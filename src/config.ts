@@ -32,4 +32,11 @@ export const FIREBASE_CONFIG: {
   appId: string
   storageBucket?: string
   messagingSenderId?: string
-} | null = null
+} | null = {
+  apiKey: 'AIzaSyAWkh01_9CzppTPtZcb2tlQyNpNhcQbXLQ',
+  authDomain: 'castra-a69ab.firebaseapp.com',
+  projectId: 'castra-a69ab',
+  storageBucket: 'castra-a69ab.firebasestorage.app',
+  messagingSenderId: '428975402839',
+  appId: '1:428975402839:web:4f511428f1a6ad7d4d1812',
+}
