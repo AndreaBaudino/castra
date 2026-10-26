@@ -6,6 +6,7 @@ export interface Match {
   date: string // ISO
   result: Result // for a bo3, derived from the score
   format?: Format // missing on older matches: bo1
+  games?: Result[] // bo3 only: each game's result, in order
   score?: [number, number] // bo3 only: games won, games lost
   deckId?: string // set when the deck is one of the saved decks
   deckName: string
@@ -42,6 +43,26 @@ export function groupBy(ms: Match[], key: (m: Match) => string) {
 }
 
 export const fmtRecord = (r: Record3) => (r.d ? `${r.w}-${r.l}-${r.d}` : `${r.w}-${r.l}`)
+
+/**
+ * The games of a bo3 that count: from the first, stopping at a missing one or once someone has won two.
+ * Fewer than three without a winner is fine (the round ran out of time).
+ */
+export function playedGames(games: (Result | undefined)[]): Result[] {
+  const out: Result[] = []
+  for (const g of games.slice(0, 3)) {
+    if (!g) break
+    out.push(g)
+    const [w, l] = scoreOf(out)
+    if (w === 2 || l === 2) break
+  }
+  return out
+}
+
+export const scoreOf = (games: Result[]): [number, number] => [
+  games.filter((g) => g === 'W').length,
+  games.filter((g) => g === 'L').length,
+]
 
 export const resultOfScore = ([w, l]: [number, number]): Result => (w > l ? 'W' : l > w ? 'L' : 'D')
 

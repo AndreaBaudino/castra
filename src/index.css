@@ -1331,14 +1331,36 @@ h1 {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
-.score-pick {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+.game-row {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
-.score-pick .res {
-  height: 44px;
+.game-row .result-pick {
+  flex: 1;
+}
+.game-row .res {
+  height: 42px;
+}
+.game-row.off {
+  opacity: 0.35;
+}
+.game-n {
+  width: 24px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.bo3-score {
   font-variant-numeric: tabular-nums;
+}
+.res-text-W {
+  color: var(--good);
+}
+.res-text-L {
+  color: var(--bad);
+}
+.res-text-D {
+  color: var(--mid);
 }
 .res {
   height: 52px;

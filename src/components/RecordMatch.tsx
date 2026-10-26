@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import { type Deck, newId } from '../lib/decks'
-import { type Format, type Match, type Result, resultOfScore } from '../lib/matches'
+import { type Format, type Match, type Result, playedGames, resultOfScore, scoreOf } from '../lib/matches'
 import { useStoredState } from '../lib/storage'
 import { Sheet } from './ui'
 
-// games won - games lost; 1-0, 1-1 and 0-0 happen when time runs out
-const BO3_SCORES: [number, number][] = [[2, 0], [2, 1], [1, 0], [1, 1], [0, 0], [0, 1], [1, 2], [0, 2]]
+const RESULTS = [
+  ['W', 'match.win'],
+  ['L', 'match.loss'],
+  ['D', 'match.draw'],
+] as const
 
 export function RecordMatch({
   open,
@@ -35,7 +38,7 @@ export function RecordMatch({
   const [kind, setKind] = useStoredState<Match['kind']>('cc.lastKind', 'casual')
   const [format, setFormat] = useStoredState<Format>('cc.lastFormat', 'bo1')
   const [result, setResult] = useState<Result | null>(null)
-  const [score, setScore] = useState<[number, number] | null>(null)
+  const [games, setGames] = useState<(Result | undefined)[]>([])
   const [deckId, setDeckId] = useState('')
   const [deckFree, setDeckFree] = useState('')
   const [opponent, setOpponent] = useState('')
@@ -47,7 +50,9 @@ export function RecordMatch({
       const known = decks.some((d) => d.id === editing.deckId)
       setFormat(editing.format ?? 'bo1')
       setResult(editing.result)
-      setScore(editing.score ?? null)
+      // older bo3s only have the score: rebuild the games from it
+      const [w, l] = editing.score ?? [0, 0]
+      setGames(editing.games ?? [...Array<Result>(w).fill('W'), ...Array<Result>(l).fill('L')])
       setDeckId(known ? editing.deckId! : '')
       setDeckFree(known ? '' : editing.deckName)
       setOpponent(editing.opponent)
@@ -56,7 +61,7 @@ export function RecordMatch({
       return
     }
     setResult(suggestedResult ?? null)
-    setScore(null)
+    setGames([])
     setDeckId(decks.some((d) => d.id === lastDeck) ? lastDeck : '')
     setDeckFree('')
     setOpponent('')
@@ -65,7 +70,11 @@ export function RecordMatch({
 
   const deck = decks.find((d) => d.id === deckId)
   const deckName = deck?.name ?? deckFree.trim()
-  const finalResult = format === 'bo3' ? score && resultOfScore(score) : result
+  const played = playedGames(games)
+  const score = scoreOf(played)
+  const finalResult = format === 'bo3' ? (played.length ? resultOfScore(score) : null) : result
+  // tapping the selected result again clears it
+  const setGame = (i: number, r: Result) => setGames((gs) => Object.assign([...gs], { [i]: gs[i] === r ? undefined : r }))
   const canSave = !!finalResult && !!deckName
 
   const save = () => {
@@ -77,7 +86,8 @@ export function RecordMatch({
       date: editing?.date ?? new Date().toISOString(),
       result: finalResult,
       format,
-      score: format === 'bo3' ? score! : undefined,
+      games: format === 'bo3' ? played : undefined,
+      score: format === 'bo3' ? score : undefined,
       deckId: deck?.id,
       deckName,
       opponent: opponent.trim(),
@@ -99,28 +109,35 @@ export function RecordMatch({
         </div>
         {format === 'bo3' ? (
           <div className="field">
-            <span>{t('match.score')}</span>
-            <div className="score-pick">
-              {BO3_SCORES.map((sc) => (
-                <button
-                  key={sc.join()}
-                  className={`res res-${resultOfScore(sc)} ${score?.join() === sc.join() ? 'on' : ''}`}
-                  onClick={() => setScore(sc)}
-                >
-                  {sc.join('-')}
-                </button>
-              ))}
-            </div>
+            <span>
+              {t('match.result')}
+              {played.length > 0 && <strong className={`bo3-score res-text-${finalResult}`}> {score.join('-')}</strong>}
+            </span>
+            {[0, 1, 2].map((i) => {
+              // a game can be set once the previous ones are and the match isn't decided yet
+              const open = i <= played.length && (i === played.length ? !(score[0] === 2 || score[1] === 2) : true)
+              return (
+                <div key={i} className={`game-row ${open ? '' : 'off'}`}>
+                  <span className="game-n">G{i + 1}</span>
+                  <div className="result-pick">
+                    {RESULTS.map(([r, k]) => (
+                      <button
+                        key={r}
+                        disabled={!open}
+                        className={`res res-${r} ${open && games[i] === r ? 'on' : ''}`}
+                        onClick={() => setGame(i, r)}
+                      >
+                        {t(k)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className="result-pick">
-            {(
-              [
-                ['W', 'match.win'],
-                ['L', 'match.loss'],
-                ['D', 'match.draw'],
-              ] as const
-            ).map(([r, k]) => (
+            {RESULTS.map(([r, k]) => (
               <button key={r} className={`res res-${r} ${result === r ? 'on' : ''}`} onClick={() => setResult(r)}>
                 {t(k)}
               </button>
