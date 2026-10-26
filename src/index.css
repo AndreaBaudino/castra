@@ -1331,6 +1331,15 @@ h1 {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
+.score-pick {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.score-pick .res {
+  height: 44px;
+  font-variant-numeric: tabular-nums;
+}
 .res {
   height: 52px;
   border-radius: 12px;
@@ -1375,7 +1384,9 @@ h1 {
   background: var(--mid);
 }
 .res-badge {
-  width: 26px;
+  min-width: 26px;
+  padding: 0 5px;
+  font-variant-numeric: tabular-nums;
   height: 26px;
   border-radius: 8px;
   display: grid;

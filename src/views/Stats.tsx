@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import type { Deck } from '../lib/decks'
-import { type Match, fmtRecord, groupBy, record } from '../lib/matches'
+import { type Match, fmtRecord, groupBy, record, resultLabel } from '../lib/matches'
+import { useLongPress } from '../lib/longPress'
 import { type MetaDeck, normName, winrate } from '../lib/meta'
-import { Icon, pct, wrClass } from '../components/ui'
+import { Icon, Sheet, pct, wrClass } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
 
 type Filter = 'all' | Match['kind']
@@ -19,6 +20,27 @@ export function ResultDots({ matches, n = 10 }: { matches: Match[]; n?: number }
   )
 }
 
+function HistoryRow({ m, deckName, onLongPress }: { m: Match; deckName: string; onLongPress: () => void }) {
+  const { t, lang } = useI18n()
+  const press = useLongPress(() => {}, onLongPress)
+  return (
+    <li className="stat-row history" {...press}>
+      <span className={`res-badge res-${m.result}`}>{resultLabel(m)}</span>
+      <span className="grow hist-main">
+        <span className="ellipsis">
+          {deckName} <span className="muted">vs</span> {m.opponent || '—'}
+        </span>
+        <span className="muted small">
+          {new Date(m.date).toLocaleDateString(lang)} · {m.format === 'bo3' ? 'Bo3' : 'Bo1'} ·{' '}
+          {t(m.kind === 'tournament' ? 'match.tournament' : 'match.casual')}
+          {m.durationMin ? ` · ${m.durationMin}′` : ''}
+          {m.notes ? ` · ${m.notes}` : ''}
+        </span>
+      </span>
+    </li>
+  )
+}
+
 export default function Stats({
   matches,
   setMatches,
@@ -30,9 +52,11 @@ export default function Stats({
   decks: Deck[]
   metaDecks: MetaDeck[]
 }) {
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
   const [filter, setFilter] = useState<Filter>('all')
   const [adding, setAdding] = useState(false)
+  const [actions, setActions] = useState<Match | null>(null) // long-pressed match
+  const [editing, setEditing] = useState<Match | null>(null)
   const shown = useMemo(
     () => matches.filter((m) => filter === 'all' || m.kind === filter).sort((a, b) => b.date.localeCompare(a.date)),
     [matches, filter],
@@ -124,40 +148,57 @@ export default function Stats({
             <div className="group-title">{t('stats.history')}</div>
             <ul className="card-list">
               {shown.map((m) => (
-                <li key={m.id} className="stat-row history">
-                  <span className={`res-badge res-${m.result}`}>{m.result}</span>
-                  <span className="grow hist-main">
-                    <span className="ellipsis">
-                      {decks.find((d) => d.id === m.deckId)?.name ?? m.deckName} <span className="muted">vs</span> {m.opponent || '—'}
-                    </span>
-                    <span className="muted small">
-                      {new Date(m.date).toLocaleDateString(lang)} · {t(m.kind === 'tournament' ? 'match.tournament' : 'match.casual')}
-                      {m.durationMin ? ` · ${m.durationMin}′` : ''}
-                      {m.notes ? ` · ${m.notes}` : ''}
-                    </span>
-                  </span>
-                  <button
-                    className="icon-btn"
-                    aria-label="delete"
-                    onClick={() => confirm(t('stats.deleteConfirm')) && setMatches((ms) => ms.filter((x) => x.id !== m.id))}
-                  >
-                    <Icon name="trash" size={16} />
-                  </button>
-                </li>
+                <HistoryRow
+                  key={m.id}
+                  m={m}
+                  deckName={decks.find((d) => d.id === m.deckId)?.name ?? m.deckName}
+                  onLongPress={() => setActions(m)}
+                />
               ))}
             </ul>
           </section>
         </>
       )}
 
+      {shown.length > 0 && <p className="muted small center">{t('stats.longPressHint')}</p>}
+
+      <Sheet open={!!actions} onClose={() => setActions(null)} title={t('stats.matchActions')}>
+        <div className="form">
+          <button
+            className="btn"
+            onClick={() => {
+              setEditing(actions)
+              setActions(null)
+            }}
+          >
+            <Icon name="edit" size={16} /> {t('stats.editMatch')}
+          </button>
+          <button
+            className="btn danger"
+            onClick={() => {
+              if (!actions || !confirm(t('stats.deleteConfirm'))) return
+              setMatches((ms) => ms.filter((x) => x.id !== actions.id))
+              setActions(null)
+            }}
+          >
+            <Icon name="trash" size={16} /> {t('stats.deleteMatch')}
+          </button>
+        </div>
+      </Sheet>
+
       <RecordMatch
-        open={adding}
-        onClose={() => setAdding(false)}
+        open={adding || !!editing}
+        editing={editing ?? undefined}
+        onClose={() => {
+          setAdding(false)
+          setEditing(null)
+        }}
         decks={decks}
         metaNames={metaDecks.map((d) => d.name)}
         onSave={(m) => {
-          setMatches((ms) => [m, ...ms])
+          setMatches((ms) => (editing ? ms.map((x) => (x.id === m.id ? m : x)) : [m, ...ms]))
           setAdding(false)
+          setEditing(null)
         }}
       />
     </div>

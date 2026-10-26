@@ -1,9 +1,12 @@
 export type Result = 'W' | 'L' | 'D'
+export type Format = 'bo1' | 'bo3'
 
 export interface Match {
   id: string
   date: string // ISO
-  result: Result
+  result: Result // for a bo3, derived from the score
+  format?: Format // missing on older matches: bo1
+  score?: [number, number] // bo3 only: games won, games lost
   deckId?: string // set when the deck is one of the saved decks
   deckName: string
   opponent: string
@@ -39,3 +42,8 @@ export function groupBy(ms: Match[], key: (m: Match) => string) {
 }
 
 export const fmtRecord = (r: Record3) => (r.d ? `${r.w}-${r.l}-${r.d}` : `${r.w}-${r.l}`)
+
+export const resultOfScore = ([w, l]: [number, number]): Result => (w > l ? 'W' : l > w ? 'L' : 'D')
+
+/** What the result badge shows: W/L/D for a bo1, the score (2-1) for a bo3. */
+export const resultLabel = (m: Match) => (m.format === 'bo3' && m.score ? m.score.join('-') : m.result)
