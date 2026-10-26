@@ -1,0 +1,464 @@
+import { useEffect, useRef, useState } from 'react'
+import { COMMANDER_DAMAGE_LETHAL, POISON_LETHAL, STARTING_LIFE } from '../config'
+import { useI18n } from '../i18n'
+import type { Deck } from '../lib/decks'
+import type { Match } from '../lib/matches'
+import { useStoredState } from '../lib/storage'
+import { playAlarm, unlockAudio } from '../lib/sound'
+import {
+  DEFAULT_TIMER_SETTINGS,
+  type TimerSettings,
+  type TimerState,
+  elapsed,
+  fmt,
+  freshTimer,
+  phaseOf,
+} from '../lib/timer'
+import { Icon } from '../components/ui'
+import { RecordMatch } from '../components/RecordMatch'
+
+export interface PlayerState {
+  life: number
+  cmd: number // commander damage received
+  poison: number
+  tax: number
+}
+
+export interface GameState {
+  startLife: number
+  players: [PlayerState, PlayerState]
+  startedAt: string
+  timer?: TimerState
+}
+
+const fresh = (startLife: number): GameState => ({
+  startLife,
+  players: [0, 1].map(() => ({ life: startLife, cmd: 0, poison: 0, tax: 0 })) as [PlayerState, PlayerState],
+  startedAt: new Date().toISOString(),
+  timer: freshTimer(),
+})
+
+export const GAME_KEY = 'cc.game'
+export const defaultGame = () => fresh(STARTING_LIFE)
+
+export function isGameInProgress(g: GameState) {
+  return (
+    g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison || p.tax) || !!(g.timer && elapsed(g.timer) > 0)
+  )
+}
+
+const isDead = (p: PlayerState) => p.life <= 0 || p.cmd >= COMMANDER_DAMAGE_LETHAL || p.poison >= POISON_LETHAL
+
+/** Fires once on tap, then repeats while held. */
+function useRepeat(fn: () => void) {
+  const timer = useRef<number | undefined>(undefined)
+  const fnRef = useRef(fn)
+  fnRef.current = fn
+  const stop = () => {
+    clearTimeout(timer.current)
+    clearInterval(timer.current)
+  }
+  useEffect(() => stop, [])
+  return {
+    onPointerDown: (e: React.PointerEvent) => {
+      e.preventDefault()
+      fnRef.current()
+      timer.current = window.setTimeout(() => {
+        timer.current = window.setInterval(() => fnRef.current(), 90)
+      }, 420)
+    },
+    onPointerUp: stop,
+    onPointerLeave: stop,
+    onPointerCancel: stop,
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  }
+}
+
+function PlayerPanel({
+  idx,
+  p,
+  update,
+}: {
+  idx: 0 | 1
+  p: PlayerState
+  update: (fn: (p: PlayerState) => PlayerState) => void
+}) {
+  const { t } = useI18n()
+  const [delta, setDelta] = useState(0)
+  const deltaTimer = useRef<number | undefined>(undefined)
+
+  const showDelta = (d: number) => {
+    setDelta((x) => x + d)
+    clearTimeout(deltaTimer.current)
+    deltaTimer.current = window.setTimeout(() => setDelta(0), 1400)
+  }
+  const changeLife = (d: number) => {
+    update((p) => ({ ...p, life: p.life + d }))
+    showDelta(d)
+  }
+  const minus = useRepeat(() => changeLife(-1))
+  const plus = useRepeat(() => changeLife(1))
+
+  const counter = (key: 'cmd' | 'poison' | 'tax', label: string, step: number, lethal?: number) => (
+    <div className={`counter ${lethal && p[key] >= lethal ? 'lethal' : ''}`}>
+      <button
+        aria-label={`${label} -`}
+        onClick={() =>
+          // undoing commander damage gives the life back
+          update((p) => ({ ...p, [key]: Math.max(0, p[key] - step), ...(key === 'cmd' && p.cmd > 0 ? { life: p.life + step } : {}) }))
+        }
+      >
+        −
+      </button>
+      <div className="counter-val">
+        <span className="counter-num">{p[key]}</span>
+        <span className="counter-label">{label}</span>
+      </div>
+      <button
+        aria-label={`${label} +`}
+        onClick={() => {
+          // commander damage is also life loss
+          update((p) => ({ ...p, [key]: p[key] + step, ...(key === 'cmd' ? { life: p.life - step } : {}) }))
+          if (key === 'cmd') showDelta(-step)
+        }}
+      >
+        +
+      </button>
+    </div>
+  )
+
+  return (
+    <section className={`player p${idx} ${isDead(p) ? 'dead' : ''}`}>
+      <div className="life-zone">
+        <button className="life-tap minus" {...minus} aria-label="-1">
+          <span>−</span>
+        </button>
+        <div className="life-center">
+          <div className="life-num">{p.life}</div>
+          <div className={`life-delta ${delta ? 'show' : ''}`}>{delta > 0 ? `+${delta}` : delta || ''}</div>
+          {isDead(p) && <div className="life-dead">{t('life.lost')}</div>}
+        </div>
+        <button className="life-tap plus" {...plus} aria-label="+1">
+          <span>+</span>
+        </button>
+      </div>
+      <div className="counters">
+        {counter('cmd', t('life.cmd'), 1, COMMANDER_DAMAGE_LETHAL)}
+        {counter('poison', t('life.poison'), 1, POISON_LETHAL)}
+        {counter('tax', t('life.tax'), 2)}
+      </div>
+    </section>
+  )
+}
+
+function TimerPill({
+  timer,
+  settings,
+  onToggle,
+  onTurn,
+}: {
+  timer: TimerState
+  settings: TimerSettings
+  onToggle: () => void
+  onTurn: (d: 1 | -1) => void
+}) {
+  const { t } = useI18n()
+  const phase = phaseOf(timer, settings)
+  const hold = useRef<number | undefined>(undefined)
+  const held = useRef(false)
+  const running = !!timer.runningSince
+
+  if (phase.kind === 'turns') {
+    const over = phase.turn > phase.total
+    return (
+      <button
+        className="timer-pill turns"
+        onPointerDown={() => {
+          held.current = false
+          hold.current = window.setTimeout(() => {
+            held.current = true
+            onTurn(-1)
+          }, 550)
+        }}
+        onPointerUp={() => {
+          clearTimeout(hold.current)
+          if (!held.current && !over) onTurn(1)
+        }}
+        onPointerLeave={() => clearTimeout(hold.current)}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <span className="timer-label">{over ? '' : t('timer.turn')}</span>
+        <span className="timer-time">{over ? t('timer.over') : `${phase.turn}/${phase.total}`}</span>
+      </button>
+    )
+  }
+
+  return (
+    <button className={`timer-pill ${running ? 'running' : 'paused'} ${phase.kind}`} onClick={onToggle}>
+      <span className="timer-label">{phase.kind === 'extra' ? t('timer.extra') : running ? '' : '▶'}</span>
+      <span className="timer-time">{fmt(phase.remainingMs)}</span>
+    </button>
+  )
+}
+
+function Stepper({ label, value, set, min, max, step = 1 }: { label: string; value: number; set: (v: number) => void; min: number; max: number; step?: number }) {
+  return (
+    <div className="stepper">
+      <span>{label}</span>
+      <div className="stepper-ctrl">
+        <button onClick={() => set(Math.max(min, value - step))} aria-label="-">
+          −
+        </button>
+        <b>{value}</b>
+        <button onClick={() => set(Math.min(max, value + step))} aria-label="+">
+          +
+        </button>
+      </div>
+    </div>
+  )
+}
+
+type Roll = { kind: 'dice'; values: [number, number] } | { kind: 'coin'; value: boolean } | { kind: 'first'; value: 0 | 1 }
+
+export default function LifeCounter({
+  onExit,
+  decks,
+  metaNames,
+  onSaveMatch,
+}: {
+  onExit: () => void
+  decks: Deck[]
+  metaNames: string[]
+  onSaveMatch: (m: Match) => void
+}) {
+  const { t } = useI18n()
+  const [game, setGame] = useStoredState<GameState>(GAME_KEY, defaultGame())
+  const [settings, setSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
+  const [menu, setMenu] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const [roll, setRoll] = useState<Roll | null>(null)
+  const [banner, setBanner] = useState('')
+  const [, tick] = useState(0)
+  const timer = game.timer ?? freshTimer()
+
+  // keep the screen awake during the game
+  useEffect(() => {
+    let lock: WakeLockSentinel | null = null
+    const acquire = async () => {
+      try {
+        lock = await navigator.wakeLock?.request('screen')
+      } catch {
+        /* not supported or denied */
+      }
+    }
+    acquire()
+    const onVis = () => document.visibilityState === 'visible' && acquire()
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      lock?.release().catch(() => {})
+    }
+  }, [])
+
+  const setTimer = (fn: (t: TimerState) => TimerState) => setGame((g) => ({ ...g, timer: fn(g.timer ?? freshTimer()) }))
+
+  // clock: re-render while running and fire the alarms on phase changes
+  useEffect(() => {
+    if (!timer.runningSince) return
+    const id = setInterval(() => {
+      tick((n) => n + 1)
+      const phase = phaseOf(timer, settings)
+      if (phase.kind === 'extra' && timer.alerted === 'none') {
+        if (settings.sound) playAlarm('extra')
+        setBanner(`${t('timer.timeUp')} ${t('timer.extraStart')}`)
+        setTimer((x) => ({ ...x, alerted: 'extra' }))
+      } else if (phase.kind === 'turns' && timer.alerted !== 'turns') {
+        if (settings.sound) playAlarm('turns')
+        setBanner(`${t('timer.timeUp')} ${t('timer.turnsStart')}`)
+        // the clock is done: freeze it at the end of the timed part
+        setTimer((x) => ({
+          ...x,
+          elapsedMs: (settings.mainMin + settings.extraMin) * 60_000,
+          runningSince: null,
+          alerted: 'turns',
+        }))
+      }
+    }, 250)
+    return () => clearInterval(id)
+  }, [timer, settings]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!banner) return
+    const id = setTimeout(() => setBanner(''), 6000)
+    return () => clearTimeout(id)
+  }, [banner])
+
+  const toggleTimer = () => {
+    unlockAudio()
+    setTimer((x) =>
+      x.runningSince ? { ...x, elapsedMs: elapsed(x), runningSince: null } : { ...x, runningSince: Date.now() },
+    )
+  }
+
+  const update = (i: 0 | 1) => (fn: (p: PlayerState) => PlayerState) =>
+    setGame((g) => {
+      const players = [...g.players] as GameState['players']
+      players[i] = fn(players[i])
+      return { ...g, players }
+    })
+
+  const reset = (startLife = game.startLife) => {
+    setGame(fresh(startLife))
+    setMenu(false)
+  }
+
+  const d20 = () => 1 + Math.floor(Math.random() * 20)
+  const someoneDead = game.players.some(isDead)
+  // the bottom player is assumed to be the phone's owner
+  const suggested = isDead(game.players[1]) && !isDead(game.players[0]) ? 'L' : isDead(game.players[0]) && !isDead(game.players[1]) ? 'W' : undefined
+
+  return (
+    <div className="life-root">
+      <PlayerPanel idx={0} p={game.players[0]} update={update(0)} />
+
+      <div className="life-bar">
+        <button className="bar-btn" onClick={onExit} aria-label={t('life.exit')}>
+          <Icon name="home" />
+        </button>
+        <button className="bar-btn" onClick={() => setRoll({ kind: 'first', value: Math.random() < 0.5 ? 0 : 1 })} aria-label={t('life.first')}>
+          <Icon name="crown" />
+        </button>
+        <TimerPill
+          timer={timer}
+          settings={settings}
+          onToggle={toggleTimer}
+          onTurn={(d) => setTimer((x) => ({ ...x, turn: Math.max(0, x.turn + d) }))}
+        />
+        <button className="bar-btn" onClick={() => setRoll({ kind: 'dice', values: [d20(), d20()] })} aria-label={t('life.dice')}>
+          <Icon name="dice" />
+        </button>
+        <button className={`bar-btn accent ${someoneDead ? 'attn' : ''}`} onClick={() => setMenu(true)} aria-label={t('game.settings')}>
+          <Icon name="gear" />
+        </button>
+      </div>
+
+      <PlayerPanel idx={1} p={game.players[1]} update={update(1)} />
+
+      {banner && (
+        <div className="timer-banner" onClick={() => setBanner('')}>
+          <div className="p0">{banner}</div>
+          <div>{banner}</div>
+        </div>
+      )}
+
+      {roll && (
+        <div className="roll-overlay" onClick={() => setRoll(null)}>
+          {roll.kind === 'dice' && (
+            <>
+              <div className="roll-half p0">
+                <div className="roll-big">{roll.values[0]}</div>
+                <div className="roll-sub">d20</div>
+              </div>
+              <div className="roll-half p1">
+                <div className="roll-big">{roll.values[1]}</div>
+                <div className="roll-sub">d20</div>
+              </div>
+            </>
+          )}
+          {roll.kind === 'coin' && (
+            <div className="roll-center">
+              <div className="roll-big">{roll.value ? t('life.heads') : t('life.tails')}</div>
+            </div>
+          )}
+          {roll.kind === 'first' && (
+            <div className={`roll-half p${roll.value} winner`}>
+              <div className="roll-big">
+                <Icon name="crown" size={56} />
+              </div>
+              <div className="roll-sub">{t('life.starts')}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {menu && (
+        <div className="roll-overlay dim" onClick={() => setMenu(false)}>
+          <div className="reset-card" onClick={(e) => e.stopPropagation()}>
+            <strong>{t('game.settings')}</strong>
+            <button
+              className="btn primary"
+              onClick={() => {
+                setMenu(false)
+                setRecording(true)
+              }}
+            >
+              <Icon name="meta" size={16} /> {t('game.record')}
+            </button>
+
+            <div className="menu-section">{t('timer.title')}</div>
+            <Stepper label={t('timer.main')} value={settings.mainMin} min={5} max={120} step={5} set={(v) => setSettings((s) => ({ ...s, mainMin: v }))} />
+            <Stepper label={t('timer.extraMin')} value={settings.extraMin} min={0} max={30} set={(v) => setSettings((s) => ({ ...s, extraMin: v }))} />
+            <Stepper label={t('timer.extraTurns')} value={settings.extraTurns} min={0} max={10} set={(v) => setSettings((s) => ({ ...s, extraTurns: v }))} />
+            <div className="stepper">
+              <span>{t('timer.sound')}</span>
+              <div className="seg">
+                {[true, false].map((v) => (
+                  <button key={String(v)} className={settings.sound === v ? 'on' : ''} onClick={() => setSettings((s) => ({ ...s, sound: v }))}>
+                    {v ? 'On' : 'Off'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="muted small">{t('timer.hint')}</div>
+            <div className="btn-pair">
+              <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
+                {t('timer.resetTimer')}
+              </button>
+              <button className="btn ghost" onClick={() => setRoll({ kind: 'coin', value: Math.random() < 0.5 })}>
+                {t('life.coin')}
+              </button>
+            </div>
+
+            <div className="menu-section">{t('life.startLife')}</div>
+            <div className="seg">
+              {[20, 25, 30, 40].map((v) => (
+                <button key={v} className={v === game.startLife ? 'on' : ''} onClick={() => setGame((g) => ({ ...g, startLife: v }))}>
+                  {v}
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn ghost"
+              onClick={() => {
+                if (!isGameInProgress(game) || confirm(t('life.resetConfirm'))) reset()
+              }}
+            >
+              <Icon name="refresh" size={16} /> {t('life.reset')} · {game.startLife}
+            </button>
+            <button className="btn ghost" onClick={() => setMenu(false)}>
+              {t('life.close')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="life-sheet-host">
+        <RecordMatch
+          open={recording}
+          onClose={() => setRecording(false)}
+          decks={decks}
+          metaNames={metaNames}
+          suggestedResult={suggested}
+          durationMin={Math.round(elapsed(timer) / 60_000) || undefined}
+          saveLabel={t('match.saveAndReset')}
+          onSave={(m) => {
+            onSaveMatch(m)
+            setRecording(false)
+            reset()
+            setBanner(t('match.saved'))
+          }}
+        />
+      </div>
+    </div>
+  )
+}
