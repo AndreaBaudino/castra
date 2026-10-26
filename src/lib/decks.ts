@@ -11,14 +11,21 @@ export interface CardInfo {
   colorIdentity: string[]
   image?: string // normal size
   art?: string // art crop
+  set?: string // edition code, e.g. "c21"
+  setName?: string
+  cn?: string // collector number
 }
 
 export interface DeckCard {
   name: string
   qty: number
   section: Section
+  set?: string // requested edition (from import or chosen in the app)
+  cn?: string
   info?: CardInfo
 }
+
+export type DeckView = 'list' | 'pile' | 'grid'
 
 export interface Deck {
   id: string
@@ -26,6 +33,8 @@ export interface Deck {
   tags: string[]
   notes: string
   cards: DeckCard[]
+  view?: DeckView // default 'list'
+  cover?: string // name of the card whose art is the deck's splash; default: commander
   createdAt: string
   updatedAt: string
 }
@@ -99,23 +108,39 @@ export function parseDecklist(text: string): DeckCard[] {
     const m = s.match(/^(\d+)\s*x?\s+(.+)$/i)
     const qty = m ? parseInt(m[1], 10) : 1
     s = m ? m[2] : s
-    // strip set/collector info and foil/tags: "Sol Ring (C21) 263 *F* #ramp"
+    // tags and foil markers: "Sol Ring (C21) 263 *F* #ramp"
     s = s
       .replace(/\s+#\S.*$/, '')
       .replace(/\s+\*[A-Z]+\*/g, '')
-      .replace(/\s+\([A-Za-z0-9]{2,6}\)(\s+[\w★-]+)?\s*$/, '')
-      .replace(/\s+\[[^\]]+\]\s*$/, '')
+      .trim()
+    // edition: "(C21) 263" (Moxfield/Arena) or "[C21]" (MTGO-like)
+    let set: string | undefined
+    let cn: string | undefined
+    s = s
+      .replace(/\s+\(([A-Za-z0-9]{2,6})\)(?:\s+([\w★-]+))?\s*$/, (_, a: string, b?: string) => {
+        set = a.toLowerCase()
+        cn = b
+        return ''
+      })
+      .replace(/\s+\[([A-Za-z0-9]{2,6})\]\s*$/, (_, a: string) => {
+        set = a.toLowerCase()
+        return ''
+      })
       .trim()
     if (!s) continue
     const existing = out.find((c) => c.name.toLowerCase() === s.toLowerCase() && c.section === section)
     if (existing) existing.qty += qty
-    else out.push({ name: s, qty, section })
+    else out.push({ name: s, qty, section, ...(set ? { set } : {}), ...(cn ? { cn } : {}) })
   }
   return out
 }
 
 export function exportDecklist(deck: Deck): string {
-  const line = (c: DeckCard) => `${c.qty} ${c.name}`
+  const line = (c: DeckCard) => {
+    const set = c.info?.set ?? c.set
+    const cn = c.info?.cn ?? c.cn
+    return `${c.qty} ${c.name}${set ? ` (${set.toUpperCase()})${cn ? ` ${cn}` : ''}` : ''}`
+  }
   const cmd = deck.cards.filter((c) => c.section === 'commander')
   const main = deck.cards.filter((c) => c.section === 'main')
   const side = deck.cards.filter((c) => c.section === 'side')
@@ -175,3 +200,11 @@ export const WUBRG = ['W', 'U', 'B', 'R', 'G']
 export const sortColors = (cs: string[]) => WUBRG.filter((c) => cs.includes(c))
 
 export const newId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+
+/** The deck's splash art: the chosen cover card (in its edition), otherwise the first commander. */
+export function deckCover(deck: Deck): string | undefined {
+  const chosen = deck.cover ? deck.cards.find((c) => c.name === deck.cover)?.info?.art : undefined
+  return chosen ?? deck.cards.find((c) => c.section === 'commander')?.info?.art
+}
+
+export const cardKey = (c: Pick<DeckCard, 'name' | 'section'>) => `${c.section}|${c.name}`

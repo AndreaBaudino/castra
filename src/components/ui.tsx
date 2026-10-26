@@ -66,6 +66,13 @@ const paths: Record<string, ReactNode> = {
       <path d="M4 21a8 8 0 0 1 16 0" />
     </>
   ),
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="m21 16-5-5-9 9" />
+    </>
+  ),
   stats: <path d="M3 3v18h18M7 15l4-4 3 3 6-6" />,
 }
 

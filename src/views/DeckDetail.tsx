@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import {
+  type CardInfo,
   type Deck,
   type DeckCard,
+  type DeckView,
   type Group,
   GROUP_ORDER,
+  cardKey,
   checkDeck,
+  deckCover,
   exportDecklist,
   groupOf,
   isValid,
@@ -13,11 +17,13 @@ import {
 } from '../lib/decks'
 import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
 import { type Match, fmtRecord, record } from '../lib/matches'
-import { autocomplete, fetchNamed } from '../lib/scryfall'
+import { fetchPrints, searchCards } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
 
-const GROUP_KEY: Record<Group, Parameters<ReturnType<typeof useI18n>['t']>[0]> = {
+type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
+
+const GROUP_KEY: Record<Group, TKey> = {
   commander: 'deck.commander',
   creatures: 'deck.creatures',
   planeswalkers: 'deck.planeswalkers',
@@ -30,6 +36,8 @@ const GROUP_KEY: Record<Group, Parameters<ReturnType<typeof useI18n>['t']>[0]> =
   other: 'deck.other',
   sideboard: 'deck.sideboard',
 }
+
+const VIEW_KEY: Record<DeckView, TKey> = { list: 'deck.view.list', pile: 'deck.view.pile', grid: 'deck.view.grid' }
 
 function ManaCost({ cost }: { cost: string }) {
   const symbols = cost.match(/\{[^}]+\}/g) ?? []
@@ -48,41 +56,96 @@ function ManaCost({ cost }: { cost: string }) {
   )
 }
 
-function AddCard({ onAdd }: { onAdd: (name: string) => void }) {
+/** Card image, or a framed placeholder with the name when Scryfall had no match. */
+function CardImage({ card, onClick }: { card: DeckCard; onClick: () => void }) {
+  return (
+    <button className="card-img" onClick={onClick} aria-label={card.name}>
+      {card.info?.image ? (
+        <img src={card.info.image} alt={card.name} loading="lazy" />
+      ) : (
+        <span className="card-ph">{card.name}</span>
+      )}
+      {card.qty > 1 && <span className="qty-badge">×{card.qty}</span>}
+    </button>
+  )
+}
+
+function AddCardsSheet({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (c: CardInfo) => void }) {
   const { t } = useI18n()
   const [q, setQ] = useState('')
-  const [opts, setOpts] = useState<string[]>([])
+  const [results, setResults] = useState<CardInfo[]>([])
+  const [loading, setLoading] = useState(false)
+  const [added, setAdded] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (!open) {
+      setQ('')
+      setResults([])
+      setAdded({})
+    }
+  }, [open])
+
   useEffect(() => {
     const ctrl = new AbortController()
-    const id = setTimeout(() => autocomplete(q, ctrl.signal).then(setOpts).catch(() => {}), 220)
+    const id = setTimeout(() => {
+      setLoading(true)
+      searchCards(q, ctrl.signal)
+        .then(setResults)
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    }, 300)
     return () => {
       clearTimeout(id)
       ctrl.abort()
     }
   }, [q])
+
   return (
-    <div className="add-card">
-      <div className="search">
-        <Icon name="plus" size={18} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('deck.addCard')} />
+    <Sheet open={open} onClose={onClose} title={t('deck.addCards')}>
+      <div className="search sticky-search">
+        <Icon name="search" size={18} />
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('deck.searchCards')} />
       </div>
-      {opts.length > 0 && q && (
-        <ul className="ac-list">
-          {opts.map((o) => (
-            <li key={o}>
-              <button
-                onClick={() => {
-                  onAdd(o)
-                  setQ('')
-                  setOpts([])
-                }}
-              >
-                {o}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {loading && <div className="muted small center pad">…</div>}
+      {!loading && q.trim().length >= 2 && !results.length && <div className="muted small center pad">{t('meta.noResults')}</div>}
+      <div className="result-grid">
+        {results.map((c) => (
+          <button
+            key={c.id}
+            className="result"
+            onClick={() => {
+              onAdd(c)
+              setAdded((a) => ({ ...a, [c.id]: (a[c.id] ?? 0) + 1 }))
+            }}
+          >
+            {c.image ? <img src={c.image} alt={c.name} loading="lazy" /> : <span className="card-ph">{c.name}</span>}
+            {added[c.id] ? <span className="qty-badge added">+{added[c.id]}</span> : <span className="add-badge">+</span>}
+          </button>
+        ))}
+      </div>
+    </Sheet>
+  )
+}
+
+function PrintsPicker({ name, current, onPick }: { name: string; current?: string; onPick: (c: CardInfo) => void }) {
+  const { t } = useI18n()
+  const [prints, setPrints] = useState<CardInfo[] | null>(null)
+  useEffect(() => {
+    fetchPrints(name)
+      .then(setPrints)
+      .catch(() => setPrints([]))
+  }, [name])
+  if (!prints) return <div className="muted small center pad">{t('deck.loadingPrints')}</div>
+  return (
+    <div className="result-grid prints">
+      {prints.map((p) => (
+        <button key={p.id} className={`result ${p.id === current ? 'on' : ''}`} onClick={() => onPick(p)}>
+          {p.image ? <img src={p.image} alt={p.setName} loading="lazy" /> : <span className="card-ph">{p.setName}</span>}
+          <span className="print-label">
+            {p.set?.toUpperCase()} · {p.cn}
+          </span>
+        </button>
+      ))}
     </div>
   )
 }
@@ -104,12 +167,17 @@ export default function DeckDetail({
 }) {
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
-  const [selected, setSelected] = useState<DeckCard | null>(null)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [choosingPrint, setChoosingPrint] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [choosingCover, setChoosingCover] = useState(false)
   const [toast, setToast] = useState('')
   const check = useMemo(() => checkDeck(deck), [deck])
   const meta = findMetaDeck(metaDecks, commanderNames(deck))
-  const art = check.commanders[0]?.info?.art
+  const art = deckCover(deck)
   const mine = record(matches.filter((m) => m.deckId === deck.id))
+  const view = deck.view ?? 'list'
+  const selected = selectedKey ? deck.cards.find((c) => cardKey(c) === selectedKey) : undefined
 
   const groups = useMemo(() => {
     const g = new Map<Group, DeckCard[]>()
@@ -133,29 +201,43 @@ export default function DeckDetail({
 
   const save = (patch: Partial<Deck>) => onChange({ ...deck, ...patch, updatedAt: new Date().toISOString() })
   const setCards = (fn: (cs: DeckCard[]) => DeckCard[]) => save({ cards: fn(deck.cards) })
-  const same = (a: DeckCard, b: DeckCard) => a.name === b.name && a.section === b.section
-
-  const changeQty = (c: DeckCard, d: number) =>
-    setCards((cs) => cs.map((x) => (same(x, c) ? { ...x, qty: x.qty + d } : x)).filter((x) => x.qty > 0))
-  const moveTo = (c: DeckCard, section: DeckCard['section']) => {
-    setCards((cs) => cs.map((x) => (same(x, c) ? { ...x, section } : x)))
-    setSelected(null)
-  }
-  const remove = (c: DeckCard) => {
-    setCards((cs) => cs.filter((x) => !same(x, c)))
-    setSelected(null)
-  }
-  const add = async (name: string) => {
-    const existing = deck.cards.find((c) => c.name === name && c.section === 'main')
-    if (existing) return changeQty(existing, 1)
-    const info = await fetchNamed(name)
-    setCards((cs) => [...cs, { name, qty: 1, section: 'main', info }])
-  }
+  const same = (a: DeckCard, b: DeckCard) => cardKey(a) === cardKey(b)
 
   const flash = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(''), 1600)
   }
+
+  const changeQty = (c: DeckCard, d: number) =>
+    setCards((cs) => cs.map((x) => (same(x, c) ? { ...x, qty: x.qty + d } : x)).filter((x) => x.qty > 0))
+  const moveTo = (c: DeckCard, section: DeckCard['section']) => {
+    if (deck.cards.some((x) => x.section === section && x.name === c.name)) return
+    setCards((cs) => cs.map((x) => (same(x, c) ? { ...x, section } : x)))
+    setSelectedKey(cardKey({ name: c.name, section }))
+  }
+  const remove = (c: DeckCard) => {
+    setCards((cs) => cs.filter((x) => !same(x, c)))
+    setSelectedKey(null)
+  }
+  const add = (info: CardInfo) => {
+    const existing = deck.cards.find((c) => c.name === info.name && c.section === 'main')
+    if (existing) changeQty(existing, 1)
+    else setCards((cs) => [...cs, { name: info.name, qty: 1, section: 'main', set: info.set, cn: info.cn, info }])
+    flash(`${t('deck.added')}: ${info.name}`)
+  }
+  const setPrint = (c: DeckCard, info: CardInfo) => {
+    setCards((cs) => cs.map((x) => (x.name === c.name ? { ...x, info, set: info.set, cn: info.cn } : x)))
+    setChoosingPrint(false)
+  }
+  const open = (c: DeckCard) => {
+    setChoosingPrint(false)
+    setSelectedKey(cardKey(c))
+  }
+
+  const coverCandidates = useMemo(() => {
+    const seen = new Set<string>()
+    return deck.cards.filter((c) => c.info?.art && !seen.has(c.name) && seen.add(c.name))
+  }, [deck.cards])
 
   return (
     <div className="page deck-page">
@@ -165,9 +247,14 @@ export default function DeckDetail({
           <button className="icon-btn on-image" onClick={onBack} aria-label={t('deck.back')}>
             <Icon name="back" />
           </button>
-          <button className="icon-btn on-image" onClick={() => setEditing((e) => !e)}>
-            {editing ? <span className="small strong">{t('deck.done')}</span> : <Icon name="edit" />}
-          </button>
+          <div className="hero-actions">
+            <button className="icon-btn on-image" onClick={() => setChoosingCover(true)} aria-label={t('deck.chooseCover')}>
+              <Icon name="image" />
+            </button>
+            <button className="icon-btn on-image" onClick={() => setEditing((e) => !e)}>
+              {editing ? <span className="small strong">{t('deck.done')}</span> : <Icon name="edit" />}
+            </button>
+          </div>
         </div>
         <div className="deck-hero-body">
           <h1 className="ellipsis">{deck.name}</h1>
@@ -202,7 +289,6 @@ export default function DeckDetail({
             <span>{t('deck.notes')}</span>
             <textarea rows={3} value={deck.notes} onChange={(e) => save({ notes: e.target.value })} />
           </label>
-          <AddCard onAdd={add} />
           <button
             className="btn danger"
             onClick={() => {
@@ -272,65 +358,171 @@ export default function DeckDetail({
         </button>
       </section>
 
-      {groups.map(([g, cards]) => (
-        <section key={g} className="group">
-          <div className="group-title">
-            {t(GROUP_KEY[g])} <span className="muted">{cards.reduce((s, c) => s + c.qty, 0)}</span>
-          </div>
-          <ul className="card-list">
-            {cards.map((c) => (
-              <li key={c.section + c.name} className="card-row">
-                <button className="card-row-main" onClick={() => setSelected(c)}>
-                  <span className="qty">{c.qty}</span>
-                  <span className={`ellipsis ${c.info ? '' : 'warn-text'}`}>{c.name}</span>
-                  {c.info && <ManaCost cost={c.info.manaCost} />}
-                </button>
-                {editing && (
-                  <span className="qty-ctrl">
-                    <button onClick={() => changeQty(c, -1)} aria-label="-">
-                      <Icon name="minus" size={14} />
-                    </button>
-                    <button onClick={() => changeQty(c, 1)} aria-label="+">
-                      <Icon name="plus" size={14} />
-                    </button>
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <div className="deck-toolbar">
+        <div className="seg">
+          {(['list', 'pile', 'grid'] as DeckView[]).map((v) => (
+            <button key={v} className={view === v ? 'on' : ''} onClick={() => save({ view: v })}>
+              {t(VIEW_KEY[v])}
+            </button>
+          ))}
+        </div>
+        <button className="btn small primary" onClick={() => setAdding(true)}>
+          <Icon name="plus" size={16} /> {t('deck.addCard')}
+        </button>
+      </div>
 
-      <Sheet open={!!selected} onClose={() => setSelected(null)} title={selected?.name}>
-        {selected && (
-          <div className="card-preview">
-            {selected.info?.image && <img src={selected.info.image} alt={selected.name} loading="lazy" />}
-            <div className="muted small">{selected.info?.typeLine}</div>
-            <div className="btn-row">
-              {selected.section !== 'commander' ? (
-                <button className="btn ghost" onClick={() => moveTo(selected, 'commander')}>
-                  <Icon name="crown" size={16} /> {t('deck.setCommander')}
-                </button>
-              ) : (
-                <button className="btn ghost" onClick={() => moveTo(selected, 'main')}>
-                  {t('deck.unsetCommander')}
-                </button>
-              )}
-              {selected.section === 'side' ? (
-                <button className="btn ghost" onClick={() => moveTo(selected, 'main')}>
-                  <Icon name="swap" size={16} /> {t('deck.toMain')}
-                </button>
-              ) : (
-                <button className="btn ghost" onClick={() => moveTo(selected, 'side')}>
-                  <Icon name="swap" size={16} /> {t('deck.toSideboard')}
-                </button>
-              )}
-              <button className="btn danger" onClick={() => remove(selected)}>
-                <Icon name="trash" size={16} /> {t('deck.remove')}
-              </button>
+      {view === 'pile' ? (
+        <div className="piles">
+          {groups.map(([g, cards]) => (
+            <section key={g} className="pile-col">
+              <div className="group-title">
+                {t(GROUP_KEY[g])} <span className="muted">{cards.reduce((s, c) => s + c.qty, 0)}</span>
+              </div>
+              <div className="pile">
+                {cards.map((c) => (
+                  <CardImage key={cardKey(c)} card={c} onClick={() => open(c)} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        groups.map(([g, cards]) => (
+          <section key={g} className="group">
+            <div className="group-title">
+              {t(GROUP_KEY[g])} <span className="muted">{cards.reduce((s, c) => s + c.qty, 0)}</span>
             </div>
-          </div>
-        )}
+            {view === 'grid' ? (
+              <div className="card-grid">
+                {cards.map((c) => (
+                  <CardImage key={cardKey(c)} card={c} onClick={() => open(c)} />
+                ))}
+              </div>
+            ) : (
+              <ul className="card-list">
+                {cards.map((c) => (
+                  <li key={cardKey(c)} className="card-row">
+                    <button className="card-row-main" onClick={() => open(c)}>
+                      <span className="qty">{c.qty}</span>
+                      <span className={`ellipsis ${c.info ? '' : 'warn-text'}`}>{c.name}</span>
+                      {(c.info?.set ?? c.set) && <span className="set-code">{(c.info?.set ?? c.set)!.toUpperCase()}</span>}
+                      {c.info && <ManaCost cost={c.info.manaCost} />}
+                    </button>
+                    {editing && (
+                      <span className="qty-ctrl">
+                        <button onClick={() => changeQty(c, -1)} aria-label="-">
+                          <Icon name="minus" size={14} />
+                        </button>
+                        <button onClick={() => changeQty(c, 1)} aria-label="+">
+                          <Icon name="plus" size={14} />
+                        </button>
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))
+      )}
+
+      <Sheet open={!!selected} onClose={() => setSelectedKey(null)} title={selected?.name}>
+        {selected &&
+          (choosingPrint ? (
+            <>
+              <button className="btn ghost full" onClick={() => setChoosingPrint(false)}>
+                <Icon name="back" size={16} /> {t('deck.back')}
+              </button>
+              <PrintsPicker name={selected.name} current={selected.info?.id} onPick={(p) => setPrint(selected, p)} />
+            </>
+          ) : (
+            <div className="card-preview">
+              {selected.info?.image && <img src={selected.info.image} alt={selected.name} loading="lazy" />}
+              <div className="muted small">{selected.info?.typeLine}</div>
+              <button className="edition-row" onClick={() => setChoosingPrint(true)}>
+                <span className="muted small">{t('deck.edition')}</span>
+                <span className="grow ellipsis">
+                  {selected.info?.setName ?? selected.set?.toUpperCase() ?? '—'}
+                  {(selected.info?.set ?? selected.set) && (
+                    <span className="muted">
+                      {' '}
+                      ({(selected.info?.set ?? selected.set)!.toUpperCase()}
+                      {(selected.info?.cn ?? selected.cn) ? ` #${selected.info?.cn ?? selected.cn}` : ''})
+                    </span>
+                  )}
+                </span>
+                <span className="link">{t('deck.change')}</span>
+              </button>
+              <div className="qty-line">
+                <span>{t('deck.qty')}</span>
+                <span className="stepper-ctrl">
+                  <button onClick={() => (selected.qty > 1 ? changeQty(selected, -1) : remove(selected))} aria-label="-">
+                    −
+                  </button>
+                  <b>{selected.qty}</b>
+                  <button onClick={() => changeQty(selected, 1)} aria-label="+">
+                    +
+                  </button>
+                </span>
+              </div>
+              <div className="btn-row">
+                {selected.section !== 'commander' ? (
+                  <button className="btn ghost" onClick={() => moveTo(selected, 'commander')}>
+                    <Icon name="crown" size={16} /> {t('deck.setCommander')}
+                  </button>
+                ) : (
+                  <button className="btn ghost" onClick={() => moveTo(selected, 'main')}>
+                    {t('deck.unsetCommander')}
+                  </button>
+                )}
+                {selected.section === 'side' ? (
+                  <button className="btn ghost" onClick={() => moveTo(selected, 'main')}>
+                    <Icon name="swap" size={16} /> {t('deck.toMain')}
+                  </button>
+                ) : (
+                  <button className="btn ghost" onClick={() => moveTo(selected, 'side')}>
+                    <Icon name="swap" size={16} /> {t('deck.toSideboard')}
+                  </button>
+                )}
+                {selected.info?.art && (
+                  <button
+                    className="btn ghost"
+                    disabled={deck.cover === selected.name}
+                    onClick={() => {
+                      save({ cover: selected.name })
+                      flash(t('deck.coverSet'))
+                    }}
+                  >
+                    <Icon name="image" size={16} /> {deck.cover === selected.name ? t('deck.isCover') : t('deck.setCover')}
+                  </button>
+                )}
+                <button className="btn danger" onClick={() => remove(selected)}>
+                  <Icon name="trash" size={16} /> {t('deck.remove')}
+                </button>
+              </div>
+            </div>
+          ))}
+      </Sheet>
+
+      <AddCardsSheet open={adding} onClose={() => setAdding(false)} onAdd={add} />
+
+      <Sheet open={choosingCover} onClose={() => setChoosingCover(false)} title={t('deck.chooseCover')}>
+        <p className="muted small no-margin">{t('deck.coverHint')}</p>
+        <div className="cover-grid">
+          {coverCandidates.map((c) => (
+            <button
+              key={c.name}
+              className={`cover-opt ${(deck.cover ?? check.commanders[0]?.name) === c.name ? 'on' : ''}`}
+              onClick={() => {
+                save({ cover: c.name })
+                setChoosingCover(false)
+              }}
+            >
+              <img src={c.info!.art} alt="" loading="lazy" />
+              <span className="ellipsis">{c.name}</span>
+            </button>
+          ))}
+        </div>
       </Sheet>
 
       {toast && <div className="toast">{toast}</div>}
