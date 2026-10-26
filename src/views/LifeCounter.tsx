@@ -22,7 +22,6 @@ export interface PlayerState {
   life: number
   cmd: number // commander damage received
   poison: number
-  tax: number
 }
 
 export interface GameState {
@@ -34,7 +33,7 @@ export interface GameState {
 
 const fresh = (startLife: number): GameState => ({
   startLife,
-  players: [0, 1].map(() => ({ life: startLife, cmd: 0, poison: 0, tax: 0 })) as [PlayerState, PlayerState],
+  players: [0, 1].map(() => ({ life: startLife, cmd: 0, poison: 0 })) as [PlayerState, PlayerState],
   startedAt: new Date().toISOString(),
   timer: freshTimer(),
 })
@@ -44,7 +43,7 @@ export const defaultGame = () => fresh(STARTING_LIFE)
 
 export function isGameInProgress(g: GameState) {
   return (
-    g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison || p.tax) || !!(g.timer && elapsed(g.timer) > 0)
+    g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison) || !!(g.timer && elapsed(g.timer) > 0)
   )
 }
 
@@ -100,7 +99,7 @@ function PlayerPanel({
   const minus = useRepeat(() => changeLife(-1))
   const plus = useRepeat(() => changeLife(1))
 
-  const counter = (key: 'cmd' | 'poison' | 'tax', label: string, step: number, lethal?: number) => (
+  const counter = (key: 'cmd' | 'poison', label: string, step: number, lethal?: number) => (
     <div className={`counter ${lethal && p[key] >= lethal ? 'lethal' : ''}`}>
       <button
         aria-label={`${label} -`}
@@ -146,7 +145,6 @@ function PlayerPanel({
       <div className="counters">
         {counter('cmd', t('life.cmd'), 1, COMMANDER_DAMAGE_LETHAL)}
         {counter('poison', t('life.poison'), 1, POISON_LETHAL)}
-        {counter('tax', t('life.tax'), 2)}
       </div>
     </section>
   )

@@ -1030,8 +1030,8 @@ h1 {
 }
 .counters {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 84px; /* the raised game button sits in the gap between the two */
   padding: 0 8px 8px;
 }
 .counter {

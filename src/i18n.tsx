@@ -7,7 +7,7 @@ const it = {
   'nav.home': 'Home',
   'nav.meta': 'Meta',
   'nav.game': 'Partita',
-  'nav.stats': 'Statistiche',
+  'nav.stats': 'Le mie stats',
   'nav.decks': 'Mazzi',
 
   'home.newGame': 'Nuova partita',
@@ -53,7 +53,6 @@ const it = {
   'life.resetConfirm': 'Azzerare la partita?',
   'life.cmd': 'Comandante',
   'life.poison': 'Veleno',
-  'life.tax': 'Tassa',
   'life.player': 'Giocatore',
   'life.dice': 'Dado',
   'life.coin': 'Moneta',
@@ -230,7 +229,7 @@ const en: Record<Key, string> = {
   'nav.home': 'Home',
   'nav.meta': 'Meta',
   'nav.game': 'Game',
-  'nav.stats': 'Stats',
+  'nav.stats': 'My stats',
   'nav.decks': 'Decks',
 
   'home.newGame': 'New game',
@@ -276,7 +275,6 @@ const en: Record<Key, string> = {
   'life.resetConfirm': 'Reset the game?',
   'life.cmd': 'Commander',
   'life.poison': 'Poison',
-  'life.tax': 'Tax',
   'life.player': 'Player',
   'life.dice': 'Die',
   'life.coin': 'Coin',
