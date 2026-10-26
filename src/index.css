@@ -1339,6 +1339,9 @@ h1 {
 .bo3 .off {
   opacity: 0.35;
 }
+.bo3 .field:not(:first-child) > span {
+  text-align: center;
+}
 .game-seg button.on {
   color: #fff;
 }
