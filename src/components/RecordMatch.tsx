@@ -108,23 +108,25 @@ export function RecordMatch({
           ))}
         </div>
         {format === 'bo3' ? (
-          <div className="field">
-            <span>
-              {t('match.result')}
-              {played.length > 0 && <strong className={`bo3-score res-text-${finalResult}`}> {score.join('-')}</strong>}
-            </span>
+          <div className="bo3">
+            <div className="field">
+              <span>
+                {t('match.result')}
+                {played.length > 0 && <strong className={`bo3-score res-text-${finalResult}`}> {score.join('-')}</strong>}
+              </span>
+            </div>
             {[0, 1, 2].map((i) => {
               // a game can be set once the previous ones are and the match isn't decided yet
               const open = i <= played.length && (i === played.length ? !(score[0] === 2 || score[1] === 2) : true)
               return (
-                <div key={i} className={`game-row ${open ? '' : 'off'}`}>
-                  <span className="game-n">G{i + 1}</span>
-                  <div className="result-pick">
+                <div key={i} className={`field ${open ? '' : 'off'}`}>
+                  <span>Game {i + 1}</span>
+                  <div className="seg wide game-seg">
                     {RESULTS.map(([r, k]) => (
                       <button
                         key={r}
                         disabled={!open}
-                        className={`res res-${r} ${open && games[i] === r ? 'on' : ''}`}
+                        className={`res-${r} ${open && games[i] === r ? 'on' : ''}`}
                         onClick={() => setGame(i, r)}
                       >
                         {t(k)}

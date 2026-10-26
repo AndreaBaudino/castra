@@ -1331,24 +1331,26 @@ h1 {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
-.game-row {
+.bo3 {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
 }
-.game-row .result-pick {
-  flex: 1;
-}
-.game-row .res {
-  height: 42px;
-}
-.game-row.off {
+.bo3 .off {
   opacity: 0.35;
 }
-.game-n {
-  width: 24px;
-  font-weight: 800;
-  color: var(--muted);
+.game-seg button.on {
+  color: #fff;
+}
+.game-seg button.on.res-W {
+  background: var(--good);
+}
+.game-seg button.on.res-L {
+  background: var(--bad);
+}
+.game-seg button.on.res-D {
+  background: var(--mid);
+  color: #1b150f;
 }
 .bo3-score {
   font-variant-numeric: tabular-nums;
