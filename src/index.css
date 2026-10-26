@@ -1608,18 +1608,18 @@ h1 {
 
 /* Moxfield-style piles: one column per type, cards overlapped so only the title bar shows */
 .piles {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  margin: 0 -16px;
-  padding: 0 16px 8px;
-  scroll-snap-type: x proximity;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 10px;
+  align-items: start;
+}
+@media (min-width: 560px) {
+  .piles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 .pile-col {
-  flex: none;
-  width: 42vw;
-  max-width: 180px;
-  scroll-snap-align: start;
+  min-width: 0;
 }
 .pile .card-img {
   margin-bottom: -118%;
@@ -1740,4 +1740,14 @@ h1 {
 }
 .cover-opt.on img {
   box-shadow: 0 0 0 3px var(--gold);
+}
+
+/* press-and-hold targets: no text selection or iOS callout menu */
+.deck-tile,
+.card-img,
+.result,
+.cover-opt {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }

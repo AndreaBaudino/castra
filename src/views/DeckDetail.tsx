@@ -366,9 +366,11 @@ export default function DeckDetail({
             </button>
           ))}
         </div>
-        <button className="btn small primary" onClick={() => setAdding(true)}>
-          <Icon name="plus" size={16} /> {t('deck.addCard')}
-        </button>
+        {editing && (
+          <button className="btn small primary" onClick={() => setAdding(true)}>
+            <Icon name="plus" size={16} /> {t('deck.addCard')}
+          </button>
+        )}
       </div>
 
       {view === 'pile' ? (
