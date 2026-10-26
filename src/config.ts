@@ -20,3 +20,16 @@ export const STARTING_LIFE = 25
 export const COMMANDER_DAMAGE_LETHAL = 21
 export const POISON_LETHAL = 10
 export const DECK_SIZE = 100
+
+/**
+ * Firebase web config (Project settings → Your apps → Web app). These values are public by design:
+ * access is protected by Firestore security rules (see README). While null, login and cloud sync are off.
+ */
+export const FIREBASE_CONFIG: {
+  apiKey: string
+  authDomain: string
+  projectId: string
+  appId: string
+  storageBucket?: string
+  messagingSenderId?: string
+} | null = null

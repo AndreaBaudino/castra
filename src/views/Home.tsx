@@ -2,6 +2,7 @@ import { useI18n } from '../i18n'
 import type { Deck } from '../lib/decks'
 import { type Match, fmtRecord, groupBy, record } from '../lib/matches'
 import { type MetaData, winrate } from '../lib/meta'
+import type { AppUser } from '../lib/auth'
 import { Icon, Pips, pct, wrClass } from '../components/ui'
 import { DeckTile } from './Decks'
 import { metaSummary } from './Meta'
@@ -13,6 +14,7 @@ export default function Home({
   matches,
   gameInProgress,
   go,
+  user,
   openDeck,
   importDeck,
 }: {
@@ -20,7 +22,8 @@ export default function Home({
   decks: Deck[]
   matches: Match[]
   gameInProgress: boolean
-  go: (tab: 'meta' | 'game' | 'decks' | 'stats') => void
+  go: (tab: 'meta' | 'game' | 'decks' | 'stats' | 'account') => void
+  user: AppUser | null
   openDeck: (id: string) => void
   importDeck: () => void
 }) {
@@ -41,12 +44,23 @@ export default function Home({
           <div className="brand-kicker">Centurion Commander</div>
           <h1>Castra</h1>
         </div>
-        <div className="seg lang" aria-label={t('common.lang')}>
-          {(['it', 'en'] as const).map((l) => (
-            <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>
-              {l.toUpperCase()}
-            </button>
-          ))}
+        <div className="head-right">
+          <div className="seg lang" aria-label={t('common.lang')}>
+            {(['it', 'en'] as const).map((l) => (
+              <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button className="account-btn" onClick={() => go('account')} aria-label={t('auth.title')}>
+            {user?.photo ? (
+              <img src={user.photo} alt="" referrerPolicy="no-referrer" />
+            ) : user ? (
+              <span className="avatar">{(user.name ?? user.email ?? '?')[0].toUpperCase()}</span>
+            ) : (
+              <Icon name="user" />
+            )}
+          </button>
         </div>
       </header>
 

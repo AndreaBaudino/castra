@@ -15,6 +15,8 @@
   --tabbar-h: 62px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
+  --p0: #7d1f1a;
+  --p1: #23405f;
 
   --W: #f4ecd2;
   --U: #4f8fd6;
@@ -46,6 +48,21 @@
     --B: #2f2833;
     color-scheme: light;
   }
+}
+
+:root[data-theme='light'] {
+  --bg: #f6f1ea;
+  --surface: #fffdfa;
+  --surface-2: #efe7dc;
+  --line: #e1d6c7;
+  --text: #221b16;
+  --muted: #7a6b5e;
+  --gold: #a87a1e;
+  --good: #23824d;
+  --bad: #c2392f;
+  --mid: #8a7350;
+  --B: #2f2833;
+  color-scheme: light;
 }
 
 * {
@@ -368,10 +385,10 @@ h1 {
   gap: 14px;
   padding: 16px;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--red) 0%, #7d1f1a 100%);
+  background: linear-gradient(135deg, var(--red) 0%, color-mix(in srgb, var(--red) 62%, black) 100%);
   color: #fff;
   text-align: left;
-  box-shadow: 0 6px 18px rgba(184, 50, 42, 0.25);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--red) 25%, transparent);
 }
 .hero-icon {
   width: 46px;
@@ -919,10 +936,10 @@ h1 {
 }
 .player.p0 {
   transform: rotate(180deg);
-  background: linear-gradient(160deg, #7d1f1a, #3e110e);
+  background: linear-gradient(160deg, var(--p0), color-mix(in srgb, var(--p0) 50%, black));
 }
 .player.p1 {
-  background: linear-gradient(160deg, #23405f, #10202f);
+  background: linear-gradient(160deg, var(--p1), color-mix(in srgb, var(--p1) 50%, black));
 }
 .player.dead {
   filter: grayscale(0.85) brightness(0.7);
@@ -1365,4 +1382,150 @@ h1 {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* ---------- account ---------- */
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.account-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--text);
+}
+.account-btn img,
+.profile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--gold);
+  color: #1b150f;
+  font-weight: 800;
+  border-radius: 50%;
+}
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.profile > img,
+.profile > .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex: none;
+}
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.btn.google {
+  background: #fff;
+  color: #1f1f1f;
+  border-color: #dadce0;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.color-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.color-label {
+  font-size: 0.85rem;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  position: relative;
+}
+.swatch.on {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text);
+}
+.swatch.custom {
+  cursor: pointer;
+  background-image: conic-gradient(red, yellow, lime, cyan, blue, magenta, red) !important;
+}
+.swatch.custom input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.theme-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.tp-btn {
+  background: var(--red);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.tp-link {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex: 1;
+}
+.tp-p {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.tp-p.p0 {
+  background: linear-gradient(160deg, var(--p0), color-mix(in srgb, var(--p0) 50%, black));
+}
+.tp-p.p1 {
+  background: linear-gradient(160deg, var(--p1), color-mix(in srgb, var(--p1) 50%, black));
+}
+.link:disabled {
+  opacity: 0.5;
 }

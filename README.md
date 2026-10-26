@@ -26,3 +26,19 @@ Finché `META_SHEET_ID` è vuoto l'app mostra dati DEMO. I dati scaricati restan
 
 Import da testo (Moxfield → Export → Copy as plain text, o formato MTGO/Arena).
 I dati e le immagini delle carte arrivano da Scryfall; i mazzi sono salvati sul dispositivo (localStorage).
+
+## Login e sincronizzazione (Firebase)
+
+Login con Google o email/password; se loggato, mazzi, partite e grafica personale vengono salvati
+in Firestore (`users/{uid}`), così sono uguali su tutti i dispositivi. Senza login l'app funziona solo in locale.
+
+Setup (una tantum, piano gratuito "Spark"):
+
+1. https://console.firebase.google.com → **Aggiungi progetto** (Google Analytics non serve).
+2. **Build → Authentication → Get started**, poi in *Sign-in method* abilita **Google** e **Email/Password**.
+3. *Authentication → Settings → Authorized domains*: aggiungi `andreabaudino.github.io`.
+4. **Build → Firestore Database → Create database** (location `eur3` o `europe-west`), poi nella scheda
+   *Rules* incolla il contenuto di `firestore.rules` e pubblica.
+5. **Project settings → Your apps → Web (</>)**: registra l'app e copia l'oggetto `firebaseConfig`
+   in `FIREBASE_CONFIG` dentro `src/config.ts`. Questi valori sono pubblici per design: la sicurezza
+   è garantita dalle regole del punto 4.
