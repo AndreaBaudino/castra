@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
 import { useCollectionSync, useDocFieldSync } from './lib/sync'
@@ -25,6 +25,11 @@ const fromHash = (): { tab: Tab; deck: string | null } => {
   return { tab: ROUTES.includes(tab as Tab) ? (tab as Tab) : 'home', deck: deck || null }
 }
 
+type Route = { tab: Tab; deck: string | null }
+const toHash = (r: Route) => (r.deck ? `${r.tab}/${r.deck}` : r.tab)
+const isSub = (r: Route) => !!r.deck || r.tab === 'stats' || r.tab === 'account'
+const parentOf = (r: Route) => (r.deck ? r.tab : 'home')
+
 export default function App() {
   const { t } = useI18n()
   const [route, setRoute] = useState(fromHash)
@@ -43,19 +48,43 @@ export default function App() {
     applyTheme(theme)
   }, [theme])
 
+  // where history.back() is taking us when we leave a sub-page for a main page
+  const pending = useRef<string | null>(null)
   useEffect(() => {
-    const onHash = () => setRoute(fromHash())
-    addEventListener('hashchange', onHash)
-    return () => removeEventListener('hashchange', onHash)
+    // opened straight on a sub-page: put its parent underneath, so back still lands there
+    const r = fromHash()
+    if (isSub(r) && !history.state?.sub) {
+      history.replaceState(null, '', `#${parentOf(r)}`)
+      history.pushState({ sub: true }, '', `#${toHash(r)}`)
+    }
+    const onPop = () => {
+      if (pending.current) {
+        history.replaceState(null, '', pending.current)
+        pending.current = null
+      }
+      setRoute(fromHash())
+    }
+    addEventListener('popstate', onPop)
+    return () => removeEventListener('popstate', onPop)
   }, [])
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [route.tab, route.deck])
 
-  // replace instead of push: the history never grows, so the phone's back button closes the app
-  // (like a native app) instead of walking back through every page visited
+  // Main pages replace each other, so the phone's back button closes the app from any of them.
+  // A sub-page (a deck, stats, account) sits one entry above its main page, so back returns there.
   const go = (tab: Tab, deck?: string) => {
-    history.replaceState(null, '', `#${deck ? `${tab}/${deck}` : tab}`)
+    const to = { tab, deck: deck ?? null }
+    const hash = `#${toHash(to)}`
+    const onSub = !!history.state?.sub
+    if (isSub(to)) {
+      if (onSub) history.replaceState({ sub: true }, '', hash)
+      else history.pushState({ sub: true }, '', hash)
+    } else if (onSub) {
+      pending.current = hash
+      history.back() // drop the sub-page entry; the popstate handler lands on `hash`
+      return
+    } else history.replaceState(null, '', hash)
     setRoute(fromHash())
   }
 
