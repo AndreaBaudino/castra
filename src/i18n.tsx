@@ -118,7 +118,8 @@ const it = {
 
   'timer.title': 'Timer del round',
   'timer.main': 'Durata (min)',
-  'timer.extraMin': 'Tempo extra (min)',
+  'timer.added': 'Tempo aggiuntivo',
+  'timer.addedHint': 'Minuti aggiunti (es. judge call)',
   'timer.extraTurns': 'Turni extra',
   'timer.sound': 'Suono',
   'timer.resetTimer': 'Azzera timer',
@@ -321,7 +322,8 @@ const en: Record<Key, string> = {
 
   'timer.title': 'Round timer',
   'timer.main': 'Duration (min)',
-  'timer.extraMin': 'Extra time (min)',
+  'timer.added': 'Added time',
+  'timer.addedHint': 'Minutes added (e.g. judge call)',
   'timer.extraTurns': 'Extra turns',
   'timer.sound': 'Sound',
   'timer.resetTimer': 'Reset timer',

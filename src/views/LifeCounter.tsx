@@ -196,7 +196,10 @@ function TimerPill({
 
   return (
     <button className={`timer-pill ${running ? 'running' : 'paused'}`} onClick={onToggle}>
-      <span className="timer-label">{running ? '' : '▶'}</span>
+      <span className="timer-label">
+        {running ? '' : '▶'}
+        {timer.addedMs ? ` +${timer.addedMs / 60_000}′` : ''}
+      </span>
       <span className="timer-time">{fmt(phase.remainingMs)}</span>
     </button>
   )
@@ -272,7 +275,7 @@ export default function LifeCounter({
         // the clock is done: freeze it at the end of the timed part
         setTimer((x) => ({
           ...x,
-          elapsedMs: totalMs(settings),
+          elapsedMs: totalMs(settings, x),
           runningSince: null,
           alerted: 'turns',
         }))
@@ -366,9 +369,23 @@ export default function LifeCounter({
               <Icon name="meta" size={16} /> {t('game.record')}
             </button>
 
+            <div className="menu-section">{t('timer.added')}</div>
+            <Stepper
+              label={t('timer.addedHint')}
+              value={(timer.addedMs ?? 0) / 60_000}
+              min={0}
+              max={60}
+              set={(v) =>
+                setTimer((x) => {
+                  const next = { ...x, addedMs: v * 60_000 }
+                  // time given back after the clock ran out: back to the countdown (paused), alarm re-armed
+                  return elapsed(x) < totalMs(settings, next) ? { ...next, alerted: 'none' } : next
+                })
+              }
+            />
+
             <div className="menu-section">{t('timer.title')}</div>
             <Stepper label={t('timer.main')} value={settings.mainMin} min={5} max={120} step={5} set={(v) => setSettings((s) => ({ ...s, mainMin: v }))} />
-            <Stepper label={t('timer.extraMin')} value={settings.extraMin} min={0} max={30} set={(v) => setSettings((s) => ({ ...s, extraMin: v }))} />
             <Stepper label={t('timer.extraTurns')} value={settings.extraTurns} min={0} max={10} set={(v) => setSettings((s) => ({ ...s, extraTurns: v }))} />
             <div className="stepper">
               <span>{t('timer.sound')}</span>

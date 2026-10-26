@@ -916,6 +916,7 @@ h1 {
 .life-root {
   position: fixed;
   inset: 0 0 calc(var(--tabbar-h) + var(--safe-b)) 0;
+  z-index: 25; /* above the tab bar, so its overlays (menu, dice, alarm) cover it too */
   display: grid;
   grid-template-rows: 1fr auto 1fr;
   background: #0d0b0a;
