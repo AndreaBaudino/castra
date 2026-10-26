@@ -52,8 +52,11 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [route.tab, route.deck])
 
+  // replace instead of push: the history never grows, so the phone's back button closes the app
+  // (like a native app) instead of walking back through every page visited
   const go = (tab: Tab, deck?: string) => {
-    location.hash = deck ? `${tab}/${deck}` : tab
+    history.replaceState(null, '', `#${deck ? `${tab}/${deck}` : tab}`)
+    setRoute(fromHash())
   }
 
   const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined
@@ -112,7 +115,7 @@ export default function App() {
                 setDecks((ds) => ds.filter((x) => x.id !== openDeck.id))
                 go('decks')
               }}
-              onBack={() => history.back()}
+              onBack={() => go('decks')}
             />
           ) : (
             <Decks
