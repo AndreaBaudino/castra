@@ -221,12 +221,10 @@ function Stepper({ label, value, set, min, max, step = 1 }: { label: string; val
 type Roll = { kind: 'dice'; values: [number, number] } | { kind: 'coin'; value: boolean } | { kind: 'first'; value: 0 | 1 }
 
 export default function LifeCounter({
-  onExit,
   decks,
   metaNames,
   onSaveMatch,
 }: {
-  onExit: () => void
   decks: Deck[]
   metaNames: string[]
   onSaveMatch: (m: Match) => void
@@ -322,8 +320,8 @@ export default function LifeCounter({
       <PlayerPanel idx={0} p={game.players[0]} update={update(0)} />
 
       <div className="life-bar">
-        <button className="bar-btn" onClick={onExit} aria-label={t('life.exit')}>
-          <Icon name="home" />
+        <button className="bar-btn" onClick={() => setRoll({ kind: 'coin', value: Math.random() < 0.5 })} aria-label={t('life.coin')}>
+          <span className="coin-glyph">¢</span>
         </button>
         <button className="bar-btn" onClick={() => setRoll({ kind: 'first', value: Math.random() < 0.5 ? 0 : 1 })} aria-label={t('life.first')}>
           <Icon name="crown" />
@@ -410,14 +408,9 @@ export default function LifeCounter({
               </div>
             </div>
             <div className="muted small">{t('timer.hint')}</div>
-            <div className="btn-pair">
-              <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
-                {t('timer.resetTimer')}
-              </button>
-              <button className="btn ghost" onClick={() => setRoll({ kind: 'coin', value: Math.random() < 0.5 })}>
-                {t('life.coin')}
-              </button>
-            </div>
+            <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
+              {t('timer.resetTimer')}
+            </button>
 
             <div className="menu-section">{t('life.startLife')}</div>
             <div className="seg">

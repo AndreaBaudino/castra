@@ -42,22 +42,19 @@ export default function App() {
     location.hash = deck ? `${tab}/${deck}` : tab
   }
 
-  if (route.tab === 'game')
-    return (
-      <LifeCounter
-        onExit={() => go('home')}
-        decks={decks}
-        metaNames={meta.decks.map((d) => d.name)}
-        onSaveMatch={(m) => setMatches((ms) => [m, ...ms])}
-      />
-    )
-
   const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined
   const gameInProgress = isGameInProgress(readStored<GameState>(GAME_KEY, defaultGame()))
 
   return (
     <div className="app">
       <main>
+        {route.tab === 'game' && (
+          <LifeCounter
+            decks={decks}
+            metaNames={meta.decks.map((d) => d.name)}
+            onSaveMatch={(m) => setMatches((ms) => [m, ...ms])}
+          />
+        )}
         {route.tab === 'home' && (
           <Home
             meta={meta}
