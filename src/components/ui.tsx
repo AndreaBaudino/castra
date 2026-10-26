@@ -15,7 +15,18 @@ export function Pips({ colors, size = 12 }: { colors: string | string[]; size?: 
 const paths: Record<string, ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   meta: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
-  game: <path d="M12 21s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 6c-2.2 4.6-9.2 9-9.2 9z" />,
+  // crossed swords: one sword, then its mirror image
+  game: (
+    <>
+      {[undefined, 'matrix(-1 0 0 1 24 0)'].map((tr, i) => (
+        <g key={i} transform={tr}>
+          <path d="M2.5 2.5l3 .9 10.9 10.9-2 2L3.4 5.5z" fill="currentColor" />
+          <path d="M12.9 18.7q-.1-.7.5-1.1l4.2-4.2q.4-.6 1.1-.5M15.9 15.9l3.4 3.4" />
+          <circle cx="20.2" cy="20.2" r=".9" />
+        </g>
+      ))}
+    </>
+  ),
   decks: (
     <>
       <rect x="6" y="3" width="13" height="17" rx="2" />
@@ -103,7 +114,7 @@ export const wrClass = (v: number) => (v >= 0.55 ? 'wr-good' : v <= 0.45 ? 'wr-b
 // Counted module-wide: a sheet replaced by another in the same render (or StrictMode's double effect) keeps it.
 let openSheets = 0
 
-function useBackCloses(open: boolean, onClose: () => void) {
+export function useBackCloses(open: boolean, onClose: () => void) {
   const close = useRef(onClose)
   close.current = onClose
   useEffect(() => {

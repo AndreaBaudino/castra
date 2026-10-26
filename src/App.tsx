@@ -17,8 +17,8 @@ import Account from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
 
 type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account'
-const TABS = ['home', 'meta', 'game', 'decks'] as const
-const ROUTES: Tab[] = [...TABS, 'stats', 'account']
+const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
+const ROUTES: Tab[] = [...TABS, 'account']
 
 const fromHash = (): { tab: Tab; deck: string | null } => {
   const [tab, deck] = location.hash.slice(1).split('/')
@@ -27,7 +27,7 @@ const fromHash = (): { tab: Tab; deck: string | null } => {
 
 type Route = { tab: Tab; deck: string | null }
 const toHash = (r: Route) => (r.deck ? `${r.tab}/${r.deck}` : r.tab)
-const isSub = (r: Route) => !!r.deck || r.tab === 'stats' || r.tab === 'account'
+const isSub = (r: Route) => !!r.deck || r.tab === 'account'
 const parentOf = (r: Route) => (r.deck ? r.tab : 'home')
 
 export default function App() {
@@ -74,7 +74,7 @@ export default function App() {
   }, [route.tab, route.deck])
 
   // Main pages replace each other, so the phone's back button closes the app from any of them.
-  // A sub-page (a deck, stats, account) sits one entry above its main page, so back returns there.
+  // A sub-page (a deck, account) sits one entry above its main page, so back returns there.
   const go = (tab: Tab, deck?: string) => {
     const to = { tab, deck: deck ?? null }
     const depth = (history.state?.sub ? 1 : 0) + (history.state?.sheet ? 1 : 0)
@@ -125,7 +125,7 @@ export default function App() {
           />
         )}
         {route.tab === 'stats' && (
-          <Stats matches={matches} setMatches={setMatches} decks={decks} metaDecks={meta.decks} onBack={() => go('home')} />
+          <Stats matches={matches} setMatches={setMatches} decks={decks} metaDecks={meta.decks} />
         )}
         {route.tab === 'meta' && <Meta meta={meta} status={status} onRefresh={refresh} />}
         {route.tab === 'decks' &&
@@ -155,8 +155,18 @@ export default function App() {
 
       <nav className="tabbar">
         {TABS.map((tab) => (
-          <button key={tab} className={route.tab === tab || (tab === 'home' && (route.tab === 'stats' || route.tab === 'account')) ? 'on' : ''} onClick={() => go(tab)}>
-            <Icon name={tab} size={22} />
+          <button
+            key={tab}
+            className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && route.tab === 'account') ? 'on' : ''}`}
+            onClick={() => go(tab)}
+          >
+            {tab === 'game' ? (
+              <span className="fab">
+                <Icon name="game" size={28} />
+              </span>
+            ) : (
+              <Icon name={tab} size={22} />
+            )}
             <span>{t(`nav.${tab}`)}</span>
           </button>
         ))}

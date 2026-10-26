@@ -15,7 +15,7 @@ import {
   phaseOf,
   totalMs,
 } from '../lib/timer'
-import { Icon } from '../components/ui'
+import { Icon, useBackCloses } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
 
 export interface PlayerState {
@@ -237,6 +237,7 @@ export default function LifeCounter({
   const [game, setGame] = useStoredState<GameState>(GAME_KEY, defaultGame())
   const [settings, setSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
   const [menu, setMenu] = useState(false)
+  useBackCloses(menu, () => setMenu(false))
   const [recording, setRecording] = useState(false)
   const [roll, setRoll] = useState<Roll | null>(null)
   const [banner, setBanner] = useState('')

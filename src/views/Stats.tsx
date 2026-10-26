@@ -24,13 +24,11 @@ export default function Stats({
   setMatches,
   decks,
   metaDecks,
-  onBack,
 }: {
   matches: Match[]
   setMatches: (fn: (m: Match[]) => Match[]) => void
   decks: Deck[]
   metaDecks: MetaDeck[]
-  onBack: () => void
 }) {
   const { t, lang } = useI18n()
   const [filter, setFilter] = useState<Filter>('all')
@@ -49,9 +47,6 @@ export default function Stats({
     <div className="page">
       <header className="page-head">
         <div className="head-left">
-          <button className="icon-btn" onClick={onBack} aria-label="back">
-            <Icon name="back" />
-          </button>
           <h1>{t('stats.title')}</h1>
         </div>
         <button className="btn small primary" onClick={() => setAdding(true)}>

@@ -7,6 +7,7 @@ const it = {
   'nav.home': 'Home',
   'nav.meta': 'Meta',
   'nav.game': 'Partita',
+  'nav.stats': 'Statistiche',
   'nav.decks': 'Mazzi',
 
   'home.newGame': 'Nuova partita',
@@ -229,6 +230,7 @@ const en: Record<Key, string> = {
   'nav.home': 'Home',
   'nav.meta': 'Meta',
   'nav.game': 'Game',
+  'nav.stats': 'Stats',
   'nav.decks': 'Decks',
 
   'home.newGame': 'New game',
