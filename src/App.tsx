@@ -48,21 +48,23 @@ export default function App() {
     applyTheme(theme)
   }, [theme])
 
-  // where history.back() is taking us when we leave a sub-page for a main page
-  const pending = useRef<string | null>(null)
+  // the history is at most [main page, sub-page, open sheet]: land() rebuilds it from the main entry
+  const land = (to: Route) => {
+    if (isSub(to)) {
+      history.replaceState(null, '', `#${parentOf(to)}`)
+      history.pushState({ sub: true }, '', `#${toHash(to)}`)
+    } else history.replaceState(null, '', `#${toHash(to)}`)
+    setRoute(fromHash())
+  }
+  // where we're going once history.go() has rewound to the main entry
+  const pending = useRef<Route | null>(null)
   useEffect(() => {
     // opened straight on a sub-page: put its parent underneath, so back still lands there
-    const r = fromHash()
-    if (isSub(r) && !history.state?.sub) {
-      history.replaceState(null, '', `#${parentOf(r)}`)
-      history.pushState({ sub: true }, '', `#${toHash(r)}`)
-    }
+    if (!history.state?.sub) land(fromHash())
     const onPop = () => {
-      if (pending.current) {
-        history.replaceState(null, '', pending.current)
-        pending.current = null
-      }
-      setRoute(fromHash())
+      if (pending.current) land(pending.current)
+      else setRoute(fromHash())
+      pending.current = null
     }
     addEventListener('popstate', onPop)
     return () => removeEventListener('popstate', onPop)
@@ -75,17 +77,10 @@ export default function App() {
   // A sub-page (a deck, stats, account) sits one entry above its main page, so back returns there.
   const go = (tab: Tab, deck?: string) => {
     const to = { tab, deck: deck ?? null }
-    const hash = `#${toHash(to)}`
-    const onSub = !!history.state?.sub
-    if (isSub(to)) {
-      if (onSub) history.replaceState({ sub: true }, '', hash)
-      else history.pushState({ sub: true }, '', hash)
-    } else if (onSub) {
-      pending.current = hash
-      history.back() // drop the sub-page entry; the popstate handler lands on `hash`
-      return
-    } else history.replaceState(null, '', hash)
-    setRoute(fromHash())
+    const depth = (history.state?.sub ? 1 : 0) + (history.state?.sheet ? 1 : 0)
+    if (!depth) return land(to)
+    pending.current = to
+    history.go(-depth) // the popstate handler lands on `to`
   }
 
   const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined

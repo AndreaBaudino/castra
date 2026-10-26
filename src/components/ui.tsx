@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 
 export function Pips({ colors, size = 12 }: { colors: string | string[]; size?: number }) {
   const list = typeof colors === 'string' ? colors.split('') : colors
@@ -99,7 +99,37 @@ export const pct = (v: number, digits = 1) => `${(v * 100).toFixed(digits)}%`
 /** Winrate color: below 45% red, 45–55 neutral, above 55 green. */
 export const wrClass = (v: number) => (v >= 0.55 ? 'wr-good' : v <= 0.45 ? 'wr-bad' : 'wr-mid')
 
+// An open sheet owns one history entry, so the phone's back button closes it instead of leaving the page.
+// Counted module-wide: a sheet replaced by another in the same render (or StrictMode's double effect) keeps it.
+let openSheets = 0
+
+function useBackCloses(open: boolean, onClose: () => void) {
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    if (!open) return
+    openSheets++
+    if (!history.state?.sheet) history.pushState({ ...history.state, sheet: true }, '')
+    let popped = false
+    const onPop = () => {
+      popped = true
+      close.current()
+    }
+    addEventListener('popstate', onPop)
+    return () => {
+      openSheets--
+      removeEventListener('popstate', onPop)
+      // closed from inside (x, backdrop, an action): drop the entry, unless another sheet took it over
+      if (!popped)
+        setTimeout(() => {
+          if (!openSheets && history.state?.sheet) history.back()
+        })
+    }
+  }, [open])
+}
+
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: ReactNode }) {
+  useBackCloses(open, onClose)
   if (!open) return null
   return (
     <div className="sheet-backdrop" onClick={onClose}>
