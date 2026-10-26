@@ -26,21 +26,16 @@ function tone(freq: number, start: number, dur: number, gain = 0.35) {
   osc.stop(start + dur + 0.05)
 }
 
-/** 'extra': two short beeps (extra time begins). 'turns': fanfare repeated 3 times (extra turns begin). */
-export function playAlarm(kind: 'extra' | 'turns') {
+/** Fanfare repeated 3 times: time is up, extra turns begin. */
+export function playAlarm() {
   unlockAudio()
-  navigator.vibrate?.(kind === 'turns' ? [400, 150, 400, 150, 700] : [250, 120, 250])
+  navigator.vibrate?.([400, 150, 400, 150, 700])
   if (!ctx) return
   const t0 = ctx.currentTime + 0.05
-  if (kind === 'extra') {
-    tone(880, t0, 0.25)
-    tone(880, t0 + 0.35, 0.25)
-  } else {
-    for (let r = 0; r < 3; r++) {
-      const b = t0 + r * 1.1
-      tone(523, b, 0.22)
-      tone(659, b + 0.2, 0.22)
-      tone(784, b + 0.4, 0.5)
-    }
+  for (let r = 0; r < 3; r++) {
+    const b = t0 + r * 1.1
+    tone(523, b, 0.22)
+    tone(659, b + 0.2, 0.22)
+    tone(784, b + 0.4, 0.5)
   }
 }

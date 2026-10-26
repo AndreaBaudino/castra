@@ -13,6 +13,7 @@ import {
   fmt,
   freshTimer,
   phaseOf,
+  totalMs,
 } from '../lib/timer'
 import { Icon } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
@@ -194,8 +195,8 @@ function TimerPill({
   }
 
   return (
-    <button className={`timer-pill ${running ? 'running' : 'paused'} ${phase.kind}`} onClick={onToggle}>
-      <span className="timer-label">{phase.kind === 'extra' ? t('timer.extra') : running ? '' : '▶'}</span>
+    <button className={`timer-pill ${running ? 'running' : 'paused'}`} onClick={onToggle}>
+      <span className="timer-label">{running ? '' : '▶'}</span>
       <span className="timer-time">{fmt(phase.remainingMs)}</span>
     </button>
   )
@@ -218,7 +219,7 @@ function Stepper({ label, value, set, min, max, step = 1 }: { label: string; val
   )
 }
 
-type Roll = { kind: 'dice'; values: [number, number] } | { kind: 'coin'; value: boolean } | { kind: 'first'; value: 0 | 1 }
+type Roll = { kind: 'dice'; values: [number, number] }
 
 export default function LifeCounter({
   decks,
@@ -265,18 +266,13 @@ export default function LifeCounter({
     if (!timer.runningSince) return
     const id = setInterval(() => {
       tick((n) => n + 1)
-      const phase = phaseOf(timer, settings)
-      if (phase.kind === 'extra' && timer.alerted === 'none') {
-        if (settings.sound) playAlarm('extra')
-        setBanner(`${t('timer.timeUp')} ${t('timer.extraStart')}`)
-        setTimer((x) => ({ ...x, alerted: 'extra' }))
-      } else if (phase.kind === 'turns' && timer.alerted !== 'turns') {
-        if (settings.sound) playAlarm('turns')
+      if (phaseOf(timer, settings).kind === 'turns' && timer.alerted !== 'turns') {
+        if (settings.sound) playAlarm()
         setBanner(`${t('timer.timeUp')} ${t('timer.turnsStart')}`)
         // the clock is done: freeze it at the end of the timed part
         setTimer((x) => ({
           ...x,
-          elapsedMs: (settings.mainMin + settings.extraMin) * 60_000,
+          elapsedMs: totalMs(settings),
           runningSince: null,
           alerted: 'turns',
         }))
@@ -320,11 +316,8 @@ export default function LifeCounter({
       <PlayerPanel idx={0} p={game.players[0]} update={update(0)} />
 
       <div className="life-bar">
-        <button className="bar-btn" onClick={() => setRoll({ kind: 'coin', value: Math.random() < 0.5 })} aria-label={t('life.coin')}>
-          <span className="coin-glyph">¢</span>
-        </button>
-        <button className="bar-btn" onClick={() => setRoll({ kind: 'first', value: Math.random() < 0.5 ? 0 : 1 })} aria-label={t('life.first')}>
-          <Icon name="crown" />
+        <button className="bar-btn" onClick={() => setRoll({ kind: 'dice', values: [d20(), d20()] })} aria-label={t('life.dice')}>
+          <Icon name="dice" />
         </button>
         <TimerPill
           timer={timer}
@@ -332,9 +325,6 @@ export default function LifeCounter({
           onToggle={toggleTimer}
           onTurn={(d) => setTimer((x) => ({ ...x, turn: Math.max(0, x.turn + d) }))}
         />
-        <button className="bar-btn" onClick={() => setRoll({ kind: 'dice', values: [d20(), d20()] })} aria-label={t('life.dice')}>
-          <Icon name="dice" />
-        </button>
         <button className={`bar-btn accent ${someoneDead ? 'attn' : ''}`} onClick={() => setMenu(true)} aria-label={t('game.settings')}>
           <Icon name="gear" />
         </button>
@@ -351,31 +341,14 @@ export default function LifeCounter({
 
       {roll && (
         <div className="roll-overlay" onClick={() => setRoll(null)}>
-          {roll.kind === 'dice' && (
-            <>
-              <div className="roll-half p0">
-                <div className="roll-big">{roll.values[0]}</div>
-                <div className="roll-sub">d20</div>
-              </div>
-              <div className="roll-half p1">
-                <div className="roll-big">{roll.values[1]}</div>
-                <div className="roll-sub">d20</div>
-              </div>
-            </>
-          )}
-          {roll.kind === 'coin' && (
-            <div className="roll-center">
-              <div className="roll-big">{roll.value ? t('life.heads') : t('life.tails')}</div>
-            </div>
-          )}
-          {roll.kind === 'first' && (
-            <div className={`roll-half p${roll.value} winner`}>
-              <div className="roll-big">
-                <Icon name="crown" size={56} />
-              </div>
-              <div className="roll-sub">{t('life.starts')}</div>
-            </div>
-          )}
+          <div className="roll-half p0">
+            <div className="roll-big">{roll.values[0]}</div>
+            <div className="roll-sub">d20</div>
+          </div>
+          <div className="roll-half p1">
+            <div className="roll-big">{roll.values[1]}</div>
+            <div className="roll-sub">d20</div>
+          </div>
         </div>
       )}
 
