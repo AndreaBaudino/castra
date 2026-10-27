@@ -5,6 +5,7 @@ import { type Deck, checkDeck, deckCover, isValid, newId, parseDecklist, sortCol
 import { type MetaDeck, findMetaDeck, normName, winrate } from '../lib/meta'
 import { fetchCollection, requestKey } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
+import { useDialog } from '../components/Dialog'
 
 export function commanderNames(deck: Deck) {
   return deck.cards.filter((c) => c.section === 'commander').map((c) => c.name)
@@ -53,6 +54,7 @@ export function DeckTile({
 
 function ImportSheet({ open, onClose, onImport }: { open: boolean; onClose: () => void; onImport: (d: Deck) => void }) {
   const { t } = useI18n()
+  const dialog = useDialog()
   const [name, setName] = useState('')
   const [text, setText] = useState('')
   const [tags, setTags] = useState('')
@@ -99,7 +101,7 @@ function ImportSheet({ open, onClose, onImport }: { open: boolean; onClose: () =
         createdAt: now,
         updatedAt: now,
       })
-      if (notFound.length) alert(`${t('decks.notFound')}: ${notFound.join(', ')}`)
+      if (notFound.length) dialog.alert(`${t('decks.notFound')}: ${notFound.join(', ')}`)
       setName('')
       setText('')
       setTags('')
@@ -151,6 +153,7 @@ export default function Decks({
   setImportOpen: (v: boolean) => void
 }) {
   const { t } = useI18n()
+  const dialog = useDialog()
   const [tag, setTag] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [actions, setActions] = useState<Deck | null>(null)
@@ -226,8 +229,8 @@ export default function Decks({
                 </button>
                 <button
                   className="btn danger"
-                  onClick={() => {
-                    if (!confirm(t('deck.deleteConfirm'))) return
+                  onClick={async () => {
+                    if (!(await dialog.confirm(t('deck.deleteConfirm'), { ok: t('deck.delete'), danger: true }))) return
                     setDecks((ds) => ds.filter((x) => x.id !== actions.id))
                     setActions(null)
                   }}

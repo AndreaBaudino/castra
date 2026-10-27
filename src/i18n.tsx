@@ -339,6 +339,7 @@ const it = {
   'theme.reset': 'Ripristina predefiniti',
 
   'common.lang': 'Lingua',
+  'common.cancel': 'Annulla',
 }
 
 type Key = keyof typeof it
@@ -679,6 +680,7 @@ const en: Record<Key, string> = {
   'theme.reset': 'Restore defaults',
 
   'common.lang': 'Language',
+  'common.cancel': 'Cancel',
 }
 
 const dict: Record<Lang, Record<Key, string>> = { it, en }

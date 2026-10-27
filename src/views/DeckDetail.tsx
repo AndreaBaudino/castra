@@ -20,6 +20,7 @@ import { type Match, fmtRecord, record } from '../lib/matches'
 import { fetchPrints, searchCards } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
+import { useDialog } from '../components/Dialog'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
 
@@ -166,6 +167,7 @@ export default function DeckDetail({
   onBack: () => void
 }) {
   const { t } = useI18n()
+  const dialog = useDialog()
   const [editing, setEditing] = useState(false)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [choosingPrint, setChoosingPrint] = useState(false)
@@ -291,8 +293,8 @@ export default function DeckDetail({
           </label>
           <button
             className="btn danger"
-            onClick={() => {
-              if (confirm(t('deck.deleteConfirm'))) onDelete()
+            onClick={async () => {
+              if (await dialog.confirm(t('deck.deleteConfirm'), { ok: t('deck.delete'), danger: true })) onDelete()
             }}
           >
             <Icon name="trash" size={16} /> {t('deck.delete')}

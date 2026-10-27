@@ -6,6 +6,7 @@ import { useLongPress } from '../lib/longPress'
 import { type MetaDeck, normName, winrate } from '../lib/meta'
 import { Icon, Sheet, pct, wrClass } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
+import { useDialog } from '../components/Dialog'
 
 type Filter = 'all' | Match['kind']
 
@@ -53,6 +54,7 @@ export default function Stats({
   metaDecks: MetaDeck[]
 }) {
   const { t } = useI18n()
+  const dialog = useDialog()
   const [filter, setFilter] = useState<Filter>('all')
   const [adding, setAdding] = useState(false)
   const [actions, setActions] = useState<Match | null>(null) // long-pressed match
@@ -175,8 +177,8 @@ export default function Stats({
           </button>
           <button
             className="btn danger"
-            onClick={() => {
-              if (!actions || !confirm(t('stats.deleteConfirm'))) return
+            onClick={async () => {
+              if (!actions || !(await dialog.confirm(t('stats.deleteConfirm'), { ok: t('stats.deleteMatch'), danger: true }))) return
               setMatches((ms) => ms.filter((x) => x.id !== actions.id))
               setActions(null)
             }}

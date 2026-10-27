@@ -5,6 +5,7 @@ import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
 import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
+import { useDialog } from '../components/Dialog'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
@@ -433,6 +434,7 @@ export function PlayerPage({
 /** The claimer's picture, the "verified" tick and the button to claim or release the player. */
 function ClaimBox({ p, prefs }: { p: Player; prefs: CircuitPrefs }) {
   const { t } = useI18n()
+  const dialog = useDialog()
   const [busy, setBusy] = useState(false)
   const claim = prefs.claims.get(p.key)
   const mine = !!claim && claim.uid === prefs.uid
@@ -474,9 +476,9 @@ function ClaimBox({ p, prefs }: { p: Player; prefs: CircuitPrefs }) {
         <button
           className="btn ghost"
           disabled={busy}
-          onClick={() => {
+          onClick={async () => {
             const current = prefs.me && prefs.claims.get(prefs.me)?.uid === prefs.uid ? prefs.me : null
-            if (!current || confirm(t('circuit.moveClaim'))) run(p.key)
+            if (!current || (await dialog.confirm(t('circuit.moveClaim')))) run(p.key)
           }}
         >
           <Icon name="user" size={16} /> {t('circuit.thisIsMe')}

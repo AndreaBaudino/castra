@@ -4,6 +4,7 @@ import { authErrorKey, useAuth } from '../lib/auth'
 import { cloudEnabled } from '../lib/firebase'
 import { DEFAULT_THEME, SWATCHES, type Theme } from '../lib/theme'
 import { Icon } from '../components/ui'
+import { useDialog } from '../components/Dialog'
 
 function GoogleLogo() {
   return (
@@ -170,6 +171,7 @@ export default function Account({
   onSignOut: () => void
 }) {
   const { t } = useI18n()
+  const dialog = useDialog()
   const { user, ready, signOut } = useAuth()
 
   return (
@@ -206,7 +208,7 @@ export default function Account({
             <button
               className="btn ghost"
               onClick={async () => {
-                if (!confirm(t('auth.signOutConfirm'))) return
+                if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
                 await signOut()
                 onSignOut()
               }}

@@ -17,6 +17,7 @@ import {
 } from '../lib/timer'
 import { Icon, useBackCloses } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
+import { useDialog } from '../components/Dialog'
 
 export interface PlayerState {
   life: number
@@ -232,6 +233,7 @@ export default function LifeCounter({
   onSaveMatch: (m: Match) => void
 }) {
   const { t } = useI18n()
+  const dialog = useDialog()
   const [game, setGame] = useStoredState<GameState>(GAME_KEY, defaultGame())
   const [settings, setSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
   const [menu, setMenu] = useState(false)
@@ -411,8 +413,8 @@ export default function LifeCounter({
             </div>
             <button
               className="btn ghost"
-              onClick={() => {
-                if (!isGameInProgress(game) || confirm(t('life.resetConfirm'))) reset()
+              onClick={async () => {
+                if (!isGameInProgress(game) || (await dialog.confirm(t('life.resetConfirm')))) reset()
               }}
             >
               <Icon name="refresh" size={16} /> {t('life.reset')} · {game.startLife}

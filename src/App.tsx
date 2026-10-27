@@ -19,6 +19,7 @@ import DeckDetail from './views/DeckDetail'
 import Stats from './views/Stats'
 import Account from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
+import { useDialog } from './components/Dialog'
 
 type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
@@ -36,6 +37,7 @@ const parentOf = (r: Route) => (r.deck ? r.tab : 'home')
 
 export default function App() {
   const { t } = useI18n()
+  const dialog = useDialog()
   const [route, setRoute] = useState(fromHash)
   const [decks, setDecks] = useStoredState<Deck[]>('cc.decks', [])
   const [matches, setMatches] = useStoredState<Match[]>('cc.matches', [])
@@ -109,11 +111,11 @@ export default function App() {
   const go = (tab: Tab, deck?: string, stack = false) => {
     const to = { tab, deck: deck ?? null }
     const sub = Number(history.state?.sub ?? 0) // true from before sub-pages could stack
-    if (stack && sub && !history.state?.sheet && isSub(to)) {
+    if (stack && sub && !history.state?.sheet && !history.state?.dialog && isSub(to)) {
       history.pushState({ sub: sub + 1 }, '', `#${toHash(to)}`)
       return setRoute(fromHash())
     }
-    const depth = sub + (history.state?.sheet ? 1 : 0)
+    const depth = sub + (history.state?.sheet ? 1 : 0) + (history.state?.dialog ? 1 : 0)
     if (!depth) return land(to)
     pending.current = to
     history.go(-depth) // the popstate handler lands on `to`
@@ -140,7 +142,7 @@ export default function App() {
       else if (owned) await unclaimPlayer(user, owned)
       setCircuitMe(key)
     } catch {
-      alert(t('circuit.claimError'))
+      dialog.alert(t('circuit.claimError'))
     }
   }
   const circuitPrefs = { me: circuitMe, follow, setFollow, claims, uid, link: linkPlayer, login: () => go('account') }

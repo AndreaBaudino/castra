@@ -113,33 +113,45 @@ export const pct = (v: number, digits = 1) => `${(v * 100).toFixed(digits)}%`
 /** Winrate color: below 45% red, 45–55 neutral, above 55 green. */
 export const wrClass = (v: number) => (v >= 0.55 ? 'wr-good' : v <= 0.45 ? 'wr-bad' : 'wr-mid')
 
-// An open sheet owns one history entry, so the phone's back button closes it instead of leaving the page.
-// Counted module-wide: a sheet replaced by another in the same render (or StrictMode's double effect) keeps it.
-let openSheets = 0
+// An open overlay owns one history entry, so the phone's back button closes it instead of leaving the page.
+// Two layers: sheets, and dialogs that can open on top of a sheet. Each layer is counted module-wide, so a
+// sheet replaced by another in the same render (or StrictMode's double effect) keeps the same entry.
+type Layer = 'sheet' | 'dialog'
+const open: Record<Layer, number> = { sheet: 0, dialog: 0 }
+let popping = false
 
-export function useBackCloses(open: boolean, onClose: () => void) {
+// drop the entries of layers that closed from inside (x, backdrop, an action), one step at a time
+function settle() {
+  if (popping) return
+  const st = history.state
+  if ((st?.dialog && !open.dialog) || (st?.sheet && !open.sheet)) {
+    popping = true
+    history.back()
+  }
+}
+addEventListener('popstate', () => {
+  popping = false
+  setTimeout(settle)
+})
+
+export function useBackCloses(isOpen: boolean, onClose: () => void, layer: Layer = 'sheet') {
   const close = useRef(onClose)
   close.current = onClose
   useEffect(() => {
-    if (!open) return
-    openSheets++
-    if (!history.state?.sheet) history.pushState({ ...history.state, sheet: true }, '')
-    let popped = false
+    if (!isOpen) return
+    open[layer]++
+    if (!history.state?.[layer]) history.pushState({ ...history.state, [layer]: true }, '')
+    // closed by the back button: our entry is gone (a dialog popping off a sheet leaves the sheet's)
     const onPop = () => {
-      popped = true
-      close.current()
+      if (!history.state?.[layer]) close.current()
     }
     addEventListener('popstate', onPop)
     return () => {
-      openSheets--
+      open[layer]--
       removeEventListener('popstate', onPop)
-      // closed from inside (x, backdrop, an action): drop the entry, unless another sheet took it over
-      if (!popped)
-        setTimeout(() => {
-          if (!openSheets && history.state?.sheet) history.back()
-        })
+      setTimeout(settle)
     }
-  }, [open])
+  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: ReactNode }) {
