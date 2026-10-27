@@ -109,12 +109,12 @@ export default function App() {
 
   // Main pages replace each other, so the phone's back button closes the app from any of them.
   // A sub-page (a deck, account, a circuit player or event) sits one entry above its main page, so back
-  // returns there. `stack` piles a sub-page on the current one (a player's event, that event's players…),
-  // so back retraces the steps.
+  // returns there. `stack` piles a sub-page on the current page (a player's event, that event's players,
+  // a player opened from the stats…), so back retraces the steps.
   const go = (tab: Tab, deck?: string, stack = false) => {
     const to = { tab, deck: deck ?? null }
     const sub = Number(history.state?.sub ?? 0) // true from before sub-pages could stack
-    if (stack && sub && !history.state?.sheet && !history.state?.dialog && isSub(to)) {
+    if (stack && !history.state?.sheet && !history.state?.dialog && isSub(to)) {
       history.pushState({ sub: sub + 1 }, '', `#${toHash(to)}`)
       return setRoute(fromHash())
     }
@@ -152,7 +152,7 @@ export default function App() {
       dialog.alert(t('circuit.claimError'))
     }
   }
-  const circuitPrefs = { me: circuitMe, follow, setFollow, claims, uid, link: linkPlayer, login: () => go('account') }
+  const circuitPrefs = { me: circuitMe, follow, setFollow, claims, uid, link: linkPlayer, login: () => go('account'), matches }
   const openPlayer = (key: string) => go('meta', `p~${encodeURIComponent(key)}`, true)
   const openEvent = (id: string) => go('meta', `e~${id}`, true)
   const openLeague = (season: string, name: string) => go('meta', `l~${season}~${encodeURIComponent(name)}`, true)
@@ -173,6 +173,7 @@ export default function App() {
           <LifeCounter
             decks={decks}
             metaNames={meta.decks.map((d) => d.name)}
+            players={circuit.data?.players}
             onSaveMatch={(m) => setMatches((ms) => [m, ...ms])}
           />
         )}
@@ -226,7 +227,7 @@ export default function App() {
           />
         )}
         {route.tab === 'stats' && (
-          <Stats matches={matches} setMatches={setMatches} decks={decks} metaDecks={meta.decks} />
+          <Stats matches={matches} setMatches={setMatches} decks={decks} metaDecks={meta.decks} players={circuit.data?.players} openPlayer={openPlayer} />
         )}
         {route.tab === 'meta' &&
           (metaSub && circuit.data ? (

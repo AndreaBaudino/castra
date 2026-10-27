@@ -2745,3 +2745,73 @@ textarea {
   min-width: 40px;
   text-align: right;
 }
+.vs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vs-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+.opp-linked {
+  color: var(--good);
+  font-weight: 600;
+}
+
+/* stats: filters, play/draw, matchups */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.play-draw {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.play-draw > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.play-draw b {
+  font-size: 1.15rem;
+}
+.card-list > li > button.stat-row,
+.card-list > li > div.stat-row {
+  width: 100%;
+  text-align: left;
+}
+.card-list > li + li > .stat-row {
+  border-top: 1px solid var(--line);
+}
+.stat-row .chev {
+  color: var(--muted);
+  display: inline-flex;
+  transition: transform 0.15s;
+}
+.matchup.open .chev {
+  transform: rotate(90deg);
+}
+.matchup-decks {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 4px;
+  background: var(--surface-2);
+}
+.stat-row.sub {
+  padding-left: 22px;
+  font-size: 0.85rem;
+}
+.chart .grid.mid {
+  stroke-dasharray: 3 3;
+}

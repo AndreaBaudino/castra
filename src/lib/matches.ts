@@ -10,7 +10,10 @@ export interface Match {
   score?: [number, number] // bo3 only: games won, games lost
   deckId?: string // set when the deck is one of the saved decks
   deckName: string
-  opponent: string
+  opponent: string // the opponent's commander
+  opponentName?: string // the opponent player, as typed
+  opponentPlayer?: string // their circuit player key, when the name is in the ranking
+  start?: 'play' | 'draw' // who went first (game 1 of a bo3): on the play = me
   kind: 'tournament' | 'casual'
   durationMin?: number
   notes?: string

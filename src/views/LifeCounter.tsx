@@ -257,10 +257,12 @@ type Roll = { kind: 'dice'; values: [number, number] }
 export default function LifeCounter({
   decks,
   metaNames,
+  players,
   onSaveMatch,
 }: {
   decks: Deck[]
   metaNames: string[]
+  players?: { key: string; name: string }[]
   onSaveMatch: (m: Match) => void
 }) {
   const { t, lang } = useI18n()
@@ -523,6 +525,7 @@ export default function LifeCounter({
           onClose={() => setRecording(false)}
           decks={decks}
           metaNames={metaNames}
+          players={players}
           suggestedResult={suggested}
           durationMin={Math.round(elapsed(timer) / 60_000) || undefined}
           saveLabel={t('match.saveAndReset')}

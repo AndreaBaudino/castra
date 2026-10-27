@@ -4,7 +4,8 @@ import { type Deck, newId } from '../lib/decks'
 import { type Format, type Match, type Result, playedGames, resultOfScore, scoreOf } from '../lib/matches'
 import { useStoredState } from '../lib/storage'
 import { readPrefs } from '../lib/prefs'
-import { Sheet } from './ui'
+import { playerKey } from '../lib/circuit'
+import { Icon, Sheet } from './ui'
 
 const RESULTS = [
   ['W', 'match.win'],
@@ -22,6 +23,7 @@ export function RecordMatch({
   durationMin,
   saveLabel,
   editing,
+  players,
 }: {
   open: boolean
   onClose: () => void
@@ -33,6 +35,8 @@ export function RecordMatch({
   saveLabel?: string
   /** an existing match to edit instead of recording a new one */
   editing?: Match
+  /** circuit players, to pick the opponent from */
+  players?: { key: string; name: string }[]
 }) {
   const { t } = useI18n()
   const [lastDeck, setLastDeck] = useStoredState<string>('cc.lastDeck', '')
@@ -44,6 +48,8 @@ export function RecordMatch({
   const [deckFree, setDeckFree] = useState('')
   const [opponent, setOpponent] = useState('')
   const [notes, setNotes] = useState('')
+  const [start, setStart] = useState<Match['start'] | null>(null)
+  const [oppName, setOppName] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -59,6 +65,8 @@ export function RecordMatch({
       setOpponent(editing.opponent)
       setKind(editing.kind)
       setNotes(editing.notes ?? '')
+      setStart(editing.start ?? null)
+      setOppName(editing.opponentName ?? '')
       return
     }
     // a fixed choice from the account's preferences, otherwise the last one used
@@ -71,6 +79,8 @@ export function RecordMatch({
     setDeckFree('')
     setOpponent('')
     setNotes('')
+    setStart(null)
+    setOppName('')
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const deck = decks.find((d) => d.id === deckId)
@@ -81,6 +91,7 @@ export function RecordMatch({
   // tapping the selected result again clears it
   const setGame = (i: number, r: Result) => setGames((gs) => Object.assign([...gs], { [i]: gs[i] === r ? undefined : r }))
   const canSave = !!finalResult && !!deckName
+  const oppPlayer = oppName.trim() ? players?.find((p) => p.key === playerKey(oppName)) : undefined
 
   const save = () => {
     if (!finalResult || !deckName) return
@@ -99,6 +110,9 @@ export function RecordMatch({
       kind,
       durationMin: editing ? editing.durationMin : durationMin,
       notes: notes.trim() || undefined,
+      start: start ?? undefined,
+      opponentName: oppName.trim() || undefined,
+      opponentPlayer: oppPlayer?.key,
     })
   }
 
@@ -151,6 +165,17 @@ export function RecordMatch({
             ))}
           </div>
         )}
+        <div className="field">
+          <span>{t(format === 'bo3' ? 'match.startG1' : 'match.start')}</span>
+          <div className="seg wide">
+            {(['play', 'draw'] as const).map((s) => (
+              // tapping the selected one again clears it: often nobody remembers
+              <button key={s} className={start === s ? 'on' : ''} onClick={() => setStart(start === s ? null : s)}>
+                {t(s === 'play' ? 'match.otp' : 'match.otd')}
+              </button>
+            ))}
+          </div>
+        </div>
         <label>
           <span>{t('match.myDeck')}</span>
           <select value={deckId} onChange={(e) => setDeckId(e.target.value)}>
@@ -172,6 +197,23 @@ export function RecordMatch({
           <span>{t('match.opponent')}</span>
           <input value={opponent} onChange={(e) => setOpponent(e.target.value)} list="meta-names" />
         </label>
+        <label>
+          <span>
+            {t('match.oppPlayer')}
+            {oppPlayer && (
+              <span className="opp-linked">
+                {' '}
+                <Icon name="check" size={12} /> {t('match.oppInCircuit')}
+              </span>
+            )}
+          </span>
+          <input value={oppName} onChange={(e) => setOppName(e.target.value)} list="circuit-players" autoComplete="off" />
+        </label>
+        <datalist id="circuit-players">
+          {players?.map((p) => (
+            <option key={p.key} value={p.name} />
+          ))}
+        </datalist>
         <datalist id="meta-names">
           {metaNames.map((n) => (
             <option key={n} value={n} />

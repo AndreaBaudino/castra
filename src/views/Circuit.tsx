@@ -5,6 +5,7 @@ import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
 import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
+import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
@@ -17,6 +18,7 @@ export interface CircuitPrefs {
   uid: string | null // signed-in account
   link: (key: string | null) => Promise<void> // claim (or release with null) a player for this account
   login: () => void
+  matches: Match[] // the user's own matches: their record against a player
 }
 
 type Sort = 'total' | 's1' | 's2' | 'events' | 'played' | 'avg' | 'top8'
@@ -357,6 +359,8 @@ export function PlayerPage({
         {above && <div className="muted small">{t('circuit.gapAbove', { n: above.total - p.total, r: above.rank ?? '' })}</div>}
       </section>
 
+      <MyRecordVs p={p} matches={prefs.matches} />
+
       <section className="card">
         <div className="card-title">{t('circuit.breakdown')}</div>
         {(['s1', 's2'] as const).map((s) => {
@@ -444,6 +448,33 @@ export function PotyTag({ invited }: { invited?: boolean }) {
     </span>
   ) : (
     <span className="tag poty-zone">{t('circuit.potyZone')}</span>
+  )
+}
+
+/** The user's own matches against this player, from their stats. */
+function MyRecordVs({ p, matches }: { p: Player; matches: Match[] }) {
+  const { t, lang } = useI18n()
+  const vs = matches.filter((m) => m.opponentPlayer === p.key).sort((a, b) => b.date.localeCompare(a.date))
+  if (!vs.length) return null
+  const rec = record(vs)
+  return (
+    <section className="card">
+      <div className="card-title">
+        {t('circuit.myRecordVs')}
+        <b>{fmtRecord(rec)}</b>
+      </div>
+      <ul className="vs-list">
+        {vs.slice(0, 5).map((m) => (
+          <li key={m.id}>
+            <span className={`res-badge res-${m.result}`}>{resultLabel(m)}</span>
+            <span className="ellipsis grow">
+              {m.deckName} <span className="muted">vs</span> {m.opponent || '—'}
+            </span>
+            <span className="muted small">{new Date(m.date).toLocaleDateString(lang, { day: 'numeric', month: 'short' })}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
