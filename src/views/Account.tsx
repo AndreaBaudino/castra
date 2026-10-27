@@ -507,8 +507,8 @@ function ProfileCard({ circuit, cp, onLogin }: { circuit: Circuit | null; cp: Ci
           <strong className="ellipsis">{user.name ?? user.email}</strong>
           {me && poty ? (
             <span className="muted small ellipsis">
-              {me.rank ? placeLabel(me.rank, lang) : '—'} · {me.total} pt · POTY{' '}
-              {(me.potyInvited ? t('account.potyInvited') : poty.isIn(me) ? t('account.potyIn') : t('account.potyOut')).toLowerCase()}
+              {me.rank ? placeLabel(me.rank, lang) : '—'} · {me.total} pt ·{' '}
+              {me.potyInvited ? t('circuit.potyInvited') : poty.isIn(me) ? t('circuit.potyZone') : t('account.potyHeadOut')}
             </span>
           ) : (
             user.name && <span className="muted small ellipsis">{user.email}</span>

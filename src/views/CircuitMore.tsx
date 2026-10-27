@@ -3,7 +3,7 @@ import { useI18n } from '../i18n'
 import { type Circuit, type League, type Player, eventDateLabel, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
-import { type CircuitPrefs, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
+import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
 
 // Leagues, season records and head-to-head: views built on the circuit model.
 
@@ -63,7 +63,7 @@ export function LeagueList({ circuit, openLeague }: { circuit: Circuit; openLeag
                 <span className="muted small">
                   {t('circuit.nPlayers', { n: l.players })} · {t('circuit.nStages', { n: l.stages })} · {t('circuit.avgShort', { n: a.toFixed(1) })}
                 </span>
-                {n > 0 && <span className="tag poty-zone">POTY {n}</span>}
+                {n > 0 && <span className="tag poty-zone">{t('circuit.potyZoneCount', { n })}</span>}
               </div>
               <div className="podium small">
                 {l.entries.slice(0, 3).map((e, i) => (
@@ -135,7 +135,7 @@ export function LeaguePage({
                   </div>
                   <div className="sub-line">
                     {p && <span className="muted small">#{p.rank} {t('circuit.overall')}</span>}
-                    {p && poty.isIn(p) && <span className={`tag ${p.potyInvited ? 'poty' : 'poty-zone'}`}>{p.potyInvited ? t('circuit.potyInvited') : 'POTY'}</span>}
+                    {p && poty.isIn(p) && <PotyTag invited={p.potyInvited} />}
                     {!counted && <span className="tag">{t('circuit.notCounted', { l: p![l.season]!.league })}</span>}
                   </div>
                 </div>

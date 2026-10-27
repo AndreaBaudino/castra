@@ -1907,6 +1907,11 @@ textarea {
   color: var(--gold);
   font-weight: 700;
 }
+.tag.poty svg {
+  margin-right: 3px;
+  stroke-width: 3;
+  vertical-align: -1px;
+}
 .tag.poty-zone {
   border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent);
   background: transparent;

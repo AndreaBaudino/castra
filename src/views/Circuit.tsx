@@ -206,8 +206,8 @@ function PlayerRow({
             <div className="sub-line">
               {league && <span className="muted small">{league}</span>}
               <span className="muted small">· {t(p.events.length === 1 ? 'circuit.oneEvent' : 'circuit.nEvents', { n: p.events.length })}</span>
-              {poty === 'invited' && <span className="tag poty">{t('circuit.potyInvited')}</span>}
-              {poty === 'zone' && <span className="tag poty-zone">POTY</span>}
+              {poty === 'invited' && <PotyTag invited />}
+              {poty === 'zone' && <PotyTag />}
             </div>
           </div>
           <span className="pts">
@@ -421,7 +421,7 @@ export function PlayerPage({
                         {t('circuit.nPlayers', { n: e.players })}
                       </span>
                     </div>
-                    {pe.poty ? <span className="tag poty">{t('circuit.potyInvited')}</span> : <b className="pts-inline">+{pe.points}</b>}
+                    {pe.poty ? <PotyTag invited /> : <b className="pts-inline">+{pe.points}</b>}
                   </li>
                 )
               })}
@@ -434,6 +434,19 @@ export function PlayerPage({
 }
 
 /** Small green tick next to a claimed player's name. */
+/** Invited to the Player of the Year (for sure), or within the ranking spots for now. */
+export function PotyTag({ invited }: { invited?: boolean }) {
+  const { t } = useI18n()
+  return invited ? (
+    <span className="tag poty">
+      <Icon name="check" size={11} />
+      {t('circuit.potyInvited')}
+    </span>
+  ) : (
+    <span className="tag poty-zone">{t('circuit.potyZone')}</span>
+  )
+}
+
 export function VerifiedTick() {
   const { t } = useI18n()
   return (
@@ -606,7 +619,7 @@ export function EventPage({
           </span>
         )}
       </span>
-      {r.poty ? <span className="tag poty">{t('circuit.potyInvited')}</span> : <b className="pts-inline">{r.points}</b>}
+      {r.poty ? <PotyTag invited /> : <b className="pts-inline">{r.points}</b>}
     </li>
   )
 
