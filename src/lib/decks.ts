@@ -15,6 +15,7 @@ export interface CardInfo {
   set?: string // edition code, e.g. "c21"
   setName?: string
   cn?: string // collector number
+  produced?: string[] // mana colours it can produce (W U B R G C); missing on cards fetched before it was added
 }
 
 export interface DeckCard {

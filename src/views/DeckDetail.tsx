@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import {
   type CardInfo,
@@ -17,12 +17,13 @@ import {
 } from '../lib/decks'
 import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
 import { type Match, fmtRecord, record } from '../lib/matches'
-import { fetchPrints, searchCards } from '../lib/scryfall'
+import { fetchCollection, fetchPrints, requestKey, searchCards } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
 import { useDialog } from '../components/Dialog'
 import { isBanned } from '../lib/banlist'
 import { SampleHand } from '../components/SampleHand'
+import { DeckAnalysis } from '../components/DeckAnalysis'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
 
@@ -194,19 +195,35 @@ export default function DeckDetail({
     return GROUP_ORDER.filter((k) => g.has(k)).map((k) => [k, g.get(k)!] as const)
   }, [deck.cards])
 
-  const curve = useMemo(() => {
-    const buckets = Array(8).fill(0) as number[]
-    for (const c of deck.cards) {
-      if (c.section !== 'main' || groupOf(c) === 'lands') continue
-      buckets[Math.min(7, Math.floor(c.info?.cmc ?? 0))] += c.qty
-    }
-    return buckets
-  }, [deck.cards])
-  const maxCurve = Math.max(...curve, 1)
 
   const save = (patch: Partial<Deck>) => onChange({ ...deck, ...patch, updatedAt: new Date().toISOString() })
   const setCards = (fn: (cs: DeckCard[]) => DeckCard[]) => save({ cards: fn(deck.cards) })
   const same = (a: DeckCard, b: DeckCard) => cardKey(a) === cardKey(b)
+
+  // cards fetched before the analysis existed lack the mana they produce: fetch it once, quietly
+  const latest = useRef(deck)
+  latest.current = deck
+  useEffect(() => {
+    const req = (c: DeckCard) => ({ name: c.name, set: c.info?.set, cn: c.info?.cn })
+    const missing = deck.cards.filter((c) => c.info && c.info.produced === undefined)
+    if (!missing.length) return
+    let cancelled = false
+    fetchCollection(missing.map(req))
+      .then(({ found }) => {
+        if (cancelled) return
+        const d = latest.current
+        onChange({
+          ...d,
+          cards: d.cards.map((c) =>
+            c.info && c.info.produced === undefined ? { ...c, info: { ...c.info, produced: found.get(requestKey(req(c)))?.produced ?? [] } } : c,
+          ),
+        })
+      })
+      .catch(() => {}) // offline: try again next time
+    return () => {
+      cancelled = true
+    }
+  }, [deck.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const flash = (msg: string) => {
     setToast(msg)
@@ -340,16 +357,7 @@ export default function DeckDetail({
             </b>
           </div>
         )}
-        <div className="curve-title muted small">{t('deck.curve')}</div>
-        <div className="curve">
-          {curve.map((v, i) => (
-            <div key={i} className="curve-col">
-              <span className="curve-v">{v || ''}</span>
-              <span className="curve-bar" style={{ height: `${(v / maxCurve) * 100}%` }} />
-              <span className="curve-x">{i === 7 ? '7+' : i}</span>
-            </div>
-          ))}
-        </div>
+        <DeckAnalysis deck={deck} identity={check.identity} groupLabel={(g) => t(GROUP_KEY[g])} onOpen={open} />
         {deck.notes && !editing && <p className="summary-text">{deck.notes}</p>}
         <button
           className="btn ghost"

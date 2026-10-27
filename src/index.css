@@ -717,14 +717,38 @@ h1 {
   background: color-mix(in srgb, var(--bad) 12%, transparent);
   color: var(--bad);
 }
-.curve-title {
+.curve-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: -4px;
+}
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+.legend .key {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+.key.perm,
+.seg-perm {
+  background: var(--gold);
+}
+.key.spell,
+.seg-spell {
+  background: color-mix(in srgb, var(--muted) 55%, var(--surface-2));
 }
 .curve {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 6px;
-  height: 84px;
+  height: 108px;
 }
 .curve-col {
   display: flex;
@@ -732,19 +756,122 @@ h1 {
   justify-content: flex-end;
   align-items: center;
   gap: 2px;
+  min-width: 0;
+  padding: 0;
+  transition: opacity 0.15s;
 }
-.curve-bar {
+.curve.has-sel .curve-col:not(.sel) {
+  opacity: 0.4;
+}
+.curve-stack {
   width: 100%;
-  background: var(--gold);
-  border-radius: 4px 4px 0 0;
   min-height: 2px;
-  opacity: 0.85;
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* surface gap between the two parts */
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+}
+.curve-stack > span {
+  flex-basis: 0;
+  min-height: 0;
+}
+.curve-col.sel .curve-stack {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
 }
 .curve-v,
 .curve-x {
   font-size: 0.68rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+.curve-col.sel .curve-v,
+.curve-col.sel .curve-x {
+  color: var(--text);
+  font-weight: 700;
+}
+.curve-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.odds {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.odds th {
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+  padding-bottom: 2px;
+}
+.odds td {
+  padding: 3px 0;
+}
+.odds td + td {
+  text-align: right;
+  font-weight: 700;
+  width: 52px;
+}
+.curve-group {
+  display: flex;
+  flex-direction: column;
+}
+.curve-card {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  text-align: left;
+  font-size: 0.9rem;
+  min-width: 0;
+}
+.curve-card .qty {
+  color: var(--muted);
+  min-width: 14px;
+}
+.color-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.color-stat {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.color-bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.color-line {
+  display: grid;
+  grid-template-columns: 56px 1fr 38px;
+  align-items: center;
+  gap: 8px;
+}
+.color-line b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.meter {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.meter .fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
 }
 .group-title {
   font-weight: 700;

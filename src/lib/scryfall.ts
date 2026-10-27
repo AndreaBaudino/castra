@@ -14,6 +14,7 @@ interface ScryCard {
   set_name?: string
   collector_number?: string
   released_at?: string
+  produced_mana?: string[]
   image_uris?: { normal: string; art_crop: string }
   card_faces?: { mana_cost?: string; type_line?: string; image_uris?: { normal: string; art_crop: string } }[]
 }
@@ -33,6 +34,7 @@ function toInfo(c: ScryCard): CardInfo {
     set: c.set,
     setName: c.set_name,
     cn: c.collector_number,
+    produced: c.produced_mana ?? [],
   }
 }
 
