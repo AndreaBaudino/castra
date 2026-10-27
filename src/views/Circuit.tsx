@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { type Circuit, type CircuitEvent, type Player, eventDateLabel, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
@@ -575,17 +575,84 @@ function SubPageShell({
   )
 }
 
+// ---------- live indicator ----------
+
+type LoadStatus = 'idle' | 'loading' | 'error'
+type Live = 'live' | 'stale' | 'none'
+
+// green: fetched from the sheet (or being fetched) · yellow: showing the saved copy (offline, error) · red: no data at all
+const liveOf = (circuit: Circuit | null, status: LoadStatus): Live =>
+  !circuit ? (status === 'loading' ? 'live' : 'none') : status === 'error' ? 'stale' : 'live'
+
+function useMinuteTick() {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
+}
+
+function ago(iso: string, lang: string, justNow: string) {
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60_000)
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' })
+  if (min < 1) return justNow
+  if (min < 60) return rtf.format(-min, 'minute')
+  if (min < 24 * 60) return rtf.format(-Math.round(min / 60), 'hour')
+  return new Date(iso).toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' })
+}
+
+export function LiveStatus({ circuit, status }: { circuit: Circuit | null; status: LoadStatus }) {
+  const { t, lang } = useI18n()
+  useMinuteTick()
+  const live = liveOf(circuit, status)
+  const when = circuit && new Date(circuit.updatedAt).toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' })
+  const text =
+    live === 'none'
+      ? t('circuit.liveNone')
+      : status === 'loading'
+        ? t('circuit.liveLoading')
+        : live === 'stale'
+          ? t(navigator.onLine ? 'circuit.liveError' : 'circuit.liveOffline', { d: when ?? '' })
+          : t('circuit.live', { d: ago(circuit!.updatedAt, lang, t('circuit.justNow')) })
+  return (
+    <div className={`live-status ${live}`} role="status">
+      <LiveDot live={live} />
+      <span>{text}</span>
+    </div>
+  )
+}
+
+function LiveDot({ live, title }: { live: Live; title?: string }) {
+  return <span className={`live-dot ${live}`} title={title} aria-hidden={!title} />
+}
+
 // ---------- home card ----------
 
-export function CircuitCard({ circuit, me, openPlayer, findMe }: { circuit: Circuit | null; me: string | null; openPlayer: (k: string) => void; findMe: () => void }) {
+export function CircuitCard({
+  circuit,
+  status,
+  me,
+  openPlayer,
+  findMe,
+}: {
+  circuit: Circuit | null
+  status: LoadStatus
+  me: string | null
+  openPlayer: (k: string) => void
+  findMe: () => void
+}) {
   const { t } = useI18n()
+  const live = liveOf(circuit, status)
   const p = me ? circuit?.players.find((x) => x.key === me) : undefined
   const poty = useMemo(() => circuit && potyStatus(circuit), [circuit])
   if (!circuit) return null
   return (
     <section className="card">
       <div className="card-title">
-        {t('circuit.title')}
+        <span className="title-live">
+          {t('circuit.title')}
+          <LiveDot live={live} title={t(live === 'live' ? 'circuit.dotLive' : 'circuit.dotStale')} />
+        </span>
         {p && (
           <button className="link" onClick={() => openPlayer(p.key)}>
             {t('stats.details')}

@@ -20,6 +20,7 @@ export default function Home({
   openDeck,
   importDeck,
   circuit,
+  circuitStatus,
   circuitMe,
   openPlayer,
   findMe,
@@ -33,6 +34,7 @@ export default function Home({
   openDeck: (id: string) => void
   importDeck: () => void
   circuit: Circuit | null
+  circuitStatus: 'idle' | 'loading' | 'error'
   circuitMe: string | null
   openPlayer: (key: string) => void
   findMe: () => void
@@ -124,7 +126,7 @@ export default function Home({
         )}
       </section>
 
-      <CircuitCard circuit={circuit} me={circuitMe} openPlayer={openPlayer} findMe={findMe} />
+      <CircuitCard circuit={circuit} status={circuitStatus} me={circuitMe} openPlayer={openPlayer} findMe={findMe} />
 
       <section className="card">
         <div className="card-title">

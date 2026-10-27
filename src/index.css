@@ -2033,3 +2033,59 @@ textarea {
   overflow: hidden;
   overflow-wrap: anywhere;
 }
+.live-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.live-status.stale {
+  color: var(--mid);
+}
+.live-status.none {
+  color: var(--bad);
+}
+.title-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.live-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--good);
+}
+.live-dot.stale {
+  background: #e3b341;
+}
+.live-dot.none {
+  background: var(--bad);
+}
+/* the "on air" pulse, only while live */
+.live-dot.live::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--good);
+  animation: live-pulse 1.8s ease-out infinite;
+}
+@keyframes live-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot.live::after {
+    animation: none;
+  }
+}

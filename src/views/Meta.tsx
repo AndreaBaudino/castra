@@ -4,7 +4,7 @@ import { type MetaData, type MetaDeck, normName, wilson, winrate } from '../lib/
 import { Icon, Pips, pct, wrClass } from '../components/ui'
 import type { Circuit } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
-import { CircuitPanel, type CircuitPrefs } from './Circuit'
+import { CircuitPanel, type CircuitPrefs, LiveStatus } from './Circuit'
 
 type Status = 'idle' | 'loading' | 'error'
 
@@ -89,18 +89,8 @@ export default function Meta({
 
       {mode === 'circuit' ? (
         <>
-          {circuitStatus === 'error' && <div className="notice warn">{circuit ? t('meta.offline') : t('meta.error')}</div>}
-          {!circuit ? (
-            <div className="empty">{circuitStatus === 'loading' ? '…' : ''}</div>
-          ) : (
-            <>
-              <p className="muted small no-margin">
-                {t('circuit.intro')} · {t('meta.updated')}{' '}
-                {new Date(circuit.updatedAt).toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' })}
-              </p>
-              <CircuitPanel circuit={circuit} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} />
-            </>
-          )}
+          <LiveStatus circuit={circuit} status={circuitStatus} />
+          {circuit && <CircuitPanel circuit={circuit} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} />}
         </>
       ) : (
         <>

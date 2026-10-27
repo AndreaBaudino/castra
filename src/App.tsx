@@ -124,6 +124,7 @@ export default function App() {
             go={(tab) => go(tab)}
             user={user}
             circuit={circuit.data}
+            circuitStatus={circuit.status}
             circuitMe={circuitMe}
             openPlayer={openPlayer}
             findMe={() => {
