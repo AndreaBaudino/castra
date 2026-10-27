@@ -644,6 +644,20 @@ export default function Account({
             <MenuRow icon="database" label={titles.data} note={syncNote} onClick={() => openSection('data')} />
             <MenuRow icon="info" label={titles.info} note={versionLabel.split(' · ')[0]} onClick={() => openSection('info')} />
           </section>
+          <section className="card menu-card">
+            {(
+              [
+                ['globe', 'account.formatSite', FORMAT_SITE_URL],
+                ['ban', 'account.banlist', BANLIST_URL],
+              ] as const
+            ).map(([icon, label, href]) => (
+              <a key={href} className="menu-row" href={href} target="_blank" rel="noopener noreferrer">
+                <Icon name={icon} size={20} />
+                <span className="menu-label">{t(label)}</span>
+                <Icon name="external" size={16} />
+              </a>
+            ))}
+          </section>
           {user && (
             <section className="card menu-card">
               <button
@@ -659,20 +673,6 @@ export default function Account({
               </button>
             </section>
           )}
-          <section className="card menu-card">
-            {(
-              [
-                ['globe', 'account.formatSite', FORMAT_SITE_URL],
-                ['ban', 'account.banlist', BANLIST_URL],
-              ] as const
-            ).map(([icon, label, href]) => (
-              <a key={href} className="menu-row" href={href} target="_blank" rel="noopener noreferrer">
-                <Icon name={icon} size={20} />
-                <span className="menu-label">{t(label)}</span>
-                <Icon name="external" size={16} />
-              </a>
-            ))}
-          </section>
         </>
       ) : section === 'login' ? (
         <LoginForm />
