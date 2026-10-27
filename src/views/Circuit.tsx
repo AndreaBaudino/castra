@@ -4,14 +4,18 @@ import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type 
 import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
 import { ComparePicker, LeagueList, Records } from './CircuitMore'
+import type { Claim } from '../lib/claims'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
 export interface CircuitPrefs {
   me: string | null // player key the user said is them
-  setMe: (k: string | null) => void
   follow: string[]
   setFollow: (fn: (f: string[]) => string[]) => void
+  claims: Map<string, Claim> // players claimed by an account, shared by everyone
+  uid: string | null // signed-in account
+  link: (key: string | null) => Promise<void> // claim (or release with null) a player for this account
+  login: () => void
 }
 
 type Sort = 'total' | 's1' | 's2' | 'events' | 'played' | 'avg' | 'top8'
@@ -310,7 +314,6 @@ export function PlayerPage({
   const poty = useMemo(() => potyStatus(circuit), [circuit])
   if (!p) return <SubPageShell title="—" onBack={onBack} />
   const followed = prefs.follow.includes(p.key)
-  const isMe = prefs.me === p.key
   const above = [...circuit.players].reverse().find((o) => o.total > p.total)
   const evById = new Map(circuit.events.map((e) => [e.id, e]))
 
@@ -328,9 +331,7 @@ export function PlayerPage({
         </button>
       }
     >
-      <button className={`btn ${isMe ? 'primary' : 'ghost'}`} onClick={() => prefs.setMe(isMe ? null : p.key)}>
-        <Icon name="user" size={16} /> {isMe ? t('circuit.isMe') : t('circuit.thisIsMe')}
-      </button>
+      <ClaimBox p={p} prefs={prefs} />
       {/* "me" on the left when comparing someone with me */}
       <ComparePicker circuit={circuit} p={p} prefs={prefs} onPick={(o) => (o === prefs.me ? openCompare(o, p.key) : openCompare(p.key, o))} />
 
@@ -426,6 +427,62 @@ export function PlayerPage({
         </>
       )}
     </SubPageShell>
+  )
+}
+
+/** The claimer's picture, the "verified" tick and the button to claim or release the player. */
+function ClaimBox({ p, prefs }: { p: Player; prefs: CircuitPrefs }) {
+  const { t } = useI18n()
+  const [busy, setBusy] = useState(false)
+  const claim = prefs.claims.get(p.key)
+  const mine = !!claim && claim.uid === prefs.uid
+  const run = async (key: string | null) => {
+    setBusy(true)
+    try {
+      await prefs.link(key)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="claim-box">
+      <span className={`claim-avatar ${claim ? 'claimed' : ''}`}>
+        {claim?.photo ? (
+          <img src={claim.photo} alt="" referrerPolicy="no-referrer" />
+        ) : claim ? (
+          <span>{(claim.name ?? p.name)[0].toUpperCase()}</span>
+        ) : (
+          <Icon name="user" size={30} />
+        )}
+      </span>
+      {claim && (
+        <span className="verified">
+          <Icon name="check" size={13} /> {t('circuit.verified')}
+        </span>
+      )}
+      {mine ? (
+        <button className="btn primary" disabled={busy} onClick={() => run(null)}>
+          <Icon name="user" size={16} /> {t('circuit.isMe')}
+        </button>
+      ) : claim ? (
+        <span className="muted small">{t('circuit.claimedByOther')}</span>
+      ) : !prefs.uid ? (
+        <button className="btn ghost" onClick={prefs.login}>
+          <Icon name="user" size={16} /> {t('circuit.loginToClaim')}
+        </button>
+      ) : (
+        <button
+          className="btn ghost"
+          disabled={busy}
+          onClick={() => {
+            const current = prefs.me && prefs.claims.get(prefs.me)?.uid === prefs.uid ? prefs.me : null
+            if (!current || confirm(t('circuit.moveClaim'))) run(p.key)
+          }}
+        >
+          <Icon name="user" size={16} /> {t('circuit.thisIsMe')}
+        </button>
+      )}
+    </div>
   )
 }
 

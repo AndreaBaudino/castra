@@ -7,6 +7,7 @@ import type { Deck } from './lib/decks'
 import type { Match } from './lib/matches'
 import { useMeta } from './lib/meta'
 import { readStored, useStoredState, writeStored } from './lib/storage'
+import { claimPlayer, unclaimPlayer, useClaims } from './lib/claims'
 import { type CircuitNotice, type CircuitSnapshot, mergeNotices, noticeOf, snapshotOf, useCircuit } from './lib/circuit'
 import { Icon } from './components/ui'
 import Home from './views/Home'
@@ -47,6 +48,7 @@ export default function App() {
   const [notice, setNotice] = useStoredState<CircuitNotice | null>('cc.circuit.notice', null)
   const { user } = useAuth()
   const uid = user?.uid ?? null
+  const { claims, loaded: claimsLoaded } = useClaims()
 
   useCollectionSync(uid, 'decks', decks, setDecks, (l, r) => l.updatedAt > r.updatedAt)
   useCollectionSync(uid, 'matches', matches, setMatches)
@@ -56,6 +58,14 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+
+  // keep the local "me" in line with the shared claims
+  useEffect(() => {
+    if (!claimsLoaded || !circuitMe) return
+    const claim = claims.get(circuitMe)
+    if (claim && claim.uid !== uid) setCircuitMe(null) // someone else's
+    else if (!claim && user) claimPlayer(user, circuitMe, null).catch(() => {}) // linked before claims existed
+  }, [claims, claimsLoaded, circuitMe, uid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // compare the circuit with what the user saw last time: their position, the followed players, new events
   useEffect(() => {
@@ -121,7 +131,19 @@ export default function App() {
   )
 
   const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined
-  const circuitPrefs = { me: circuitMe, setMe: setCircuitMe, follow, setFollow }
+  // "this is me": a shared claim, so a player can belong to one account only
+  const linkPlayer = async (key: string | null) => {
+    if (!user) return go('account')
+    const owned = circuitMe && claims.get(circuitMe)?.uid === user.uid ? circuitMe : null
+    try {
+      if (key) await claimPlayer(user, key, owned)
+      else if (owned) await unclaimPlayer(user, owned)
+      setCircuitMe(key)
+    } catch {
+      alert(t('circuit.claimError'))
+    }
+  }
+  const circuitPrefs = { me: circuitMe, follow, setFollow, claims, uid, link: linkPlayer, login: () => go('account') }
   const openPlayer = (key: string) => go('meta', `p~${encodeURIComponent(key)}`, true)
   const openEvent = (id: string) => go('meta', `e~${id}`, true)
   const openLeague = (season: string, name: string) => go('meta', `l~${season}~${encodeURIComponent(name)}`, true)

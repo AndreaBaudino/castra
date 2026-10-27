@@ -2296,3 +2296,50 @@ textarea {
 .notice-card .mini-list li {
   cursor: pointer;
 }
+
+/* ---------- claimed player ---------- */
+.claim-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.claim-box .btn {
+  align-self: stretch;
+}
+.claim-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 2px dashed var(--line);
+  color: var(--muted);
+}
+.claim-avatar.claimed {
+  border: 2px solid var(--good);
+  color: var(--text);
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+.claim-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px 1px 5px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--good);
+  background: color-mix(in srgb, var(--good) 14%, transparent);
+}
+.verified svg {
+  stroke-width: 3;
+}
