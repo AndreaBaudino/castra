@@ -3,6 +3,7 @@ import { useI18n } from '../i18n'
 import { type Deck, newId } from '../lib/decks'
 import { type Format, type Match, type Result, playedGames, resultOfScore, scoreOf } from '../lib/matches'
 import { useStoredState } from '../lib/storage'
+import { readPrefs } from '../lib/prefs'
 import { Sheet } from './ui'
 
 const RESULTS = [
@@ -60,6 +61,10 @@ export function RecordMatch({
       setNotes(editing.notes ?? '')
       return
     }
+    // a fixed choice from the account's preferences, otherwise the last one used
+    const prefs = readPrefs()
+    if (prefs.format !== 'last') setFormat(prefs.format)
+    if (prefs.kind !== 'last') setKind(prefs.kind)
     setResult(suggestedResult ?? null)
     setGames([])
     setDeckId(decks.some((d) => d.id === lastDeck) ? lastDeck : '')

@@ -5,6 +5,7 @@ import type { Deck } from '../lib/decks'
 import type { Match } from '../lib/matches'
 import { useStoredState } from '../lib/storage'
 import { playAlarm, unlockAudio } from '../lib/sound'
+import { haptic, readPrefs } from '../lib/prefs'
 import {
   DEFAULT_TIMER_SETTINGS,
   type TimerSettings,
@@ -94,6 +95,7 @@ function PlayerPanel({
     deltaTimer.current = window.setTimeout(() => setDelta(0), 1400)
   }
   const changeLife = (d: number) => {
+    haptic()
     update((p) => ({ ...p, life: p.life + d }))
     showDelta(d)
   }
@@ -104,10 +106,11 @@ function PlayerPanel({
     <div className={`counter ${lethal && p[key] >= lethal ? 'lethal' : ''}`}>
       <button
         aria-label={`${label} -`}
-        onClick={() =>
+        onClick={() => {
+          haptic()
           // undoing commander damage gives the life back
           update((p) => ({ ...p, [key]: Math.max(0, p[key] - step), ...(key === 'cmd' && p.cmd > 0 ? { life: p.life + step } : {}) }))
-        }
+        }}
       >
         −
       </button>
@@ -118,6 +121,7 @@ function PlayerPanel({
       <button
         aria-label={`${label} +`}
         onClick={() => {
+          haptic()
           // commander damage is also life loss
           update((p) => ({ ...p, [key]: p[key] + step, ...(key === 'cmd' ? { life: p.life - step } : {}) }))
           if (key === 'cmd') showDelta(-step)
@@ -244,8 +248,9 @@ export default function LifeCounter({
   const [, tick] = useState(0)
   const timer = game.timer ?? freshTimer()
 
-  // keep the screen awake during the game
+  // keep the screen awake during the game (unless turned off in the account's preferences)
   useEffect(() => {
+    if (!readPrefs().wake) return
     let lock: WakeLockSentinel | null = null
     const acquire = async () => {
       try {

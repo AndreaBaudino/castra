@@ -1,5 +1,46 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { fb } from './firebase'
+import { readStored, writeStored } from './storage'
+
+// What the account page shows about the cloud: writes still waiting for the server, the last one it confirmed.
+// Firestore keeps offline writes queued and confirms them once back online.
+const LAST_SYNC_KEY = 'cc.lastSync'
+let status = { pending: 0, lastAt: readStored<string | null>(LAST_SYNC_KEY, null), failed: false }
+const listeners = new Set<() => void>()
+const setStatus = (s: Partial<typeof status>) => {
+  status = { ...status, ...s }
+  listeners.forEach((l) => l())
+}
+export const useSyncStatus = () =>
+  useSyncExternalStore(
+    (l) => {
+      listeners.add(l)
+      return () => listeners.delete(l)
+    },
+    () => status,
+  )
+
+// while the account is being deleted, nothing is uploaded again (the emptied account would re-send its settings)
+let paused = false
+export const pauseSync = (on: boolean) => {
+  paused = on
+}
+export const syncPaused = () => paused
+
+/** Runs a cloud write, keeping the sync status up to date. */
+async function tracked(write: () => Promise<unknown>, what: string) {
+  if (paused) return
+  setStatus({ pending: status.pending + 1 })
+  try {
+    await write()
+    const now = new Date().toISOString()
+    writeStored(LAST_SYNC_KEY, now)
+    setStatus({ pending: status.pending - 1, lastAt: now, failed: false })
+  } catch (e) {
+    console.error('sync', what, e)
+    setStatus({ pending: status.pending - 1, failed: true })
+  }
+}
 
 /**
  * Keeps a local list (already persisted in localStorage) in sync with users/{uid}/{name} in Firestore.
@@ -73,7 +114,7 @@ export function useCollectionSync<T extends { id: string }>(
           if (w.data) batch.set(ref, w.data)
           else batch.delete(ref)
         }
-        await batch.commit().catch((e) => console.error('sync', name, e))
+        await tracked(() => batch.commit(), name)
       }
     })
   }, [items, uid, name])
@@ -96,8 +137,9 @@ export function useDocFieldSync<T>(uid: string | null, field: string, value: T, 
         const remote = snap.get(field) as T | undefined
         if (remote === undefined) {
           // nothing saved yet for this account: upload the local value
-          known.current = JSON.stringify(latest.current)
-          fs.setDoc(fs.doc(db, 'users', uid), { [field]: JSON.parse(known.current) }, { merge: true }).catch(() => {})
+          const json = JSON.stringify(latest.current)
+          known.current = json
+          tracked(() => fs.setDoc(fs.doc(db, 'users', uid), { [field]: JSON.parse(json) }, { merge: true }), field)
           return
         }
         known.current = JSON.stringify(remote)
@@ -115,8 +157,6 @@ export function useDocFieldSync<T>(uid: string | null, field: string, value: T, 
     const json = JSON.stringify(value)
     if (json === known.current) return
     known.current = json
-    fb().then(({ db, fs }) =>
-      fs.setDoc(fs.doc(db, 'users', uid), { [field]: JSON.parse(json) }, { merge: true }).catch((e) => console.error('sync', field, e)),
-    )
+    fb().then(({ db, fs }) => tracked(() => fs.setDoc(fs.doc(db, 'users', uid), { [field]: JSON.parse(json) }, { merge: true }), field))
   }, [value, uid, field])
 }

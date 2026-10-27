@@ -49,3 +49,9 @@ export const FIREBASE_CONFIG: {
   messagingSenderId: '428975402839',
   appId: '1:428975402839:web:4f511428f1a6ad7d4d1812',
 }
+
+/** Links on the account page. */
+export const FORMAT_SITE_URL = 'https://www.centurioncommander.eu/it/home-ita/'
+export const BANLIST_URL = 'https://www.centurioncommander.eu/it/ban-list-it/'
+/** Where "Report a problem" leads: an issue on the app's repository. */
+export const FEEDBACK_URL = 'https://github.com/AndreaBaudino/castra/issues/new'

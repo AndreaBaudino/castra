@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
-import { useCollectionSync, useDocFieldSync } from './lib/sync'
+import { syncPaused, useCollectionSync, useDocFieldSync } from './lib/sync'
+import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
 import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
 import type { Deck } from './lib/decks'
 import type { Match } from './lib/matches'
@@ -43,6 +44,7 @@ export default function App() {
   const [matches, setMatches] = useStoredState<Match[]>('cc.matches', [])
   const [importOpen, setImportOpen] = useState(false)
   const [theme, setTheme] = useStoredState<Theme>('cc.theme', DEFAULT_THEME)
+  const [prefs, setPrefs] = useStoredState<Prefs>(PREFS_KEY, readPrefs())
   const { data: meta, status, refresh } = useMeta()
   const circuit = useCircuit()
   const [circuitMe, setCircuitMe] = useStoredState<string | null>('cc.circuit.me', null)
@@ -55,6 +57,7 @@ export default function App() {
   useCollectionSync(uid, 'decks', decks, setDecks, (l, r) => l.updatedAt > r.updatedAt)
   useCollectionSync(uid, 'matches', matches, setMatches)
   useDocFieldSync(uid, 'theme', theme, setTheme)
+  useDocFieldSync(uid, 'prefs', prefs, (p) => setPrefs({ ...DEFAULT_PREFS, ...p }))
   useDocFieldSync(uid, 'circuitMe', circuitMe, setCircuitMe)
   useDocFieldSync(uid, 'circuitFollow', follow, setFollow)
   useEffect(() => {
@@ -63,7 +66,7 @@ export default function App() {
 
   // keep the local "me" in line with the shared claims
   useEffect(() => {
-    if (!claimsLoaded || !circuitMe) return
+    if (!claimsLoaded || !circuitMe || syncPaused()) return // paused: the account is being deleted
     const claim = claims.get(circuitMe)
     if (claim && claim.uid !== uid) setCircuitMe(null) // someone else's
     else if (!claim && user) claimPlayer(user, circuitMe, null).catch(() => {}) // linked before claims existed
@@ -76,7 +79,7 @@ export default function App() {
     const prev = readStored<CircuitSnapshot | null>('cc.circuit.seen', null)
     writeStored('cc.circuit.seen', next)
     const change = prev && noticeOf(prev, next, circuit.data)
-    if (change) setNotice((n) => mergeNotices(n, change))
+    if (change && prefs.circuitAlerts) setNotice((n) => mergeNotices(n, change))
   }, [circuit.data, circuitMe, follow]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // the history is [main page, sub-pages…, open sheet]: land() rebuilds it from the main entry
@@ -136,7 +139,10 @@ export default function App() {
   const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined
   // "this is me": a shared claim, so a player can belong to one account only
   const linkPlayer = async (key: string | null) => {
-    if (!user) return go('account')
+    if (!user) {
+      if (key) return go('account')
+      return setCircuitMe(null) // a link made before signing in: nothing shared to release
+    }
     const owned = circuitMe && claims.get(circuitMe)?.uid === user.uid ? circuitMe : null
     try {
       if (key) await claimPlayer(user, key, owned)
@@ -151,6 +157,11 @@ export default function App() {
   const openEvent = (id: string) => go('meta', `e~${id}`, true)
   const openLeague = (season: string, name: string) => go('meta', `l~${season}~${encodeURIComponent(name)}`, true)
   const openCompare = (a: string, b: string) => go('meta', `c~${encodeURIComponent(a)}~${encodeURIComponent(b)}`, true)
+  const findMe = () => {
+    writeStored(META_MODE_KEY, 'circuit')
+    writeStored('cc.circuit.view', 'ranking')
+    go('meta')
+  }
   // meta/p~<player key>, meta/e~<event id>, meta/l~<season>~<league>, meta/c~<player a>~<player b>
   const [metaSub, ...metaArgs] = route.tab === 'meta' && route.deck ? route.deck.split('~').map(decodeURIComponent) : []
   const gameInProgress = isGameInProgress(readStored<GameState>(GAME_KEY, defaultGame()))
@@ -178,11 +189,7 @@ export default function App() {
             circuitStatus={circuit.status}
             circuitMe={circuitMe}
             openPlayer={openPlayer}
-            findMe={() => {
-              writeStored(META_MODE_KEY, 'circuit')
-              writeStored('cc.circuit.view', 'ranking')
-              go('meta')
-            }}
+            findMe={findMe}
             openDeck={(id) => go('decks', id)}
             importDeck={() => {
               setImportOpen(true)
@@ -194,12 +201,23 @@ export default function App() {
           <Account
             theme={theme}
             setTheme={setTheme}
+            prefs={prefs}
+            setPrefs={setPrefs}
+            decks={decks}
+            setDecks={setDecks}
+            matches={matches}
+            setMatches={setMatches}
+            circuit={circuit.data}
+            circuitPrefs={circuitPrefs}
+            openPlayer={openPlayer}
+            findMe={findMe}
             onBack={() => go('home')}
             onSignOut={() => {
               // the data now lives in the account: don't leave it on a possibly shared device
               setDecks(() => [])
               setMatches(() => [])
               setTheme(() => DEFAULT_THEME)
+              setPrefs(() => DEFAULT_PREFS)
               setCircuitMe(null)
               setFollow(() => [])
             }}

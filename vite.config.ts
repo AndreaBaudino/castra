@@ -1,12 +1,22 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+
+// shown on the account page: the build day, and the commit when built from git
+let commit = ''
+try {
+  commit = execSync('git rev-parse --short HEAD').toString().trim()
+} catch {
+  // not a git checkout
+}
 
 // BASE lets the app be served from a sub-path (e.g. GitHub Pages: /centurion-companion/)
 const base = process.env.BASE ?? '/'
 
 export default defineConfig({
   base,
+  define: { __BUILD__: JSON.stringify({ date: new Date().toISOString().slice(0, 10), commit }) },
   plugins: [
     react(),
     VitePWA({

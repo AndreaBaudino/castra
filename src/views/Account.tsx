@@ -1,10 +1,20 @@
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { authErrorKey, useAuth } from '../lib/auth'
 import { cloudEnabled } from '../lib/firebase'
 import { DEFAULT_THEME, SWATCHES, type Theme } from '../lib/theme'
+import type { Deck } from '../lib/decks'
+import type { Match } from '../lib/matches'
+import { type Circuit, potyStatus } from '../lib/circuit'
+import type { Prefs } from '../lib/prefs'
+import { useSyncStatus } from '../lib/sync'
+import { deleteAccount } from '../lib/account'
+import { backupName, csvName, download, makeBackup, matchesCsv, mergeById, parseBackup } from '../lib/backup'
+import { CHANGELOG } from '../lib/changelog'
+import { BANLIST_URL, FEEDBACK_URL, FORMAT_SITE_URL } from '../config'
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
+import { type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
 
 function GoogleLogo() {
   return (
@@ -159,20 +169,379 @@ function ThemeEditor({ theme, setTheme }: { theme: Theme; setTheme: (fn: (t: The
   )
 }
 
+function Toggle({ label, hint, on, set }: { label: string; hint?: string; on: boolean; set: (v: boolean) => void }) {
+  return (
+    <button className="toggle-row" role="switch" aria-checked={on} onClick={() => set(!on)}>
+      <span className="toggle-text">
+        {label}
+        {hint && <span className="muted small">{hint}</span>}
+      </span>
+      <span className={`switch ${on ? 'on' : ''}`} />
+    </button>
+  )
+}
+
+function Choice<V extends string>({ label, value, options, set }: { label: string; value: V; options: [V, string][]; set: (v: V) => void }) {
+  return (
+    <div className="pref-choice">
+      <span>{label}</span>
+      <div className="seg wide">
+        {options.map(([v, text]) => (
+          <button key={v} className={value === v ? 'on' : ''} onClick={() => set(v)}>
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** The circuit player linked to the account, and the followed ones. */
+function CircuitIdentity({
+  circuit,
+  cp,
+  openPlayer,
+  findMe,
+}: {
+  circuit: Circuit | null
+  cp: CircuitPrefs
+  openPlayer: (key: string) => void
+  findMe: () => void
+}) {
+  const { t, lang } = useI18n()
+  const dialog = useDialog()
+  const [busy, setBusy] = useState(false)
+  const poty = useMemo(() => circuit && potyStatus(circuit), [circuit])
+  const byKey = useMemo(() => new Map(circuit?.players.map((p) => [p.key, p])), [circuit])
+  const me = cp.me ? byKey.get(cp.me) : undefined
+  const followed = cp.follow.map((k) => byKey.get(k)).filter((p) => !!p).sort((a, b) => (a.rank ?? 1e9) - (b.rank ?? 1e9))
+
+  return (
+    <>
+      <section className="card">
+        <div className="card-title">{t('account.player')}</div>
+        {!me || !poty ? (
+          <div className="empty-inline">
+            <p className="muted small">{cp.me && !circuit ? t('account.playerNoData') : t('circuit.linkPrompt')}</p>
+            <button className="btn small primary" onClick={findMe}>
+              <Icon name="search" size={16} /> {t('circuit.findMe')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <button className="linked-player" onClick={() => openPlayer(me.key)}>
+              <span className="linked-name">
+                <strong className="ellipsis">{me.name}</strong>
+                {cp.claims.get(me.key)?.uid === cp.uid && (
+                  <span className="verified">
+                    <Icon name="check" size={13} /> {t('circuit.verified')}
+                  </span>
+                )}
+              </span>
+              <Icon name="chevron" size={18} />
+            </button>
+            <div className="stats3 compact">
+              <div>
+                <div className="stat-num">{me.rank ? placeLabel(me.rank, lang) : '—'}</div>
+                <div className="stat-label">{t('circuit.position')}</div>
+              </div>
+              <div>
+                <div className="stat-num">{me.total}</div>
+                <div className="stat-label">{t('circuit.points')}</div>
+              </div>
+              <div>
+                <div className={`stat-num ${poty.isIn(me) ? 'good' : ''}`}>
+                  {me.potyInvited ? t('account.potyInvited') : poty.isIn(me) ? t('account.potyIn') : t('account.potyOut')}
+                </div>
+                <div className="stat-label">POTY</div>
+              </div>
+            </div>
+            <div className="btn-pair">
+              <button className="btn ghost" onClick={findMe}>
+                <Icon name="swap" size={16} /> {t('account.changePlayer')}
+              </button>
+              <button
+                className="btn ghost"
+                disabled={busy}
+                onClick={async () => {
+                  if (!(await dialog.confirm(t('account.unlinkConfirm', { n: me.name }), { ok: t('account.unlink'), danger: true }))) return
+                  setBusy(true)
+                  await cp.link(null).finally(() => setBusy(false))
+                }}
+              >
+                <Icon name="close" size={16} /> {t('account.unlink')}
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+
+      <section className="card">
+        <div className="card-title">
+          {t('circuit.followed')}
+          {followed.length > 0 && <span className="muted small">{followed.length}</span>}
+        </div>
+        {!followed.length ? (
+          <p className="muted small no-margin">{t('account.followEmpty')}</p>
+        ) : (
+          <div className="follow-list">
+            {followed.map((p) => (
+              <div key={p.key} className="follow-row">
+                <button className="follow-main" onClick={() => openPlayer(p.key)}>
+                  <span className="follow-rank">{p.rank ? placeLabel(p.rank, lang) : '—'}</span>
+                  <span className="follow-name ellipsis">
+                    {p.name}
+                    {cp.claims.has(p.key) && <VerifiedTick />}
+                  </span>
+                  <span className="muted small">{p.total} pt</span>
+                </button>
+                <button
+                  className="icon-btn star-on"
+                  aria-label={t('account.unfollow')}
+                  onClick={() => cp.setFollow((f) => f.filter((k) => k !== p.key))}
+                >
+                  <Icon name="star" size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
+  )
+}
+
+function Preferences({ prefs, setPrefs }: { prefs: Prefs; setPrefs: (fn: (p: Prefs) => Prefs) => void }) {
+  const { t, lang, setLang } = useI18n()
+  const set = <K extends keyof Prefs>(k: K) => (v: Prefs[K]) => setPrefs((p) => ({ ...p, [k]: v }))
+  return (
+    <section className="card">
+      <div className="card-title">{t('account.prefs')}</div>
+      <div className="pref-group">{t('account.newMatches')}</div>
+      <Choice
+        label={t('account.format')}
+        value={prefs.format}
+        options={[
+          ['last', t('account.lastUsed')],
+          ['bo1', 'Bo1'],
+          ['bo3', 'Bo3'],
+        ]}
+        set={set('format')}
+      />
+      <Choice
+        label={t('match.kind')}
+        value={prefs.kind}
+        options={[
+          ['last', t('account.lastUsed')],
+          ['casual', t('match.casual')],
+          ['tournament', t('match.tournament')],
+        ]}
+        set={set('kind')}
+      />
+      <div className="pref-group">{t('account.duringGame')}</div>
+      <Toggle label={t('account.wake')} hint={t('account.wakeHint')} on={prefs.wake} set={set('wake')} />
+      <Toggle label={t('account.haptics')} hint={t('account.hapticsHint')} on={prefs.haptics} set={set('haptics')} />
+      <div className="pref-group">{t('circuit.title')}</div>
+      <Toggle label={t('account.alerts')} hint={t('account.alertsHint')} on={prefs.circuitAlerts} set={set('circuitAlerts')} />
+      <div className="pref-group">{t('common.lang')}</div>
+      <div className="seg wide">
+        {(['it', 'en'] as const).map((l) => (
+          <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>
+            {l === 'it' ? 'Italiano' : 'English'}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function SyncLine() {
+  const { t, lang } = useI18n()
+  const { pending, lastAt, failed } = useSyncStatus()
+  const when = lastAt && new Date(lastAt).toLocaleString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const state = !navigator.onLine ? 'offline' : failed ? 'error' : pending ? 'saving' : 'ok'
+  return (
+    <div className={`sync-line ${state}`}>
+      <span className="sync-dot" />
+      <div>
+        <div>{t(`account.sync.${state}`)}</div>
+        {when && <div className="muted small">{t('account.lastSync', { d: when })}</div>}
+      </div>
+    </div>
+  )
+}
+
+function DataSection({
+  decks,
+  matches,
+  restore,
+  onDeleteAccount,
+}: {
+  decks: Deck[]
+  matches: Match[]
+  restore: (text: string) => void
+  onDeleteAccount?: () => void
+}) {
+  const { t, lang } = useI18n()
+  const { user } = useAuth()
+  const file = useRef<HTMLInputElement>(null)
+  return (
+    <section className="card">
+      <div className="card-title">{t('account.data')}</div>
+      {user && <SyncLine />}
+      <p className="muted small no-margin">{t('account.dataCounts', { d: decks.length, m: matches.length })}</p>
+      <div className="data-actions">
+        <button
+          className="btn ghost"
+          disabled={!matches.length}
+          onClick={() => download(csvName(), matchesCsv(matches, new Map(decks.map((d) => [d.id, d.name])), lang), 'text/csv;charset=utf-8')}
+        >
+          <Icon name="download" size={16} /> {t('account.exportCsv')}
+        </button>
+        <button className="btn ghost" onClick={() => download(backupName(), JSON.stringify(makeBackup(decks, matches), null, 1), 'application/json')}>
+          <Icon name="download" size={16} /> {t('account.backup')}
+        </button>
+        <button className="btn ghost" onClick={() => file.current?.click()}>
+          <Icon name="upload" size={16} /> {t('account.restore')}
+        </button>
+        <input
+          ref={file}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          onChange={async (e) => {
+            const f = e.target.files?.[0]
+            e.target.value = '' // the same file can be picked again
+            if (f) restore(await f.text())
+          }}
+        />
+      </div>
+      <p className="muted small no-margin">{t('account.backupHint')}</p>
+      {onDeleteAccount && (
+        <button className="btn danger" onClick={onDeleteAccount}>
+          <Icon name="trash" size={16} /> {t('account.delete')}
+        </button>
+      )}
+    </section>
+  )
+}
+
+function Info() {
+  const { t, lang } = useI18n()
+  const [all, setAll] = useState(false)
+  const releases = all ? CHANGELOG : CHANGELOG.slice(0, 1)
+  return (
+    <section className="card">
+      <div className="card-title">
+        {t('account.info')}
+        <span className="muted small">
+          {t('account.version')} {__BUILD__.date.split('-').join('.')}
+          {__BUILD__.commit && ` · ${__BUILD__.commit}`}
+        </span>
+      </div>
+      <div className="pref-group">{t('account.whatsNew')}</div>
+      {releases.map((r) => (
+        <div key={r.date} className="release">
+          <div className="muted small">{new Date(r.date).toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          <ul>
+            {r[lang].map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      {CHANGELOG.length > 1 && (
+        <button className="link" onClick={() => setAll(!all)}>
+          {all ? t('account.lessNews') : t('account.allNews')}
+        </button>
+      )}
+      <div className="pref-group">{t('account.links')}</div>
+      <div className="link-list">
+        <a href={FORMAT_SITE_URL} target="_blank" rel="noopener noreferrer">
+          <Icon name="globe" size={18} /> <span>{t('account.formatSite')}</span> <Icon name="external" size={16} />
+        </a>
+        <a href={BANLIST_URL} target="_blank" rel="noopener noreferrer">
+          <Icon name="ban" size={18} /> <span>{t('account.banlist')}</span> <Icon name="external" size={16} />
+        </a>
+        <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+          <Icon name="chat" size={18} /> <span>{t('account.feedback')}</span> <Icon name="external" size={16} />
+        </a>
+      </div>
+    </section>
+  )
+}
+
 export default function Account({
   theme,
   setTheme,
+  prefs,
+  setPrefs,
+  decks,
+  setDecks,
+  matches,
+  setMatches,
+  circuit,
+  circuitPrefs,
+  openPlayer,
+  findMe,
   onBack,
   onSignOut,
 }: {
   theme: Theme
   setTheme: (fn: (t: Theme) => Theme) => void
+  prefs: Prefs
+  setPrefs: (fn: (p: Prefs) => Prefs) => void
+  decks: Deck[]
+  setDecks: (fn: (d: Deck[]) => Deck[]) => void
+  matches: Match[]
+  setMatches: (fn: (m: Match[]) => Match[]) => void
+  circuit: Circuit | null
+  circuitPrefs: CircuitPrefs
+  openPlayer: (key: string) => void
+  findMe: () => void
   onBack: () => void
+  /** clears this device's copy of the account's data */
   onSignOut: () => void
 }) {
-  const { t } = useI18n()
+  const { t, setLang } = useI18n()
   const dialog = useDialog()
   const { user, ready, signOut } = useAuth()
+  const [deleting, setDeleting] = useState(false)
+
+  const restore = async (text: string) => {
+    const b = parseBackup(text)
+    if (!b) return dialog.alert(t('account.restoreInvalid'))
+    if (!(await dialog.confirm(t('account.restoreConfirm', { d: b.decks.length, m: b.matches.length }), { ok: t('account.restore') }))) return
+    setDecks((ds) => mergeById(ds, b.decks))
+    setMatches((ms) => mergeById(ms, b.matches))
+    const s = b.settings
+    if (s['cc.theme']) setTheme(() => ({ ...DEFAULT_THEME, ...(s['cc.theme'] as Theme) }))
+    if (s['cc.prefs']) setPrefs((p) => ({ ...p, ...(s['cc.prefs'] as Prefs) }))
+    if (Array.isArray(s['cc.circuit.follow'])) circuitPrefs.setFollow(() => s['cc.circuit.follow'] as string[])
+    if (s['cc.lang'] === 'it' || s['cc.lang'] === 'en') setLang(s['cc.lang'])
+    if (s['cc.timerSettings']) localStorage.setItem('cc.timerSettings', JSON.stringify(s['cc.timerSettings']))
+    dialog.alert(t('account.restored', { d: b.decks.length, m: b.matches.length }))
+  }
+
+  const removeAccount = async () => {
+    if (!user) return
+    if (!(await dialog.confirm(t('account.deleteConfirm'), { ok: t('account.delete'), danger: true }))) return
+    setDeleting(true)
+    const owned = circuitPrefs.me && circuitPrefs.claims.get(circuitPrefs.me)?.uid === user.uid ? circuitPrefs.me : null
+    try {
+      const outcome = await deleteAccount(user, owned)
+      if (outcome === 'reauth') await dialog.alert(t('account.deleteReauth'))
+      if (outcome === 'done') {
+        onSignOut()
+        await dialog.alert(t('account.deleted'))
+        onBack()
+      }
+    } catch {
+      await dialog.alert(t('account.deleteError'))
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="page">
@@ -192,33 +561,36 @@ export default function Account({
       ) : !user ? (
         <LoginForm />
       ) : (
-        <>
-          <section className="card">
-            <div className="profile">
-              {user.photo ? <img src={user.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{(user.name ?? user.email ?? '?')[0].toUpperCase()}</span>}
-              <div className="profile-text">
-                <strong className="ellipsis">{user.name ?? user.email}</strong>
-                {user.name && <span className="muted small ellipsis">{user.email}</span>}
-              </div>
+        <section className="card">
+          <div className="profile">
+            {user.photo ? <img src={user.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{(user.name ?? user.email ?? '?')[0].toUpperCase()}</span>}
+            <div className="profile-text">
+              <strong className="ellipsis">{user.name ?? user.email}</strong>
+              {user.name && <span className="muted small ellipsis">{user.email}</span>}
             </div>
-            <div className="check ok">
-              <Icon name="shield" size={16} />
-              <div>{t('auth.synced')}</div>
-            </div>
-            <button
-              className="btn ghost"
-              onClick={async () => {
-                if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
-                await signOut()
-                onSignOut()
-              }}
-            >
-              {t('auth.signOut')}
-            </button>
-          </section>
-          <ThemeEditor theme={theme} setTheme={setTheme} />
-        </>
+          </div>
+          <div className="check ok">
+            <Icon name="shield" size={16} />
+            <div>{t('auth.synced')}</div>
+          </div>
+          <button
+            className="btn ghost"
+            onClick={async () => {
+              if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
+              await signOut()
+              onSignOut()
+            }}
+          >
+            {t('auth.signOut')}
+          </button>
+        </section>
       )}
+
+      <CircuitIdentity circuit={circuit} cp={circuitPrefs} openPlayer={openPlayer} findMe={findMe} />
+      <Preferences prefs={prefs} setPrefs={setPrefs} />
+      <ThemeEditor theme={theme} setTheme={setTheme} />
+      <DataSection decks={decks} matches={matches} restore={restore} onDeleteAccount={user && !deleting ? removeAccount : undefined} />
+      <Info />
     </div>
   )
 }

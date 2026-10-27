@@ -66,6 +66,22 @@ const paths: Record<string, ReactNode> = {
   chevron: <path d="m9 6 6 6-6 6" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   star: <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />,
+  download: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
+  upload: <path d="M12 16V5M7 10l5-5 5 5M5 20h14" />,
+  external: <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
+    </>
+  ),
+  ban: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.6 5.6 12.8 12.8" />
+    </>
+  ),
+  chat: <path d="M4 5h16v11H9l-5 4z" />,
   pie: <path d="M12 3a9 9 0 1 0 9 9h-9zM15 2.5A9 9 0 0 1 21.5 9H15z" />,
   trophy: <path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4" />,
   shield: <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" />,
