@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useId, useRef } from 'react'
 
 export function Pips({ colors, size = 12 }: { colors: string | string[]; size?: number }) {
   const list = typeof colors === 'string' ? colors.split('') : colors
@@ -12,21 +12,38 @@ export function Pips({ colors, size = 12 }: { colors: string | string[]; size?: 
   )
 }
 
+// crossed swords, points up: the front sword cuts a thin gap through the one behind it
+const SWORD = (
+  <>
+    <rect x="10.9" y="-0.4" width="2.2" height="4.6" rx=".4" />
+    <rect x="7.4" y="4" width="9.2" height="2.3" rx=".5" />
+    <path d="M10.4 6.2H13.6V21.4L12.7 24.2 10.4 22.3Z" />
+  </>
+)
+const swordAt = (deg: number) => `translate(12 12) rotate(${deg}) scale(1.08 -1.08) translate(-12 -12)`
+
+function Swords() {
+  const gap = useId()
+  return (
+    <g fill="currentColor" stroke="none">
+      <mask id={gap} maskUnits="userSpaceOnUse" x="-4" y="-4" width="32" height="32">
+        <rect x="-4" y="-4" width="32" height="32" fill="#fff" />
+        <g transform={swordAt(-45)} fill="#000" stroke="#000" strokeWidth="2.8" strokeLinejoin="round">
+          {SWORD}
+        </g>
+      </mask>
+      <g mask={`url(#${gap})`}>
+        <g transform={swordAt(45)}>{SWORD}</g>
+      </g>
+      <g transform={swordAt(-45)}>{SWORD}</g>
+    </g>
+  )
+}
+
 const paths: Record<string, ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   meta: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
-  // crossed swords: one sword, then its mirror image
-  game: (
-    <>
-      {[undefined, 'matrix(-1 0 0 1 24 0)'].map((tr, i) => (
-        <g key={i} transform={tr}>
-          <path d="M2.5 2.5l3 .9 10.9 10.9-2 2L3.4 5.5z" fill="currentColor" />
-          <path d="M12.9 18.7q-.1-.7.5-1.1l4.2-4.2q.4-.6 1.1-.5M15.9 15.9l3.4 3.4" />
-          <circle cx="20.2" cy="20.2" r=".9" />
-        </g>
-      ))}
-    </>
-  ),
+  game: <Swords />,
   decks: (
     <>
       <rect x="6" y="3" width="13" height="17" rx="2" />
