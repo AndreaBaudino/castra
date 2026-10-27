@@ -1743,11 +1743,29 @@ h1 {
 }
 .theme-preview {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 10px;
   border-radius: 12px;
   background: var(--surface-2);
+}
+.tp-brand {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.tp-brand .logo-cut {
+  fill: var(--surface-2);
+}
+.tp-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  line-height: 1.1;
 }
 .tp-btn {
   background: var(--red);

@@ -3,6 +3,7 @@ import { useI18n } from '../i18n'
 import { authErrorKey, useAuth } from '../lib/auth'
 import { cloudEnabled } from '../lib/firebase'
 import { DEFAULT_THEME, SWATCHES, type Theme } from '../lib/theme'
+import { Logo } from '../components/Logo'
 import type { Deck } from '../lib/decks'
 import type { Match } from '../lib/matches'
 import { type Circuit, potyStatus } from '../lib/circuit'
@@ -157,6 +158,13 @@ function ThemeEditor({ theme, setTheme }: { theme: Theme; setTheme: (fn: (t: The
       <ColorRow label={t('theme.p0')} value={theme.p0} onChange={set('p0')} />
       <ColorRow label={t('theme.p1')} value={theme.p1} onChange={set('p1')} />
       <div className="theme-preview" aria-hidden>
+        <div className="tp-brand">
+          <Logo size={40} />
+          <div>
+            <div className="brand-kicker">Centurion Commander</div>
+            <div className="tp-title">Castra</div>
+          </div>
+        </div>
         <span className="tp-btn">{t('home.newGame')}</span>
         <span className="tp-link">{t('home.seeAll')}</span>
         <span className="tp-p p0" />
