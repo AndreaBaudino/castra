@@ -5,7 +5,7 @@ export type Lang = 'it' | 'en'
 
 const it = {
   'nav.home': 'Home',
-  'nav.meta': 'Meta',
+  'nav.meta': 'Circuito',
   'nav.game': 'Partita',
   'nav.stats': 'Le mie stats',
   'nav.decks': 'Mazzi',
@@ -22,7 +22,7 @@ const it = {
   'home.inMeta': 'nel meta',
   'home.notInMeta': 'non nel meta',
 
-  'meta.title': 'Meta',
+  'meta.title': 'Circuito',
   'meta.demo': 'Dati dimostrativi: verranno sostituiti dal foglio ufficiale.',
   'meta.updated': 'Aggiornato',
   'meta.summary': 'Sommario',
@@ -192,8 +192,8 @@ const it = {
   'stats.editMatch': 'Modifica partita',
   'stats.deleteMatch': 'Elimina partita',
 
-  'circuit.modeDecks': 'Meta mazzi',
-  'circuit.modeCircuit': 'Circuito',
+  'circuit.modeDecks': 'Meta',
+  'circuit.modeCircuit': 'Classifiche',
   'circuit.title': 'Circuito Centurion',
   'circuit.events': 'Eventi',
   'circuit.searchPlayer': 'Cerca giocatore…',
@@ -346,7 +346,7 @@ type Key = keyof typeof it
 
 const en: Record<Key, string> = {
   'nav.home': 'Home',
-  'nav.meta': 'Meta',
+  'nav.meta': 'Circuit',
   'nav.game': 'Game',
   'nav.stats': 'My stats',
   'nav.decks': 'Decks',
@@ -363,7 +363,7 @@ const en: Record<Key, string> = {
   'home.inMeta': 'in meta',
   'home.notInMeta': 'not in meta',
 
-  'meta.title': 'Meta',
+  'meta.title': 'Circuit',
   'meta.demo': 'Demo data: will be replaced by the official sheet.',
   'meta.updated': 'Updated',
   'meta.summary': 'Summary',
@@ -533,8 +533,8 @@ const en: Record<Key, string> = {
   'stats.editMatch': 'Edit game',
   'stats.deleteMatch': 'Delete game',
 
-  'circuit.modeDecks': 'Deck meta',
-  'circuit.modeCircuit': 'Circuit',
+  'circuit.modeDecks': 'Meta',
+  'circuit.modeCircuit': 'Rankings',
   'circuit.title': 'Centurion circuit',
   'circuit.events': 'Events',
   'circuit.searchPlayer': 'Search player…',

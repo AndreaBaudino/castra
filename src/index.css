@@ -1315,6 +1315,31 @@ h1 {
 .seg.wide {
   display: flex;
 }
+/* Circuit tab: picks between deck meta and rankings, above the pill segments of each */
+.mode-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+.mode-tabs button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0;
+  margin-bottom: -1px;
+  border-bottom: 2.5px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.mode-tabs button.on {
+  color: var(--text);
+  border-bottom-color: var(--gold);
+}
+.mode-tabs button.on svg {
+  color: var(--gold);
+}
 .seg.wide button {
   flex: 1;
   padding: 8px 10px;

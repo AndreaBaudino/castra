@@ -83,9 +83,10 @@ export default function Meta({
         )}
       </header>
 
-      <div className="seg wide mode-seg">
+      <div className="mode-tabs" role="tablist">
         {(['decks', 'circuit'] as const).map((m) => (
-          <button key={m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>
+          <button key={m} role="tab" aria-selected={mode === m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>
+            <Icon name={m === 'decks' ? 'pie' : 'trophy'} size={20} />
             {t(m === 'decks' ? 'circuit.modeDecks' : 'circuit.modeCircuit')}
           </button>
         ))}

@@ -293,7 +293,7 @@ export default function App() {
                 <Icon name="game" size={28} />
               </span>
             ) : (
-              <Icon name={tab} size={22} />
+              <Icon name={tab === 'meta' ? 'trophy' : tab} size={22} />
             )}
             <span>{t(`nav.${tab}`)}</span>
           </button>
