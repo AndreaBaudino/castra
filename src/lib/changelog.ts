@@ -8,7 +8,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    date: '2026-10-28',
+    date: '2026-10-27',
     it: [
       'Contapunti: annulla l\'ultimo tocco e cronologia della partita',
       'Partite: chi ha iniziato (on the play / on the draw) e giocatore avversario dal circuito',
@@ -16,19 +16,6 @@ export const CHANGELOG: Release[] = [
       'Scheda giocatore: i tuoi precedenti contro di lui',
       'Mazzi: controllo della banlist Centurion e mano di prova',
       'Avviso quando c\'è una nuova versione e invito a installare l\'app',
-    ],
-    en: [
-      'Life counter: undo the last tap and game history',
-      'Matches: who went first (on the play / on the draw) and opponent player from the circuit',
-      'Stats: filters, trend, winrate on the play and on the draw, matchups by deck, against players',
-      'Player page: your record against them',
-      'Decks: Centurion banlist check and sample hand',
-      'Notice when a new version is out and an invite to install the app',
-    ],
-  },
-  {
-    date: '2026-10-27',
-    it: [
       'Nuova area profilo: giocatore collegato, seguiti, preferenze, i tuoi dati e info',
       'Esporta le partite in CSV e fai un backup completo, con ripristino',
       'Circuito: classifica, eventi, leghe, record e testa a testa dal foglio ufficiale',
@@ -37,6 +24,12 @@ export const CHANGELOG: Release[] = [
       'In classifica la tua riga resta sempre visibile',
     ],
     en: [
+      'Life counter: undo the last tap and game history',
+      'Matches: who went first (on the play / on the draw) and opponent player from the circuit',
+      'Stats: filters, trend, winrate on the play and on the draw, matchups by deck, against players',
+      'Player page: your record against them',
+      'Decks: Centurion banlist check and sample hand',
+      'Notice when a new version is out and an invite to install the app',
       'New profile area: linked player, followed players, preferences, your data and info',
       'Export your matches as CSV and make a full backup, with restore',
       'Circuit: ranking, events, leagues, records and head to head from the official sheet',
