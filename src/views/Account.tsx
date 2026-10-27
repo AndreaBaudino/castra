@@ -449,12 +449,6 @@ function Info() {
       )}
       <div className="pref-group">{t('account.links')}</div>
       <div className="link-list">
-        <a href={FORMAT_SITE_URL} target="_blank" rel="noopener noreferrer">
-          <Icon name="globe" size={18} /> <span>{t('account.formatSite')}</span> <Icon name="external" size={16} />
-        </a>
-        <a href={BANLIST_URL} target="_blank" rel="noopener noreferrer">
-          <Icon name="ban" size={18} /> <span>{t('account.banlist')}</span> <Icon name="external" size={16} />
-        </a>
         <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
           <Icon name="chat" size={18} /> <span>{t('account.feedback')}</span> <Icon name="external" size={16} />
         </a>
@@ -665,6 +659,20 @@ export default function Account({
               </button>
             </section>
           )}
+          <section className="card menu-card">
+            {(
+              [
+                ['globe', 'account.formatSite', FORMAT_SITE_URL],
+                ['ban', 'account.banlist', BANLIST_URL],
+              ] as const
+            ).map(([icon, label, href]) => (
+              <a key={href} className="menu-row" href={href} target="_blank" rel="noopener noreferrer">
+                <Icon name={icon} size={20} />
+                <span className="menu-label">{t(label)}</span>
+                <Icon name="external" size={16} />
+              </a>
+            ))}
+          </section>
         </>
       ) : section === 'login' ? (
         <LoginForm />

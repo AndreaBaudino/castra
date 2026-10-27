@@ -2894,3 +2894,6 @@ textarea {
   margin: 0 auto;
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
 }
+a.menu-row {
+  text-decoration: none;
+}
