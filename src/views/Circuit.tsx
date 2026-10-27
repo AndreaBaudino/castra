@@ -195,6 +195,7 @@ function PlayerRow({
           <div className="meta-name">
             <div className="name-line">
               <span className="ellipsis">{p.name}</span>
+              {prefs.claims.has(p.key) && <VerifiedTick />}
               {prefs.follow.includes(p.key) && (
                 <span className="star-on">
                   <Icon name="star" size={12} />
@@ -428,6 +429,16 @@ export function PlayerPage({
         </>
       )}
     </SubPageShell>
+  )
+}
+
+/** Small green tick next to a claimed player's name. */
+export function VerifiedTick() {
+  const { t } = useI18n()
+  return (
+    <span className="verified-tick" title={t('circuit.verified')} aria-label={t('circuit.verified')}>
+      <Icon name="check" size={10} />
+    </span>
   )
 }
 

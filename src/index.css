@@ -2401,3 +2401,18 @@ textarea {
     opacity: 0;
   }
 }
+.verified-tick {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-left: 5px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  align-self: center;
+  background: var(--good);
+  color: #fff;
+}
+.verified-tick svg {
+  stroke-width: 3.5;
+}

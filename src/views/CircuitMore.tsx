@@ -3,7 +3,7 @@ import { useI18n } from '../i18n'
 import { type Circuit, type League, type Player, eventDateLabel, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
-import { type CircuitPrefs, SubPageShell, avg, placeLabel } from './Circuit'
+import { type CircuitPrefs, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
 
 // Leagues, season records and head-to-head: views built on the circuit model.
 
@@ -125,6 +125,7 @@ export function LeaguePage({
                 <div className="meta-name">
                   <div className="name-line">
                     <span className="ellipsis">{p?.name}</span>
+                    {prefs.claims.has(e.key) && <VerifiedTick />}
                     {prefs.follow.includes(e.key) && (
                       <span className="star-on">
                         <Icon name="star" size={12} />
