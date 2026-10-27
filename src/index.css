@@ -521,7 +521,8 @@ h1 {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* clip, not hidden: hidden would make it a scroll box and break the sticky "me" row */
+  overflow: clip;
 }
 .meta-row {
   padding: 10px 12px;
@@ -762,7 +763,8 @@ h1 {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* clip, not hidden: hidden would make it a scroll box and break the sticky "me" row */
+  overflow: clip;
 }
 .card-row {
   display: flex;
@@ -2419,4 +2421,18 @@ textarea {
   width: 8px;
   height: 8px;
   stroke-width: 4;
+}
+
+/* my own row in a ranking sticks to the screen edge while it's out of view, then sits back in its place */
+.player-row.me,
+.event-row.me {
+  position: sticky;
+  top: calc(var(--safe-t) + 8px);
+  /* above the tab bar and its raised game button */
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + 34px);
+  z-index: 3;
+  background: color-mix(in srgb, var(--gold) 14%, var(--surface));
+  box-shadow:
+    inset 3px 0 0 var(--gold),
+    0 2px 12px rgb(0 0 0 / 0.25);
 }
