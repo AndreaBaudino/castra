@@ -30,8 +30,31 @@ export function applyTheme(t: Theme) {
   set('--red', t.accent, DEFAULT_THEME.accent)
   // the logo crest keeps its brighter red by default and follows a custom accent
   set('--crest', t.accent, DEFAULT_THEME.accent)
+  tintFavicon(t.accent)
   set('--gold', t.highlight, DEFAULT_THEME.highlight)
   root.style.setProperty('--p0', t.p0)
   root.style.setProperty('--p1', t.p1)
   root.style.fontSize = FONT[t.scale]
+}
+
+// The tab icon follows a custom accent too (the installed app icon can't: it's a fixed image)
+const CREST = '#ef4136'
+let iconSvg: Promise<string> | null = null
+
+function tintFavicon(accent: string) {
+  const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!link) return
+  const original = `${import.meta.env.BASE_URL}icon.svg`
+  if (accent.toLowerCase() === DEFAULT_THEME.accent) {
+    link.href = original
+    return
+  }
+  iconSvg ??= fetch(original).then((r) => r.text())
+  iconSvg
+    .then((svg) => {
+      link.href = `data:image/svg+xml,${encodeURIComponent(svg.split(CREST).join(accent))}`
+    })
+    .catch(() => {
+      iconSvg = null
+    })
 }
