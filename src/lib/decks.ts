@@ -1,4 +1,5 @@
 import { DECK_SIZE } from '../config'
+import { type BanCheck, banCheck, banCount } from './banlist'
 
 export type Section = 'commander' | 'main' | 'side'
 
@@ -172,6 +173,7 @@ export interface DeckCheck {
   identity: string[]
   duplicates: string[]
   offIdentity: string[]
+  bans: BanCheck
 }
 
 export function checkDeck(deck: Deck): DeckCheck {
@@ -190,11 +192,12 @@ export function checkDeck(deck: Deck): DeckCheck {
     identity,
     duplicates,
     offIdentity,
+    bans: banCheck(deck.cards),
   }
 }
 
 export const isValid = (c: DeckCheck) =>
-  c.count === DECK_SIZE && c.commanders.length > 0 && !c.duplicates.length && !c.offIdentity.length
+  c.count === DECK_SIZE && c.commanders.length > 0 && !c.duplicates.length && !c.offIdentity.length && !banCount(c.bans)
 
 export const WUBRG = ['W', 'U', 'B', 'R', 'G']
 export const sortColors = (cs: string[]) => WUBRG.filter((c) => cs.includes(c))

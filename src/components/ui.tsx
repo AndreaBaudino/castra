@@ -110,6 +110,12 @@ const paths: Record<string, ReactNode> = {
       <path d="M3.5 3.5v5h5M12 8v4.5l3 2" />
     </>
   ),
+  cards: (
+    <>
+      <rect x="3" y="7" width="10" height="14" rx="1.5" transform="rotate(-8 8 14)" />
+      <rect x="10" y="4" width="10" height="14" rx="1.5" transform="rotate(8 15 11)" />
+    </>
+  ),
   pie: <path d="M12 3a9 9 0 1 0 9 9h-9zM15 2.5A9 9 0 0 1 21.5 9H15z" />,
   trophy: <path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4" />,
   shield: <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" />,

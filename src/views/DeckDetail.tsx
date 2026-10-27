@@ -21,6 +21,8 @@ import { fetchPrints, searchCards } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
 import { useDialog } from '../components/Dialog'
+import { isBanned } from '../lib/banlist'
+import { SampleHand } from '../components/SampleHand'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
 
@@ -173,6 +175,7 @@ export default function DeckDetail({
   const [choosingPrint, setChoosingPrint] = useState(false)
   const [adding, setAdding] = useState(false)
   const [choosingCover, setChoosingCover] = useState(false)
+  const [hand, setHand] = useState(false)
   const [toast, setToast] = useState('')
   const check = useMemo(() => checkDeck(deck), [deck])
   const meta = findMetaDeck(metaDecks, commanderNames(deck))
@@ -314,6 +317,9 @@ export default function DeckDetail({
                 {!check.commanders.length && <div>{t('deck.check.noCommander')}</div>}
                 {check.duplicates.length > 0 && <div>{t('deck.check.singleton', { cards: check.duplicates.join(', ') })}</div>}
                 {check.offIdentity.length > 0 && <div>{t('deck.check.identity', { cards: check.offIdentity.join(', ') })}</div>}
+                {check.bans.banned.length > 0 && <div>{t('deck.check.banned', { cards: check.bans.banned.join(', ') })}</div>}
+                {check.bans.asCommander.length > 0 && <div>{t('deck.check.bannedCommander', { cards: check.bans.asCommander.join(', ') })}</div>}
+                {check.bans.asPartner.length > 0 && <div>{t('deck.check.bannedPartner', { cards: check.bans.asPartner.join(', ') })}</div>}
               </>
             )}
           </div>
@@ -358,7 +364,11 @@ export default function DeckDetail({
         >
           <Icon name="copy" size={16} /> {t('deck.export')}
         </button>
+        <button className="btn ghost" onClick={() => setHand(true)}>
+          <Icon name="cards" size={16} /> {t('hand.title')}
+        </button>
       </section>
+      <SampleHand open={hand} onClose={() => setHand(false)} deck={deck} />
 
       <div className="deck-toolbar">
         <div className="seg">
@@ -409,6 +419,7 @@ export default function DeckDetail({
                     <button className="card-row-main" onClick={() => open(c)}>
                       <span className="qty">{c.qty}</span>
                       <span className={`ellipsis ${c.info ? '' : 'warn-text'}`}>{c.name}</span>
+                      {isBanned(c.name) && <span className="tag ban-tag">BAN</span>}
                       {(c.info?.set ?? c.set) && <span className="set-code">{(c.info?.set ?? c.set)!.toUpperCase()}</span>}
                       {c.info && <ManaCost cost={c.info.manaCost} />}
                     </button>

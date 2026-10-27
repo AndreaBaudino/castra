@@ -2815,3 +2815,38 @@ textarea {
 .chart .grid.mid {
   stroke-dasharray: 3 3;
 }
+
+/* sample hand */
+.hand-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.hand-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.hand-grid .card-img.drawn {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+.hand-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgb(0 0 0 / 0.75);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.hand-zoom img {
+  width: min(88vw, 380px);
+  border-radius: 14px;
+}
+.tag.ban-tag {
+  background: color-mix(in srgb, var(--bad) 22%, transparent);
+  color: var(--bad);
+  font-weight: 700;
+}
