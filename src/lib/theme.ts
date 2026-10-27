@@ -28,6 +28,8 @@ export function applyTheme(t: Theme) {
   const set = (name: string, v: string, def: string) =>
     v.toLowerCase() === def ? root.style.removeProperty(name) : root.style.setProperty(name, v)
   set('--red', t.accent, DEFAULT_THEME.accent)
+  // the logo crest keeps its brighter red by default and follows a custom accent
+  set('--crest', t.accent, DEFAULT_THEME.accent)
   set('--gold', t.highlight, DEFAULT_THEME.highlight)
   root.style.setProperty('--p0', t.p0)
   root.style.setProperty('--p1', t.p1)

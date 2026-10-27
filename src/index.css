@@ -169,7 +169,7 @@ h1 {
   fill: var(--bg);
 }
 .logo-crest {
-  fill: var(--red-strong);
+  fill: var(--crest, var(--red-strong));
 }
 
 .tabbar {
