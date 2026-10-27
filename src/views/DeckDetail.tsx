@@ -24,6 +24,7 @@ import { useDialog } from '../components/Dialog'
 import { isBanned } from '../lib/banlist'
 import { SampleHand } from '../components/SampleHand'
 import { DeckAnalysis } from '../components/DeckAnalysis'
+import { summaryOf } from '../lib/analysis'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
 
@@ -169,7 +170,7 @@ export default function DeckDetail({
   onDelete: () => void
   onBack: () => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const dialog = useDialog()
   const [editing, setEditing] = useState(false)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -177,11 +178,21 @@ export default function DeckDetail({
   const [adding, setAdding] = useState(false)
   const [choosingCover, setChoosingCover] = useState(false)
   const [hand, setHand] = useState(false)
+  const [statsOpen, setStatsOpen] = useState(false)
+  useEffect(() => setStatsOpen(false), [deck.id])
   const [toast, setToast] = useState('')
   const check = useMemo(() => checkDeck(deck), [deck])
   const meta = findMetaDeck(metaDecks, commanderNames(deck))
   const art = deckCover(deck)
   const mine = record(matches.filter((m) => m.deckId === deck.id))
+  const statsLine = useMemo(() => {
+    const s = summaryOf(deck)
+    return [
+      t('deck.statsAvg', { n: s.avgNoLands.toLocaleString(lang, { maximumFractionDigits: 2 }) }),
+      t('deck.statsLands', { n: s.lands }),
+      ...(mine.games ? [t('deck.statsWr', { wr: pct(mine.wr, 0) })] : []),
+    ].join(' · ')
+  }, [deck, lang, mine.games, mine.wr]) // eslint-disable-line react-hooks/exhaustive-deps
   const view = deck.view ?? 'list'
   const selected = selectedKey ? deck.cards.find((c) => cardKey(c) === selectedKey) : undefined
 
@@ -341,42 +352,59 @@ export default function DeckDetail({
             )}
           </div>
         </div>
-        {meta && (
-          <div className="kv">
-            <span>{t('deck.metaWr')}</span>
-            <b className={wrClass(winrate(meta))}>
-              {pct(winrate(meta))} <span className="muted small">({meta.games})</span>
-            </b>
-          </div>
-        )}
-        {mine.games > 0 && (
-          <div className="kv">
-            <span>{t('stats.mine')}</span>
-            <b className={wrClass(mine.wr)}>
-              {pct(mine.wr)} <span className="muted small">({fmtRecord(mine)})</span>
-            </b>
-          </div>
-        )}
-        <DeckAnalysis deck={deck} identity={check.identity} groupLabel={(g) => t(GROUP_KEY[g])} onOpen={open} />
         {deck.notes && !editing && <p className="summary-text">{deck.notes}</p>}
-        <button
-          className="btn ghost"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(exportDecklist(deck))
-              flash(t('deck.copied'))
-            } catch {
-              /* clipboard blocked */
-            }
-          }}
-        >
-          <Icon name="copy" size={16} /> {t('deck.export')}
-        </button>
-        <button className="btn ghost" onClick={() => setHand(true)}>
-          <Icon name="cards" size={16} /> {t('hand.title')}
-        </button>
+        <div className="btn-pair">
+          <button
+            className="btn ghost"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(exportDecklist(deck))
+                flash(t('deck.copied'))
+              } catch {
+                /* clipboard blocked */
+              }
+            }}
+          >
+            <Icon name="copy" size={16} /> {t('deck.export')}
+          </button>
+          <button className="btn ghost" onClick={() => setHand(true)}>
+            <Icon name="cards" size={16} /> {t('hand.title')}
+          </button>
+        </div>
       </section>
       <SampleHand open={hand} onClose={() => setHand(false)} deck={deck} />
+
+      {/* closed every time a deck is opened: open it when needed */}
+      <section className={`card collapsible ${statsOpen ? 'open' : ''}`}>
+        <button className="collapse-head" onClick={() => setStatsOpen(!statsOpen)} aria-expanded={statsOpen}>
+          <span className="card-title">{t('deck.stats')}</span>
+          {!statsOpen && <span className="muted small ellipsis collapse-sum">{statsLine}</span>}
+          <span className="chev">
+            <Icon name="chevron" size={16} />
+          </span>
+        </button>
+        {statsOpen && (
+          <>
+            {meta && (
+              <div className="kv">
+                <span>{t('deck.metaWr')}</span>
+                <b className={wrClass(winrate(meta))}>
+                  {pct(winrate(meta))} <span className="muted small">({meta.games})</span>
+                </b>
+              </div>
+            )}
+            {mine.games > 0 && (
+              <div className="kv">
+                <span>{t('stats.mine')}</span>
+                <b className={wrClass(mine.wr)}>
+                  {pct(mine.wr)} <span className="muted small">({fmtRecord(mine)})</span>
+                </b>
+              </div>
+            )}
+            <DeckAnalysis deck={deck} identity={check.identity} groupLabel={(g) => t(GROUP_KEY[g])} onOpen={open} />
+          </>
+        )}
+      </section>
 
       <div className="deck-toolbar">
         <div className="seg">

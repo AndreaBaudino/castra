@@ -371,6 +371,10 @@ const it = {
 
   'common.lang': 'Lingua',
   'common.cancel': 'Annulla',
+  'deck.stats': 'Statistiche',
+  'deck.statsAvg': 'costo medio {n}',
+  'deck.statsLands': '{n} terre',
+  'deck.statsWr': 'il tuo winrate {wr}',
   'analysis.summary': 'Costo medio {avg} senza terre ({avgAll} con le terre) · mediano {med} · {lands} terre · valore di mana totale {total}',
   'analysis.permanents': 'Permanenti',
   'analysis.spells': 'Magie',
@@ -838,6 +842,10 @@ const en: Record<Key, string> = {
 
   'common.lang': 'Language',
   'common.cancel': 'Cancel',
+  'deck.stats': 'Stats',
+  'deck.statsAvg': 'avg mana value {n}',
+  'deck.statsLands': '{n} lands',
+  'deck.statsWr': 'your winrate {wr}',
   'analysis.summary': 'Average mana value {avg} without lands ({avgAll} with lands) · median {med} · {lands} lands · total mana value {total}',
   'analysis.permanents': 'Permanents',
   'analysis.spells': 'Spells',

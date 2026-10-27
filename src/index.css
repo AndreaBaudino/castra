@@ -3024,3 +3024,29 @@ textarea {
 a.menu-row {
   text-decoration: none;
 }
+
+/* collapsible card (deck stats) */
+.collapse-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  min-height: 28px;
+}
+.collapse-head .card-title {
+  flex: none;
+}
+.collapse-sum {
+  flex: 1;
+  min-width: 0;
+}
+.collapse-head .chev {
+  margin-left: auto;
+  color: var(--muted);
+  display: inline-flex;
+  transition: transform 0.15s;
+}
+.collapsible.open .collapse-head .chev {
+  transform: rotate(90deg);
+}
