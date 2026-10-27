@@ -22,6 +22,7 @@ export function metaSummary(decks: MetaDeck[], minGames: number) {
 }
 
 export default function Meta({
+  banner,
   meta,
   status,
   onRefresh,
@@ -31,7 +32,9 @@ export default function Meta({
   prefs,
   openPlayer,
   openEvent,
+  openLeague,
 }: {
+  banner?: React.ReactNode
   meta: MetaData
   status: Status
   onRefresh: () => void
@@ -41,6 +44,7 @@ export default function Meta({
   prefs: CircuitPrefs
   openPlayer: (key: string) => void
   openEvent: (id: string) => void
+  openLeague: (season: string, name: string) => void
 }) {
   const { t, lang } = useI18n()
   const [mode, setMode] = useStoredState<'decks' | 'circuit'>(META_MODE_KEY, 'decks')
@@ -90,7 +94,8 @@ export default function Meta({
       {mode === 'circuit' ? (
         <>
           <LiveStatus circuit={circuit} status={circuitStatus} />
-          {circuit && <CircuitPanel circuit={circuit} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} />}
+          {banner}
+          {circuit && <CircuitPanel circuit={circuit} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} openLeague={openLeague} />}
         </>
       ) : (
         <>

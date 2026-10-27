@@ -7,11 +7,12 @@ import type { Deck } from './lib/decks'
 import type { Match } from './lib/matches'
 import { useMeta } from './lib/meta'
 import { readStored, useStoredState, writeStored } from './lib/storage'
-import { useCircuit } from './lib/circuit'
+import { type CircuitNotice, type CircuitSnapshot, mergeNotices, noticeOf, snapshotOf, useCircuit } from './lib/circuit'
 import { Icon } from './components/ui'
 import Home from './views/Home'
 import Meta, { META_MODE_KEY } from './views/Meta'
-import { EventPage, PlayerPage } from './views/Circuit'
+import { CircuitNoticeCard, EventPage, PlayerPage } from './views/Circuit'
+import { ComparePage, LeaguePage } from './views/CircuitMore'
 import Decks from './views/Decks'
 import DeckDetail from './views/DeckDetail'
 import Stats from './views/Stats'
@@ -43,6 +44,7 @@ export default function App() {
   const circuit = useCircuit()
   const [circuitMe, setCircuitMe] = useStoredState<string | null>('cc.circuit.me', null)
   const [follow, setFollow] = useStoredState<string[]>('cc.circuit.follow', [])
+  const [notice, setNotice] = useStoredState<CircuitNotice | null>('cc.circuit.notice', null)
   const { user } = useAuth()
   const uid = user?.uid ?? null
 
@@ -54,6 +56,16 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+
+  // compare the circuit with what the user saw last time: their position, the followed players, new events
+  useEffect(() => {
+    if (!circuit.data) return
+    const next = snapshotOf(circuit.data, circuitMe, follow)
+    const prev = readStored<CircuitSnapshot | null>('cc.circuit.seen', null)
+    writeStored('cc.circuit.seen', next)
+    const change = prev && noticeOf(prev, next, circuit.data)
+    if (change) setNotice((n) => mergeNotices(n, change))
+  }, [circuit.data, circuitMe, follow]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // the history is [main page, sub-pages…, open sheet]: land() rebuilds it from the main entry
   const land = (to: Route) => {
@@ -97,12 +109,25 @@ export default function App() {
     history.go(-depth) // the popstate handler lands on `to`
   }
 
+  const noticeCard = notice && (
+    <CircuitNoticeCard
+      notice={notice}
+      openPlayer={(k) => {
+        setNotice(null)
+        openPlayer(k)
+      }}
+      onClose={() => setNotice(null)}
+    />
+  )
+
   const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined
   const circuitPrefs = { me: circuitMe, setMe: setCircuitMe, follow, setFollow }
   const openPlayer = (key: string) => go('meta', `p~${encodeURIComponent(key)}`, true)
   const openEvent = (id: string) => go('meta', `e~${id}`, true)
-  // meta/p~<player key> and meta/e~<event id>
-  const [metaSub, metaArg] = route.tab === 'meta' && route.deck ? [route.deck.slice(0, 1), decodeURIComponent(route.deck.slice(2))] : []
+  const openLeague = (season: string, name: string) => go('meta', `l~${season}~${encodeURIComponent(name)}`, true)
+  const openCompare = (a: string, b: string) => go('meta', `c~${encodeURIComponent(a)}~${encodeURIComponent(b)}`, true)
+  // meta/p~<player key>, meta/e~<event id>, meta/l~<season>~<league>, meta/c~<player a>~<player b>
+  const [metaSub, ...metaArgs] = route.tab === 'meta' && route.deck ? route.deck.split('~').map(decodeURIComponent) : []
   const gameInProgress = isGameInProgress(readStored<GameState>(GAME_KEY, defaultGame()))
 
   return (
@@ -117,6 +142,7 @@ export default function App() {
         )}
         {route.tab === 'home' && (
           <Home
+            banner={noticeCard}
             meta={meta}
             decks={decks}
             matches={matches}
@@ -160,12 +186,38 @@ export default function App() {
         {route.tab === 'meta' &&
           (metaSub && circuit.data ? (
             metaSub === 'p' ? (
-              <PlayerPage circuit={circuit.data} playerKey={metaArg!} prefs={circuitPrefs} onBack={() => history.back()} openEvent={openEvent} />
+              <PlayerPage
+                circuit={circuit.data}
+                playerKey={metaArgs[0]}
+                prefs={circuitPrefs}
+                onBack={() => history.back()}
+                openEvent={openEvent}
+                openCompare={openCompare}
+              />
+            ) : metaSub === 'e' ? (
+              <EventPage circuit={circuit.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
+            ) : metaSub === 'l' ? (
+              <LeaguePage
+                circuit={circuit.data}
+                season={metaArgs[0]}
+                name={metaArgs[1]}
+                prefs={circuitPrefs}
+                onBack={() => history.back()}
+                openPlayer={openPlayer}
+              />
             ) : (
-              <EventPage circuit={circuit.data} eventId={metaArg!} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
+              <ComparePage
+                circuit={circuit.data}
+                a={metaArgs[0]}
+                b={metaArgs[1]}
+                onBack={() => history.back()}
+                openPlayer={openPlayer}
+                openEvent={openEvent}
+              />
             )
           ) : (
             <Meta
+              banner={noticeCard}
               meta={meta}
               status={status}
               onRefresh={refresh}
@@ -175,6 +227,7 @@ export default function App() {
               prefs={circuitPrefs}
               openPlayer={openPlayer}
               openEvent={openEvent}
+              openLeague={openLeague}
             />
           ))}
         {route.tab === 'decks' &&

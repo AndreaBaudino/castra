@@ -56,8 +56,17 @@ export interface Player {
   potyInvited: boolean
 }
 
+export interface League {
+  season: 's1' | 's2'
+  name: string
+  players: number // as declared in the sheet
+  stages: number
+  entries: { key: string; points: number; rank: number }[] // by points
+}
+
 export interface Circuit {
   players: Player[] // by official rank
+  leagues: League[]
   events: CircuitEvent[] // in sheet (chronological) order
   updatedAt: string
 }
@@ -128,10 +137,11 @@ export function parseEventName(name: string) {
 
 // ---------- sheets → model ----------
 
-function parseLeague(rows: string[][]): Map<string, LeagueEntry & { name: string }> {
+function parseLeague(rows: string[][], season: League['season']) {
   const out = new Map<string, LeagueEntry & { name: string }>()
+  const leagues: League[] = []
   const h = findHeader(rows)
-  if (h < 0) return out
+  if (h < 0) return { best: out, leagues }
   const H = rows[h]
   const [iName, iPts, iLeague, iPlayers, iStages] = [/player name/i, /^points?$|^punti$/i, /^lega$|^league$/i, /#\s*players|giocatori/i, /tappe|stages/i].map(
     (re) => colOf(H, re),
@@ -153,14 +163,23 @@ function parseLeague(rows: string[][]): Map<string, LeagueEntry & { name: string
   // rank inside each league
   const byLeague = new Map<string, typeof all>()
   all.forEach((e) => byLeague.set(e.league, [...(byLeague.get(e.league) ?? []), e]))
-  byLeague.forEach((list) => list.sort((a, b) => b.points - a.points).forEach((e, i) => (e.leagueRank = i + 1)))
+  byLeague.forEach((list, name) => {
+    list.sort((a, b) => b.points - a.points).forEach((e, i) => (e.leagueRank = i + 1))
+    leagues.push({
+      season,
+      name,
+      players: Math.max(...list.map((e) => e.leaguePlayers), list.length),
+      stages: Math.max(...list.map((e) => e.stages)),
+      entries: list.map((e) => ({ key: e.key, points: e.points, rank: e.leagueRank })),
+    })
+  })
   // someone in two leagues keeps the best one (the one that counts in the leaderboard)
   for (const { key, ...e } of [...all].sort((a, b) => b.points - a.points)) {
     const best = out.get(key)
     if (best) best.also = [...(best.also ?? []), e.league]
     else out.set(key, e)
   }
-  return out
+  return { best: out, leagues }
 }
 
 function parseEvents(rows: string[][], names: Map<string, string>): CircuitEvent[] {
@@ -200,8 +219,8 @@ function parseEvents(rows: string[][], names: Map<string, string>): CircuitEvent
 
 export function buildCircuit(sheets: { leaderboard: string; s1: string; s2: string; events: string }): Circuit {
   const names = new Map<string, string>()
-  const s1 = parseLeague(parseCsv(sheets.s1))
-  const s2 = parseLeague(parseCsv(sheets.s2))
+  const { best: s1, leagues: l1 } = parseLeague(parseCsv(sheets.s1), 's1')
+  const { best: s2, leagues: l2 } = parseLeague(parseCsv(sheets.s2), 's2')
   const events = parseEvents(parseCsv(sheets.events), names)
   // events without a year belong to the season of the others
   const years = events.map((e) => e.year).filter(Boolean) as number[]
@@ -254,7 +273,7 @@ export function buildCircuit(sheets: { leaderboard: string; s1: string; s2: stri
   players.sort((a, b) => (a.rank ?? 1e9) - (b.rank ?? 1e9) || b.total - a.total || a.name.localeCompare(b.name))
   // the tail of the leaderboard has no position: rank them by points (ties share the position)
   players.forEach((p) => (p.rank ??= 1 + players.filter((o) => o.total > p.total).length))
-  return { players, events, updatedAt: new Date().toISOString() }
+  return { players, leagues: [...l1, ...l2], events, updatedAt: new Date().toISOString() }
 }
 
 // ---------- POTY ----------
@@ -277,11 +296,18 @@ export function potyStatus(c: Circuit) {
 
 // ---------- hook ----------
 
-const CACHE_KEY = 'cc.circuit.cache'
+const CACHE_KEY = 'cc.circuit.v2' // bumped when the model changes
 const csvUrl = (gid: string) => `https://docs.google.com/spreadsheets/d/${CIRCUIT_SHEET_ID}/export?format=csv&gid=${gid}`
 
 export function useCircuit() {
-  const [data, setData] = useState<Circuit | null>(() => readStored<Circuit | null>(CACHE_KEY, null))
+  const [data, setData] = useState<Circuit | null>(() => {
+    try {
+      localStorage.removeItem('cc.circuit.cache') // the first model's cache
+    } catch {
+      // storage unavailable
+    }
+    return readStored<Circuit | null>(CACHE_KEY, null)
+  })
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
 
   const refresh = useCallback(async () => {
@@ -318,4 +344,66 @@ export function eventDateLabel(e: CircuitEvent, lang: string) {
   if (!e.month) return ''
   const d = new Date(e.year ?? 2000, e.month - 1, e.day ?? 1)
   return d.toLocaleDateString(lang, e.day ? { day: 'numeric', month: 'short' } : { month: 'long' })
+}
+
+// ---------- what changed since the last time ----------
+
+/** What the user saw last time: their position, the followed players', the events. */
+export interface CircuitSnapshot {
+  me?: { key: string; rank: number; total: number }
+  follow: Record<string, { rank: number; total: number }>
+  events: string[]
+}
+
+export interface RankChange {
+  key: string
+  name: string
+  from: number
+  to: number
+  points: number // gained since
+}
+
+export interface CircuitNotice {
+  at: string
+  me?: RankChange
+  follow: RankChange[]
+  events: string[] // new events
+}
+
+export function snapshotOf(c: Circuit, me: string | null, follow: string[]): CircuitSnapshot {
+  const at = (k: string) => c.players.find((p) => p.key === k)
+  const m = me ? at(me) : undefined
+  const f: CircuitSnapshot['follow'] = {}
+  follow.forEach((k) => {
+    const p = at(k)
+    if (p) f[k] = { rank: p.rank ?? 0, total: p.total }
+  })
+  return { me: m && { key: m.key, rank: m.rank ?? 0, total: m.total }, follow: f, events: c.events.map((e) => e.name) }
+}
+
+/** The differences worth telling, or null. A newly linked or followed player is not a change. */
+export function noticeOf(prev: CircuitSnapshot, next: CircuitSnapshot, c: Circuit): CircuitNotice | null {
+  const name = (k: string) => c.players.find((p) => p.key === k)?.name ?? k
+  const change = (k: string, a: { rank: number; total: number }, b: { rank: number; total: number }): RankChange | undefined =>
+    a.rank !== b.rank || a.total !== b.total ? { key: k, name: name(k), from: a.rank, to: b.rank, points: b.total - a.total } : undefined
+  const me = prev.me && next.me && prev.me.key === next.me.key ? change(next.me.key, prev.me, next.me) : undefined
+  const follow = Object.entries(next.follow)
+    .map(([k, v]) => prev.follow[k] && change(k, prev.follow[k], v))
+    .filter((x): x is RankChange => !!x)
+  const events = next.events.filter((e) => !prev.events.includes(e))
+  return me || follow.length || events.length ? { at: new Date().toISOString(), me, follow, events } : null
+}
+
+/** A notice not yet read absorbs the next one: positions keep their oldest "from". */
+export function mergeNotices(old: CircuitNotice | null, add: CircuitNotice): CircuitNotice {
+  if (!old) return add
+  const merge = (a: RankChange | undefined, b: RankChange) => (a ? { ...b, from: a.from, points: a.points + b.points } : b)
+  const follow = new Map(old.follow.map((f) => [f.key, f]))
+  add.follow.forEach((f) => follow.set(f.key, merge(follow.get(f.key), f)))
+  return {
+    at: add.at,
+    me: add.me ? merge(old.me, add.me) : old.me,
+    follow: [...follow.values()].filter((f) => f.from !== f.to || f.points),
+    events: [...old.events, ...add.events.filter((e) => !old.events.includes(e))],
+  }
 }

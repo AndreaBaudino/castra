@@ -11,6 +11,7 @@ import { CircuitCard } from './Circuit'
 import type { Circuit } from '../lib/circuit'
 
 export default function Home({
+  banner,
   meta,
   decks,
   matches,
@@ -25,6 +26,7 @@ export default function Home({
   openPlayer,
   findMe,
 }: {
+  banner?: React.ReactNode
   meta: MetaData
   decks: Deck[]
   matches: Match[]
@@ -75,6 +77,8 @@ export default function Home({
           </button>
         </div>
       </header>
+
+      {banner}
 
       <button className="hero-btn" onClick={() => go('game')}>
         <span className="hero-icon">

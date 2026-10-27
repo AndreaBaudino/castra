@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
-import { type Circuit, type CircuitEvent, type Player, eventDateLabel, potyStatus } from '../lib/circuit'
+import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type RankChange, eventDateLabel, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
+import { ComparePicker, LeagueList, Records } from './CircuitMore'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
@@ -17,7 +18,7 @@ type Sort = 'total' | 's1' | 's2' | 'events' | 'played' | 'avg' | 'top8'
 const SORTS: Sort[] = ['total', 's1', 's2', 'events', 'played', 'avg', 'top8']
 const MIN_FOR_AVG = 3
 
-const avg = (p: Player) => (p.events.length ? p.eventPoints / p.events.length : 0)
+export const avg = (p: Player) => (p.events.length ? p.eventPoints / p.events.length : 0)
 const sortValue = (p: Player, s: Sort) =>
   s === 'total'
     ? p.total
@@ -36,7 +37,7 @@ const sortValue = (p: Player, s: Sort) =>
 const qualifies = (p: Player, s: Sort) =>
   s === 's1' ? !!p.s1 : s === 's2' ? !!p.s2 : s === 'avg' ? p.events.length >= MIN_FOR_AVG : s === 'total' ? true : sortValue(p, s) > 0
 
-const placeLabel = (n: number, lang: string) => (lang === 'it' ? `${n}°` : `#${n}`)
+export const placeLabel = (n: number, lang: string) => (lang === 'it' ? `${n}°` : `#${n}`)
 
 const playerLeagues = (p: Player) => [p.s1, p.s2].flatMap((l) => (l ? [l.league, ...(l.also ?? [])] : []))
 
@@ -53,27 +54,33 @@ export function CircuitPanel({
   prefs,
   openPlayer,
   openEvent,
+  openLeague,
 }: {
   circuit: Circuit
   prefs: CircuitPrefs
   openPlayer: (key: string) => void
   openEvent: (id: string) => void
+  openLeague: (season: string, name: string) => void
 }) {
   const { t } = useI18n()
-  const [view, setView] = useStoredState<'ranking' | 'events'>('cc.circuit.view', 'ranking')
+  const [view, setView] = useStoredState<'ranking' | 'events' | 'leagues' | 'records'>('cc.circuit.view', 'ranking')
   return (
     <>
-      <div className="seg wide">
-        {(['ranking', 'events'] as const).map((v) => (
+      <div className="seg wide circuit-views">
+        {(['ranking', 'events', 'leagues', 'records'] as const).map((v) => (
           <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>
-            {t(v === 'ranking' ? 'circuit.ranking' : 'circuit.events')}
+            {t(`circuit.view.${v}`)}
           </button>
         ))}
       </div>
       {view === 'ranking' ? (
         <Ranking circuit={circuit} prefs={prefs} openPlayer={openPlayer} />
-      ) : (
+      ) : view === 'events' ? (
         <EventList circuit={circuit} prefs={prefs} openEvent={openEvent} />
+      ) : view === 'leagues' ? (
+        <LeagueList circuit={circuit} openLeague={openLeague} />
+      ) : (
+        <Records circuit={circuit} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} />
       )}
     </>
   )
@@ -192,7 +199,7 @@ function PlayerRow({
             </div>
             <div className="sub-line">
               {league && <span className="muted small">{league}</span>}
-              <span className="muted small">· {t('circuit.nEvents', { n: p.events.length })}</span>
+              <span className="muted small">· {t(p.events.length === 1 ? 'circuit.oneEvent' : 'circuit.nEvents', { n: p.events.length })}</span>
               {poty === 'invited' && <span className="tag poty">{t('circuit.potyInvited')}</span>}
               {poty === 'zone' && <span className="tag poty-zone">POTY</span>}
             </div>
@@ -289,12 +296,14 @@ export function PlayerPage({
   prefs,
   onBack,
   openEvent,
+  openCompare,
 }: {
   circuit: Circuit
   playerKey: string
   prefs: CircuitPrefs
   onBack: () => void
   openEvent: (id: string) => void
+  openCompare: (a: string, b: string) => void
 }) {
   const { t, lang } = useI18n()
   const p = circuit.players.find((x) => x.key === playerKey)
@@ -322,6 +331,8 @@ export function PlayerPage({
       <button className={`btn ${isMe ? 'primary' : 'ghost'}`} onClick={() => prefs.setMe(isMe ? null : p.key)}>
         <Icon name="user" size={16} /> {isMe ? t('circuit.isMe') : t('circuit.thisIsMe')}
       </button>
+      {/* "me" on the left when comparing someone with me */}
+      <ComparePicker circuit={circuit} p={p} prefs={prefs} onPick={(o) => (o === prefs.me ? openCompare(o, p.key) : openCompare(p.key, o))} />
 
       <section className="card">
         <div className="stats3">
@@ -548,7 +559,7 @@ export function EventPage({
   )
 }
 
-function SubPageShell({
+export function SubPageShell({
   title,
   onBack,
   actions,
@@ -684,6 +695,72 @@ export function CircuitCard({
           </div>
           <PotyNote p={p} poty={poty} />
         </>
+      )}
+    </section>
+  )
+}
+
+// ---------- "ranking updated" notice ----------
+
+export function CircuitNoticeCard({
+  notice,
+  openPlayer,
+  onClose,
+}: {
+  notice: CircuitNotice
+  openPlayer: (k: string) => void
+  onClose: () => void
+}) {
+  const { t, lang } = useI18n()
+  const { me, follow, events } = notice
+  const pos = (n: number) => placeLabel(n, lang)
+  const arrow = (c: RankChange) => (c.to < c.from ? 'up' : c.to > c.from ? 'down' : 'same')
+  const pts = (n: number) => (n ? ` · ${n > 0 ? '+' : ''}${t('circuit.nPts', { n })}` : '')
+  return (
+    <section className={`card notice-card ${me ? arrow(me) : ''}`} role="status">
+      <div className="card-title">
+        <span className="title-live">
+          <Icon name="trophy" size={16} /> {t('circuit.noticeTitle')}
+        </span>
+        <button className="icon-btn" onClick={onClose} aria-label="close">
+          <Icon name="close" size={18} />
+        </button>
+      </div>
+      {me && (
+        <button className={`notice-me ${arrow(me)}`} onClick={() => openPlayer(me.key)}>
+          <span className="notice-arrow" aria-hidden>
+            {arrow(me) === 'up' ? '▲' : arrow(me) === 'down' ? '▼' : '='}
+          </span>
+          <span>
+            {arrow(me) === 'same'
+              ? t('circuit.meSame', { to: me.to })
+              : t(arrow(me) === 'up' ? 'circuit.meUp' : 'circuit.meDown', { to: me.to, n: Math.abs(me.to - me.from) })}
+            {pts(me.points)}
+          </span>
+        </button>
+      )}
+      {follow.length > 0 && (
+        <ul className="mini-list">
+          {follow.slice(0, 4).map((f) => (
+            <li key={f.key} onClick={() => openPlayer(f.key)}>
+              <span className={`notice-arrow ${arrow(f)}`} aria-hidden>
+                {arrow(f) === 'up' ? '▲' : arrow(f) === 'down' ? '▼' : '='}
+              </span>
+              <span className="ellipsis grow">{f.name}</span>
+              <span className="small">
+                {pos(f.from)} → <b>{pos(f.to)}</b>
+                <span className="muted">{pts(f.points)}</span>
+              </span>
+            </li>
+          ))}
+          {follow.length > 4 && <li className="muted small">{t('circuit.andOthers', { n: follow.length - 4 })}</li>}
+        </ul>
+      )}
+      {events.length > 0 && (
+        <div className="small">
+          {t(events.length > 1 ? 'circuit.newEvents' : 'circuit.newEvent', { n: events.length })} <b>{events.slice(0, 2).join(', ')}</b>
+          {events.length > 2 ? '…' : ''}
+        </div>
       )}
     </section>
   )
