@@ -8,6 +8,7 @@ import { DeckTile } from './Decks'
 import { metaSummary } from './Meta'
 import { ResultDots } from './Stats'
 import { CircuitCard } from './Circuit'
+import { InstallBanner } from '../components/AppBanners'
 import type { Circuit } from '../lib/circuit'
 
 export default function Home({
@@ -71,6 +72,7 @@ export default function Home({
         </div>
       </header>
 
+      <InstallBanner />
       {banner}
 
       <button className="hero-btn" onClick={() => go('game')}>

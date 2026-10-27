@@ -20,7 +20,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // the app asks before switching to a new version (a game may be in progress): see AppBanners.tsx
+      registerType: 'prompt',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Castra · Centurion Commander',

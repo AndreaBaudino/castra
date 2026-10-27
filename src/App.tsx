@@ -21,6 +21,7 @@ import Stats from './views/Stats'
 import Account, { isAccountSection } from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
 import { useDialog } from './components/Dialog'
+import { UpdateBanner } from './components/AppBanners'
 
 type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
@@ -168,6 +169,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <UpdateBanner />
       <main>
         {route.tab === 'game' && (
           <LifeCounter
