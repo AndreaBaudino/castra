@@ -3050,3 +3050,10 @@ a.menu-row {
 .collapsible.open .collapse-head .chev {
   transform: rotate(90deg);
 }
+.card.collapsible:not(.open) {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.card.collapsible:not(.open) .collapse-head {
+  min-height: 24px;
+}
