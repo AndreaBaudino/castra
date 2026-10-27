@@ -9,6 +9,7 @@ import { metaSummary } from './Meta'
 import { ResultDots } from './Stats'
 import { CircuitCard } from './Circuit'
 import { InstallBanner } from '../components/AppBanners'
+import { Logo } from '../components/Logo'
 import type { Circuit } from '../lib/circuit'
 
 export default function Home({
@@ -55,9 +56,12 @@ export default function Home({
   return (
     <div className="page">
       <header className="page-head brand">
-        <div>
-          <div className="brand-kicker">Centurion Commander</div>
-          <h1>Castra</h1>
+        <div className="brand-mark">
+          <Logo />
+          <div>
+            <div className="brand-kicker">Centurion Commander</div>
+            <h1>Castra</h1>
+          </div>
         </div>
         <div className="head-right">
           <button className="account-btn" onClick={() => go('account')} aria-label={t('auth.title')}>

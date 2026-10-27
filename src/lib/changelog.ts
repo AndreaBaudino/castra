@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-10-27',
     it: [
+      'Nuova icona e logo: l\'elmo di Castra',
       'Mazzi: curva di mana con permanenti e magie, carte e probabilità in curva toccando una barra, analisi dei colori',
       'Contapunti: annulla l\'ultimo tocco e cronologia della partita',
       'Partite: chi ha iniziato (on the play / on the draw) e giocatore avversario dal circuito',
@@ -25,6 +26,7 @@ export const CHANGELOG: Release[] = [
       'In classifica la tua riga resta sempre visibile',
     ],
     en: [
+      'New icon and logo: the Castra helmet',
       'Decks: mana curve split into permanents and spells, cards and on-curve odds by tapping a bar, colour analysis',
       'Life counter: undo the last tap and game history',
       'Matches: who went first (on the play / on the draw) and opponent player from the circuit',

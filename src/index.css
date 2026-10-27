@@ -153,6 +153,24 @@ h1 {
   font-family: Georgia, 'Times New Roman', serif;
   font-weight: 700;
 }
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo {
+  flex: none;
+  width: auto;
+}
+.logo-metal {
+  fill: var(--text);
+}
+.logo-cut {
+  fill: var(--bg);
+}
+.logo-crest {
+  fill: var(--red-strong);
+}
 
 .tabbar {
   position: fixed;
