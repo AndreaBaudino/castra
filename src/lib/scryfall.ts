@@ -15,9 +15,15 @@ interface ScryCard {
   collector_number?: string
   released_at?: string
   produced_mana?: string[]
+  keywords?: string[]
   image_uris?: { normal: string; art_crop: string }
   card_faces?: { mana_cost?: string; type_line?: string; image_uris?: { normal: string; art_crop: string } }[]
 }
+
+// what lets two cards share the command zone
+const PAIRING = ['partner', 'partner with', 'friends forever', "doctor's companion", 'choose a background']
+const isPartner = (c: ScryCard) =>
+  !!c.keywords?.some((k) => PAIRING.includes(k.toLowerCase())) || /\bbackground\b/i.test(c.type_line ?? '')
 
 function toInfo(c: ScryCard): CardInfo {
   const face = c.card_faces?.[0]
@@ -35,6 +41,7 @@ function toInfo(c: ScryCard): CardInfo {
     setName: c.set_name,
     cn: c.collector_number,
     produced: c.produced_mana ?? [],
+    ...(isPartner(c) ? { partner: true } : {}),
   }
 }
 

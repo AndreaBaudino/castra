@@ -87,8 +87,19 @@ function ImportSheet({ open, onClose, onImport }: { open: boolean; onClose: () =
           }
         }
       }
+      // still none ("Copy for Moxfield"): the first card is the commander, the second too when both can pair up
+      if (!cards.some((c) => c.section === 'commander')) {
+        const [a, b] = cards
+        const canLead = (c?: (typeof cards)[number]) => !!c && /legendary|background/i.test(c.info?.typeLine ?? '')
+        if (canLead(a) && a.qty === 1) {
+          a.section = 'commander'
+          if (canLead(b) && b.qty === 1 && a.info?.partner && b.info?.partner) b.section = 'commander'
+        }
+      }
       const now = new Date().toISOString()
-      const commander = cards.find((c) => c.section === 'commander')?.name
+      // partners: "Rograkh / Tevesh Szat"
+      const commanders = cards.filter((c) => c.section === 'commander').map((c) => c.name)
+      const commander = commanders.length > 1 ? commanders.map((n) => n.split(/,| \/\/ /)[0]).join(' / ') : commanders[0]
       onImport({
         id: newId(),
         name: name.trim() || commander || 'Deck',

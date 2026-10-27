@@ -15,6 +15,7 @@ export interface CardInfo {
   set?: string // edition code, e.g. "c21"
   setName?: string
   cn?: string // collector number
+  partner?: boolean // can share the command zone: partner, friends forever, background…
   produced?: string[] // mana colours it can produce (W U B R G C); missing on cards fetched before it was added
 }
 
@@ -110,7 +111,9 @@ export function parseDecklist(text: string): DeckCard[] {
     const m = s.match(/^(\d+)\s*x?\s+(.+)$/i)
     const qty = m ? parseInt(m[1], 10) : 1
     s = m ? m[2] : s
-    // tags and foil markers: "Sol Ring (C21) 263 *F* #ramp"
+    // "*CMDR*" marks a commander in some exports
+    const cmdr = /\*CMDR\*/i.test(s)
+    // tags and foil/etched markers: "Sol Ring (C21) 263 *F* #ramp"
     s = s
       .replace(/\s+#\S.*$/, '')
       .replace(/\s+\*[A-Z]+\*/g, '')
@@ -129,10 +132,13 @@ export function parseDecklist(text: string): DeckCard[] {
         return ''
       })
       .trim()
+    // double-faced cards written with a single slash: "Fell the Profane / Fell Mire"
+    s = s.replace(/\s+\/\s+/, ' // ')
     if (!s) continue
-    const existing = out.find((c) => c.name.toLowerCase() === s.toLowerCase() && c.section === section)
+    const sec = cmdr ? 'commander' : section
+    const existing = out.find((c) => c.name.toLowerCase() === s.toLowerCase() && c.section === sec)
     if (existing) existing.qty += qty
-    else out.push({ name: s, qty, section, ...(set ? { set } : {}), ...(cn ? { cn } : {}) })
+    else out.push({ name: s, qty, section: sec, ...(set ? { set } : {}), ...(cn ? { cn } : {}) })
   }
   return out
 }
