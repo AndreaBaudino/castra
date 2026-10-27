@@ -41,7 +41,7 @@ export default function Home({
   openPlayer: (key: string) => void
   findMe: () => void
 }) {
-  const { t, lang, setLang } = useI18n()
+  const { t } = useI18n()
   const top = meta.decks
     .filter((d) => d.games >= 10)
     .sort((a, b) => winrate(b) - winrate(a))
@@ -59,13 +59,6 @@ export default function Home({
           <h1>Castra</h1>
         </div>
         <div className="head-right">
-          <div className="seg lang" aria-label={t('common.lang')}>
-            {(['it', 'en'] as const).map((l) => (
-              <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
           <button className="account-btn" onClick={() => go('account')} aria-label={t('auth.title')}>
             {user?.photo ? (
               <img src={user.photo} alt="" referrerPolicy="no-referrer" />

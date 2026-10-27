@@ -407,9 +407,6 @@ h1 {
 }
 
 /* ---------- home ---------- */
-.lang button {
-  padding: 5px 9px;
-}
 .hero-btn {
   display: flex;
   align-items: center;
