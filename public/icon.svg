@@ -1,6 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f0cf7e"/>
+      <stop offset="0.5" stop-color="#d4a64a"/>
+      <stop offset="1" stop-color="#a8812f"/>
+    </linearGradient>
+    <linearGradient id="r" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d8453b"/>
+      <stop offset="1" stop-color="#8f241e"/>
+    </linearGradient>
+  </defs>
   <rect width="512" height="512" rx="112" fill="#14110f"/>
-  <circle cx="256" cy="256" r="176" fill="none" stroke="#d4a64a" stroke-width="20"/>
-  <text x="256" y="300" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="150" font-weight="700" fill="#d4a64a" letter-spacing="4">C</text>
-  <path d="M176 352h160" stroke="#b8322a" stroke-width="18" stroke-linecap="round"/>
+  <!-- crest -->
+  <path d="M222 176 C 214 140 196 96 200 66 Q 256 22 312 66 C 316 96 298 140 290 176 Z" fill="url(#r)"/>
+  <path d="M232 70 C 230 110 238 140 242 168 M256 52 L256 168 M280 70 C 282 110 274 140 270 168" stroke="#5e1612" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <!-- helmet with T-shaped opening -->
+  <path fill="url(#g)" d="M256 150
+    C 336 150 388 202 388 292 L 388 372
+    C 388 418 352 452 300 470 L 276 440 L 276 318
+    C 290 304 318 300 350 304 Q 366 290 350 274
+    C 312 264 282 266 256 276 C 230 266 200 264 162 274
+    Q 146 290 162 304 C 194 300 222 304 236 318
+    L 236 440 L 212 470 C 160 452 124 418 124 372 L 124 292
+    C 124 202 176 150 256 150 Z"/>
+  <!-- crest holder -->
+  <rect x="226" y="140" width="60" height="22" rx="8" fill="#a8812f"/>
+  <!-- details: center ridge, brow, cheek line -->
+  <path d="M256 164 L256 250" stroke="#8a6626" stroke-width="8" stroke-linecap="round"/>
+  <path d="M150 252 C 200 236 230 240 256 250 C 282 240 312 236 362 252" stroke="#8a6626" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <path d="M164 330 C 172 380 188 418 210 446 M348 330 C 340 380 324 418 302 446" stroke="#8a6626" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M168 220 C 180 192 204 174 232 166" stroke="#fbe3a6" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.8"/>
 </svg>
