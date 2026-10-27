@@ -7,6 +7,7 @@ import type { Deck } from '../lib/decks'
 import type { Match } from '../lib/matches'
 import { type Circuit, potyStatus } from '../lib/circuit'
 import type { Prefs } from '../lib/prefs'
+import type { TimerSettings } from '../lib/timer'
 import { useSyncStatus } from '../lib/sync'
 import { deleteAccount } from '../lib/account'
 import { backupName, csvName, download, makeBackup, matchesCsv, mergeById, parseBackup } from '../lib/backup'
@@ -525,6 +526,7 @@ export default function Account({
   setTheme,
   prefs,
   setPrefs,
+  setTimerSettings,
   decks,
   setDecks,
   matches,
@@ -542,6 +544,7 @@ export default function Account({
   setTheme: (fn: (t: Theme) => Theme) => void
   prefs: Prefs
   setPrefs: (fn: (p: Prefs) => Prefs) => void
+  setTimerSettings: (fn: (s: TimerSettings) => TimerSettings) => void
   decks: Deck[]
   setDecks: (fn: (d: Deck[]) => Deck[]) => void
   matches: Match[]
@@ -576,7 +579,7 @@ export default function Account({
     if (s['cc.prefs']) setPrefs((p) => ({ ...p, ...(s['cc.prefs'] as Prefs) }))
     if (Array.isArray(s['cc.circuit.follow'])) circuitPrefs.setFollow(() => s['cc.circuit.follow'] as string[])
     if (s['cc.lang'] === 'it' || s['cc.lang'] === 'en') setLang(s['cc.lang'])
-    if (s['cc.timerSettings']) localStorage.setItem('cc.timerSettings', JSON.stringify(s['cc.timerSettings']))
+    if (s['cc.timerSettings']) setTimerSettings((x) => ({ ...x, ...(s['cc.timerSettings'] as TimerSettings) }))
     dialog.alert(t('account.restored', { d: b.decks.length, m: b.matches.length }))
   }
 

@@ -3,6 +3,7 @@ import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
 import { syncPaused, useCollectionSync, useDocFieldSync } from './lib/sync'
 import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
+import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
 import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
 import type { Deck } from './lib/decks'
 import type { Match } from './lib/matches'
@@ -38,7 +39,7 @@ const isSub = (r: Route) => !!r.deck || r.tab === 'account'
 const parentOf = (r: Route) => (r.deck ? r.tab : 'home')
 
 export default function App() {
-  const { t } = useI18n()
+  const { t, lang, setLang } = useI18n()
   const dialog = useDialog()
   const [route, setRoute] = useState(fromHash)
   const [decks, setDecks] = useStoredState<Deck[]>('cc.decks', [])
@@ -46,6 +47,7 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false)
   const [theme, setTheme] = useStoredState<Theme>('cc.theme', DEFAULT_THEME)
   const [prefs, setPrefs] = useStoredState<Prefs>(PREFS_KEY, readPrefs())
+  const [timerSettings, setTimerSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
   const { data: meta, status, refresh } = useMeta()
   const circuit = useCircuit()
   const [circuitMe, setCircuitMe] = useStoredState<string | null>('cc.circuit.me', null)
@@ -59,6 +61,8 @@ export default function App() {
   useCollectionSync(uid, 'matches', matches, setMatches)
   useDocFieldSync(uid, 'theme', theme, setTheme)
   useDocFieldSync(uid, 'prefs', prefs, (p) => setPrefs({ ...DEFAULT_PREFS, ...p }))
+  useDocFieldSync(uid, 'timerSettings', timerSettings, (s) => setTimerSettings({ ...DEFAULT_TIMER_SETTINGS, ...s }))
+  useDocFieldSync(uid, 'lang', lang, setLang)
   useDocFieldSync(uid, 'circuitMe', circuitMe, setCircuitMe)
   useDocFieldSync(uid, 'circuitFollow', follow, setFollow)
   useEffect(() => {
@@ -176,6 +180,8 @@ export default function App() {
             decks={decks}
             metaNames={meta.decks.map((d) => d.name)}
             players={circuit.data?.players}
+            settings={timerSettings}
+            setSettings={setTimerSettings}
             onSaveMatch={(m) => setMatches((ms) => [m, ...ms])}
           />
         )}
@@ -206,6 +212,7 @@ export default function App() {
             setTheme={setTheme}
             prefs={prefs}
             setPrefs={setPrefs}
+            setTimerSettings={setTimerSettings}
             decks={decks}
             setDecks={setDecks}
             matches={matches}

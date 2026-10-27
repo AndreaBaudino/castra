@@ -7,7 +7,6 @@ import { useStoredState } from '../lib/storage'
 import { playAlarm, unlockAudio } from '../lib/sound'
 import { haptic, readPrefs } from '../lib/prefs'
 import {
-  DEFAULT_TIMER_SETTINGS,
   type TimerSettings,
   type TimerState,
   elapsed,
@@ -258,17 +257,21 @@ export default function LifeCounter({
   decks,
   metaNames,
   players,
+  settings,
+  setSettings,
   onSaveMatch,
 }: {
   decks: Deck[]
   metaNames: string[]
   players?: { key: string; name: string }[]
+  /** timer settings: kept by the app, which syncs them with the account */
+  settings: TimerSettings
+  setSettings: (fn: (s: TimerSettings) => TimerSettings) => void
   onSaveMatch: (m: Match) => void
 }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
   const [game, setGame] = useStoredState<GameState>(GAME_KEY, defaultGame())
-  const [settings, setSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
   const [menu, setMenu] = useState(false)
   useBackCloses(menu, () => setMenu(false))
   const [history, setHistory] = useState(false)
