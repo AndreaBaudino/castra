@@ -7,6 +7,8 @@ import { Icon, Pips, pct, wrClass } from '../components/ui'
 import { DeckTile } from './Decks'
 import { metaSummary } from './Meta'
 import { ResultDots } from './Stats'
+import { CircuitCard } from './Circuit'
+import type { Circuit } from '../lib/circuit'
 
 export default function Home({
   meta,
@@ -17,6 +19,10 @@ export default function Home({
   user,
   openDeck,
   importDeck,
+  circuit,
+  circuitMe,
+  openPlayer,
+  findMe,
 }: {
   meta: MetaData
   decks: Deck[]
@@ -26,6 +32,10 @@ export default function Home({
   user: AppUser | null
   openDeck: (id: string) => void
   importDeck: () => void
+  circuit: Circuit | null
+  circuitMe: string | null
+  openPlayer: (key: string) => void
+  findMe: () => void
 }) {
   const { t, lang, setLang } = useI18n()
   const top = meta.decks
@@ -113,6 +123,8 @@ export default function Home({
           </>
         )}
       </section>
+
+      <CircuitCard circuit={circuit} me={circuitMe} openPlayer={openPlayer} findMe={findMe} />
 
       <section className="card">
         <div className="card-title">

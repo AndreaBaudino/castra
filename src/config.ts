@@ -16,6 +16,15 @@ export const META_SHEET_TAB = ''
 /** Optional second tab with a free-text editorial summary (first column, one paragraph per row). */
 export const META_SUMMARY_TAB = ''
 
+/**
+ * Google Sheet of the Centurion circuit: overall leaderboard, city leagues (S1, S2) and big events.
+ * Read through the CSV export, by tab id (the gid=… in the tab's URL).
+ */
+export const CIRCUIT_SHEET_ID = '186xE3qYmCdJeMQpmXXO7UqPL8ER2FUFos-K5OFWWtVQ'
+export const CIRCUIT_TABS = { leaderboard: '1845835181', s1: '638335391', s2: '722468170', events: '503261492' }
+/** Players invited to the Player of the Year by ranking (on top of those invited at events). */
+export const POTY_SPOTS = 36
+
 export const STARTING_LIFE = 25
 export const COMMANDER_DAMAGE_LETHAL = 21
 export const POISON_LETHAL = 10

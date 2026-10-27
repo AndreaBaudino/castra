@@ -6,10 +6,12 @@ import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
 import type { Deck } from './lib/decks'
 import type { Match } from './lib/matches'
 import { useMeta } from './lib/meta'
-import { readStored, useStoredState } from './lib/storage'
+import { readStored, useStoredState, writeStored } from './lib/storage'
+import { useCircuit } from './lib/circuit'
 import { Icon } from './components/ui'
 import Home from './views/Home'
-import Meta from './views/Meta'
+import Meta, { META_MODE_KEY } from './views/Meta'
+import { EventPage, PlayerPage } from './views/Circuit'
 import Decks from './views/Decks'
 import DeckDetail from './views/DeckDetail'
 import Stats from './views/Stats'
@@ -38,17 +40,22 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false)
   const [theme, setTheme] = useStoredState<Theme>('cc.theme', DEFAULT_THEME)
   const { data: meta, status, refresh } = useMeta()
+  const circuit = useCircuit()
+  const [circuitMe, setCircuitMe] = useStoredState<string | null>('cc.circuit.me', null)
+  const [follow, setFollow] = useStoredState<string[]>('cc.circuit.follow', [])
   const { user } = useAuth()
   const uid = user?.uid ?? null
 
   useCollectionSync(uid, 'decks', decks, setDecks, (l, r) => l.updatedAt > r.updatedAt)
   useCollectionSync(uid, 'matches', matches, setMatches)
   useDocFieldSync(uid, 'theme', theme, setTheme)
+  useDocFieldSync(uid, 'circuitMe', circuitMe, setCircuitMe)
+  useDocFieldSync(uid, 'circuitFollow', follow, setFollow)
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
 
-  // the history is at most [main page, sub-page, open sheet]: land() rebuilds it from the main entry
+  // the history is [main page, sub-pages…, open sheet]: land() rebuilds it from the main entry
   const land = (to: Route) => {
     if (isSub(to)) {
       history.replaceState(null, '', `#${parentOf(to)}`)
@@ -74,16 +81,28 @@ export default function App() {
   }, [route.tab, route.deck])
 
   // Main pages replace each other, so the phone's back button closes the app from any of them.
-  // A sub-page (a deck, account) sits one entry above its main page, so back returns there.
-  const go = (tab: Tab, deck?: string) => {
+  // A sub-page (a deck, account, a circuit player or event) sits one entry above its main page, so back
+  // returns there. `stack` piles a sub-page on the current one (a player's event, that event's players…),
+  // so back retraces the steps.
+  const go = (tab: Tab, deck?: string, stack = false) => {
     const to = { tab, deck: deck ?? null }
-    const depth = (history.state?.sub ? 1 : 0) + (history.state?.sheet ? 1 : 0)
+    const sub = Number(history.state?.sub ?? 0) // true from before sub-pages could stack
+    if (stack && sub && !history.state?.sheet && isSub(to)) {
+      history.pushState({ sub: sub + 1 }, '', `#${toHash(to)}`)
+      return setRoute(fromHash())
+    }
+    const depth = sub + (history.state?.sheet ? 1 : 0)
     if (!depth) return land(to)
     pending.current = to
     history.go(-depth) // the popstate handler lands on `to`
   }
 
   const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined
+  const circuitPrefs = { me: circuitMe, setMe: setCircuitMe, follow, setFollow }
+  const openPlayer = (key: string) => go('meta', `p~${encodeURIComponent(key)}`, true)
+  const openEvent = (id: string) => go('meta', `e~${id}`, true)
+  // meta/p~<player key> and meta/e~<event id>
+  const [metaSub, metaArg] = route.tab === 'meta' && route.deck ? [route.deck.slice(0, 1), decodeURIComponent(route.deck.slice(2))] : []
   const gameInProgress = isGameInProgress(readStored<GameState>(GAME_KEY, defaultGame()))
 
   return (
@@ -104,6 +123,14 @@ export default function App() {
             gameInProgress={gameInProgress}
             go={(tab) => go(tab)}
             user={user}
+            circuit={circuit.data}
+            circuitMe={circuitMe}
+            openPlayer={openPlayer}
+            findMe={() => {
+              writeStored(META_MODE_KEY, 'circuit')
+              writeStored('cc.circuit.view', 'ranking')
+              go('meta')
+            }}
             openDeck={(id) => go('decks', id)}
             importDeck={() => {
               setImportOpen(true)
@@ -121,13 +148,34 @@ export default function App() {
               setDecks(() => [])
               setMatches(() => [])
               setTheme(() => DEFAULT_THEME)
+              setCircuitMe(null)
+              setFollow(() => [])
             }}
           />
         )}
         {route.tab === 'stats' && (
           <Stats matches={matches} setMatches={setMatches} decks={decks} metaDecks={meta.decks} />
         )}
-        {route.tab === 'meta' && <Meta meta={meta} status={status} onRefresh={refresh} />}
+        {route.tab === 'meta' &&
+          (metaSub && circuit.data ? (
+            metaSub === 'p' ? (
+              <PlayerPage circuit={circuit.data} playerKey={metaArg!} prefs={circuitPrefs} onBack={() => history.back()} openEvent={openEvent} />
+            ) : (
+              <EventPage circuit={circuit.data} eventId={metaArg!} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
+            )
+          ) : (
+            <Meta
+              meta={meta}
+              status={status}
+              onRefresh={refresh}
+              circuit={circuit.data}
+              circuitStatus={circuit.status}
+              onCircuitRefresh={circuit.refresh}
+              prefs={circuitPrefs}
+              openPlayer={openPlayer}
+              openEvent={openEvent}
+            />
+          ))}
         {route.tab === 'decks' &&
           (openDeck ? (
             <DeckDetail

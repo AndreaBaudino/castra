@@ -64,6 +64,8 @@ const paths: Record<string, ReactNode> = {
   crown: <path d="M3 18h18M4 8l4 4 4-7 4 7 4-4-2 10H6z" />,
   swap: <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />,
   chevron: <path d="m9 6 6 6-6 6" />,
+  star: <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />,
+  trophy: <path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4" />,
   shield: <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" />,
   gear: (
     <>
