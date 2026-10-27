@@ -2401,18 +2401,22 @@ textarea {
     opacity: 0;
   }
 }
+/* in lists: a quiet tick in the theme's highlight colour (the green "Verified" badge is for the player page) */
 .verified-tick {
   flex: none;
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   margin-left: 5px;
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
-  align-self: center;
-  background: var(--good);
-  color: #fff;
+  vertical-align: -1px;
+  color: color-mix(in srgb, var(--gold) 80%, var(--muted));
+  border: 1.5px solid currentColor;
+  opacity: 0.85;
 }
 .verified-tick svg {
-  stroke-width: 3.5;
+  width: 8px;
+  height: 8px;
+  stroke-width: 4;
 }

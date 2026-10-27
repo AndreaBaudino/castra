@@ -124,6 +124,7 @@ export default function App() {
   const noticeCard = notice && (
     <CircuitNoticeCard
       notice={notice}
+      claims={claims}
       openPlayer={(k) => {
         setNotice(null)
         openPlayer(k)
@@ -234,6 +235,7 @@ export default function App() {
                 circuit={circuit.data}
                 a={metaArgs[0]}
                 b={metaArgs[1]}
+                prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
                 openEvent={openEvent}

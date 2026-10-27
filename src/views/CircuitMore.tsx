@@ -208,7 +208,10 @@ export function Records({ circuit, prefs, openPlayer, openEvent }: { circuit: Ci
               {shown.map(({ p, v }) => (
                 <li key={p.key} className={p.key === prefs.me ? 'me' : ''} onClick={() => openPlayer(p.key)}>
                   <span className="rank">{pos(v)}</span>
-                  <span className="ellipsis grow">{p.name}</span>
+                  <span className="ellipsis grow">
+                    {p.name}
+                    {prefs.claims.has(p.key) && <VerifiedTick />}
+                  </span>
                   <b className="pts-inline">{fmt(v)}</b>
                 </li>
               ))}
@@ -297,7 +300,10 @@ export function ComparePicker({ circuit, p, prefs, onPick }: { circuit: Circuit;
         {results.map((x) => (
           <li key={x.key} onClick={() => onPick(x.key)}>
             <span className="rank">{x.rank}</span>
-            <span className="ellipsis grow">{x.name}</span>
+            <span className="ellipsis grow">
+              {x.name}
+              {prefs.claims.has(x.key) && <VerifiedTick />}
+            </span>
             <span className="muted small">{x.total}</span>
           </li>
         ))}
@@ -312,6 +318,7 @@ export function ComparePage({
   circuit,
   a: ka,
   b: kb,
+  prefs,
   onBack,
   openPlayer,
   openEvent,
@@ -319,6 +326,7 @@ export function ComparePage({
   circuit: Circuit
   a: string
   b: string
+  prefs: CircuitPrefs
   onBack: () => void
   openPlayer: (k: string) => void
   openEvent: (id: string) => void
@@ -358,7 +366,10 @@ export function ComparePage({
         {[a, b].map((p, i) => (
           <button key={p.key} className={`h2h-player side-${i ? 'b' : 'a'}`} onClick={() => openPlayer(p.key)}>
             <span className="h2h-swatch" />
-            <strong className="ellipsis">{p.name}</strong>
+            <strong className="ellipsis">
+              {p.name}
+              {prefs.claims.has(p.key) && <VerifiedTick />}
+            </strong>
             <span className="muted small">
               #{p.rank} · {p.total} {t('circuit.unitPts')}
             </span>

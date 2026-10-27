@@ -280,6 +280,7 @@ function EventList({ circuit, prefs, openEvent }: { circuit: Circuit; prefs: Cir
                 {winner && (
                   <div className="small winner">
                     <Icon name="trophy" size={13} /> {byKey.get(winner.key)?.name}
+                    {prefs.claims.has(winner.key) && <VerifiedTick />}
                     {winner.poty && <span className="muted"> · {t('circuit.top4Poty')}</span>}
                   </div>
                 )}
@@ -597,6 +598,7 @@ export function EventPage({
       <span className={`place-badge ${r.place ? (r.place <= 4 ? 'top4' : 'top8') : ''}`}>{r.place ? placeLabel(r.place, lang) : '—'}</span>
       <span className="ellipsis grow">
         {byKey.get(r.key)?.name}
+        {prefs.claims.has(r.key) && <VerifiedTick />}
         {prefs.follow.includes(r.key) && (
           <span className="star-on">
             {' '}
@@ -774,10 +776,12 @@ export function CircuitCard({
 
 export function CircuitNoticeCard({
   notice,
+  claims,
   openPlayer,
   onClose,
 }: {
   notice: CircuitNotice
+  claims: Map<string, Claim>
   openPlayer: (k: string) => void
   onClose: () => void
 }) {
@@ -816,7 +820,10 @@ export function CircuitNoticeCard({
               <span className={`notice-arrow ${arrow(f)}`} aria-hidden>
                 {arrow(f) === 'up' ? '▲' : arrow(f) === 'down' ? '▼' : '='}
               </span>
-              <span className="ellipsis grow">{f.name}</span>
+              <span className="ellipsis grow">
+                {f.name}
+                {claims.has(f.key) && <VerifiedTick />}
+              </span>
               <span className="small">
                 {pos(f.from)} → <b>{pos(f.to)}</b>
                 <span className="muted">{pts(f.points)}</span>
