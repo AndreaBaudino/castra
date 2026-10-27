@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { authErrorKey, useAuth } from '../lib/auth'
 import { cloudEnabled } from '../lib/firebase'
@@ -131,7 +131,6 @@ function ThemeEditor({ theme, setTheme }: { theme: Theme; setTheme: (fn: (t: The
   const set = <K extends keyof Theme>(k: K) => (v: Theme[K]) => setTheme((x) => ({ ...x, [k]: v }))
   return (
     <section className="card">
-      <div className="card-title">{t('theme.title')}</div>
       <div className="stepper">
         <span>{t('theme.mode')}</span>
         <div className="seg">
@@ -316,7 +315,6 @@ function Preferences({ prefs, setPrefs }: { prefs: Prefs; setPrefs: (fn: (p: Pre
   const set = <K extends keyof Prefs>(k: K) => (v: Prefs[K]) => setPrefs((p) => ({ ...p, [k]: v }))
   return (
     <section className="card">
-      <div className="card-title">{t('account.prefs')}</div>
       <div className="pref-group">{t('account.newMatches')}</div>
       <Choice
         label={t('account.format')}
@@ -387,7 +385,6 @@ function DataSection({
   const file = useRef<HTMLInputElement>(null)
   return (
     <section className="card">
-      <div className="card-title">{t('account.data')}</div>
       {user && <SyncLine />}
       <p className="muted small no-margin">{t('account.dataCounts', { d: decks.length, m: matches.length })}</p>
       <div className="data-actions">
@@ -426,19 +423,14 @@ function DataSection({
   )
 }
 
+const versionLabel = __BUILD__.date.split('-').join('.') + (__BUILD__.commit ? ` · ${__BUILD__.commit}` : '')
+
 function Info() {
   const { t, lang } = useI18n()
   const [all, setAll] = useState(false)
   const releases = all ? CHANGELOG : CHANGELOG.slice(0, 1)
   return (
     <section className="card">
-      <div className="card-title">
-        {t('account.info')}
-        <span className="muted small">
-          {t('account.version')} {__BUILD__.date.split('-').join('.')}
-          {__BUILD__.commit && ` · ${__BUILD__.commit}`}
-        </span>
-      </div>
       <div className="pref-group">{t('account.whatsNew')}</div>
       {releases.map((r) => (
         <div key={r.date} className="release">
@@ -467,11 +459,74 @@ function Info() {
           <Icon name="chat" size={18} /> <span>{t('account.feedback')}</span> <Icon name="external" size={16} />
         </a>
       </div>
+      <p className="muted small no-margin version-line">Castra · {t('account.version')} {versionLabel}</p>
+    </section>
+  )
+}
+
+export type AccountSection = 'login' | 'circuit' | 'prefs' | 'look' | 'data' | 'info'
+const SECTIONS: AccountSection[] = ['login', 'circuit', 'prefs', 'look', 'data', 'info']
+export const isAccountSection = (s: string | null): s is AccountSection => SECTIONS.includes(s as AccountSection)
+
+function MenuRow({ icon, label, note, onClick }: { icon: string; label: string; note?: string; onClick: () => void }) {
+  return (
+    <button className="menu-row" onClick={onClick}>
+      <Icon name={icon} size={20} />
+      <span className="menu-label">{label}</span>
+      {note && <span className="muted small ellipsis menu-note">{note}</span>}
+      <Icon name="chevron" size={16} />
+    </button>
+  )
+}
+
+/** The account card at the top of the menu: who is signed in and their circuit player. */
+function ProfileCard({ circuit, cp, onLogin }: { circuit: Circuit | null; cp: CircuitPrefs; onLogin: () => void }) {
+  const { t, lang } = useI18n()
+  const { user } = useAuth()
+  const poty = useMemo(() => circuit && potyStatus(circuit), [circuit])
+  const me = cp.me ? circuit?.players.find((p) => p.key === cp.me) : undefined
+  if (!user)
+    return (
+      <section className="card profile-card">
+        <div className="profile">
+          <span className="avatar empty">
+            <Icon name="user" size={26} />
+          </span>
+          <p className="muted small no-margin">{t('auth.why')}</p>
+        </div>
+        <button className="btn primary" onClick={onLogin}>
+          {t('auth.signIn')}
+        </button>
+      </section>
+    )
+  return (
+    <section className="card profile-card">
+      <div className="profile">
+        {user.photo ? <img src={user.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{(user.name ?? user.email ?? '?')[0].toUpperCase()}</span>}
+        <div className="profile-text">
+          <strong className="ellipsis">{user.name ?? user.email}</strong>
+          {me && poty ? (
+            <span className="muted small ellipsis">
+              {me.rank ? placeLabel(me.rank, lang) : '—'} · {me.total} pt · POTY{' '}
+              {(me.potyInvited ? t('account.potyInvited') : poty.isIn(me) ? t('account.potyIn') : t('account.potyOut')).toLowerCase()}
+            </span>
+          ) : (
+            user.name && <span className="muted small ellipsis">{user.email}</span>
+          )}
+          {me && cp.claims.get(me.key)?.uid === cp.uid && (
+            <span className="verified">
+              <Icon name="check" size={13} /> {t('circuit.verified')}
+            </span>
+          )}
+        </div>
+      </div>
     </section>
   )
 }
 
 export default function Account({
+  section,
+  openSection,
   theme,
   setTheme,
   prefs,
@@ -487,6 +542,8 @@ export default function Account({
   onBack,
   onSignOut,
 }: {
+  section: AccountSection | null
+  openSection: (s: AccountSection) => void
   theme: Theme
   setTheme: (fn: (t: Theme) => Theme) => void
   prefs: Prefs
@@ -506,7 +563,13 @@ export default function Account({
   const { t, setLang } = useI18n()
   const dialog = useDialog()
   const { user, ready, signOut } = useAuth()
+  const sync = useSyncStatus()
   const [deleting, setDeleting] = useState(false)
+
+  // signed in from the login page: back to the menu
+  useEffect(() => {
+    if (section === 'login' && user) onBack()
+  }, [section, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const restore = async (text: string) => {
     const b = parseBackup(text)
@@ -543,6 +606,18 @@ export default function Account({
     }
   }
 
+  const titles: Record<AccountSection, string> = {
+    login: t('auth.signIn'),
+    circuit: t('account.circuit'),
+    prefs: t('account.prefs'),
+    look: t('theme.title'),
+    data: t('account.data'),
+    info: t('account.infoLinks'),
+  }
+  const syncNote = !user
+    ? t('account.matchesCount', { m: matches.length })
+    : t(`account.syncShort.${!navigator.onLine ? 'offline' : sync.failed ? 'error' : sync.pending ? 'saving' : 'ok'}`)
+
   return (
     <div className="page">
       <header className="page-head">
@@ -550,47 +625,60 @@ export default function Account({
           <button className="icon-btn" onClick={onBack} aria-label="back">
             <Icon name="back" />
           </button>
-          <h1>{t('auth.title')}</h1>
+          <h1>{section ? titles[section] : t('account.title')}</h1>
         </div>
       </header>
 
-      {!cloudEnabled ? (
-        <div className="notice">{t('auth.notConfigured')}</div>
-      ) : !ready ? (
-        <div className="empty">…</div>
-      ) : !user ? (
+      {!section ? (
+        <>
+          {!cloudEnabled ? (
+            <div className="notice">{t('auth.notConfigured')}</div>
+          ) : !ready ? (
+            <div className="empty">…</div>
+          ) : (
+            <ProfileCard circuit={circuit} cp={circuitPrefs} onLogin={() => openSection('login')} />
+          )}
+          <section className="card menu-card">
+            <MenuRow
+              icon="trophy"
+              label={titles.circuit}
+              note={circuitPrefs.follow.length ? t('account.followCount', { n: circuitPrefs.follow.length }) : undefined}
+              onClick={() => openSection('circuit')}
+            />
+            <MenuRow icon="gear" label={titles.prefs} onClick={() => openSection('prefs')} />
+            <MenuRow icon="palette" label={titles.look} onClick={() => openSection('look')} />
+            <MenuRow icon="database" label={titles.data} note={syncNote} onClick={() => openSection('data')} />
+            <MenuRow icon="info" label={titles.info} note={versionLabel.split(' · ')[0]} onClick={() => openSection('info')} />
+          </section>
+          {user && (
+            <section className="card menu-card">
+              <button
+                className="menu-row danger"
+                onClick={async () => {
+                  if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
+                  await signOut()
+                  onSignOut()
+                }}
+              >
+                <Icon name="logout" size={20} />
+                <span className="menu-label">{t('auth.signOut')}</span>
+              </button>
+            </section>
+          )}
+        </>
+      ) : section === 'login' ? (
         <LoginForm />
+      ) : section === 'circuit' ? (
+        <CircuitIdentity circuit={circuit} cp={circuitPrefs} openPlayer={openPlayer} findMe={findMe} />
+      ) : section === 'prefs' ? (
+        <Preferences prefs={prefs} setPrefs={setPrefs} />
+      ) : section === 'look' ? (
+        <ThemeEditor theme={theme} setTheme={setTheme} />
+      ) : section === 'data' ? (
+        <DataSection decks={decks} matches={matches} restore={restore} onDeleteAccount={user && !deleting ? removeAccount : undefined} />
       ) : (
-        <section className="card">
-          <div className="profile">
-            {user.photo ? <img src={user.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{(user.name ?? user.email ?? '?')[0].toUpperCase()}</span>}
-            <div className="profile-text">
-              <strong className="ellipsis">{user.name ?? user.email}</strong>
-              {user.name && <span className="muted small ellipsis">{user.email}</span>}
-            </div>
-          </div>
-          <div className="check ok">
-            <Icon name="shield" size={16} />
-            <div>{t('auth.synced')}</div>
-          </div>
-          <button
-            className="btn ghost"
-            onClick={async () => {
-              if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
-              await signOut()
-              onSignOut()
-            }}
-          >
-            {t('auth.signOut')}
-          </button>
-        </section>
+        <Info />
       )}
-
-      <CircuitIdentity circuit={circuit} cp={circuitPrefs} openPlayer={openPlayer} findMe={findMe} />
-      <Preferences prefs={prefs} setPrefs={setPrefs} />
-      <ThemeEditor theme={theme} setTheme={setTheme} />
-      <DataSection decks={decks} matches={matches} restore={restore} onDeleteAccount={user && !deleting ? removeAccount : undefined} />
-      <Info />
     </div>
   )
 }

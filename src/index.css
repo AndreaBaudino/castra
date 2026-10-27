@@ -2637,3 +2637,50 @@ textarea {
 .link-list a svg:first-child {
   color: var(--gold);
 }
+.menu-card {
+  padding: 0 14px;
+  gap: 0;
+}
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  text-align: left;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.menu-row:first-child {
+  border-top: 0;
+}
+.menu-row > svg:first-child {
+  color: var(--gold);
+  flex: none;
+}
+.menu-label {
+  flex: 1;
+  color: var(--text);
+  font-size: 0.98rem;
+}
+.menu-note {
+  max-width: 45%;
+}
+.menu-row.danger,
+.menu-row.danger > svg:first-child,
+.menu-row.danger .menu-label {
+  color: var(--bad);
+}
+.profile-card .profile > .avatar.empty {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 2px dashed var(--line);
+}
+.profile-card .profile-text {
+  gap: 3px;
+  align-items: flex-start;
+}
+.version-line {
+  text-align: center;
+  margin-top: 4px;
+}

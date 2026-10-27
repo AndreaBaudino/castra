@@ -18,7 +18,7 @@ import { ComparePage, LeaguePage } from './views/CircuitMore'
 import Decks from './views/Decks'
 import DeckDetail from './views/DeckDetail'
 import Stats from './views/Stats'
-import Account from './views/Account'
+import Account, { isAccountSection } from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
 import { useDialog } from './components/Dialog'
 
@@ -211,7 +211,9 @@ export default function App() {
             circuitPrefs={circuitPrefs}
             openPlayer={openPlayer}
             findMe={findMe}
-            onBack={() => go('home')}
+            section={isAccountSection(route.deck) ? route.deck : null}
+            openSection={(sec) => go('account', sec, true)}
+            onBack={() => (route.deck ? history.back() : go('home'))}
             onSignOut={() => {
               // the data now lives in the account: don't leave it on a possibly shared device
               setDecks(() => [])
