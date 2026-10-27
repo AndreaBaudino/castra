@@ -2689,3 +2689,59 @@ textarea {
   text-align: center;
   margin-top: 4px;
 }
+
+/* life counter history */
+.bar-btn:disabled {
+  opacity: 0.35;
+}
+.history-card {
+  max-height: 80dvh;
+}
+.life-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  max-height: 52dvh;
+  display: flex;
+  flex-direction: column;
+}
+.life-log li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+.life-log li:first-child {
+  border-top: 0;
+}
+.log-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.log-dot.p0 {
+  background: var(--p0);
+}
+.log-dot.p1 {
+  background: var(--p1);
+}
+.log-what {
+  flex: 1;
+  min-width: 0;
+}
+.log-after {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.log-after small {
+  font-weight: 600;
+  color: var(--muted);
+}
+.log-time {
+  min-width: 40px;
+  text-align: right;
+}

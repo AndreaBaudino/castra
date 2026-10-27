@@ -31,6 +31,33 @@ export interface GameState {
   players: [PlayerState, PlayerState]
   startedAt: string
   timer?: TimerState
+  log?: LogEntry[] // what changed, oldest first: emptied by a new game
+}
+
+/** One change to a player's counters; taps in a quick burst on the same player add up into one entry. */
+export interface LogEntry {
+  p: 0 | 1
+  d: PlayerState // the change
+  after: PlayerState
+  at: number // ms
+}
+
+const BURST_MS = 2000
+const diff = (a: PlayerState, b: PlayerState): PlayerState => ({ life: b.life - a.life, cmd: b.cmd - a.cmd, poison: b.poison - a.poison })
+const isZero = (d: PlayerState) => !d.life && !d.cmd && !d.poison
+const sum = (a: PlayerState, b: PlayerState): PlayerState => ({ life: a.life + b.life, cmd: a.cmd + b.cmd, poison: a.poison + b.poison })
+
+function logChange(log: LogEntry[], p: 0 | 1, before: PlayerState, after: PlayerState): LogEntry[] {
+  const d = diff(before, after)
+  if (isZero(d)) return log
+  const last = log[log.length - 1]
+  const now = Date.now()
+  if (last && last.p === p && now - last.at < BURST_MS) {
+    const merged = sum(last.d, d)
+    // a burst that cancels itself out leaves nothing to show
+    return isZero(merged) ? log.slice(0, -1) : [...log.slice(0, -1), { p, d: merged, after, at: now }]
+  }
+  return [...log, { p, d, after, at: now }]
 }
 
 const fresh = (startLife: number): GameState => ({
@@ -236,12 +263,14 @@ export default function LifeCounter({
   metaNames: string[]
   onSaveMatch: (m: Match) => void
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const dialog = useDialog()
   const [game, setGame] = useStoredState<GameState>(GAME_KEY, defaultGame())
   const [settings, setSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
   const [menu, setMenu] = useState(false)
   useBackCloses(menu, () => setMenu(false))
+  const [history, setHistory] = useState(false)
+  useBackCloses(history, () => setHistory(false))
   const [recording, setRecording] = useState(false)
   const [roll, setRoll] = useState<Roll | null>(null)
   const [banner, setBanner] = useState('')
@@ -307,8 +336,20 @@ export default function LifeCounter({
     setGame((g) => {
       const players = [...g.players] as GameState['players']
       players[i] = fn(players[i])
-      return { ...g, players }
+      return { ...g, players, log: logChange(g.log ?? [], i, g.players[i], players[i]) }
     })
+
+  const log = game.log ?? []
+  const undo = () => {
+    haptic(15)
+    setGame((g) => {
+      const last = g.log?.[g.log.length - 1]
+      if (!last) return g
+      const players = [...g.players] as GameState['players']
+      players[last.p] = diff(last.d, players[last.p]) // subtracts the change
+      return { ...g, players, log: g.log!.slice(0, -1) }
+    })
+  }
 
   const reset = (startLife = game.startLife) => {
     setGame(fresh(startLife))
@@ -328,12 +369,18 @@ export default function LifeCounter({
         <button className="bar-btn" onClick={() => setRoll({ kind: 'dice', values: [d20(), d20()] })} aria-label={t('life.dice')}>
           <Icon name="dice" />
         </button>
+        <button className="bar-btn" onClick={undo} disabled={!log.length} aria-label={t('life.undo')}>
+          <Icon name="undo" />
+        </button>
         <TimerPill
           timer={timer}
           settings={settings}
           onToggle={toggleTimer}
           onTurn={(d) => setTimer((x) => ({ ...x, turn: Math.max(0, x.turn + d) }))}
         />
+        <button className="bar-btn" onClick={() => setHistory(true)} aria-label={t('life.history')}>
+          <Icon name="history" />
+        </button>
         <button className={`bar-btn accent ${someoneDead ? 'attn' : ''}`} onClick={() => setMenu(true)} aria-label={t('game.settings')}>
           <Icon name="gear" />
         </button>
@@ -357,6 +404,45 @@ export default function LifeCounter({
           <div className="roll-half p1">
             <div className="roll-big">{roll.values[1]}</div>
             <div className="roll-sub">d20</div>
+          </div>
+        </div>
+      )}
+
+      {history && (
+        <div className="roll-overlay dim" onClick={() => setHistory(false)}>
+          <div className="reset-card history-card" onClick={(e) => e.stopPropagation()}>
+            <strong>{t('life.history')}</strong>
+            {!log.length ? (
+              <p className="muted small no-margin">{t('life.historyEmpty')}</p>
+            ) : (
+              <ol className="life-log">
+                {[...log].reverse().map((e, i) => (
+                  <li key={log.length - i}>
+                    <span className={`log-dot p${e.p}`} />
+                    <span className="log-what">
+                      {(['life', 'cmd', 'poison'] as const)
+                        .filter((k) => e.d[k])
+                        .map((k) => `${e.d[k] > 0 ? '+' : '−'}${Math.abs(e.d[k])} ${t(k === 'life' ? 'life.lifeShort' : k === 'cmd' ? 'life.cmd' : 'life.poison').toLowerCase()}`)
+                        .join(' · ')}
+                    </span>
+                    <span className="log-after">
+                      {e.after.life}
+                      {e.after.cmd > 0 && <small> · C{e.after.cmd}</small>}
+                      {e.after.poison > 0 && <small> · V{e.after.poison}</small>}
+                    </span>
+                    <span className="muted small log-time">{new Date(e.at).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <div className="btn-pair">
+              <button className="btn ghost" disabled={!log.length} onClick={undo}>
+                <Icon name="undo" size={16} /> {t('life.undo')}
+              </button>
+              <button className="btn ghost" onClick={() => setHistory(false)}>
+                {t('life.close')}
+              </button>
+            </div>
           </div>
         </div>
       )}
