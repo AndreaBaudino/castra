@@ -3203,3 +3203,104 @@ a.menu-row {
 .card.collapsible:not(.open) .collapse-head {
   min-height: 24px;
 }
+
+/* player page: the picture over the signature commander's art, badges, colours */
+.player-cover {
+  position: relative;
+  align-self: stretch;
+  margin: 0 -16px;
+  height: 190px;
+  margin-bottom: 28px;
+  display: grid;
+  place-items: end center;
+}
+.player-cover-art {
+  position: absolute;
+  inset: 0;
+  background: center top / cover no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+  mask-image: linear-gradient(180deg, #000 70%, transparent);
+  opacity: 0.9;
+}
+.player-cover .claim-avatar {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  background: var(--surface-2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transform: translateY(28px); /* on the art's faded bottom edge */
+}
+.player-cover .claim-avatar:not(.claimed) {
+  border-style: solid;
+}
+/* "most played deck": a card with the commander's art and a link to its page */
+.card.signature {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px 10px 10px;
+  text-align: left;
+  color: var(--muted);
+}
+.signature-art {
+  width: 56px;
+  height: 42px;
+  border-radius: 8px;
+  flex: none;
+  background: var(--surface-2) center top / cover no-repeat;
+}
+.signature-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text);
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.badge.gold {
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 45%, transparent);
+  color: var(--gold);
+}
+.color-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 4px 0 10px;
+}
+.color-bar span {
+  flex-basis: 0;
+}
+.color-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.color-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}

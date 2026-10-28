@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { PlayerBadges, PlayerColors, PlayerCover, SignatureDeck, signatureOf } from './PlayerCard'
 import { useI18n } from '../i18n'
 import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type RankChange, eventDateLabel, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
@@ -7,7 +8,7 @@ import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
 import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
-import type { MetaDataset } from '../lib/meta'
+import type { MetaCommander, MetaDataset } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
@@ -336,14 +337,25 @@ export function PlayerPage({
     // in the meta but not in the circuit ranking (a league that doesn't count, or a name written differently)
     return (
       <SubPageShell title={mine[0].player!} onBack={onBack}>
+        <div className="claim-box">
+          <PlayerCover signature={signatureOf(dataset, mine)}>
+            <span className="claim-avatar">
+              <Icon name="user" size={30} />
+            </span>
+          </PlayerCover>
+        </div>
         <div className="notice">{t('meta.notInCircuit')}</div>
         <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />
+        <PlayerColors dataset={dataset} entries={mine} />
         <PlayerLists dataset={dataset} entries={mine} />
+        <PlayerBadges dataset={dataset} entries={mine} />
+        <SignatureDeck signature={signatureOf(dataset, mine)} openCommander={openCommander} />
         <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} openTournament={openTournament} openEvent={openEvent} />
       </SubPageShell>
     )
   }
   const followed = prefs.follow.includes(p.key)
+  const signature = dataset ? signatureOf(dataset, mine) : undefined
   const above = [...circuit.players].reverse().find((o) => o.total > p.total)
 
   return (
@@ -360,7 +372,7 @@ export function PlayerPage({
         </button>
       }
     >
-      <ClaimBox p={p} prefs={prefs} />
+      <ClaimBox p={p} prefs={prefs} signature={signature} />
       {/* "me" on the left when comparing someone with me */}
       <ComparePicker circuit={circuit} p={p} prefs={prefs} onPick={(o) => (o === prefs.me ? openCompare(o, p.key) : openCompare(p.key, o))} />
 
@@ -382,6 +394,9 @@ export function PlayerPage({
         <PotyNote p={p} poty={poty} />
         {above && <div className="muted small">{t('circuit.gapAbove', { n: above.total - p.total, r: above.rank ?? '' })}</div>}
       </section>
+
+      {dataset && <PlayerBadges dataset={dataset} entries={mine} player={p} />}
+      <SignatureDeck signature={signature} openCommander={openCommander} />
 
       <MyRecordVs p={p} matches={prefs.matches} />
 
@@ -411,6 +426,7 @@ export function PlayerPage({
       </section>
 
       {dataset && mine.length > 0 && <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />}
+      {dataset && <PlayerColors dataset={dataset} entries={mine} />}
 
       {p.events.length > 0 && (
         <section className="card">
@@ -490,7 +506,7 @@ export function VerifiedTick() {
 }
 
 /** The claimer's picture, the "verified" tick and the button to claim or release the player. */
-function ClaimBox({ p, prefs }: { p: Player; prefs: CircuitPrefs }) {
+function ClaimBox({ p, prefs, signature }: { p: Player; prefs: CircuitPrefs; signature?: { cmd: MetaCommander } }) {
   const { t } = useI18n()
   const dialog = useDialog()
   const [busy, setBusy] = useState(false)
@@ -506,15 +522,17 @@ function ClaimBox({ p, prefs }: { p: Player; prefs: CircuitPrefs }) {
   }
   return (
     <div className="claim-box">
-      <span className={`claim-avatar ${claim ? 'claimed' : ''}`}>
-        {claim?.photo ? (
-          <img src={claim.photo} alt="" referrerPolicy="no-referrer" />
-        ) : claim ? (
-          <span>{(claim.name ?? p.name)[0].toUpperCase()}</span>
-        ) : (
-          <Icon name="user" size={30} />
-        )}
-      </span>
+      <PlayerCover signature={signature}>
+        <span className={`claim-avatar ${claim ? 'claimed' : ''}`}>
+          {claim?.photo ? (
+            <img src={claim.photo} alt="" referrerPolicy="no-referrer" />
+          ) : claim ? (
+            <span>{(claim.name ?? p.name)[0].toUpperCase()}</span>
+          ) : (
+            <Icon name="user" size={30} />
+          )}
+        </span>
+      </PlayerCover>
       {claim && (
         <span className="verified">
           <Icon name="check" size={13} /> {t('circuit.verified')}

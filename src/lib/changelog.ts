@@ -22,6 +22,7 @@ export const CHANGELOG: Release[] = [
       'Mazzi: il numero di carte compare solo come avviso se non sono 100, e "lista non valida" per gli altri problemi; pallino del mana nero più visibile nel tema scuro',
       'Tasto indietro del telefono: dalle schermate principali torna alla Home, dalle sottoschermate a quella superiore; chiude l\'app solo dalla Home',
       'Meta: filtro per numero di giocatori del torneo, con minimo e massimo (8, 12, 16, 24 o 32), per guardare quote e winrate solo nei tornei grandi o solo in quelli piccoli',
+      'Scheda giocatore: immagine profilo sopra la splash art del mazzo più giocato, traguardi (tornei e tappe vinti, Top 8, imbattuto, sempre presente, fedele, camaleonte, giramondo), mazzo più giocato e i suoi colori',
     ],
     en: [
       'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
@@ -36,6 +37,7 @@ export const CHANGELOG: Release[] = [
       'Decks: the card count shows only as a warning when it isn\'t 100, and "invalid list" for other problems; black mana pips easier to see on the dark theme',
       'Phone back button: from the main screens it goes to Home, from sub-pages to the page above; it closes the app only from Home',
       'Meta: filter by tournament size, with a minimum and a maximum (8, 12, 16, 24 or 32 players), to see shares and winrates in the big or in the small tournaments only',
+      'Player page: profile picture over the art of their most played deck, badges (tournaments and stages won, Top 8, unbeaten, never missed, loyal, chameleon, traveller), most played deck and their colours',
     ],
   },
   {

@@ -40,7 +40,7 @@ export const dateLabel = (x: MetaTournament, lang: string, t: T) =>
 export const fmtRec = (r: { wins: number; losses: number; draws: number }) => `${r.wins}-${r.losses}-${r.draws}`
 
 /** Front face of the first commander: its art for the page header. */
-const artUrl = (name: string) =>
+export const artUrl = (name: string) =>
   `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name.split(' / ')[0].split(' // ')[0])}&format=image&version=art_crop`
 
 /** A place badge: gold for the top 4, light gold for the top 8 of an event (a stage has no top 8, only its winner). */
