@@ -92,7 +92,15 @@ export function CommanderPage({
     const results = rows
       .filter((e) => (isEvent(tour(e)) ? e.place <= 8 : e.place === 1))
       .sort((a, b) => +isEvent(tour(b)) - +isEvent(tour(a)) || a.place - b.place || (tour(b).date ?? '').localeCompare(tour(a).date ?? ''))
-    const lists = rows.filter((e) => e.list).sort((a, b) => (tour(b).date ?? '').localeCompare(tour(a).date ?? ''))
+    // one list per player, the most recent: popular commanders have dozens
+    const seen = new Set<string>()
+    const lists = rows
+      .filter((e) => e.list)
+      .sort((a, b) => (tour(b).date ?? '').localeCompare(tour(a).date ?? ''))
+      .filter((e) => {
+        const k = e.key ?? e.list!
+        return !seen.has(k) && !!seen.add(k)
+      })
     const byKind = (['league', 'l1', 'l2', 'online'] as const)
       .map((k) => {
         const list = rows.filter((e) => tour(e).kind === k)
