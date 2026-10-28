@@ -24,6 +24,7 @@ export const CHANGELOG: Release[] = [
       'Meta: filtro per numero di giocatori del torneo, con minimo e massimo (8, 12, 16, 24 o 32), per guardare quote e winrate solo nei tornei grandi o solo in quelli piccoli',
       'Scheda giocatore: immagine profilo sopra la splash art del mazzo più giocato, traguardi (tornei e tappe vinti, Top 8, imbattuto, sempre presente, fedele, camaleonte, giramondo), mazzo più giocato e i suoi colori',
       'Scheda giocatore: chi l\'ha verificata può personalizzarla dalla matita in alto, scegliendo l\'immagine dietro la foto e il mazzo in evidenza',
+      'Scheda giocatore: tocca un traguardo per vedere cosa significa e in quali tornei è stato ottenuto; liste Moxfield a tutta larghezza',
     ],
     en: [
       'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
@@ -40,6 +41,7 @@ export const CHANGELOG: Release[] = [
       'Meta: filter by tournament size, with a minimum and a maximum (8, 12, 16, 24 or 32 players), to see shares and winrates in the big or in the small tournaments only',
       'Player page: profile picture over the art of their most played deck, badges (tournaments and stages won, Top 8, unbeaten, never missed, loyal, chameleon, traveller), most played deck and their colours',
       'Player page: whoever verified it can customise it from the pencil at the top, choosing the art behind their picture and their featured deck',
+      'Player page: tap a badge to see what it means and the tournaments behind it; full-width Moxfield lists',
     ],
   },
   {

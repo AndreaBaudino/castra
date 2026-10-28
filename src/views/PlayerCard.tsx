@@ -6,7 +6,7 @@ import { type CardInfo, WUBRG } from '../lib/decks'
 import { Icon, Pips, Sheet, pct } from '../components/ui'
 import { type Claim, type ClaimLook, customizeClaim } from '../lib/claims'
 import { searchCards } from '../lib/scryfall'
-import { artUrl, isEvent } from './MetaPages'
+import { artUrl, dateLabel, isEvent, tournamentLabel } from './MetaPages'
 
 // What makes a player's page their own: their picture over their signature commander's art, the badges earned in
 // the tournaments, and the colours they play. All computed from the tournament data.
@@ -197,6 +197,8 @@ export function CustomizeSheet({
 interface Badge {
   id: string
   label: string
+  desc: string // what it means, shown when tapped
+  where?: MetaEntry[] // the tournaments behind it, if any
   gold?: boolean
 }
 
@@ -204,22 +206,28 @@ const LOYAL = 10 // tournaments with the same commander
 const CHAMELEON = 5 // different commanders
 const TRAVELER = 5 // different venues
 const FULL_LEAGUE = 4 // a league with at least these stages, all played
+const SHOW_WHERE = 6
 
 export function PlayerBadges({ dataset, entries, player }: { dataset: MetaDataset; entries: MetaEntry[]; player?: Player }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
+  const [open, setOpen] = useState<string | null>(null)
   const badges = useMemo(() => {
     const tour = (e: MetaEntry) => dataset.tournaments[e.t]
+    const recent = (list: MetaEntry[]) => [...list].sort((a, b) => (tour(b).date ?? '').localeCompare(tour(a).date ?? ''))
     const out: Badge[] = []
-    const add = (id: string, label: string, gold = false) => out.push({ id, label, gold })
-    const eventWins = entries.filter((e) => isEvent(tour(e)) && e.place === 1).length
-    const stageWins = entries.filter((e) => !isEvent(tour(e)) && e.place === 1).length
-    const top8 = entries.filter((e) => isEvent(tour(e)) && e.place <= 8).length
-    if (eventWins) add('eventWins', t('badge.eventWins', { n: eventWins }), true)
-    if (stageWins) add('stageWins', t('badge.stageWins', { n: stageWins }), true)
-    if (player?.potyInvited) add('poty', t('badge.poty'), true)
-    if (top8) add('top8', t('badge.top8', { n: top8 }))
-    const unbeaten = entries.filter((e) => e.w != null && e.w - (e.bye ? 1 : 0) > 0 && !e.l).length
-    if (unbeaten) add('unbeaten', t('badge.unbeaten', { n: unbeaten }))
+    const add = (b: Badge) => out.push(b)
+    const eventWins = entries.filter((e) => isEvent(tour(e)) && e.place === 1)
+    const stageWins = entries.filter((e) => !isEvent(tour(e)) && e.place === 1)
+    const top8 = entries.filter((e) => isEvent(tour(e)) && e.place <= 8)
+    const n = (list: MetaEntry[]) => ({ n: list.length })
+    if (eventWins.length)
+      add({ id: 'eventWins', label: t('badge.eventWins', n(eventWins)), desc: t('badge.eventWins.desc'), where: recent(eventWins), gold: true })
+    if (stageWins.length)
+      add({ id: 'stageWins', label: t('badge.stageWins', n(stageWins)), desc: t('badge.stageWins.desc'), where: recent(stageWins), gold: true })
+    if (player?.potyInvited) add({ id: 'poty', label: t('badge.poty'), desc: t('badge.poty.desc'), gold: true })
+    if (top8.length) add({ id: 'top8', label: t('badge.top8', n(top8)), desc: t('badge.top8.desc'), where: recent(top8) })
+    const unbeaten = entries.filter((e) => e.w != null && e.w - (e.bye ? 1 : 0) > 0 && !e.l)
+    if (unbeaten.length) add({ id: 'unbeaten', label: t('badge.unbeaten', n(unbeaten)), desc: t('badge.unbeaten.desc'), where: recent(unbeaten) })
     // all the stages of a league, in a season
     const stages = new Map<string, number>()
     for (const x of dataset.tournaments) if (x.kind === 'league') stages.set(`${x.season} ${x.league}`, (stages.get(`${x.season} ${x.league}`) ?? 0) + 1)
@@ -233,26 +241,65 @@ export function PlayerBadges({ dataset, entries, player }: { dataset: MetaDatase
     for (const [k, s] of played)
       if ((stages.get(k) ?? 0) >= FULL_LEAGUE && s.size >= stages.get(k)!) {
         const [season, ...league] = k.split(' ')
-        add(`full-${k}`, t('badge.fullLeague', { l: `${league.join(' ')} ${season.toUpperCase()}` }))
+        const l = `${league.join(' ')} ${season.toUpperCase()}`
+        add({ id: `full-${k}`, label: t('badge.fullLeague', { l }), desc: t('badge.fullLeague.desc', { l, n: stages.get(k)! }) })
       }
     const byCmd = new Map<number, number>()
     for (const e of entries) if (e.cmd >= 0) byCmd.set(e.cmd, (byCmd.get(e.cmd) ?? 0) + 1)
     const [loyal, loyalN] = [...byCmd].sort((a, b) => b[1] - a[1])[0] ?? [-1, 0]
-    if (loyalN >= LOYAL) add('loyal', t('badge.loyal', { c: shortName(dataset.commanders[loyal].name).split(',')[0] }))
-    if (byCmd.size >= CHAMELEON) add('chameleon', t('badge.chameleon', { n: byCmd.size }))
-    const venues = new Set(entries.map((e) => tour(e).name)).size
-    if (venues >= TRAVELER) add('traveler', t('badge.traveler', { n: venues }))
+    if (loyalN >= LOYAL) {
+      const c = shortName(dataset.commanders[loyal].name)
+      add({ id: 'loyal', label: t('badge.loyal', { c: c.split(',')[0] }), desc: t('badge.loyal.desc', { c, n: loyalN, min: LOYAL }) })
+    }
+    if (byCmd.size >= CHAMELEON)
+      add({ id: 'chameleon', label: t('badge.chameleon', { n: byCmd.size }), desc: t('badge.chameleon.desc', { n: byCmd.size, min: CHAMELEON }) })
+    const venues = [...new Set(entries.map((e) => tour(e).name))]
+    if (venues.length >= TRAVELER)
+      add({
+        id: 'traveler',
+        label: t('badge.traveler', { n: venues.length }),
+        desc: `${t('badge.traveler.desc', { min: TRAVELER })} ${venues.sort((a, b) => a.localeCompare(b)).join(', ')}.`,
+      })
     return out
   }, [dataset, entries, player, t])
   if (!badges.length) return null
+  const shown = badges.find((b) => b.id === open)
   return (
-    <div className="badges">
-      {badges.map((b) => (
-        <span key={b.id} className={`badge ${b.gold ? 'gold' : ''}`}>
-          {b.gold && <Icon name="trophy" size={12} />}
-          {b.label}
-        </span>
-      ))}
+    <div className="badges-box">
+      <div className="badges">
+        {badges.map((b) => (
+          <button
+            key={b.id}
+            className={`badge ${b.gold ? 'gold' : ''} ${b.id === open ? 'on' : ''}`}
+            title={b.desc}
+            aria-expanded={b.id === open}
+            onClick={() => setOpen(b.id === open ? null : b.id)}
+          >
+            {b.gold && <Icon name="trophy" size={12} />}
+            {b.label}
+          </button>
+        ))}
+      </div>
+      {shown ? (
+        <div className="badge-info">
+          <p>{shown.desc}</p>
+          {shown.where && (
+            <ul>
+              {shown.where.slice(0, SHOW_WHERE).map((e) => {
+                const x = dataset.tournaments[e.t]
+                return (
+                  <li key={e.t}>
+                    {tournamentLabel(x, t)} <span className="muted">· {dateLabel(x, lang, t)}</span>
+                  </li>
+                )
+              })}
+              {shown.where.length > SHOW_WHERE && <li className="muted">{t('badge.more', { n: shown.where.length - SHOW_WHERE })}</li>}
+            </ul>
+          )}
+        </div>
+      ) : (
+        <p className="muted small">{t('badge.hint')}</p>
+      )}
     </div>
   )
 }

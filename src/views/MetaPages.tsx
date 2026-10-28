@@ -289,7 +289,7 @@ export function CommanderPage({
 
           {view.lists.length > 0 && (
             <section className="group">
-              <button className="btn" onClick={() => setShowLists(!showLists)}>
+              <button className="btn full" onClick={() => setShowLists(!showLists)}>
                 {t('meta.lists', { n: view.lists.length })}
                 <Icon name="chevron" size={16} />
               </button>
@@ -830,7 +830,7 @@ export function PlayerLists({ dataset, entries }: { dataset: MetaDataset; entrie
   if (!lists.length) return null
   return (
     <section className="group">
-      <button className="btn" onClick={() => setOpen(!open)}>
+      <button className="btn full" onClick={() => setOpen(!open)}>
         {t('meta.lists', { n: lists.length })}
         <Icon name="chevron" size={16} />
       </button>

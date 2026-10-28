@@ -3258,11 +3258,44 @@ a.menu-row {
   gap: 2px;
   color: var(--text);
 }
+.badges-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.badges-box > p {
+  margin: 0;
+}
 .badges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 12px;
+}
+.badge.on {
+  border-color: var(--text);
+}
+.badge.gold.on {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+/* what the tapped badge means, and where it was earned */
+.badge-info {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+}
+.badge-info p {
+  margin: 0;
+}
+.badge-info ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .badge {
   display: inline-flex;
