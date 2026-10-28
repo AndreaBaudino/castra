@@ -30,8 +30,10 @@ nel winrate; quelli non spuntati restano vittorie finché qualcuno non li spunta
 ### Aggiornamento automatico (ogni notte)
 
 `.github/workflows/meta.yml` gira ogni notte a mezzanotte (ora italiana) e si può lanciare a mano da
-Actions → Update meta → Run workflow. Scarica i fogli, rifà `public/meta-2026.json` e, se qualcosa è cambiato, fa il
-commit e ripubblica l'app. Se un foglio non si scarica non pubblica niente (e GitHub manda una mail di errore).
+Actions → Update meta → Run workflow. Scarica i fogli, rifà il meta e, se qualcosa è cambiato, lo scrive sul ramo
+`meta-data`, che contiene solo `meta-2026.json` (un unico commit, sostituito ogni volta). L'app legge i dati da lì:
+`main` non viene toccato e l'app non viene ripubblicata. Se quel file non si raggiunge, l'app usa la copia in
+`public/`. Se un foglio non si scarica non pubblica niente (e GitHub manda una mail di errore).
 
 I fogli si leggono con il tuo account Google tramite un piccolo Apps Script (`scripts/meta/apps-script`).
 Setup (una tantum):

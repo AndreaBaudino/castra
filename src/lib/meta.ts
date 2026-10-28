@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { META_YEAR } from '../config'
+import { META_DATA_URL, META_YEAR } from '../config'
 import { playerKey } from './circuit'
 import { readStored, writeStored } from './storage'
 
@@ -226,7 +226,13 @@ export function metaCommanderOf(ds: MetaDataset | null, name: string) {
 }
 
 const CACHE_KEY = 'cc.meta.data'
-const dataUrl = `${import.meta.env.BASE_URL}meta-${META_YEAR}.json`
+const bundledUrl = `${import.meta.env.BASE_URL}meta-${META_YEAR}.json`
+
+async function fetchJson(url: string) {
+  const res = await fetch(url, { cache: 'no-cache' })
+  if (!res.ok) throw new Error(String(res.status))
+  return (await res.json()) as RawMeta
+}
 
 export function useMeta() {
   const [raw, setRaw] = useState<RawMeta | null>(() => readStored<RawMeta | null>(CACHE_KEY, null))
@@ -235,9 +241,8 @@ export function useMeta() {
   const refresh = useCallback(async () => {
     setStatus('loading')
     try {
-      const res = await fetch(dataUrl, { cache: 'no-cache' })
-      if (!res.ok) throw new Error(String(res.status))
-      const next = (await res.json()) as RawMeta
+      // the nightly data, else the copy published with the app
+      const next = await fetchJson(META_DATA_URL).catch(() => fetchJson(bundledUrl))
       writeStored(CACHE_KEY, next)
       setRaw(next)
       setStatus('idle')
