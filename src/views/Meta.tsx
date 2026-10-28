@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { ALL, type MetaDataset, type MetaDeck, type MetaFilter, type TournamentKind, aggregate, normName, shortName, winrate } from '../lib/meta'
 import { Icon, Pips, pct, wrClass } from '../components/ui'
@@ -35,13 +35,21 @@ export function MetaFilters({
   leagues?: boolean
 }) {
   const { t } = useI18n()
+  // the in-person leagues: the online league is a kind of tournament of its own
   const names = useMemo(
     () =>
-      [...new Set(dataset.tournaments.filter((x) => x.league && (!filter.season || x.season === filter.season)).map((x) => x.league!))].sort(
-        (a, b) => a.localeCompare(b),
-      ),
+      [
+        ...new Set(
+          dataset.tournaments.filter((x) => x.kind === 'league' && x.league && (!filter.season || x.season === filter.season)).map((x) => x.league!),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
     [dataset, filter.season],
   )
+  // a filter saved when the online league was also in the league picker
+  const onlineLeague = !!filter.league && dataset.tournaments.some((x) => x.kind === 'online' && x.league === filter.league)
+  useEffect(() => {
+    if (onlineLeague) setFilter({ ...filter, kind: 'online', league: '' })
+  }, [onlineLeague, filter, setFilter])
   return (
     <div className="filters wrap">
       <div className="seg">
@@ -64,11 +72,11 @@ export function MetaFilters({
           </option>
         ))}
       </select>
-      {leagues && (
+      {leagues && (filter.kind === '' || filter.kind === 'league') && (
         <select
           className="select-pill"
           value={names.includes(filter.league) ? filter.league : ''}
-          onChange={(e) => setFilter({ ...filter, league: e.target.value, kind: e.target.value && filter.kind !== 'online' ? '' : filter.kind })}
+          onChange={(e) => setFilter({ ...filter, league: e.target.value })}
           aria-label={t('circuit.league')}
         >
           <option value="">{t('circuit.allLeagues')}</option>
