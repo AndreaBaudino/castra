@@ -250,7 +250,7 @@ const entries = []
 const tournaments = []
 for (const { t, players, rows } of tables) {
   const ti = tournaments.length
-  tournaments.push({ ...t, p: Math.max(players ?? 0, rows.length) })
+  tournaments.push({ ...t, p: players || rows.length }) // as declared in the sheet: some rows can be drops or duplicates
   rows.forEach((r, i) => {
     let ci = -1
     if (r.commander) {

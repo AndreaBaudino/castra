@@ -1,25 +1,78 @@
-import { useCallback, useEffect, useState } from 'react'
-import { META_SHEET_ID, META_SHEET_TAB, META_SUMMARY_TAB } from '../config'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { META_YEAR } from '../config'
+import { playerKey } from './circuit'
 import { readStored, writeStored } from './storage'
 
+// The deck meta of the circuit, from the tournament sheets (built by scripts/build-meta.mjs into
+// public/meta-<year>.json): every player's result at every event and league stage. Everything shown
+// (shares, winrates, a commander's or a player's record) is computed here from those rows, for any filter.
+
+export type Season = 's1' | 's2'
+export type TournamentKind = 'league' | 'l1' | 'l2' | 'online'
+
+export interface MetaTournament {
+  index: number
+  id: string
+  kind: TournamentKind
+  season: Season
+  name: string // events: the venue; leagues: the venue of the stages
+  league?: string // leagues: their name in the circuit sheet
+  stage?: number
+  date?: string // ISO day, missing for a few stages
+  players: number
+  circuit?: string // events: the event's title in the circuit sheet
+}
+
+export interface MetaCommander {
+  id: number
+  name: string // Scryfall names, partners as "A / B"
+  colors: string // WUBRG
+}
+
+/** One player at one tournament. A row may lack the player (anonymous), the deck, or the results. */
+export interface MetaEntry {
+  t: number // tournament index
+  player: string | null
+  key: string | null // playerKey(player)
+  cmd: number // commander id, -1 when unknown
+  place: number
+  w: number | null // null: results not filled in
+  l: number
+  d: number
+  bye: boolean // a bye ticked in the sheet: one of the wins, left out of the winrate
+  list: string | null
+}
+
+export interface MetaDataset {
+  year: number
+  updated: string
+  tournaments: MetaTournament[]
+  commanders: MetaCommander[]
+  entries: MetaEntry[]
+}
+
 export interface MetaDeck {
+  id: number // commander id
   name: string
   colors: string // WUBRG letters, '' if unknown
+  entries: number // times registered at a tournament
+  players: number // different players
   games: number
   wins: number
   losses: number
   draws: number
-  share: number // 0..1
+  share: number // 0..1 of the registered decks
 }
 
 export interface MetaData {
   decks: MetaDeck[]
-  summary: string[] // editorial paragraphs, may be empty
+  entries: number
+  tournaments: number
   updatedAt: string // ISO
-  demo: boolean
 }
 
-export const winrate = (d: MetaDeck) => (d.games ? d.wins / d.games : 0)
+/** Win rate without draws (as in the official sheets): the whole field averages 50%. */
+export const winrate = (d: { wins: number; losses: number }) => (d.wins + d.losses ? d.wins / (d.wins + d.losses) : 0)
 
 /** Wilson score interval (95%) — tells small samples apart from solid ones. */
 export function wilson(wins: number, n: number): [number, number] {
@@ -51,7 +104,161 @@ export function findMetaDeck(decks: MetaDeck[], commanderNames: string[]): MetaD
   )
 }
 
-// ---------- CSV ----------
+/** The name for lists: front faces only ("Ajani, Nacatl Pariah" for "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger"). */
+export const shortName = (name: string) =>
+  name
+    .split(' / ')
+    .map((p) => p.split(' // ')[0])
+    .join(' / ')
+
+// ---------- filters and records ----------
+
+export interface MetaFilter {
+  season: Season | '' // '' = the whole year
+  kind: TournamentKind | ''
+  league: string
+}
+export const ALL: MetaFilter = { season: '', kind: '', league: '' }
+
+export const inFilter = (t: MetaTournament, f: MetaFilter) =>
+  (!f.season || t.season === f.season) && (!f.kind || t.kind === f.kind) && (!f.league || t.league === f.league)
+
+export const entriesOf = (ds: MetaDataset, f: MetaFilter) => ds.entries.filter((e) => inFilter(ds.tournaments[e.t], f))
+
+export interface MetaRecord {
+  wins: number
+  losses: number
+  draws: number
+  games: number
+}
+
+/** Wins, losses and draws of some rows, ticked byes left out. */
+export function recordOf(entries: MetaEntry[]): MetaRecord {
+  const r = { wins: 0, losses: 0, draws: 0, games: 0 }
+  for (const e of entries) {
+    if (e.w == null) continue
+    r.wins += e.w - (e.bye ? 1 : 0)
+    r.losses += e.l
+    r.draws += e.d
+  }
+  r.games = r.wins + r.losses + r.draws
+  return r
+}
+
+export function aggregate(ds: MetaDataset, f: MetaFilter): MetaData {
+  const rows = entriesOf(ds, f)
+  const byCmd = new Map<number, MetaEntry[]>()
+  for (const e of rows) if (e.cmd >= 0) byCmd.set(e.cmd, [...(byCmd.get(e.cmd) ?? []), e])
+  const total = [...byCmd.values()].reduce((s, l) => s + l.length, 0)
+  const decks = [...byCmd].map(([id, list]): MetaDeck => {
+    const c = ds.commanders[id]
+    return {
+      id,
+      name: c.name,
+      colors: c.colors,
+      entries: list.length,
+      players: new Set(list.map((e) => e.key).filter(Boolean)).size,
+      share: list.length / total,
+      ...recordOf(list),
+    }
+  })
+  return {
+    decks: decks.sort((a, b) => b.entries - a.entries),
+    entries: rows.length,
+    tournaments: new Set(rows.map((e) => e.t)).size,
+    updatedAt: ds.updated,
+  }
+}
+
+// ---------- the data file ----------
+
+type RawTournament = { id: string; k: TournamentKind; s: Season; n: string; lg?: string; st?: number; d?: string; p: number; c?: string }
+type RawEntry = [number, string | null, number, number, number | null, number | null, number | null, 0 | 1, string | null]
+interface RawMeta {
+  v: number
+  year: number
+  updated: string
+  t: RawTournament[]
+  c: { n: string; c: string }[]
+  e: RawEntry[]
+}
+
+function fromRaw(raw: RawMeta): MetaDataset {
+  return {
+    year: raw.year,
+    updated: raw.updated,
+    tournaments: raw.t.map((t, index) => ({
+      index,
+      id: t.id,
+      kind: t.k,
+      season: t.s,
+      name: t.n,
+      league: t.lg,
+      stage: t.st,
+      date: t.d,
+      players: t.p,
+      circuit: t.c,
+    })),
+    commanders: raw.c.map((c, id) => ({ id, name: c.n, colors: c.c })),
+    entries: raw.e.map(([t, player, cmd, place, w, l, d, bye, list]) => ({
+      t,
+      player,
+      key: player ? playerKey(player) : null,
+      cmd,
+      place,
+      w,
+      l: l ?? 0,
+      d: d ?? 0,
+      bye: !!bye,
+      list,
+    })),
+  }
+}
+
+/**
+ * The commander name of a match or deck as the meta writes it, so the user's own stats line up with it.
+ * Partners in any order and the front face of a double-faced card are enough.
+ */
+export function metaCommanderOf(ds: MetaDataset | null, name: string) {
+  if (!ds) return
+  const n = normName(name)
+  return ds.commanders.find((c) => normName(c.name) === n || normName(c.name.split(' // ')[0]) === n)
+}
+
+const CACHE_KEY = 'cc.meta.data'
+const dataUrl = `${import.meta.env.BASE_URL}meta-${META_YEAR}.json`
+
+export function useMeta() {
+  const [raw, setRaw] = useState<RawMeta | null>(() => readStored<RawMeta | null>(CACHE_KEY, null))
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+
+  const refresh = useCallback(async () => {
+    setStatus('loading')
+    try {
+      const res = await fetch(dataUrl, { cache: 'no-cache' })
+      if (!res.ok) throw new Error(String(res.status))
+      const next = (await res.json()) as RawMeta
+      writeStored(CACHE_KEY, next)
+      setRaw(next)
+      setStatus('idle')
+    } catch {
+      setStatus('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  const dataset = useMemo(() => (raw ? fromRaw(raw) : null), [raw])
+  const data = useMemo<MetaData>(
+    () => (dataset ? aggregate(dataset, ALL) : { decks: [], entries: 0, tournaments: 0, updatedAt: '' }),
+    [dataset],
+  )
+  return { dataset, data, status, refresh }
+}
+
+// ---------- CSV (the circuit sheet) ----------
 
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = []
@@ -83,139 +290,4 @@ export function parseCsv(text: string): string[][] {
     rows.push(row)
   }
   return rows.filter((r) => r.some((c) => c.trim()))
-}
-
-const num = (s: string | undefined) => {
-  if (!s) return 0
-  const v = parseFloat(s.replace('%', '').replace(',', '.'))
-  return Number.isFinite(v) ? v : 0
-}
-
-const COLUMN_ALIASES: Record<string, string[]> = {
-  name: ['mazzo', 'comandante', 'deck', 'commander', 'archetipo', 'archetype', 'nome', 'name'],
-  games: ['partite', 'games', 'match', 'matches', 'giocate', 'played'],
-  wins: ['vittorie', 'wins', 'vinte', 'w'],
-  losses: ['sconfitte', 'losses', 'perse', 'l'],
-  draws: ['pareggi', 'draws', 'patte', 'd'],
-  colors: ['colori', 'colors', 'colours', 'identita', 'identity'],
-  share: ['meta', 'meta %', 'share', 'meta share', 'quota', 'presenza'],
-}
-
-export function metaFromRows(rows: string[][]): MetaDeck[] {
-  if (rows.length < 2) return []
-  const header = rows[0].map(normName)
-  const col = (key: string) => {
-    const aliases = COLUMN_ALIASES[key].map(normName)
-    let i = header.findIndex((h) => aliases.includes(h))
-    if (i < 0) i = header.findIndex((h) => aliases.some((a) => a.length > 2 && h.startsWith(a)))
-    return i
-  }
-  const c = Object.fromEntries(Object.keys(COLUMN_ALIASES).map((k) => [k, col(k)])) as Record<string, number>
-  if (c.name < 0) c.name = 0
-
-  const decks = rows.slice(1).flatMap((r): MetaDeck[] => {
-    const name = r[c.name]?.trim()
-    if (!name) return []
-    const wins = num(r[c.wins])
-    const losses = c.losses >= 0 ? num(r[c.losses]) : 0
-    const draws = c.draws >= 0 ? num(r[c.draws]) : 0
-    const games = c.games >= 0 ? num(r[c.games]) : wins + losses + draws
-    let share = c.share >= 0 ? num(r[c.share]) : -1
-    if (share > 1) share /= 100
-    return [
-      {
-        name,
-        colors: (c.colors >= 0 ? r[c.colors] : '').toUpperCase().replace(/[^WUBRGC]/g, ''),
-        games,
-        wins,
-        losses: c.losses >= 0 ? losses : Math.max(0, games - wins - draws),
-        draws,
-        share,
-      },
-    ]
-  })
-  const total = decks.reduce((s, d) => s + d.games, 0)
-  for (const d of decks) if (d.share < 0) d.share = total ? d.games / total : 0
-  return decks
-}
-
-const sheetCsvUrl = (tab: string) =>
-  `https://docs.google.com/spreadsheets/d/${META_SHEET_ID}/gviz/tq?tqx=out:csv` +
-  (tab ? `&sheet=${encodeURIComponent(tab)}` : '')
-
-// ---------- demo data (placeholder until the official sheet exists) ----------
-
-const DEMO_ROWS: [string, string, number, number][] = [
-  ['Tymna the Weaver / Thrasios, Triton Hero', 'WUBG', 188, 109],
-  ['Kinnan, Bonder Prodigy', 'UG', 164, 92],
-  ["Atraxa, Praetors' Voice", 'WUBG', 142, 73],
-  ['Najeela, the Blade-Blossom', 'WUBRG', 131, 72],
-  ['Rograkh, Son of Rohgahh / Silas Renn, Seeker Adept', 'UBR', 118, 61],
-  ['Urza, Lord High Artificer', 'U', 104, 55],
-  ['Winota, Joiner of Forces', 'RW', 97, 46],
-  ['Yuriko, the Tiger\'s Shadow', 'UB', 92, 50],
-  ['Light-Paws, Emperor\'s Voice', 'W', 76, 35],
-  ['Sisay, Weatherlight Captain', 'WUBRG', 61, 31],
-  ['Malcolm, Keen-Eyed Navigator / Tana, the Bloodsower', 'URG', 54, 26],
-  ['Zur the Enchanter', 'WUB', 47, 26],
-  ['Derevi, Empyrial Tactician', 'WUG', 39, 17],
-  ['Krenko, Mob Boss', 'R', 33, 14],
-  ['Selvala, Heart of the Wilds', 'G', 22, 13],
-  ['Grand Arbiter Augustin IV', 'WU', 14, 6],
-]
-
-function demoData(): MetaData {
-  const total = DEMO_ROWS.reduce((s, r) => s + r[2], 0)
-  return {
-    decks: DEMO_ROWS.map(([name, colors, games, wins]) => ({
-      name,
-      colors,
-      games,
-      wins,
-      draws: Math.round(games * 0.03),
-      losses: games - wins - Math.round(games * 0.03),
-      share: games / total,
-    })),
-    summary: [],
-    updatedAt: new Date().toISOString(),
-    demo: true,
-  }
-}
-
-// ---------- hook ----------
-
-const CACHE_KEY = 'cc.meta.cache'
-
-export function useMeta() {
-  const [data, setData] = useState<MetaData>(() =>
-    META_SHEET_ID ? readStored<MetaData | null>(CACHE_KEY, null) ?? { ...demoData(), decks: [] } : demoData(),
-  )
-  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
-
-  const refresh = useCallback(async () => {
-    if (!META_SHEET_ID) return
-    setStatus('loading')
-    try {
-      const res = await fetch(sheetCsvUrl(META_SHEET_TAB))
-      if (!res.ok) throw new Error(String(res.status))
-      const decks = metaFromRows(parseCsv(await res.text()))
-      let summary: string[] = []
-      if (META_SUMMARY_TAB) {
-        const s = await fetch(sheetCsvUrl(META_SUMMARY_TAB))
-        if (s.ok) summary = parseCsv(await s.text()).map((r) => r[0]?.trim()).filter(Boolean)
-      }
-      const next: MetaData = { decks, summary, updatedAt: new Date().toISOString(), demo: false }
-      writeStored(CACHE_KEY, next)
-      setData(next)
-      setStatus('idle')
-    } catch {
-      setStatus('error')
-    }
-  }, [])
-
-  useEffect(() => {
-    refresh()
-  }, [refresh])
-
-  return { data, status, refresh }
 }
