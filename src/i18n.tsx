@@ -293,6 +293,7 @@ const it = {
   'match.saveAndReset': 'Salva e nuova partita',
   'match.saved': 'Partita salvata!',
 
+  'stats.emptyShort': 'Nessuna partita',
   'stats.title': 'Le mie statistiche',
   'stats.trend': 'Andamento',
   'stats.trendWindow': 'winrate sulle ultime {n}',
@@ -890,6 +891,7 @@ const en: Record<Key, string> = {
   'match.saveAndReset': 'Save and new game',
   'match.saved': 'Game saved!',
 
+  'stats.emptyShort': 'No games yet',
   'stats.title': 'My stats',
   'stats.trend': 'Trend',
   'stats.trendWindow': 'winrate over the last {n}',

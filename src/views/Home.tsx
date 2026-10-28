@@ -1,10 +1,11 @@
 import { useI18n } from '../i18n'
-import type { Deck } from '../lib/decks'
-import { type Match, fmtRecord, groupBy, record } from '../lib/matches'
-import { type MetaDataset, type MetaDeck, type Season, aggregate, shortName, winrate } from '../lib/meta'
+import { type Deck, deckCover } from '../lib/decks'
+import { type Match, fmtRecord, record } from '../lib/matches'
+import { type MetaDataset, type MetaDeck, type Season, aggregate, findMetaDeck, shortName, winrate } from '../lib/meta'
 import type { AppUser } from '../lib/auth'
-import { Icon, Pips, pct, wrClass } from '../components/ui'
-import { DeckTile } from './Decks'
+import { Icon, pct, wrClass } from '../components/ui'
+import { commanderNames } from './Decks'
+import { artUrl } from './MetaPages'
 import { ResultDots } from './Stats'
 import { CircuitCard } from './Circuit'
 import { InstallBanner } from '../components/AppBanners'
@@ -55,11 +56,12 @@ export default function Home({
   const meta = dataset && season ? aggregate(dataset, { season, kind: '', league: '' }) : null
   const top = meta?.decks.slice(0, 5) ?? []
   const rec = record(matches)
-  const topDecks = groupBy(matches, (m) => decks.find((d) => d.id === m.deckId)?.name ?? m.deckName).slice(0, 3)
   const recent = [...decks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3)
 
+  // Compact, to fit a phone without scrolling: one row each for the stats and the circuit, and strips of art
+  // for the meta and the decks.
   return (
-    <div className="page">
+    <div className="page home-compact">
       <header className="page-head brand">
         <div className="brand-mark">
           <Logo />
@@ -86,7 +88,7 @@ export default function Home({
 
       <button className="hero-btn" onClick={() => go('game')}>
         <span className="hero-icon">
-          <Icon name="game" size={26} />
+          <Icon name="game" size={22} />
         </span>
         <span className="hero-text">
           <strong>{gameInProgress ? t('home.resumeGame') : t('home.newGame')}</strong>
@@ -95,70 +97,43 @@ export default function Home({
         <Icon name="chevron" />
       </button>
 
-      <section className="card">
-        <div className="card-title">
-          {t('stats.title')}
-          <button className="link" onClick={() => go('stats')}>
-            {t('stats.details')}
-          </button>
-        </div>
+      <button className="card home-row" onClick={() => go('stats')}>
+        <span className="title-live">{t('stats.title')}</span>
         {!matches.length ? (
-          <p className="muted small no-margin">{t('stats.empty')}</p>
+          <span className="muted small">{t('stats.emptyShort')}</span>
         ) : (
-          <>
-            <div className="stats3 compact">
-              <div>
-                <div className="stat-num">{rec.games}</div>
-                <div className="stat-label">{t('stats.games')}</div>
-              </div>
-              <div>
-                <div className="stat-num">{fmtRecord(rec)}</div>
-                <div className="stat-label">{t('stats.record')}</div>
-              </div>
-              <div>
-                <div className={`stat-num ${wrClass(rec.wr)}`}>{pct(rec.wr, 0)}</div>
-                <div className="stat-label">{t('stats.wr')}</div>
-              </div>
-            </div>
-            <ResultDots matches={matches} />
-            <ol className="mini-list">
-              {topDecks.map((g) => (
-                <li key={g.name}>
-                  <span className="ellipsis grow">{g.name}</span>
-                  <span className="muted small">{fmtRecord(g.rec)}</span>
-                  <span className={`wr small-wr ${wrClass(g.rec.wr)}`}>{pct(g.rec.wr, 0)}</span>
-                </li>
-              ))}
-            </ol>
-          </>
+          <span className="home-row-link">
+            <b className={wrClass(rec.wr)}>{pct(rec.wr, 0)}</b>
+            <span className="muted small">{fmtRecord(rec)}</span>
+            <ResultDots matches={matches} n={6} />
+            <Icon name="chevron" size={16} />
+          </span>
         )}
-      </section>
-
-      <CircuitCard circuit={circuit} status={circuitStatus} me={circuitMe} openPlayer={openPlayer} findMe={findMe} />
+      </button>
+      <CircuitCard compact circuit={circuit} status={circuitStatus} me={circuitMe} openPlayer={openPlayer} findMe={findMe} />
 
       <section className="card">
         <div className="card-title">
-          {t('home.metaSnapshot')}
+          <span>
+            {t('home.metaSnapshot')} {season && <span className="muted small">· {season.toUpperCase()}</span>}
+          </span>
           <button className="link" onClick={() => go('meta')}>
             {t('home.seeAll')}
           </button>
         </div>
-        {meta && season && (
-          <>
-            <div className="muted small">{t('home.metaSeason', { s: season.toUpperCase(), n: meta.tournaments, e: meta.entries })}</div>
-            <ol className="mini-list">
-              {top.map((d, i) => (
-                <li key={d.id} className="clickable" onClick={() => openCommander(d.name)}>
-                  <span className="rank">{i + 1}</span>
-                  <span className="ellipsis grow">{shortName(d.name)}</span>
-                  <Pips colors={d.colors} size={9} />
-                  <span className="small muted">{pct(d.share, 0)}</span>
-                  <span className={`wr small-wr ${wrClass(winrate(d))}`}>{pct(winrate(d), 0)}</span>
-                </li>
-              ))}
-            </ol>
-          </>
-        )}
+        <div className="strip">
+          {top.map((d, i) => (
+            <button key={d.id} className="strip-tile" style={{ backgroundImage: `url("${artUrl(d.name)}")` }} onClick={() => openCommander(d.name)}>
+              <span className="strip-rank">{i + 1}</span>
+              <span className="strip-text">
+                <span className="ellipsis">{shortName(d.name).split(',')[0]}</span>
+                <span>
+                  {pct(d.share, 0)} · <b className={wrClass(winrate(d))}>{pct(winrate(d), 0)}</b>
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="card">
@@ -178,10 +153,19 @@ export default function Home({
             </button>
           </div>
         ) : (
-          <div className="deck-list flush">
-            {recent.map((d) => (
-              <DeckTile key={d.id} deck={d} metaDecks={metaDecks} onClick={() => openDeck(d.id)} />
-            ))}
+          <div className="strip">
+            {recent.map((d) => {
+              const m = findMetaDeck(metaDecks, commanderNames(d))
+              const art = deckCover(d)
+              return (
+                <button key={d.id} className="strip-tile" style={art ? { backgroundImage: `url("${art}")` } : undefined} onClick={() => openDeck(d.id)}>
+                  <span className="strip-text">
+                    <span className="ellipsis">{d.name}</span>
+                    {m && <b className={wrClass(winrate(m))}>{pct(winrate(m), 0)}</b>}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         )}
       </section>

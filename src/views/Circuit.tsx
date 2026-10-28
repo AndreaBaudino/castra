@@ -806,18 +806,41 @@ export function CircuitCard({
   me,
   openPlayer,
   findMe,
+  compact,
 }: {
   circuit: Circuit | null
   status: LoadStatus
   me: string | null
   openPlayer: (k: string) => void
   findMe: () => void
+  compact?: boolean // one row, for the home
 }) {
   const { t } = useI18n()
   const live = liveOf(circuit, status)
   const p = me ? circuit?.players.find((x) => x.key === me) : undefined
   const poty = useMemo(() => circuit && potyStatus(circuit), [circuit])
   if (!circuit) return null
+  if (compact)
+    return (
+      <section className="card home-row">
+        <span className="title-live">
+          {t('circuit.title')}
+          <LiveDot live={live} title={t(live === 'live' ? 'circuit.dotLive' : 'circuit.dotStale')} />
+        </span>
+        {!p || !poty ? (
+          <button className="btn small primary" onClick={findMe}>
+            <Icon name="search" size={14} /> {t('circuit.findMe')}
+          </button>
+        ) : (
+          <button className="home-row-link" onClick={() => openPlayer(p.key)}>
+            <b>#{p.rank}</b>
+            <span className="muted small">{t('circuit.nPts', { n: p.total })}</span>
+            {poty.isIn(p) && <PotyTag invited={p.potyInvited} />}
+            <Icon name="chevron" size={16} />
+          </button>
+        )}
+      </section>
+    )
   return (
     <section className="card">
       <div className="card-title">
