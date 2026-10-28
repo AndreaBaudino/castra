@@ -12,16 +12,29 @@ service cloud.firestore {
     // circuit players claimed by an account ("this is me"): everyone can see who is verified,
     // a free player can be claimed once, and only the claimer can change or release it
     match /claims/{playerKey} {
+      // a field that is missing, null, or text up to `max` characters
+      function optionalText(field, max) {
+        return request.resource.data.get(field, null) == null
+          || (request.resource.data[field] is string && request.resource.data[field].size() <= max);
+      }
+
       allow read: if true;
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at'])
         // the account must point to this very player, so one account holds one claim
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.circuitMe == playerKey;
+      // the claimer can also customise their page: the art behind their picture and their favourite deck
       allow update: if request.auth != null
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at']);
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at', 'coverName', 'coverArt', 'deck'])
+        && optionalText('coverName', 150)
+        && optionalText('deck', 200)
+        && (request.resource.data.get('coverArt', null) == null
+          || (request.resource.data.coverArt is string
+            && request.resource.data.coverArt.size() <= 300
+            && request.resource.data.coverArt.matches('https://cards[.]scryfall[.]io/.*')));
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
   }

@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { type MetaCommander, type MetaDataset, type MetaEntry, shortName } from '../lib/meta'
 import type { Player } from '../lib/circuit'
-import { WUBRG } from '../lib/decks'
-import { Icon, Pips, pct } from '../components/ui'
+import { type CardInfo, WUBRG } from '../lib/decks'
+import { Icon, Pips, Sheet, pct } from '../components/ui'
+import { type Claim, type ClaimLook, customizeClaim } from '../lib/claims'
+import { searchCards } from '../lib/scryfall'
 import { artUrl, isEvent } from './MetaPages'
 
 // What makes a player's page their own: their picture over their signature commander's art, the badges earned in
@@ -18,23 +20,32 @@ export function signatureOf(dataset: MetaDataset, entries: MetaEntry[]) {
   return best && { cmd: dataset.commanders[best[0]], n: best[1].length }
 }
 
-/** The profile picture over the signature commander's art, from its top, fading into the page. */
-export function PlayerCover({ signature, children }: { signature?: { cmd: MetaCommander }; children: React.ReactNode }) {
-  if (!signature) return <>{children}</>
+/** A player's commander chosen as favourite on their page, with how many tournaments they played it. */
+export function deckOf(dataset: MetaDataset, entries: MetaEntry[], name: string | null | undefined) {
+  const cmd = name ? dataset.commanders.find((c) => c.name === name) : undefined
+  const n = cmd ? entries.filter((e) => e.cmd === cmd.id).length : 0
+  return cmd && n ? { cmd, n } : undefined
+}
+
+/** The profile picture over a card's art (the player's choice, or their most played commander), fading into the page. */
+export function PlayerCover({ art, children }: { art?: string; children: React.ReactNode }) {
+  if (!art) return <>{children}</>
   return (
     <div className="player-cover">
-      <div className="player-cover-art" style={{ backgroundImage: `url("${artUrl(signature.cmd.name)}")` }} />
+      <div className="player-cover-art" style={{ backgroundImage: `url("${art}")` }} />
       {children}
     </div>
   )
 }
 
-/** "Most played deck": the signature commander, after the badges; opens its page. */
+/** "Most played deck" (or the favourite the player chose), after the badges; opens its page. */
 export function SignatureDeck({
   signature,
+  favorite,
   openCommander,
 }: {
   signature?: { cmd: MetaCommander; n: number }
+  favorite?: boolean
   openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
@@ -44,7 +55,7 @@ export function SignatureDeck({
     <button className="card signature" onClick={() => openCommander(cmd.name)}>
       <span className="signature-art" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }} />
       <span className="signature-text">
-        <span className="muted small">{t('player.signature')}</span>
+        <span className="muted small">{t(favorite ? 'player.favorite' : 'player.signature')}</span>
         <span className="name-line">
           <span className="ellipsis">{shortName(cmd.name)}</span>
         </span>
@@ -55,6 +66,131 @@ export function SignatureDeck({
       </span>
       <Icon name="chevron" size={16} />
     </button>
+  )
+}
+
+/** The claimer's sheet to choose the art behind their picture and their favourite deck. */
+export function CustomizeSheet({
+  open,
+  onClose,
+  playerKey,
+  claim,
+  dataset,
+  entries,
+}: {
+  open: boolean
+  onClose: () => void
+  playerKey: string
+  claim: Claim
+  dataset: MetaDataset | null
+  entries: MetaEntry[]
+}) {
+  const { t } = useI18n()
+  const [look, setLook] = useState<ClaimLook>({})
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<CardInfo[]>([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    if (open) setLook({ coverName: claim.coverName, coverArt: claim.coverArt, deck: claim.deck })
+    setQ('')
+    setResults([])
+    setError(false)
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const ctrl = new AbortController()
+    const id = setTimeout(() => {
+      searchCards(q, ctrl.signal)
+        .then((r) => setResults(r.filter((c) => c.art).slice(0, 12)))
+        .catch(() => {})
+    }, 300)
+    return () => {
+      clearTimeout(id)
+      ctrl.abort()
+    }
+  }, [q])
+
+  const commanders = useMemo(() => {
+    if (!dataset) return []
+    const by = new Map<number, number>()
+    for (const e of entries) if (e.cmd >= 0) by.set(e.cmd, (by.get(e.cmd) ?? 0) + 1)
+    return [...by].sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ cmd: dataset.commanders[id], n }))
+  }, [dataset, entries])
+  const auto = dataset ? signatureOf(dataset, entries) : undefined
+  const preview = look.coverArt ?? (auto && artUrl(auto.cmd.name))
+
+  const save = async () => {
+    setBusy(true)
+    setError(false)
+    try {
+      await customizeClaim(playerKey, look)
+      onClose()
+    } catch {
+      setError(true)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title={t('player.customize')}>
+      <div className="form">
+        <div className="group-title">{t('player.coverTitle')}</div>
+        {preview && <div className="cover-preview" style={{ backgroundImage: `url("${preview}")` }} />}
+        <div className="chips">
+          <button className={!look.coverArt ? 'chip on' : 'chip'} onClick={() => setLook({ ...look, coverName: null, coverArt: null })}>
+            {t('player.coverAuto')}
+          </button>
+          {look.coverName && <span className="chip on">{look.coverName}</span>}
+        </div>
+        <div className="search">
+          <Icon name="search" size={18} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('player.coverSearch')} />
+        </div>
+        {results.length > 0 && (
+          <div className="art-grid">
+            {results.map((c) => (
+              <button
+                key={c.id}
+                className={`art-pick ${look.coverArt === c.art ? 'on' : ''}`}
+                style={{ backgroundImage: `url("${c.art}")` }}
+                onClick={() => setLook({ ...look, coverName: c.name, coverArt: c.art })}
+                aria-label={c.name}
+              >
+                <span>{c.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {commanders.length > 0 && (
+          <>
+            <div className="group-title">{t('player.favoriteTitle')}</div>
+            <ul className="card-list">
+              <li className={`event-row ${!look.deck ? 'on' : ''}`} onClick={() => setLook({ ...look, deck: null })}>
+                <span className="ellipsis grow">{t('player.favoriteAuto')}</span>
+                {!look.deck && <Icon name="check" size={16} />}
+              </li>
+              {commanders.map(({ cmd, n }) => (
+                <li key={cmd.id} className={`event-row ${look.deck === cmd.name ? 'on' : ''}`} onClick={() => setLook({ ...look, deck: cmd.name })}>
+                  <Pips colors={cmd.colors} size={10} />
+                  <span className="ellipsis grow">{shortName(cmd.name)}</span>
+                  <span className="muted small">{t('meta.nTournaments', { n })}</span>
+                  {look.deck === cmd.name && <Icon name="check" size={16} />}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {error && <div className="notice warn">{t('player.saveError')}</div>}
+        <button className="btn primary" disabled={busy} onClick={save}>
+          {t('player.save')}
+        </button>
+      </div>
+    </Sheet>
   )
 }
 

@@ -10,7 +10,13 @@ export interface Claim {
   name: string | null
   photo: string | null
   at: string
+  // chosen by the player on their page; missing = automatic (their most played commander)
+  coverName?: string | null // the card whose art is behind their picture
+  coverArt?: string | null // its art crop on Scryfall
+  deck?: string | null // the commander shown as their favourite deck
 }
+
+export type ClaimLook = Pick<Claim, 'coverName' | 'coverArt' | 'deck'>
 
 export function useClaims() {
   const [claims, setClaims] = useState<Map<string, Claim>>(new Map())
@@ -56,4 +62,10 @@ export async function unclaimPlayer(user: AppUser, key: string) {
   batch.delete(fs.doc(db, 'claims', key))
   batch.set(fs.doc(db, 'users', user.uid), { circuitMe: null }, { merge: true })
   await batch.commit()
+}
+
+/** The claimer's choices for their page: the art behind their picture and their favourite deck. */
+export async function customizeClaim(key: string, look: ClaimLook) {
+  const { db, fs } = await fb()
+  await fs.updateDoc(fs.doc(db, 'claims', key), { coverName: look.coverName ?? null, coverArt: look.coverArt ?? null, deck: look.deck ?? null })
 }

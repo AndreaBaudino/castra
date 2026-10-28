@@ -23,6 +23,7 @@ export const CHANGELOG: Release[] = [
       'Tasto indietro del telefono: dalle schermate principali torna alla Home, dalle sottoschermate a quella superiore; chiude l\'app solo dalla Home',
       'Meta: filtro per numero di giocatori del torneo, con minimo e massimo (8, 12, 16, 24 o 32), per guardare quote e winrate solo nei tornei grandi o solo in quelli piccoli',
       'Scheda giocatore: immagine profilo sopra la splash art del mazzo più giocato, traguardi (tornei e tappe vinti, Top 8, imbattuto, sempre presente, fedele, camaleonte, giramondo), mazzo più giocato e i suoi colori',
+      'Scheda giocatore: chi l\'ha verificata può personalizzarla dalla matita in alto, scegliendo l\'immagine dietro la foto e il mazzo in evidenza',
     ],
     en: [
       'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
@@ -38,6 +39,7 @@ export const CHANGELOG: Release[] = [
       'Phone back button: from the main screens it goes to Home, from sub-pages to the page above; it closes the app only from Home',
       'Meta: filter by tournament size, with a minimum and a maximum (8, 12, 16, 24 or 32 players), to see shares and winrates in the big or in the small tournaments only',
       'Player page: profile picture over the art of their most played deck, badges (tournaments and stages won, Top 8, unbeaten, never missed, loyal, chameleon, traveller), most played deck and their colours',
+      'Player page: whoever verified it can customise it from the pencil at the top, choosing the art behind their picture and their featured deck',
     ],
   },
   {

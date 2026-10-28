@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PlayerBadges, PlayerColors, PlayerCover, SignatureDeck, signatureOf } from './PlayerCard'
+import { CustomizeSheet, PlayerBadges, PlayerColors, PlayerCover, SignatureDeck, deckOf, signatureOf } from './PlayerCard'
+import { artUrl } from './MetaPages'
 import { useI18n } from '../i18n'
 import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type RankChange, eventDateLabel, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
@@ -8,7 +9,7 @@ import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
 import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
-import type { MetaCommander, MetaDataset } from '../lib/meta'
+import type { MetaDataset } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
@@ -332,13 +333,15 @@ export function PlayerPage({
   const poty = useMemo(() => potyStatus(circuit), [circuit])
   // the player's rows in the deck meta: every event and league stage, with deck and record
   const mine = useMemo(() => dataset?.entries.filter((e) => e.key === playerKey) ?? [], [dataset, playerKey])
+  const [customizing, setCustomizing] = useState(false)
   if (!p) {
     if (!dataset || !mine.length) return <SubPageShell title="—" onBack={onBack} />
+    const auto = signatureOf(dataset, mine)
     // in the meta but not in the circuit ranking (a league that doesn't count, or a name written differently)
     return (
       <SubPageShell title={mine[0].player!} onBack={onBack}>
         <div className="claim-box">
-          <PlayerCover signature={signatureOf(dataset, mine)}>
+          <PlayerCover art={auto && artUrl(auto.cmd.name)}>
             <span className="claim-avatar">
               <Icon name="user" size={30} />
             </span>
@@ -349,13 +352,17 @@ export function PlayerPage({
         <PlayerColors dataset={dataset} entries={mine} />
         <PlayerLists dataset={dataset} entries={mine} />
         <PlayerBadges dataset={dataset} entries={mine} />
-        <SignatureDeck signature={signatureOf(dataset, mine)} openCommander={openCommander} />
+        <SignatureDeck signature={auto} openCommander={openCommander} />
         <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} openTournament={openTournament} openEvent={openEvent} />
       </SubPageShell>
     )
   }
   const followed = prefs.follow.includes(p.key)
-  const signature = dataset ? signatureOf(dataset, mine) : undefined
+  // the art behind the picture and the deck shown: the player's choice, else their most played commander
+  const claim = prefs.claims.get(p.key)
+  const auto = dataset ? signatureOf(dataset, mine) : undefined
+  const favorite = dataset ? deckOf(dataset, mine, claim?.deck) : undefined
+  const cover = claim?.coverArt ?? (auto && artUrl(auto.cmd.name))
   const above = [...circuit.players].reverse().find((o) => o.total > p.total)
 
   return (
@@ -363,16 +370,34 @@ export function PlayerPage({
       title={p.name}
       onBack={onBack}
       actions={
-        <button
-          className={`icon-btn ${followed ? 'star-on' : ''}`}
-          onClick={() => prefs.setFollow((f) => (followed ? f.filter((k) => k !== p.key) : [...f, p.key]))}
-          aria-label={t('circuit.follow')}
-        >
-          <Icon name="star" />
-        </button>
+        <div className="hero-actions">
+          {/* the claimer customises their own page, like a deck's edit button */}
+          {claim && claim.uid === prefs.uid && (
+            <button className="icon-btn" onClick={() => setCustomizing(true)} aria-label={t('player.customize')}>
+              <Icon name="edit" />
+            </button>
+          )}
+          <button
+            className={`icon-btn ${followed ? 'star-on' : ''}`}
+            onClick={() => prefs.setFollow((f) => (followed ? f.filter((k) => k !== p.key) : [...f, p.key]))}
+            aria-label={t('circuit.follow')}
+          >
+            <Icon name="star" />
+          </button>
+        </div>
       }
     >
-      <ClaimBox p={p} prefs={prefs} signature={signature} />
+      {claim && claim.uid === prefs.uid && (
+        <CustomizeSheet
+          open={customizing}
+          onClose={() => setCustomizing(false)}
+          playerKey={p.key}
+          claim={claim}
+          dataset={dataset}
+          entries={mine}
+        />
+      )}
+      <ClaimBox p={p} prefs={prefs} cover={cover} />
       {/* "me" on the left when comparing someone with me */}
       <ComparePicker circuit={circuit} p={p} prefs={prefs} onPick={(o) => (o === prefs.me ? openCompare(o, p.key) : openCompare(p.key, o))} />
 
@@ -396,7 +421,7 @@ export function PlayerPage({
       </section>
 
       {dataset && <PlayerBadges dataset={dataset} entries={mine} player={p} />}
-      <SignatureDeck signature={signature} openCommander={openCommander} />
+      <SignatureDeck signature={favorite ?? auto} favorite={!!favorite} openCommander={openCommander} />
 
       <MyRecordVs p={p} matches={prefs.matches} />
 
@@ -506,7 +531,7 @@ export function VerifiedTick() {
 }
 
 /** The claimer's picture, the "verified" tick and the button to claim or release the player. */
-function ClaimBox({ p, prefs, signature }: { p: Player; prefs: CircuitPrefs; signature?: { cmd: MetaCommander } }) {
+function ClaimBox({ p, prefs, cover }: { p: Player; prefs: CircuitPrefs; cover?: string }) {
   const { t } = useI18n()
   const dialog = useDialog()
   const [busy, setBusy] = useState(false)
@@ -522,7 +547,7 @@ function ClaimBox({ p, prefs, signature }: { p: Player; prefs: CircuitPrefs; sig
   }
   return (
     <div className="claim-box">
-      <PlayerCover signature={signature}>
+      <PlayerCover art={cover}>
         <span className={`claim-avatar ${claim ? 'claimed' : ''}`}>
           {claim?.photo ? (
             <img src={claim.photo} alt="" referrerPolicy="no-referrer" />

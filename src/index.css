@@ -3304,3 +3304,40 @@ a.menu-row {
   align-items: center;
   gap: 5px;
 }
+
+/* the claimer's customisation sheet */
+.cover-preview {
+  height: 110px;
+  border-radius: var(--radius);
+  background: var(--surface-2) center top / cover no-repeat;
+}
+.art-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.art-pick {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-2) center / cover no-repeat;
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+}
+.art-pick span {
+  width: 100%;
+  padding: 14px 6px 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: left;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+.art-pick.on {
+  box-shadow: 0 0 0 3px var(--gold);
+}
+.event-row.on {
+  border-color: var(--gold);
+}
