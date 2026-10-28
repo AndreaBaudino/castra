@@ -1,6 +1,7 @@
 // Builds public/meta-<year>.json from the tournament sheets listed in scripts/meta/sources.json.
 //
-// The sheets are private, so they are read from local copies: download each one as .xlsx into
+// The sheets are private, so they are read from local copies: download each one as .xlsx into (or run
+// scripts/fetch-meta.mjs, as the nightly workflow does)
 // .meta-cache/<drive id>.xlsx, then run `npm run meta`. Commander names are resolved on Scryfall
 // (cached in scripts/meta/cards.json); misspellings and name variants are fixed in scripts/meta/aliases.json.
 //
@@ -282,8 +283,12 @@ try {
   warn('circuito', `classifica non scaricata (${e.message})`)
 }
 
+// the update time moves only when the data does, so the nightly run commits nothing on quiet days
+const outUrl = new URL(`public/meta-${sources.year}.json`, root)
+const prev = existsSync(outUrl) ? readJson(outUrl) : null
 const out = { v: 1, year: sources.year, updated: new Date().toISOString(), t: tournaments, c: commanders, e: entries }
-writeFileSync(new URL(`public/meta-${sources.year}.json`, root), JSON.stringify(out))
+if (prev && JSON.stringify({ ...prev, updated: '' }) === JSON.stringify({ ...out, updated: '' })) out.updated = prev.updated
+writeFileSync(outUrl, JSON.stringify(out))
 writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).sort()), null, 1) + '\n')
 
 console.log(`${tournaments.length} tornei, ${entries.length} presenze, ${commanders.length} comandanti`)
