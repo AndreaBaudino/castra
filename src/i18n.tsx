@@ -106,6 +106,7 @@ const it = {
   'meta.bestResults': 'Risultati migliori',
   'meta.allResults': 'Tutti i {n} risultati',
   'meta.lists': 'Liste Moxfield ({n})',
+  'meta.usedAt': 'usata in {n} tornei · ultimo:',
   'meta.ofEntries': '{n} su {total} presenze',
   'meta.chartHint': 'Tocca un punto per vedere il mese',
 
@@ -638,6 +639,7 @@ const en: Record<Key, string> = {
   'meta.bestResults': 'Best results',
   'meta.allResults': 'All {n} results',
   'meta.lists': 'Moxfield lists ({n})',
+  'meta.usedAt': 'used at {n} tournaments · last:',
   'meta.ofEntries': '{n} of {total} entries',
   'meta.chartHint': 'Tap a dot to see the month',
 

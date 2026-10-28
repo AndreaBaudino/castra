@@ -806,3 +806,51 @@ export function DeckRecords({ dataset, openCommander }: { dataset: MetaDataset; 
     </>
   )
 }
+
+/** The Moxfield lists a player submitted, one row per list (the same list is often used at several tournaments). */
+export function PlayerLists({ dataset, entries }: { dataset: MetaDataset; entries: MetaEntry[] }) {
+  const { t, lang } = useI18n()
+  const [open, setOpen] = useState(false)
+  const lists = useMemo(() => {
+    const by = new Map<string, MetaEntry[]>()
+    entries.forEach((e) => e.list && by.set(e.list, [...(by.get(e.list) ?? []), e]))
+    const date = (e: MetaEntry) => dataset.tournaments[e.t].date ?? ''
+    return [...by]
+      .map(([url, list]) => ({ url, list: list.sort((a, b) => date(b).localeCompare(date(a))) }))
+      .sort((a, b) => date(b.list[0]).localeCompare(date(a.list[0])))
+  }, [dataset, entries])
+  if (!lists.length) return null
+  return (
+    <section className="group">
+      <button className="btn" onClick={() => setOpen(!open)}>
+        {t('meta.lists', { n: lists.length })}
+        <Icon name="chevron" size={16} />
+      </button>
+      {open && (
+        <ul className="card-list">
+          {lists.map(({ url, list }) => {
+            const last = list[0]
+            const x = dataset.tournaments[last.t]
+            const c = last.cmd >= 0 ? dataset.commanders[last.cmd] : null
+            return (
+              <li key={url}>
+                <a className="event-row" href={url} target="_blank" rel="noreferrer">
+                  <div className="event-main">
+                    <span className="ellipsis">
+                      {c && <Pips colors={c.colors} size={9} />} {c ? shortName(c.name) : t('meta.noCommander')}
+                    </span>
+                    <span className="muted small ellipsis">
+                      {list.length > 1 ? `${t('meta.usedAt', { n: list.length })} ` : ''}
+                      {tournamentLabel(x, t)} · {dateLabel(x, lang, t)}
+                    </span>
+                  </div>
+                  <Icon name="external" size={16} />
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
+  )
+}
