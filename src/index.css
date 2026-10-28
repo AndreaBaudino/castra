@@ -2295,6 +2295,15 @@ textarea {
 .page-head .head-left {
   min-width: 0;
 }
+/* sub-pages (a player, an event, a league…): back, title and actions stay at the top while scrolling */
+.page-head.sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin: calc(-14px - var(--safe-t)) -16px 0;
+  padding: calc(var(--safe-t) + 14px) 16px 8px;
+  background: var(--bg);
+}
 .chart svg {
   width: 100%;
   height: auto;

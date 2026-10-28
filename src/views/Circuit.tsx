@@ -733,7 +733,7 @@ export function SubPageShell({
 }) {
   return (
     <div className="page">
-      <header className="page-head">
+      <header className="page-head sticky-head">
         <div className="head-left">
           <button className="icon-btn" onClick={onBack} aria-label="back">
             <Icon name="back" />
