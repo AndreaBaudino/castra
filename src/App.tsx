@@ -88,19 +88,19 @@ export default function App() {
     if (change && prefs.circuitAlerts) setNotice((n) => mergeNotices(n, change))
   }, [circuit.data, circuitMe, follow]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // the history is [main page, sub-pages…, open sheet]: land() rebuilds it from the main entry
+  // the history is [home, main page, sub-pages…, open sheet]: land() rebuilds it from the home entry
   const land = (to: Route) => {
-    if (isSub(to)) {
-      history.replaceState(null, '', `#${parentOf(to)}`)
-      history.pushState({ sub: true }, '', `#${toHash(to)}`)
-    } else history.replaceState(null, '', `#${toHash(to)}`)
+    const main = isSub(to) ? parentOf(to) : to.tab
+    history.replaceState(null, '', '#home')
+    if (main !== 'home') history.pushState({ main: true }, '', `#${main}`)
+    if (isSub(to)) history.pushState({ main: main !== 'home', sub: 1 }, '', `#${toHash(to)}`)
     setRoute(fromHash())
   }
-  // where we're going once history.go() has rewound to the main entry
+  // where we're going once history.go() has rewound to the home entry
   const pending = useRef<Route | null>(null)
   useEffect(() => {
-    // opened straight on a sub-page: put its parent underneath, so back still lands there
-    if (!history.state?.sub) land(fromHash())
+    // opened straight on a page (a link, the installed app): put home and the main page underneath
+    if (!history.state?.main && !history.state?.sub) land(fromHash())
     const onPop = () => {
       if (pending.current) land(pending.current)
       else setRoute(fromHash())
@@ -113,18 +113,20 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [route.tab, route.deck])
 
-  // Main pages replace each other, so the phone's back button closes the app from any of them.
+  // Home is the first entry, so the phone's back button closes the app only from there. Every other main page
+  // sits one entry above home, and main pages replace each other there: back from any of them goes home.
   // A sub-page (a deck, account, a circuit player or event) sits one entry above its main page, so back
   // returns there. `stack` piles a sub-page on the current page (a player's event, that event's players,
   // a player opened from the stats…), so back retraces the steps.
   const go = (tab: Tab, deck?: string, stack = false) => {
     const to = { tab, deck: deck ?? null }
-    const sub = Number(history.state?.sub ?? 0) // true from before sub-pages could stack
-    if (stack && !history.state?.sheet && !history.state?.dialog && isSub(to)) {
-      history.pushState({ sub: sub + 1 }, '', `#${toHash(to)}`)
+    const st = history.state
+    const sub = Number(st?.sub ?? 0) // true from before sub-pages could stack
+    if (stack && !st?.sheet && !st?.dialog && isSub(to)) {
+      history.pushState({ main: !!st?.main, sub: sub + 1 }, '', `#${toHash(to)}`)
       return setRoute(fromHash())
     }
-    const depth = sub + (history.state?.sheet ? 1 : 0) + (history.state?.dialog ? 1 : 0)
+    const depth = (st?.main ? 1 : 0) + sub + (st?.sheet ? 1 : 0) + (st?.dialog ? 1 : 0)
     if (!depth) return land(to)
     pending.current = to
     history.go(-depth) // the popstate handler lands on `to`
