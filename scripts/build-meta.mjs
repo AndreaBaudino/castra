@@ -1,8 +1,7 @@
 // Builds public/meta-<year>.json from the tournament sheets listed in scripts/meta/sources.json.
 //
-// The sheets are private, so they are read from local copies: download each one as .xlsx into (or run
-// scripts/fetch-meta.mjs, as the nightly workflow does)
-// .meta-cache/<drive id>.xlsx, then run `npm run meta`. Commander names are resolved on Scryfall
+// The sheets are private, so they are read from local copies: download each one as .xlsx into
+// .meta-cache/<drive id>.xlsx (scripts/fetch-meta.mjs does it, as in the nightly workflow), then run `npm run meta`. Commander names are resolved on Scryfall
 // (cached in scripts/meta/cards.json); misspellings and name variants are fixed in scripts/meta/aliases.json.
 //
 // Byes: a bye ticked in the BYE column is taken out of that player's wins. An unticked bye stays in as a
