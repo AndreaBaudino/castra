@@ -16,6 +16,7 @@ export const CHANGELOG: Release[] = [
       'Scheda giocatore: winrate e record con ogni comandante, e tutte le tappe di lega giocate',
       'Leghe: tappe con vincitore e mazzo, e il meta della lega',
       'Confronto giocatori con winrate e mazzi; record dei mazzi',
+      'Scheda giocatore: le liste Moxfield presentate nei tornei',
     ],
     en: [
       'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
@@ -24,6 +25,7 @@ export const CHANGELOG: Release[] = [
       'Player page: winrate and record with each commander, and every league stage played',
       'Leagues: stages with winner and deck, and the league meta',
       'Head to head with winrate and decks; deck records',
+      'Player page: the Moxfield lists submitted at tournaments',
     ],
   },
   {

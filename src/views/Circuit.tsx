@@ -8,7 +8,7 @@ import type { Claim } from '../lib/claims'
 import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
 import type { MetaDataset } from '../lib/meta'
-import { PlayerDecks, PlayerHistory } from './MetaPages'
+import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
@@ -338,6 +338,7 @@ export function PlayerPage({
       <SubPageShell title={mine[0].player!} onBack={onBack}>
         <div className="notice">{t('meta.notInCircuit')}</div>
         <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />
+        <PlayerLists dataset={dataset} entries={mine} />
         <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} openTournament={openTournament} openEvent={openEvent} />
       </SubPageShell>
     )
@@ -433,6 +434,7 @@ export function PlayerPage({
       )}
 
       <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} player={p} openTournament={openTournament} openEvent={openEvent} />
+      {dataset && <PlayerLists dataset={dataset} entries={mine} />}
     </SubPageShell>
   )
 }
