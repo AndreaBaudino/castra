@@ -48,6 +48,8 @@ const it = {
   'meta.summaryText':
     '{n} mazzi e {g} partite registrate. Il più giocato è {mp} ({mps}% del meta); il winrate più alto (min. {min} partite) è di {best} con {bwr}%.',
   'meta.noResults': 'Nessun mazzo trovato.',
+  'meta.noneAboveMin': 'Con questo filtro nessun comandante ha almeno {min} partite (massimo: {max}).',
+  'meta.showAll': 'Mostra tutti',
   'meta.lowSample': 'Campione ridotto',
   'meta.rec.wins': 'Mazzi con più tornei vinti',
   'meta.rec.top8': 'Mazzi con più top 8 (LV1/LV2)',
@@ -581,6 +583,8 @@ const en: Record<Key, string> = {
   'meta.summaryText':
     '{n} decks and {g} recorded games. Most played is {mp} ({mps}% of the meta); the highest winrate (min. {min} games) belongs to {best} at {bwr}%.',
   'meta.noResults': 'No decks found.',
+  'meta.noneAboveMin': 'With this filter no commander has at least {min} games (most: {max}).',
+  'meta.showAll': 'Show all',
   'meta.lowSample': 'Small sample',
   'meta.rec.wins': 'Decks with the most tournament wins',
   'meta.rec.top8': 'Decks with the most top 8s (LV1/LV2)',

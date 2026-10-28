@@ -119,10 +119,14 @@ export default function Meta({
 
   const meta = useMemo(() => (dataset ? aggregate(dataset, filter) : null), [dataset, filter])
   const summary = useMemo(() => metaSummary(meta?.decks ?? [], minGames), [meta, minGames])
-  const list = useMemo(() => {
+  // decks matching the search, before the min games threshold: tells "nothing found" from "all below the threshold"
+  const found = useMemo(() => {
     const nq = normName(q)
-    return (meta?.decks ?? [])
-      .filter((d) => d.games >= minGames && (!nq || normName(d.name).includes(nq)))
+    return (meta?.decks ?? []).filter((d) => !nq || normName(d.name).includes(nq))
+  }, [meta, q])
+  const list = useMemo(() => {
+    return found
+      .filter((d) => d.games >= minGames)
       .sort((a, b) =>
         sort === 'wr'
           ? winrate(b) - winrate(a) || b.games - a.games
@@ -130,7 +134,7 @@ export default function Meta({
             ? b.games - a.games
             : b.entries - a.entries || winrate(b) - winrate(a),
       )
-  }, [meta, q, sort, minGames])
+  }, [found, sort, minGames])
   const maxShare = Math.max(...list.map((d) => d.share), 0.01)
   const refreshing = mode === 'decks' ? status : circuitStatus
 
@@ -270,9 +274,17 @@ export default function Meta({
                 </li>
               )
             })}
-            {!list.length && <li className="empty">{t('meta.noResults')}</li>}
+            {!list.length && !found.length && <li className="empty">{t('meta.noResults')}</li>}
+            {!list.length && found.length > 0 && (
+              <li className="empty">
+                <p>{t('meta.noneAboveMin', { min: minGames, max: Math.max(...found.map((d) => d.games)) })}</p>
+                <button className="btn" onClick={() => setMinGames(0)}>
+                  {t('meta.showAll')}
+                </button>
+              </li>
+            )}
           </ol>
-          {minGames > 0 && <p className="muted small center">{t('meta.minNote', { n: minGames })}</p>}
+          {minGames > 0 && list.length > 0 && <p className="muted small center">{t('meta.minNote', { n: minGames })}</p>}
         </>
       )}
     </div>
