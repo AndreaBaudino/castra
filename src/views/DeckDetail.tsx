@@ -162,6 +162,7 @@ export default function DeckDetail({
   onChange,
   onDelete,
   onBack,
+  openCommander,
 }: {
   deck: Deck
   metaDecks: MetaDeck[]
@@ -169,6 +170,7 @@ export default function DeckDetail({
   onChange: (d: Deck) => void
   onDelete: () => void
   onBack: () => void
+  openCommander: (name: string) => void
 }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
@@ -386,12 +388,13 @@ export default function DeckDetail({
         {statsOpen && (
           <>
             {meta && (
-              <div className="kv">
+              <button className="kv clickable" onClick={() => openCommander(meta.name)}>
                 <span>{t('deck.metaWr')}</span>
                 <b className={wrClass(winrate(meta))}>
-                  {pct(winrate(meta))} <span className="muted small">({meta.games})</span>
+                  {pct(winrate(meta))} <span className="muted small">{t('deck.metaShare', { s: pct(meta.share), n: meta.entries })}</span>{' '}
+                  <Icon name="chevron" size={14} />
                 </b>
-              </div>
+              </button>
             )}
             {mine.games > 0 && (
               <div className="kv">

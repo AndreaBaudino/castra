@@ -12,15 +12,20 @@ npm run build    # output in dist/
 
 Per pubblicare in una sotto-cartella (es. GitHub Pages): `BASE=/centurion-companion/ npm run build`.
 
-## Dati del meta (Google Sheets)
+## Dati del meta (tornei 2026)
 
-1. Condividi il foglio come "Chiunque abbia il link può visualizzare".
-2. In `src/config.ts` imposta `META_SHEET_ID` (ed eventualmente `META_SHEET_TAB`).
-3. Colonne riconosciute (IT o EN, ordine libero): Mazzo/Comandante, Partite, Vittorie,
-   Sconfitte, Pareggi, Colori (es. `WUB`), Meta %.
-4. Opzionale: `META_SUMMARY_TAB` con un sommario editoriale (un paragrafo per riga).
+Il meta si calcola dai fogli dei tornei (Livelli 1 e 2, leghe S1/S2, lega online), elencati in
+`scripts/meta/sources.json`. I fogli sono privati: lo script legge copie locali e scrive `public/meta-2026.json`,
+che viene pubblicato con l'app.
 
-Finché `META_SHEET_ID` è vuoto l'app mostra dati DEMO. I dati scaricati restano in cache per l'uso offline.
+1. Scarica ogni foglio come .xlsx in `.meta-cache/<id del file>.xlsx` (l'id è quello nel link del foglio).
+2. `npm run meta`: legge i fogli, riconosce i comandanti su Scryfall e stampa quello che va controllato
+   (vittorie e sconfitte che non tornano, giocatori senza comandante, nomi non riconosciuti).
+3. Nomi scritti male: si correggono in `scripts/meta/aliases.json` (comandanti → nome Scryfall, giocatori → nome
+   come nel foglio del circuito).
+
+Per aggiungere un torneo basta aggiungere una riga a `sources.json`. I bye spuntati nella colonna BYE non contano
+nel winrate; quelli non spuntati restano vittorie finché qualcuno non li spunta.
 
 ## Mazzi
 

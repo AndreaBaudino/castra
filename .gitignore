@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# local copies of the tournament sheets (scripts/build-meta.mjs)
+.meta-cache

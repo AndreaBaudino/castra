@@ -3,7 +3,8 @@ import { useI18n } from '../i18n'
 import type { Deck } from '../lib/decks'
 import { type Match, type Record3, fmtRecord, groupBy, record, resultLabel } from '../lib/matches'
 import { useLongPress } from '../lib/longPress'
-import { type MetaDeck, normName, winrate } from '../lib/meta'
+import { commanderNames } from './Decks'
+import { type MetaDeck, findMetaDeck, normName, shortName, winrate } from '../lib/meta'
 import { Icon, Sheet, pct, wrClass } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
 import { useDialog } from '../components/Dialog'
@@ -129,6 +130,7 @@ export default function Stats({
   metaDecks,
   players,
   openPlayer,
+  openCommander,
 }: {
   matches: Match[]
   setMatches: (fn: (m: Match[]) => Match[]) => void
@@ -136,6 +138,7 @@ export default function Stats({
   metaDecks: MetaDeck[]
   players?: { key: string; name: string }[]
   openPlayer: (key: string) => void
+  openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
@@ -167,7 +170,12 @@ export default function Stats({
   )
   const onPlay = record(shown.filter((m) => m.start === 'play'))
   const onDraw = record(shown.filter((m) => m.start === 'draw'))
-  const metaWr = (name: string) => metaDecks.find((d) => normName(d.name) === normName(name))
+  // a deck of mine by its commanders, an opponent by the name typed for it
+  const metaOf = (name: string) => {
+    const deck = decks.find((d) => d.name === name)
+    const cmds = deck ? commanderNames(deck) : []
+    return (cmds.length ? findMetaDeck(metaDecks, cmds) : undefined) ?? metaDecks.find((d) => normName(d.name) === normName(name)) ?? findMetaDeck(metaDecks, [name])
+  }
   const filtered = filter !== 'all' || period !== 'all' || format !== 'all'
 
   return (
@@ -253,7 +261,7 @@ export default function Stats({
             <div className="group-title">{t('stats.byDeck')}</div>
             <ul className="card-list">
               {byDeck.map((g) => {
-                const m = metaWr(g.name)
+                const m = metaOf(g.name)
                 return (
                   <li key={g.name} className="stat-row">
                     <span className="ellipsis grow">{g.name}</span>
@@ -271,6 +279,7 @@ export default function Stats({
               {byOpp.map((g) => {
                 const open = openMatchup === g.name
                 const mine = groupBy(g.list, deckName)
+                const m = metaOf(g.name)
                 return (
                   <li key={g.name} className={`matchup ${open ? 'open' : ''}`}>
                     <button className="stat-row" onClick={() => setOpenMatchup(open ? null : g.name)} aria-expanded={open}>
@@ -282,6 +291,16 @@ export default function Stats({
                     </button>
                     {open && (
                       <ul className="matchup-decks">
+                        {m && (
+                          <li className="stat-row sub clickable" onClick={() => openCommander(m.name)}>
+                            <span className="ellipsis grow">
+                              <span className="muted">{t('stats.inMeta')}</span> {shortName(m.name)}
+                            </span>
+                            <span className="muted small">{pct(m.share)}</span>
+                            <b className={`wr small-wr ${wrClass(winrate(m))}`}>{pct(winrate(m), 0)}</b>
+                            <Icon name="chevron" size={14} />
+                          </li>
+                        )}
                         {mine.map((d) => (
                           <li key={d.name} className="stat-row sub">
                             <span className="ellipsis grow">

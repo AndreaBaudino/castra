@@ -15,6 +15,7 @@ import { Icon } from './components/ui'
 import Home from './views/Home'
 import Meta, { META_MODE_KEY } from './views/Meta'
 import { CircuitNoticeCard, EventPage, PlayerPage } from './views/Circuit'
+import { CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPages'
 import { ComparePage, LeaguePage } from './views/CircuitMore'
 import Decks from './views/Decks'
 import DeckDetail from './views/DeckDetail'
@@ -48,7 +49,7 @@ export default function App() {
   const [theme, setTheme] = useStoredState<Theme>('cc.theme', DEFAULT_THEME)
   const [prefs, setPrefs] = useStoredState<Prefs>(PREFS_KEY, readPrefs())
   const [timerSettings, setTimerSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
-  const { data: meta, status, refresh } = useMeta()
+  const { dataset, data: meta, status, refresh } = useMeta()
   const circuit = useCircuit()
   const [circuitMe, setCircuitMe] = useStoredState<string | null>('cc.circuit.me', null)
   const [follow, setFollow] = useStoredState<string[]>('cc.circuit.follow', [])
@@ -162,13 +163,19 @@ export default function App() {
   const openEvent = (id: string) => go('meta', `e~${id}`, true)
   const openLeague = (season: string, name: string) => go('meta', `l~${season}~${encodeURIComponent(name)}`, true)
   const openCompare = (a: string, b: string) => go('meta', `c~${encodeURIComponent(a)}~${encodeURIComponent(b)}`, true)
+  const openCommander = (name: string) => go('meta', `k~${encodeURIComponent(name)}`, true)
+  const openTournament = (id: string) => go('meta', `t~${encodeURIComponent(id)}`, true)
   const findMe = () => {
     writeStored(META_MODE_KEY, 'circuit')
     writeStored('cc.circuit.view', 'ranking')
     go('meta')
   }
-  // meta/p~<player key>, meta/e~<event id>, meta/l~<season>~<league>, meta/c~<player a>~<player b>
+  // meta/p~<player key>, meta/e~<event id>, meta/l~<season>~<league>, meta/c~<player a>~<player b>,
+  // meta/k~<commander>, meta/t~<tournament id> (an event or a league stage of the deck meta)
   const [metaSub, ...metaArgs] = route.tab === 'meta' && route.deck ? route.deck.split('~').map(decodeURIComponent) : []
+  // a circuit event with its sheet opens as a tournament of the meta: same players, plus decks and records
+  const circuitEvent = metaSub === 'e' ? circuit.data?.events.find((e) => e.id === metaArgs[0]) : undefined
+  const eventTournament = circuitEvent && tournamentOfEvent(dataset, circuitEvent)
   const gameInProgress = isGameInProgress(readStored<GameState>(GAME_KEY, defaultGame()))
 
   return (
@@ -188,7 +195,8 @@ export default function App() {
         {route.tab === 'home' && (
           <Home
             banner={noticeCard}
-            meta={meta}
+            dataset={dataset}
+            metaDecks={meta.decks}
             decks={decks}
             matches={matches}
             gameInProgress={gameInProgress}
@@ -199,6 +207,7 @@ export default function App() {
             circuitMe={circuitMe}
             openPlayer={openPlayer}
             findMe={findMe}
+            openCommander={openCommander}
             openDeck={(id) => go('decks', id)}
             importDeck={() => {
               setImportOpen(true)
@@ -236,45 +245,82 @@ export default function App() {
           />
         )}
         {route.tab === 'stats' && (
-          <Stats matches={matches} setMatches={setMatches} decks={decks} metaDecks={meta.decks} players={circuit.data?.players} openPlayer={openPlayer} />
+          <Stats
+            matches={matches}
+            setMatches={setMatches}
+            decks={decks}
+            metaDecks={meta.decks}
+            players={circuit.data?.players}
+            openPlayer={openPlayer}
+            openCommander={openCommander}
+          />
         )}
         {route.tab === 'meta' &&
-          (metaSub && circuit.data ? (
+          (metaSub === 'k' ? (
+            <CommanderPage
+              dataset={dataset}
+              name={metaArgs[0]}
+              decks={decks}
+              onBack={() => history.back()}
+              openPlayer={openPlayer}
+              openTournament={openTournament}
+              openDeck={(id) => go('decks', id)}
+            />
+          ) : metaSub === 't' || (metaSub === 'e' && eventTournament) ? (
+            <TournamentPage
+              dataset={dataset}
+              id={metaSub === 't' ? metaArgs[0] : eventTournament!.id}
+              circuit={circuit.data}
+              prefs={circuitPrefs}
+              onBack={() => history.back()}
+              openPlayer={openPlayer}
+              openCommander={openCommander}
+              openLeague={openLeague}
+            />
+          ) : metaSub && circuit.data ? (
             metaSub === 'p' ? (
               <PlayerPage
                 circuit={circuit.data}
+                dataset={dataset}
                 playerKey={metaArgs[0]}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openEvent={openEvent}
                 openCompare={openCompare}
+                openCommander={openCommander}
+                openTournament={openTournament}
               />
             ) : metaSub === 'e' ? (
               <EventPage circuit={circuit.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
             ) : metaSub === 'l' ? (
               <LeaguePage
                 circuit={circuit.data}
+                dataset={dataset}
                 season={metaArgs[0]}
                 name={metaArgs[1]}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
+                openTournament={openTournament}
+                openCommander={openCommander}
               />
             ) : (
               <ComparePage
                 circuit={circuit.data}
+                dataset={dataset}
                 a={metaArgs[0]}
                 b={metaArgs[1]}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
                 openEvent={openEvent}
+                openTournament={openTournament}
               />
             )
           ) : (
             <Meta
               banner={noticeCard}
-              meta={meta}
+              dataset={dataset}
               status={status}
               onRefresh={refresh}
               circuit={circuit.data}
@@ -284,6 +330,7 @@ export default function App() {
               openPlayer={openPlayer}
               openEvent={openEvent}
               openLeague={openLeague}
+              openCommander={openCommander}
             />
           ))}
         {route.tab === 'decks' &&
@@ -298,6 +345,7 @@ export default function App() {
                 go('decks')
               }}
               onBack={() => go('decks')}
+              openCommander={openCommander}
             />
           ) : (
             <Decks

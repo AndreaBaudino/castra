@@ -1,0 +1,33 @@
+{
+  "note": "Keys in lower case. commanders: name as written in the sheets -> Scryfall name. players: name as written (lower case, no accents) -> name as in the circuit sheet.",
+  "commanders": {
+    "cultist of absolute": "Cultist of the Absolute",
+    "ephara, god of polis": "Ephara, God of the Polis",
+    "ardenn, intrepid archaeologis": "Ardenn, Intrepid Archaeologist",
+    "raph & mikey, combinaguai": "Raph & Mikey, Troublemakers",
+    "captain howler sea scourge": "Captain Howler, Sea Scourge",
+    "namor the submariner": "Namor the Sub-Mariner",
+    "namor, the sub-mariner": "Namor the Sub-Mariner",
+    "silverquill the disputant": "Silverquill, the Disputant",
+    "yoshimaru ever faithful": "Yoshimaru, Ever Faithful",
+    "abigail, eloquent first-year": "Abigale, Eloquent First-Year",
+    "hope, estheim": "Hope Estheim",
+    "brigid doun's mind": "Brigid, Clachan's Heart",
+    "the invincible iron man": "Tony Stark",
+    "rona, tolarian obliterator": "Rona, Herald of Invasion",
+    "the sensational she-hulk": "Jennifer Walters",
+    "kili, the resourceful": "Kíli the Resourceful"
+  },
+  "players": {
+    "simone bartolomei": "Simone Bartolommei",
+    "simone bartollomei": "Simone Bartolommei",
+    "gio alessio bonous": "Giò Alessio Bounous",
+    "leonardo crifo": "Leonardo Crifo'",
+    "mattia magnetti": "Magnetti",
+    "alberto sartiri": "Alberto Sartini",
+    "davide cavallar": "Davide Cavallaro",
+    "emanuele varrino": "Emanuele Varino",
+    "giuseppe bizzoccoli": "Giuseppe Bizzocoli",
+    "tommaso castellani": "Tommaso Catellani"
+  }
+}

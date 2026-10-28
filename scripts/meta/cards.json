@@ -1,0 +1,1226 @@
+{
+ "aang, at the crossroads": {
+  "name": "Aang, at the Crossroads // Aang, Destined Savior",
+  "colors": "GUW"
+ },
+ "aang, swift savior": {
+  "name": "Aang, Swift Savior // Aang and La, Ocean's Fury",
+  "colors": "UW"
+ },
+ "abby, merciless soldier": {
+  "name": "Abby, Merciless Soldier",
+  "colors": "GR"
+ },
+ "abigail, eloquent first-year": {
+  "name": "Abigale, Eloquent First-Year",
+  "colors": "BW",
+  "fuzzy": true
+ },
+ "abigale, eloquent first-year": {
+  "name": "Abigale, Eloquent First-Year",
+  "colors": "BW"
+ },
+ "acererak the archlich": {
+  "name": "Acererak the Archlich",
+  "colors": "B"
+ },
+ "aerid konstrari": {
+  "name": "Aerid Konstrari",
+  "colors": "GR"
+ },
+ "ajani, nacatl pariah": {
+  "name": "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
+  "colors": "RW"
+ },
+ "akiri, line-slinger": {
+  "name": "Akiri, Line-Slinger",
+  "colors": "RW"
+ },
+ "amalia benavides aguirre": {
+  "name": "Amalia Benavides Aguirre",
+  "colors": "BW"
+ },
+ "aminatou, the fateshifter": {
+  "name": "Aminatou, the Fateshifter",
+  "colors": "BUW"
+ },
+ "anafenza, the foremost": {
+  "name": "Anafenza, the Foremost",
+  "colors": "BGW"
+ },
+ "anim pakal, thousandth moon": {
+  "name": "Anim Pakal, Thousandth Moon",
+  "colors": "RW"
+ },
+ "animar, soul of elements": {
+  "name": "Animar, Soul of Elements",
+  "colors": "GRU"
+ },
+ "anje falkenrath": {
+  "name": "Anje Falkenrath",
+  "colors": "BR"
+ },
+ "anowon, the ruin thief": {
+  "name": "Anowon, the Ruin Thief",
+  "colors": "BU"
+ },
+ "arabella, abandoned doll": {
+  "name": "Arabella, Abandoned Doll",
+  "colors": "RW"
+ },
+ "aragorn, king of gondor": {
+  "name": "Aragorn, King of Gondor",
+  "colors": "RUW"
+ },
+ "arahbo, roar of the world": {
+  "name": "Arahbo, Roar of the World",
+  "colors": "GW"
+ },
+ "archangel avacyn": {
+  "name": "Archangel Avacyn // Avacyn, the Purifier",
+  "colors": "RW"
+ },
+ "ardbert, warrior of darkness": {
+  "name": "Ardbert, Warrior of Darkness",
+  "colors": "BW"
+ },
+ "ardenn, intrepid archaeologist": {
+  "name": "Ardenn, Intrepid Archaeologist",
+  "colors": "W"
+ },
+ "ardoz, cobbler of war": {
+  "name": "Ardoz, Cobbler of War",
+  "colors": "R"
+ },
+ "arixmethes, slumbering isle": {
+  "name": "Arixmethes, Slumbering Isle",
+  "colors": "GU"
+ },
+ "ashling, the limitless": {
+  "name": "Ashling, the Limitless",
+  "colors": "BGRUW"
+ },
+ "asmoranomardicadaistinaculdacar": {
+  "name": "Asmoranomardicadaistinaculdacar",
+  "colors": "BR"
+ },
+ "atraxa, grand unifier": {
+  "name": "Atraxa, Grand Unifier",
+  "colors": "BGUW"
+ },
+ "atraxa, praetors' voice": {
+  "name": "Atraxa, Praetors' Voice",
+  "colors": "BGUW"
+ },
+ "atreus, impulsive son": {
+  "name": "Atreus, Impulsive Son",
+  "colors": "RU"
+ },
+ "azula, cunning usurper": {
+  "name": "Azula, Cunning Usurper",
+  "colors": "BU"
+ },
+ "azusa, lost but seeking": {
+  "name": "Azusa, Lost but Seeking",
+  "colors": "G"
+ },
+ "balmor, battlemage captain": {
+  "name": "Balmor, Battlemage Captain",
+  "colors": "RU"
+ },
+ "baral, chief of compliance": {
+  "name": "Baral, Chief of Compliance",
+  "colors": "U"
+ },
+ "basim ibn ishaq": {
+  "name": "Basim Ibn Ishaq",
+  "colors": "BU"
+ },
+ "bello, bard of the brambles": {
+  "name": "Bello, Bard of the Brambles",
+  "colors": "GR"
+ },
+ "beorn the fierce": {
+  "name": "Beorn the Fierce",
+  "colors": "G"
+ },
+ "breya, etherium shaper": {
+  "name": "Breya, Etherium Shaper",
+  "colors": "BRUW"
+ },
+ "brigid doun's mind": {
+  "name": "Brigid, Clachan's Heart // Brigid, Doun's Mind",
+  "colors": "GW",
+  "fuzzy": true
+ },
+ "brigid, clachan's heart": {
+  "name": "Brigid, Clachan's Heart // Brigid, Doun's Mind",
+  "colors": "GW"
+ },
+ "bruce banner": {
+  "name": "Bruce Banner // The Incredible Hulk",
+  "colors": "GRU"
+ },
+ "bruse tarl, boorish herder": {
+  "name": "Bruse Tarl, Boorish Herder",
+  "colors": "RW"
+ },
+ "byrke, long ear of the law": {
+  "name": "Byrke, Long Ear of the Law",
+  "colors": "GW"
+ },
+ "caesar, legion's emperor": {
+  "name": "Caesar, Legion's Emperor",
+  "colors": "BRW"
+ },
+ "captain america, first avenger": {
+  "name": "Captain America, First Avenger",
+  "colors": "RUW"
+ },
+ "captain howler sea scourge": {
+  "name": "Captain Howler, Sea Scourge",
+  "colors": "RU",
+  "fuzzy": true
+ },
+ "captain howler, sea scourge": {
+  "name": "Captain Howler, Sea Scourge",
+  "colors": "RU"
+ },
+ "cecil, dark knight": {
+  "name": "Cecil, Dark Knight // Cecil, Redeemed Paladin",
+  "colors": "BW"
+ },
+ "celes, rune knight": {
+  "name": "Celes, Rune Knight",
+  "colors": "BRW"
+ },
+ "choco, seeker of paradise": {
+  "name": "Choco, Seeker of Paradise",
+  "colors": "GUW"
+ },
+ "chulane, teller of tales": {
+  "name": "Chulane, Teller of Tales",
+  "colors": "GUW"
+ },
+ "cloud, midgar mercenary": {
+  "name": "Cloud, Midgar Mercenary",
+  "colors": "W"
+ },
+ "cultist of the absolute": {
+  "name": "Cultist of the Absolute",
+  "colors": "B"
+ },
+ "daretti, scrap savant": {
+  "name": "Daretti, Scrap Savant",
+  "colors": "R"
+ },
+ "deadpool, trading card": {
+  "name": "Deadpool, Trading Card",
+  "colors": "BR"
+ },
+ "dihada, binder of wills": {
+  "name": "Dihada, Binder of Wills",
+  "colors": "BRW"
+ },
+ "dina, essence brewer": {
+  "name": "Dina, Essence Brewer",
+  "colors": "BG"
+ },
+ "disa the restless": {
+  "name": "Disa the Restless",
+  "colors": "BGR"
+ },
+ "dragonlord ojutai": {
+  "name": "Dragonlord Ojutai",
+  "colors": "UW"
+ },
+ "eddie brock": {
+  "name": "Eddie Brock // Venom, Lethal Protector",
+  "colors": "BGR"
+ },
+ "edric, spymaster of trest": {
+  "name": "Edric, Spymaster of Trest",
+  "colors": "GU"
+ },
+ "ellie, brick master": {
+  "name": "Ellie, Brick Master",
+  "colors": "R"
+ },
+ "ellie, vengeful hunter": {
+  "name": "Ellie, Vengeful Hunter",
+  "colors": "BR"
+ },
+ "elminster": {
+  "name": "Elminster",
+  "colors": "UW"
+ },
+ "eluge, the shoreless sea": {
+  "name": "Eluge, the Shoreless Sea",
+  "colors": "U"
+ },
+ "emet-selch, unsundered": {
+  "name": "Emet-Selch, Unsundered // Hades, Sorcerer of Eld",
+  "colors": "BU"
+ },
+ "ephara, god of the polis": {
+  "name": "Ephara, God of the Polis",
+  "colors": "UW"
+ },
+ "erinis, gloom stalker": {
+  "name": "Erinis, Gloom Stalker",
+  "colors": "G"
+ },
+ "esika, god of the tree": {
+  "name": "Esika, God of the Tree // The Prismatic Bridge",
+  "colors": "BGRUW"
+ },
+ "esior, wardwing familiar": {
+  "name": "Esior, Wardwing Familiar",
+  "colors": "U"
+ },
+ "estrid, the masked": {
+  "name": "Estrid, the Masked",
+  "colors": "GUW"
+ },
+ "evelyn, the covetous": {
+  "name": "Evelyn, the Covetous",
+  "colors": "BRU"
+ },
+ "ezio auditore da firenze": {
+  "name": "Ezio Auditore da Firenze",
+  "colors": "BGRUW"
+ },
+ "ezuri, renegade leader": {
+  "name": "Ezuri, Renegade Leader",
+  "colors": "G"
+ },
+ "felothar the steadfast": {
+  "name": "Felothar the Steadfast",
+  "colors": "BGW"
+ },
+ "felothar, dawn of the abzan": {
+  "name": "Felothar, Dawn of the Abzan",
+  "colors": "BGW"
+ },
+ "finneas, ace archer": {
+  "name": "Finneas, Ace Archer",
+  "colors": "GW"
+ },
+ "flamewar, brash veteran": {
+  "name": "Flamewar, Brash Veteran // Flamewar, Streetwise Operative",
+  "colors": "BR"
+ },
+ "flaming fist": {
+  "name": "Flaming Fist",
+  "colors": "W"
+ },
+ "flubs, the fool": {
+  "name": "Flubs, the Fool",
+  "colors": "GRU"
+ },
+ "g'raha tia, scion reborn": {
+  "name": "G'raha Tia, Scion Reborn",
+  "colors": "BUW"
+ },
+ "geist of saint traft": {
+  "name": "Geist of Saint Traft",
+  "colors": "UW"
+ },
+ "gev, scaled scorch": {
+  "name": "Gev, Scaled Scorch",
+  "colors": "BR"
+ },
+ "ghyrson starn, kelermorph": {
+  "name": "Ghyrson Starn, Kelermorph",
+  "colors": "RU"
+ },
+ "giada, font of hope": {
+  "name": "Giada, Font of Hope",
+  "colors": "W"
+ },
+ "gisa, the hellraiser": {
+  "name": "Gisa, the Hellraiser",
+  "colors": "B"
+ },
+ "glarb, calamity's augur": {
+  "name": "Glarb, Calamity's Augur",
+  "colors": "BGU"
+ },
+ "glissa sunslayer": {
+  "name": "Glissa Sunslayer",
+  "colors": "BG"
+ },
+ "golbez, crystal collector": {
+  "name": "Golbez, Crystal Collector",
+  "colors": "BU"
+ },
+ "golos, tireless pilgrim": {
+  "name": "Golos, Tireless Pilgrim",
+  "colors": "BGRUW"
+ },
+ "grenzo, dungeon warden": {
+  "name": "Grenzo, Dungeon Warden",
+  "colors": "BR"
+ },
+ "gretchen titchwillow": {
+  "name": "Gretchen Titchwillow",
+  "colors": "GU"
+ },
+ "grist, the hunger tide": {
+  "name": "Grist, the Hunger Tide",
+  "colors": "BG"
+ },
+ "grist, voracious larva": {
+  "name": "Grist, Voracious Larva // Grist, the Plague Swarm",
+  "colors": "BG"
+ },
+ "grub, storied matriarch": {
+  "name": "Grub, Storied Matriarch // Grub, Notorious Auntie",
+  "colors": "BR"
+ },
+ "gut, true soul zealot": {
+  "name": "Gut, True Soul Zealot",
+  "colors": "R"
+ },
+ "hashaton, scarab's fist": {
+  "name": "Hashaton, Scarab's Fist",
+  "colors": "BUW"
+ },
+ "hearthhull, the worldseed": {
+  "name": "Hearthhull, the Worldseed",
+  "colors": "BGR"
+ },
+ "hei bai, forest guardian": {
+  "name": "Hei Bai, Forest Guardian",
+  "colors": "BGRUW"
+ },
+ "hidetsugu and kairi": {
+  "name": "Hidetsugu and Kairi",
+  "colors": "BU"
+ },
+ "high perfect morcant": {
+  "name": "High Perfect Morcant",
+  "colors": "BG"
+ },
+ "hogaak, arisen necropolis": {
+  "name": "Hogaak, Arisen Necropolis",
+  "colors": "BG"
+ },
+ "hope estheim": {
+  "name": "Hope Estheim",
+  "colors": "UW"
+ },
+ "hope, estheim": {
+  "name": "Hope Estheim",
+  "colors": "UW",
+  "fuzzy": true
+ },
+ "hydro-man, fluid felon": {
+  "name": "Hydro-Man, Fluid Felon",
+  "colors": "U"
+ },
+ "ikra shidiqi, the usurper": {
+  "name": "Ikra Shidiqi, the Usurper",
+  "colors": "BG"
+ },
+ "imoti, celebrant of bounty": {
+  "name": "Imoti, Celebrant of Bounty",
+  "colors": "GU"
+ },
+ "indoraptor, the perfect hybrid": {
+  "name": "Indoraptor, the Perfect Hybrid",
+  "colors": "BGR"
+ },
+ "ingris stingerquill": {
+  "name": "Ingris Stingerquill",
+  "colors": "BR"
+ },
+ "inspiring leader": {
+  "name": "Inspiring Leader",
+  "colors": "W"
+ },
+ "iron spider, stark upgrade": {
+  "name": "Iron Spider, Stark Upgrade",
+  "colors": ""
+ },
+ "ivy, gleeful spellthief": {
+  "name": "Ivy, Gleeful Spellthief",
+  "colors": "GU"
+ },
+ "ixhel, scion of atraxa": {
+  "name": "Ixhel, Scion of Atraxa",
+  "colors": "BGW"
+ },
+ "jace, multiverse architect": {
+  "name": "Jace, Multiverse Architect",
+  "colors": "BRUW"
+ },
+ "jan jansen, chaos crafter": {
+  "name": "Jan Jansen, Chaos Crafter",
+  "colors": "BRW"
+ },
+ "jennifer walters": {
+  "name": "Jennifer Walters // The Sensational She-Hulk",
+  "colors": "GW"
+ },
+ "jenova, ancient calamity": {
+  "name": "Jenova, Ancient Calamity",
+  "colors": "BG"
+ },
+ "jeska, thrice reborn": {
+  "name": "Jeska, Thrice Reborn",
+  "colors": "R"
+ },
+ "jin sakai, ghost of tsushima": {
+  "name": "Jin Sakai, Ghost of Tsushima",
+  "colors": "BUW"
+ },
+ "juri, master of the revue": {
+  "name": "Juri, Master of the Revue",
+  "colors": "BR"
+ },
+ "karlov of the ghost council": {
+  "name": "Karlov of the Ghost Council",
+  "colors": "BW"
+ },
+ "karumonix, the rat king": {
+  "name": "Karumonix, the Rat King",
+  "colors": "B"
+ },
+ "kassandra, eagle bearer": {
+  "name": "Kassandra, Eagle Bearer",
+  "colors": "RW"
+ },
+ "katara, the fearless": {
+  "name": "Katara, the Fearless",
+  "colors": "GUW"
+ },
+ "katara, waterbending master": {
+  "name": "Katara, Waterbending Master",
+  "colors": "U"
+ },
+ "kefka, court mage": {
+  "name": "Kefka, Court Mage // Kefka, Ruler of Ruin",
+  "colors": "BRU"
+ },
+ "kess, dissident mage": {
+  "name": "Kess, Dissident Mage",
+  "colors": "BRU"
+ },
+ "ketramose, the new dawn": {
+  "name": "Ketramose, the New Dawn",
+  "colors": "BW"
+ },
+ "kili, the resourceful": {
+  "name": "Kíli the Resourceful",
+  "colors": "W",
+  "fuzzy": true
+ },
+ "king t'challa": {
+  "name": "King T'Challa // Black Panther, Hope Enduring",
+  "colors": "UW"
+ },
+ "kinnan, bonder prodigy": {
+  "name": "Kinnan, Bonder Prodigy",
+  "colors": "GU"
+ },
+ "kiora, sovereign of the deep": {
+  "name": "Kiora, Sovereign of the Deep",
+  "colors": "GU"
+ },
+ "klothys, god of destiny": {
+  "name": "Klothys, God of Destiny",
+  "colors": "GR"
+ },
+ "koma, cosmos serpent": {
+  "name": "Koma, Cosmos Serpent",
+  "colors": "GU"
+ },
+ "korvold, fae-cursed king": {
+  "name": "Korvold, Fae-Cursed King",
+  "colors": "BGR"
+ },
+ "kotis, the fangkeeper": {
+  "name": "Kotis, the Fangkeeper",
+  "colors": "BGU"
+ },
+ "krang, master mind": {
+  "name": "Krang, Master Mind",
+  "colors": "U"
+ },
+ "kratos, stoic father": {
+  "name": "Kratos, Stoic Father",
+  "colors": "RW"
+ },
+ "krenko, mob boss": {
+  "name": "Krenko, Mob Boss",
+  "colors": "R"
+ },
+ "kroxa and kunoros": {
+  "name": "Kroxa and Kunoros",
+  "colors": "BRW"
+ },
+ "kroxa, titan of death's hunger": {
+  "name": "Kroxa, Titan of Death's Hunger",
+  "colors": "BR"
+ },
+ "kutzil, malamet exemplar": {
+  "name": "Kutzil, Malamet Exemplar",
+  "colors": "GW"
+ },
+ "kíli the resourceful": {
+  "name": "Kíli the Resourceful",
+  "colors": "W"
+ },
+ "lady octopus, inspired inventor": {
+  "name": "Lady Octopus, Inspired Inventor",
+  "colors": "U"
+ },
+ "lae'zel, vlaakith's champion": {
+  "name": "Lae'zel, Vlaakith's Champion",
+  "colors": "W"
+ },
+ "leovold, emissary of trest": {
+  "name": "Leovold, Emissary of Trest",
+  "colors": "BGU"
+ },
+ "lier, disciple of the drowned": {
+  "name": "Lier, Disciple of the Drowned",
+  "colors": "U"
+ },
+ "liesa, shroud of dusk": {
+  "name": "Liesa, Shroud of Dusk",
+  "colors": "BW"
+ },
+ "light-paws, emperor's voice": {
+  "name": "Light-Paws, Emperor's Voice",
+  "colors": "W"
+ },
+ "lightning, army of one": {
+  "name": "Lightning, Army of One",
+  "colors": "RW"
+ },
+ "lonis, cryptozoologist": {
+  "name": "Lonis, Cryptozoologist",
+  "colors": "GU"
+ },
+ "loot, exuberant explorer": {
+  "name": "Loot, Exuberant Explorer",
+  "colors": "G"
+ },
+ "loot, the key to everything": {
+  "name": "Loot, the Key to Everything",
+  "colors": "GRU"
+ },
+ "loot, the pathfinder": {
+  "name": "Loot, the Pathfinder",
+  "colors": "GRU"
+ },
+ "lumra, bellow of the woods": {
+  "name": "Lumra, Bellow of the Woods",
+  "colors": "G"
+ },
+ "lyse hext": {
+  "name": "Lyse Hext",
+  "colors": "UW"
+ },
+ "maelstrom wanderer": {
+  "name": "Maelstrom Wanderer",
+  "colors": "GRU"
+ },
+ "magda, brazen outlaw": {
+  "name": "Magda, Brazen Outlaw",
+  "colors": "R"
+ },
+ "maralen, fae ascendant": {
+  "name": "Maralen, Fae Ascendant",
+  "colors": "BGU"
+ },
+ "marath, will of the wild": {
+  "name": "Marath, Will of the Wild",
+  "colors": "GRW"
+ },
+ "marchesa, dealer of death": {
+  "name": "Marchesa, Dealer of Death",
+  "colors": "BRU"
+ },
+ "meren of clan nel toth": {
+  "name": "Meren of Clan Nel Toth",
+  "colors": "BG"
+ },
+ "millicent, restless revenant": {
+  "name": "Millicent, Restless Revenant",
+  "colors": "UW"
+ },
+ "minsc & boo, timeless heroes": {
+  "name": "Minsc & Boo, Timeless Heroes",
+  "colors": "GR"
+ },
+ "minsc, beloved ranger": {
+  "name": "Minsc, Beloved Ranger",
+  "colors": "GRW"
+ },
+ "mm'menon, the right hand": {
+  "name": "Mm'menon, the Right Hand",
+  "colors": "U"
+ },
+ "moon girl and devil dinosaur": {
+  "name": "Moon Girl and Devil Dinosaur",
+  "colors": "GU"
+ },
+ "najeela, the blade-blossom": {
+  "name": "Najeela, the Blade-Blossom",
+  "colors": "BGRUW"
+ },
+ "namor the sub-mariner": {
+  "name": "Namor the Sub-Mariner",
+  "colors": "U"
+ },
+ "namor the submariner": {
+  "name": "Namor the Sub-Mariner",
+  "colors": "U",
+  "fuzzy": true
+ },
+ "namor, the sub-mariner": {
+  "name": "Namor the Sub-Mariner",
+  "colors": "U",
+  "fuzzy": true
+ },
+ "narset, enlightened exile": {
+  "name": "Narset, Enlightened Exile",
+  "colors": "RUW"
+ },
+ "narset, enlightened master": {
+  "name": "Narset, Enlightened Master",
+  "colors": "RUW"
+ },
+ "nashi, searcher in the dark": {
+  "name": "Nashi, Searcher in the Dark",
+  "colors": "BU"
+ },
+ "neriv, heart of the storm": {
+  "name": "Neriv, Heart of the Storm",
+  "colors": "BRW"
+ },
+ "nicol bolas, the ravager": {
+  "name": "Nicol Bolas, the Ravager // Nicol Bolas, the Arisen",
+  "colors": "BRU"
+ },
+ "niv-mizzet, parun": {
+  "name": "Niv-Mizzet, Parun",
+  "colors": "RU"
+ },
+ "noble heritage": {
+  "name": "Noble Heritage",
+  "colors": "W"
+ },
+ "norman osborn": {
+  "name": "Norman Osborn // Green Goblin",
+  "colors": "BRU"
+ },
+ "octavia, living thesis": {
+  "name": "Octavia, Living Thesis",
+  "colors": "U"
+ },
+ "oloro, ageless ascetic": {
+  "name": "Oloro, Ageless Ascetic",
+  "colors": "BUW"
+ },
+ "omnath, locus of creation": {
+  "name": "Omnath, Locus of Creation",
+  "colors": "GRUW"
+ },
+ "oswald fiddlebender": {
+  "name": "Oswald Fiddlebender",
+  "colors": "W"
+ },
+ "otharri, suns' glory": {
+  "name": "Otharri, Suns' Glory",
+  "colors": "RW"
+ },
+ "pantlaza, sun-favored": {
+  "name": "Pantlaza, Sun-Favored",
+  "colors": "GRW"
+ },
+ "peter parker": {
+  "name": "Peter Parker // Amazing Spider-Man",
+  "colors": "GUW"
+ },
+ "phelia, exuberant shepherd": {
+  "name": "Phelia, Exuberant Shepherd",
+  "colors": "W"
+ },
+ "phlage, titan of fire's fury": {
+  "name": "Phlage, Titan of Fire's Fury",
+  "colors": "RW"
+ },
+ "plagon, lord of the beach": {
+  "name": "Plagon, Lord of the Beach",
+  "colors": "UW"
+ },
+ "prismari, the inspiration": {
+  "name": "Prismari, the Inspiration",
+  "colors": "RU"
+ },
+ "prossh, skyraider of kher": {
+  "name": "Prossh, Skyraider of Kher",
+  "colors": "BGR"
+ },
+ "queen marchesa": {
+  "name": "Queen Marchesa",
+  "colors": "BRW"
+ },
+ "queza, augur of agonies": {
+  "name": "Queza, Augur of Agonies",
+  "colors": "BUW"
+ },
+ "quintorius, history chaser": {
+  "name": "Quintorius, History Chaser",
+  "colors": "RW"
+ },
+ "rafiq of the many": {
+  "name": "Rafiq of the Many",
+  "colors": "GUW"
+ },
+ "ragavan, nimble pilferer": {
+  "name": "Ragavan, Nimble Pilferer",
+  "colors": "R"
+ },
+ "raggadragga, goreguts boss": {
+  "name": "Raggadragga, Goreguts Boss",
+  "colors": "GR"
+ },
+ "ragost, deft gastronaut": {
+  "name": "Ragost, Deft Gastronaut",
+  "colors": "RW"
+ },
+ "ral, monsoon mage": {
+  "name": "Ral, Monsoon Mage // Ral, Leyline Prodigy",
+  "colors": "RU"
+ },
+ "raph & mikey, troublemakers": {
+  "name": "Raph & Mikey, Troublemakers",
+  "colors": "GR"
+ },
+ "rat king, verminister": {
+  "name": "Rat King, Verminister",
+  "colors": "B"
+ },
+ "ratchet, field medic": {
+  "name": "Ratchet, Field Medic // Ratchet, Rescue Racer",
+  "colors": "W"
+ },
+ "rem karolus, stalwart slayer": {
+  "name": "Rem Karolus, Stalwart Slayer",
+  "colors": "RW"
+ },
+ "rofellos, llanowar emissary": {
+  "name": "Rofellos, Llanowar Emissary",
+  "colors": "G"
+ },
+ "rograkh, son of rohgahh": {
+  "name": "Rograkh, Son of Rohgahh",
+  "colors": "R"
+ },
+ "rona, herald of invasion": {
+  "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
+  "colors": "BU"
+ },
+ "rona, tolarian obliterator": {
+  "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
+  "colors": "BU",
+  "fuzzy": true
+ },
+ "rootha, mastering the moment": {
+  "name": "Rootha, Mastering the Moment",
+  "colors": "RU"
+ },
+ "rydia, summoner of mist": {
+  "name": "Rydia, Summoner of Mist",
+  "colors": "GR"
+ },
+ "sai, master thopterist": {
+  "name": "Sai, Master Thopterist",
+  "colors": "U"
+ },
+ "saskia the unyielding": {
+  "name": "Saskia the Unyielding",
+  "colors": "BGRW"
+ },
+ "satoru umezawa": {
+  "name": "Satoru Umezawa",
+  "colors": "BU"
+ },
+ "satoru, the infiltrator": {
+  "name": "Satoru, the Infiltrator",
+  "colors": "BU"
+ },
+ "satya, aetherflux genius": {
+  "name": "Satya, Aetherflux Genius",
+  "colors": "RUW"
+ },
+ "sauron, the dark lord": {
+  "name": "Sauron, the Dark Lord",
+  "colors": "BRU"
+ },
+ "selvala, heart of the wilds": {
+  "name": "Selvala, Heart of the Wilds",
+  "colors": "G"
+ },
+ "sephiroth, fabled soldier": {
+  "name": "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+  "colors": "B"
+ },
+ "shao jun": {
+  "name": "Shao Jun",
+  "colors": "RU"
+ },
+ "sheoldred, the apocalypse": {
+  "name": "Sheoldred, the Apocalypse",
+  "colors": "B"
+ },
+ "shorikai, genesis engine": {
+  "name": "Shorikai, Genesis Engine",
+  "colors": "UW"
+ },
+ "sidar jabari of zhalfir": {
+  "name": "Sidar Jabari of Zhalfir",
+  "colors": "BUW"
+ },
+ "sidar kondo of jamuraa": {
+  "name": "Sidar Kondo of Jamuraa",
+  "colors": "GW"
+ },
+ "silverquill the disputant": {
+  "name": "Silverquill, the Disputant",
+  "colors": "BW",
+  "fuzzy": true
+ },
+ "silverquill, the disputant": {
+  "name": "Silverquill, the Disputant",
+  "colors": "BW"
+ },
+ "sisay, weatherlight captain": {
+  "name": "Sisay, Weatherlight Captain",
+  "colors": "BGRUW"
+ },
+ "skithiryx, the blight dragon": {
+  "name": "Skithiryx, the Blight Dragon",
+  "colors": "B"
+ },
+ "slimefoot and squee": {
+  "name": "Slimefoot and Squee",
+  "colors": "BGR"
+ },
+ "slogurk, the overslime": {
+  "name": "Slogurk, the Overslime",
+  "colors": "GU"
+ },
+ "sorin of house markov": {
+  "name": "Sorin of House Markov // Sorin, Ravenous Neonate",
+  "colors": "BW"
+ },
+ "soul of windgrace": {
+  "name": "Soul of Windgrace",
+  "colors": "BGR"
+ },
+ "spider-man 2099": {
+  "name": "Spider-Man 2099",
+  "colors": "RU"
+ },
+ "splinter, radical rat": {
+  "name": "Splinter, Radical Rat",
+  "colors": "BUW"
+ },
+ "squall, seed mercenary": {
+  "name": "Squall, SeeD Mercenary",
+  "colors": "BW"
+ },
+ "storm, force of nature": {
+  "name": "Storm, Force of Nature",
+  "colors": "GRU"
+ },
+ "superior spider-man": {
+  "name": "Superior Spider-Man",
+  "colors": "BU"
+ },
+ "surrak dragonclaw": {
+  "name": "Surrak Dragonclaw",
+  "colors": "GRU"
+ },
+ "svyelun of sea and sky": {
+  "name": "Svyelun of Sea and Sky",
+  "colors": "U"
+ },
+ "sword coast sailor": {
+  "name": "Sword Coast Sailor",
+  "colors": "U"
+ },
+ "sygg, river cutthroat": {
+  "name": "Sygg, River Cutthroat",
+  "colors": "BU"
+ },
+ "sygg, wanderwine wisdom": {
+  "name": "Sygg, Wanderwine Wisdom // Sygg, Wanderbrine Shield",
+  "colors": "UW"
+ },
+ "syr vondam, sunstar exemplar": {
+  "name": "Syr Vondam, Sunstar Exemplar",
+  "colors": "BW"
+ },
+ "syr vondam, the lucent": {
+  "name": "Syr Vondam, the Lucent",
+  "colors": "BW"
+ },
+ "sythis, harvest's hand": {
+  "name": "Sythis, Harvest's Hand",
+  "colors": "GW"
+ },
+ "szarel, genesis shepherd": {
+  "name": "Szarel, Genesis Shepherd",
+  "colors": "BGR"
+ },
+ "taigam, ojutai master": {
+  "name": "Taigam, Ojutai Master",
+  "colors": "UW"
+ },
+ "tameshi, reality architect": {
+  "name": "Tameshi, Reality Architect",
+  "colors": "UW"
+ },
+ "tana, the bloodsower": {
+  "name": "Tana, the Bloodsower",
+  "colors": "GR"
+ },
+ "tannuk, memorial ensign": {
+  "name": "Tannuk, Memorial Ensign",
+  "colors": "GR"
+ },
+ "tasigur, the golden fang": {
+  "name": "Tasigur, the Golden Fang",
+  "colors": "BGU"
+ },
+ "teferi, temporal archmage": {
+  "name": "Teferi, Temporal Archmage",
+  "colors": "U"
+ },
+ "tegwyll, duke of splendor": {
+  "name": "Tegwyll, Duke of Splendor",
+  "colors": "BU"
+ },
+ "terra, herald of hope": {
+  "name": "Terra, Herald of Hope",
+  "colors": "BRW"
+ },
+ "terra, magical adept": {
+  "name": "Terra, Magical Adept // Esper Terra",
+  "colors": "BGRUW"
+ },
+ "tetsuko umezawa, fugitive": {
+  "name": "Tetsuko Umezawa, Fugitive",
+  "colors": "U"
+ },
+ "teval, the balanced scale": {
+  "name": "Teval, the Balanced Scale",
+  "colors": "BGU"
+ },
+ "tevesh szat, doom of fools": {
+  "name": "Tevesh Szat, Doom of Fools",
+  "colors": "B"
+ },
+ "thalia and the gitrog monster": {
+  "name": "Thalia and The Gitrog Monster",
+  "colors": "BGW"
+ },
+ "the beamtown bullies": {
+  "name": "The Beamtown Bullies",
+  "colors": "BGR"
+ },
+ "the first sliver": {
+  "name": "The First Sliver",
+  "colors": "BGRUW"
+ },
+ "the gitrog, ravenous ride": {
+  "name": "The Gitrog, Ravenous Ride",
+  "colors": "BG"
+ },
+ "the great goblin": {
+  "name": "The Great Goblin",
+  "colors": "BR"
+ },
+ "the invincible iron man": {
+  "name": "Tony Stark // The Invincible Iron Man",
+  "colors": "RU",
+  "fuzzy": true
+ },
+ "the necrobloom": {
+  "name": "The Necrobloom",
+  "colors": "BGW"
+ },
+ "the reaper, king no more": {
+  "name": "The Reaper, King No More",
+  "colors": "BGR"
+ },
+ "the sensational she-hulk": {
+  "name": "Jennifer Walters // The Sensational She-Hulk",
+  "colors": "GW",
+  "fuzzy": true
+ },
+ "the serpent society": {
+  "name": "The Serpent Society",
+  "colors": "BG"
+ },
+ "the ur-dragon": {
+  "name": "The Ur-Dragon",
+  "colors": "BGRUW"
+ },
+ "thrasios, triton hero": {
+  "name": "Thrasios, Triton Hero",
+  "colors": "GU"
+ },
+ "tidus, blitzball star": {
+  "name": "Tidus, Blitzball Star",
+  "colors": "UW"
+ },
+ "tidus, yuna's guardian": {
+  "name": "Tidus, Yuna's Guardian",
+  "colors": "GUW"
+ },
+ "tifa lockhart": {
+  "name": "Tifa Lockhart",
+  "colors": "G"
+ },
+ "titania, protector of argoth": {
+  "name": "Titania, Protector of Argoth",
+  "colors": "G"
+ },
+ "tivit, seller of secrets": {
+  "name": "Tivit, Seller of Secrets",
+  "colors": "BUW"
+ },
+ "tony stark": {
+  "name": "Tony Stark // The Invincible Iron Man",
+  "colors": "RU"
+ },
+ "toph, greatest earthbender": {
+  "name": "Toph, Greatest Earthbender",
+  "colors": "GR"
+ },
+ "tourach, dread cantor": {
+  "name": "Tourach, Dread Cantor",
+  "colors": "B"
+ },
+ "tymna the weaver": {
+  "name": "Tymna the Weaver",
+  "colors": "BW"
+ },
+ "ultimate green goblin": {
+  "name": "Ultimate Green Goblin",
+  "colors": "BR"
+ },
+ "urabrask": {
+  "name": "Urabrask // The Great Work",
+  "colors": "R"
+ },
+ "urza, chief artificer": {
+  "name": "Urza, Chief Artificer",
+  "colors": "BUW"
+ },
+ "urza, lord high artificer": {
+  "name": "Urza, Lord High Artificer",
+  "colors": "U"
+ },
+ "urza, lord protector": {
+  "name": "Urza, Lord Protector",
+  "colors": "UW"
+ },
+ "valgavoth, harrower of souls": {
+  "name": "Valgavoth, Harrower of Souls",
+  "colors": "BR"
+ },
+ "vendilion clique": {
+  "name": "Vendilion Clique",
+  "colors": "U"
+ },
+ "veyran, voice of duality": {
+  "name": "Veyran, Voice of Duality",
+  "colors": "RU"
+ },
+ "vial smasher the fierce": {
+  "name": "Vial Smasher the Fierce",
+  "colors": "BR"
+ },
+ "vihaan, goldwaker": {
+  "name": "Vihaan, Goldwaker",
+  "colors": "BRW"
+ },
+ "vito, thorn of the dusk rose": {
+  "name": "Vito, Thorn of the Dusk Rose",
+  "colors": "B"
+ },
+ "vivi ornitier": {
+  "name": "Vivi Ornitier",
+  "colors": "RU"
+ },
+ "vohar, vodalian desecrator": {
+  "name": "Vohar, Vodalian Desecrator",
+  "colors": "BU"
+ },
+ "voja, jaws of the conclave": {
+  "name": "Voja, Jaws of the Conclave",
+  "colors": "GRW"
+ },
+ "vren, the relentless": {
+  "name": "Vren, the Relentless",
+  "colors": "BU"
+ },
+ "wilson, refined grizzly": {
+  "name": "Wilson, Refined Grizzly",
+  "colors": "G"
+ },
+ "xenagos, god of revels": {
+  "name": "Xenagos, God of Revels",
+  "colors": "GR"
+ },
+ "y'shtola, night's blessed": {
+  "name": "Y'shtola, Night's Blessed",
+  "colors": "BUW"
+ },
+ "yorion, sky nomad": {
+  "name": "Yorion, Sky Nomad",
+  "colors": "UW"
+ },
+ "yoshimaru ever faithful": {
+  "name": "Yoshimaru, Ever Faithful",
+  "colors": "W",
+  "fuzzy": true
+ },
+ "yoshimaru, ever faithful": {
+  "name": "Yoshimaru, Ever Faithful",
+  "colors": "W"
+ },
+ "zacama, primal calamity": {
+  "name": "Zacama, Primal Calamity",
+  "colors": "GRW"
+ },
+ "zimone, infinite analyst": {
+  "name": "Zimone, Infinite Analyst",
+  "colors": "GU"
+ },
+ "zodiark, umbral god": {
+  "name": "Zodiark, Umbral God",
+  "colors": "B"
+ },
+ "zur the enchanter": {
+  "name": "Zur the Enchanter",
+  "colors": "BUW"
+ },
+ "zurgo and ojutai": {
+  "name": "Zurgo and Ojutai",
+  "colors": "RUW"
+ },
+ "zurgo stormrender": {
+  "name": "Zurgo Stormrender",
+  "colors": "BRW"
+ }
+}

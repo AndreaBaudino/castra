@@ -1,11 +1,10 @@
 import { useI18n } from '../i18n'
 import type { Deck } from '../lib/decks'
 import { type Match, fmtRecord, groupBy, record } from '../lib/matches'
-import { type MetaData, winrate } from '../lib/meta'
+import { type MetaDataset, type MetaDeck, type Season, aggregate, shortName, winrate } from '../lib/meta'
 import type { AppUser } from '../lib/auth'
 import { Icon, Pips, pct, wrClass } from '../components/ui'
 import { DeckTile } from './Decks'
-import { metaSummary } from './Meta'
 import { ResultDots } from './Stats'
 import { CircuitCard } from './Circuit'
 import { InstallBanner } from '../components/AppBanners'
@@ -14,7 +13,8 @@ import type { Circuit } from '../lib/circuit'
 
 export default function Home({
   banner,
-  meta,
+  dataset,
+  metaDecks,
   decks,
   matches,
   gameInProgress,
@@ -27,9 +27,11 @@ export default function Home({
   circuitMe,
   openPlayer,
   findMe,
+  openCommander,
 }: {
   banner?: React.ReactNode
-  meta: MetaData
+  dataset: MetaDataset | null
+  metaDecks: MetaDeck[] // the whole year, for the winrate on the deck tiles
   decks: Deck[]
   matches: Match[]
   gameInProgress: boolean
@@ -42,13 +44,16 @@ export default function Home({
   circuitMe: string | null
   openPlayer: (key: string) => void
   findMe: () => void
+  openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
-  const top = meta.decks
-    .filter((d) => d.games >= 10)
-    .sort((a, b) => winrate(b) - winrate(a))
-    .slice(0, 5)
-  const s = metaSummary(meta.decks, 10)
+  // the season being played: the one of the latest tournament
+  const season = dataset?.tournaments.reduce<{ d: string; s: Season } | null>(
+    (best, x) => (x.date && (!best || x.date > best.d) ? { d: x.date, s: x.season } : best),
+    null,
+  )?.s
+  const meta = dataset && season ? aggregate(dataset, { season, kind: '', league: '' }) : null
+  const top = meta?.decks.slice(0, 5) ?? []
   const rec = record(matches)
   const topDecks = groupBy(matches, (m) => decks.find((d) => d.id === m.deckId)?.name ?? m.deckName).slice(0, 3)
   const recent = [...decks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3)
@@ -138,31 +143,22 @@ export default function Home({
             {t('home.seeAll')}
           </button>
         </div>
-        {meta.demo && <div className="muted small demo-tag">DEMO</div>}
-        <div className="stats3 compact">
-          <div>
-            <div className="stat-num">{meta.decks.length}</div>
-            <div className="stat-label">{t('meta.decks')}</div>
-          </div>
-          <div>
-            <div className="stat-num">{s.games}</div>
-            <div className="stat-label">{t('meta.games')}</div>
-          </div>
-          <div>
-            <div className="stat-num">{pct(s.avgWr, 0)}</div>
-            <div className="stat-label">{t('meta.avgWr')}</div>
-          </div>
-        </div>
-        <ol className="mini-list">
-          {top.map((d, i) => (
-            <li key={d.name}>
-              <span className="rank">{i + 1}</span>
-              <span className="ellipsis grow">{d.name}</span>
-              <Pips colors={d.colors} size={9} />
-              <span className={`wr small-wr ${wrClass(winrate(d))}`}>{pct(winrate(d), 0)}</span>
-            </li>
-          ))}
-        </ol>
+        {meta && season && (
+          <>
+            <div className="muted small">{t('home.metaSeason', { s: season.toUpperCase(), n: meta.tournaments, e: meta.entries })}</div>
+            <ol className="mini-list">
+              {top.map((d, i) => (
+                <li key={d.id} className="clickable" onClick={() => openCommander(d.name)}>
+                  <span className="rank">{i + 1}</span>
+                  <span className="ellipsis grow">{shortName(d.name)}</span>
+                  <Pips colors={d.colors} size={9} />
+                  <span className="small muted">{pct(d.share, 0)}</span>
+                  <span className={`wr small-wr ${wrClass(winrate(d))}`}>{pct(winrate(d), 0)}</span>
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
       </section>
 
       <section className="card">
@@ -184,7 +180,7 @@ export default function Home({
         ) : (
           <div className="deck-list flush">
             {recent.map((d) => (
-              <DeckTile key={d.id} deck={d} metaDecks={meta.decks} onClick={() => openDeck(d.id)} />
+              <DeckTile key={d.id} deck={d} metaDecks={metaDecks} onClick={() => openDeck(d.id)} />
             ))}
           </div>
         )}
