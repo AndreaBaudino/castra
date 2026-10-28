@@ -24,6 +24,7 @@
   --W: #f4ecd2;
   --U: #4f8fd6;
   --B: #4a3f4f;
+  --B-ring: rgba(255, 255, 255, 0.55); /* black mana pips stand out on the dark theme */
   --R: #d9533e;
   --G: #3f9a5b;
   --C: #b9b2aa;
@@ -38,6 +39,7 @@
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
+    --B-ring: rgba(0, 0, 0, 0.35);
     --bg: #f6f1ea;
     --surface: #fffdfa;
     --surface-2: #efe7dc;
@@ -56,6 +58,7 @@
 }
 
 :root[data-theme='light'] {
+  --B-ring: rgba(0, 0, 0, 0.35);
   --bg: #f6f1ea;
   --surface: #fffdfa;
   --surface-2: #efe7dc;
@@ -407,7 +410,7 @@ h1 {
 }
 .pip-W { background: var(--W); }
 .pip-U { background: var(--U); }
-.pip-B { background: var(--B); }
+.pip-B { background: var(--B); border-color: var(--B-ring); }
 .pip-R { background: var(--R); }
 .pip-G { background: var(--G); }
 .pip-C { background: var(--C); }

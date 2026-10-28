@@ -19,6 +19,7 @@ export const CHANGELOG: Release[] = [
       'Scheda giocatore: le liste Moxfield presentate nei tornei',
       'Meta: se con il filtro scelto nessun comandante arriva al minimo di partite, un pulsante li mostra tutti',
       'Mazzi: la splash art riempie il riquadro e sfuma nel colore del tema, con nome e carte a destra',
+      'Mazzi: il numero di carte compare solo come avviso se non sono 100, e "lista non valida" per gli altri problemi; pallino del mana nero più visibile nel tema scuro',
     ],
     en: [
       'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
@@ -30,6 +31,7 @@ export const CHANGELOG: Release[] = [
       'Player page: the Moxfield lists submitted at tournaments',
       'Meta: when no commander reaches the minimum games with the chosen filter, a button shows them all',
       'Decks: the splash art fills the tile and fades into the theme colour, with name and cards on the right',
+      'Decks: the card count shows only as a warning when it isn\'t 100, and "invalid list" for other problems; black mana pips easier to see on the dark theme',
     ],
   },
   {

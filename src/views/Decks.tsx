@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { DECK_SIZE } from '../config'
 import { useI18n } from '../i18n'
 import { useLongPress } from '../lib/longPress'
 import { type Deck, checkDeck, deckCover, isValid, newId, parseDecklist, sortColors } from '../lib/decks'
@@ -37,9 +38,11 @@ export function DeckTile({
         </div>
         <div className="sub-line">
           <Pips colors={sortColors(check.identity)} size={10} />
-          <span className={`muted small ${isValid(check) ? '' : 'warn-text'}`}>
-            {check.count}/100 {t('decks.cards')}
-          </span>
+          {check.count !== DECK_SIZE ? (
+            <span className="small warn-text">⚠ {check.count}/100 {t('decks.cards')}</span>
+          ) : (
+            !isValid(check) && <span className="small warn-text">⚠ {t('decks.invalid')}</span>
+          )}
           {deck.tags.slice(0, 2).map((tag) => (
             <span key={tag} className="tag">
               {tag}
