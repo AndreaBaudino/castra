@@ -1,5 +1,10 @@
 /** Year of the tournament data in public/meta-<year>.json (built by `npm run meta`). */
 export const META_YEAR = 2026
+/**
+ * Where the app reads the meta: the meta-data branch, rewritten every night by .github/workflows/meta.yml with
+ * that file alone, so new results show up without a new release. The copy in public/ is the fallback.
+ */
+export const META_DATA_URL = `https://raw.githubusercontent.com/AndreaBaudino/castra/meta-data/meta-${META_YEAR}.json`
 
 /**
  * Google Sheet of the Centurion circuit: overall leaderboard, city leagues (S1, S2) and big events.

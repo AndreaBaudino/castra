@@ -1,0 +1,71 @@
+name: Update meta
+
+# Every night at midnight, Italian time: downloads the tournament sheets, rebuilds meta-<year>.json and, if
+# anything changed, writes it to the meta-data branch, which holds that file alone (one commit, replaced every
+# time). The app reads it from there: main is not touched and the app is not deployed again.
+# Cron runs in UTC, so both 22:00 and 23:00 are scheduled and only the one that is midnight in Rome
+# goes on (22:00 with summer time, 23:00 without).
+
+on:
+  schedule:
+    - cron: '0 22 * * *'
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meta
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Midnight in Rome?
+        id: when
+        run: |
+          case "$(TZ=Europe/Rome date +%z)" in +0200) midnight='0 22 * * *' ;; *) midnight='0 23 * * *' ;; esac
+          if [ "${{ github.event_name }}" != schedule ] || [ "${{ github.event.schedule }}" = "$midnight" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.when.outputs.go
+        uses: actions/checkout@v4
+      - if: steps.when.outputs.go
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.when.outputs.go
+        run: npm ci
+      - name: Download the sheets
+        if: steps.when.outputs.go
+        run: node scripts/fetch-meta.mjs
+        env:
+          META_SCRIPT_URL: ${{ secrets.META_SCRIPT_URL }}
+          META_SCRIPT_KEY: ${{ secrets.META_SCRIPT_KEY }}
+      - name: Build the meta
+        if: steps.when.outputs.go
+        run: |
+          file="meta-$(node -p "require('./scripts/meta/sources.json').year").json"
+          echo "FILE=$file" >> "$GITHUB_ENV"
+          # start from the published data, so its update time stays put when nothing changed
+          if git fetch --depth=1 origin meta-data 2>/dev/null && git cat-file -e "FETCH_HEAD:$file" 2>/dev/null; then
+            git show "FETCH_HEAD:$file" > "public/$file"
+            git show "FETCH_HEAD:$file" > /tmp/published.json
+          fi
+          npm run meta
+      - name: Publish to the meta-data branch
+        if: steps.when.outputs.go
+        run: |
+          if cmp -s "public/$FILE" /tmp/published.json; then
+            echo "Nessuna novità nei fogli"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          blob=$(git hash-object -w "public/$FILE")
+          tree=$(printf '100644 blob %s\t%s\n' "$blob" "$FILE" | git mktree)
+          commit=$(git commit-tree "$tree" -m "Meta aggiornato dai fogli dei tornei")
+          git push --force origin "$commit:refs/heads/meta-data"
