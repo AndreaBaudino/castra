@@ -620,8 +620,18 @@ a.event-row {
   color: inherit;
   text-decoration: none;
 }
-.mini-list li.clickable {
+.mini-list li.clickable,
+.stat-row.clickable {
   cursor: pointer;
+}
+button.kv.clickable {
+  width: 100%;
+  text-align: left;
+}
+button.kv.clickable b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .cmd-link {
   display: flex;

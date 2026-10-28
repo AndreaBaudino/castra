@@ -245,7 +245,15 @@ export default function App() {
           />
         )}
         {route.tab === 'stats' && (
-          <Stats matches={matches} setMatches={setMatches} decks={decks} metaDecks={meta.decks} players={circuit.data?.players} openPlayer={openPlayer} />
+          <Stats
+            matches={matches}
+            setMatches={setMatches}
+            decks={decks}
+            metaDecks={meta.decks}
+            players={circuit.data?.players}
+            openPlayer={openPlayer}
+            openCommander={openCommander}
+          />
         )}
         {route.tab === 'meta' &&
           (metaSub === 'k' ? (
@@ -299,12 +307,14 @@ export default function App() {
             ) : (
               <ComparePage
                 circuit={circuit.data}
+                dataset={dataset}
                 a={metaArgs[0]}
                 b={metaArgs[1]}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
                 openEvent={openEvent}
+                openTournament={openTournament}
               />
             )
           ) : (
@@ -335,6 +345,7 @@ export default function App() {
                 go('decks')
               }}
               onBack={() => go('decks')}
+              openCommander={openCommander}
             />
           ) : (
             <Decks

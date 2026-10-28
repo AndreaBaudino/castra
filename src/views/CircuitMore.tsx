@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { type Circuit, type League, type Player, eventDateLabel, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
-import { Icon } from '../components/ui'
+import { Icon, pct } from '../components/ui'
 import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
-import type { MetaDataset } from '../lib/meta'
-import { LeagueMeta, LeagueStages } from './MetaPages'
+import { type MetaDataset, type MetaEntry, type MetaTournament, recordOf, shortName, winrate } from '../lib/meta'
+import { DeckRecords, LeagueMeta, LeagueStages, tournamentLabel } from './MetaPages'
 
 // Leagues, season records and head-to-head: views built on the circuit model.
 
@@ -198,7 +198,21 @@ const RECORDS: RecordDef[] = [
   { id: 'growth', value: (p) => (p.s1 && p.s2 ? p.s2.points - p.s1.points : undefined), fmt: (v) => (v > 0 ? `+${v}` : String(v)) },
 ]
 
-export function Records({ circuit, prefs, openPlayer, openEvent }: { circuit: Circuit; prefs: CircuitPrefs; openPlayer: (k: string) => void; openEvent: (id: string) => void }) {
+export function Records({
+  circuit,
+  dataset,
+  prefs,
+  openPlayer,
+  openEvent,
+  openCommander,
+}: {
+  circuit: Circuit
+  dataset: MetaDataset | null
+  prefs: CircuitPrefs
+  openPlayer: (k: string) => void
+  openEvent: (id: string) => void
+  openCommander: (name: string) => void
+}) {
   const { t, lang } = useI18n()
   const [open, setOpen] = useState<string | null>(null)
   const months = useMemo(() => {
@@ -285,6 +299,8 @@ export function Records({ circuit, prefs, openPlayer, openEvent }: { circuit: Ci
         </ul>
         <p className="muted small no-margin">{t('circuit.byMonthNote')}</p>
       </section>
+
+      {dataset && <DeckRecords dataset={dataset} openCommander={openCommander} />}
     </>
   )
 }
@@ -344,26 +360,33 @@ type Side = 'a' | 'b' | 'tie'
 
 export function ComparePage({
   circuit,
+  dataset,
   a: ka,
   b: kb,
   prefs,
   onBack,
   openPlayer,
   openEvent,
+  openTournament,
 }: {
   circuit: Circuit
+  dataset: MetaDataset | null
   a: string
   b: string
   prefs: CircuitPrefs
   onBack: () => void
   openPlayer: (k: string) => void
   openEvent: (id: string) => void
+  openTournament: (id: string) => void
 }) {
   const { t, lang } = useI18n()
   const byKey = useMemo(() => byKeyOf(circuit), [circuit])
   const a = byKey.get(ka)
   const b = byKey.get(kb)
+  // both players in the deck meta: winrate, and every tournament played together with places and decks
+  const [ea, eb] = useMemo(() => [ka, kb].map((k) => dataset?.entries.filter((e) => e.key === k) ?? []), [dataset, ka, kb])
   if (!a || !b) return <SubPageShell title="—" onBack={onBack} />
+  const [recA, recB] = [recordOf(ea), recordOf(eb)]
 
   // [label, value a, value b, lower is better]
   const rows: [string, number | undefined, number | undefined, boolean?, ((v: number) => string)?][] = [
@@ -377,15 +400,27 @@ export function ComparePage({
     [t('circuit.rec.wins'), wins(a), wins(b)],
     [t('circuit.best'), a.best, b.best, true, (v) => placeLabel(v, lang)],
     [t('circuit.avgPts'), a.events.length ? avg(a) : undefined, b.events.length ? avg(b) : undefined, false, (v) => v.toFixed(1)],
+    [t('meta.tournaments'), ea.length || undefined, eb.length || undefined],
+    ['Winrate', recA.games ? winrate(recA) : undefined, recB.games ? winrate(recB) : undefined, false, (v) => pct(v, 0)],
   ]
   const better = (va?: number, vb?: number, lower?: boolean): Side =>
     va === undefined && vb === undefined ? 'tie' : vb === undefined ? 'a' : va === undefined ? 'b' : va === vb ? 'tie' : (va < vb) === !!lower ? 'a' : 'b'
 
-  // events both played: who finished higher (outside the top 8 the order isn't known: a tie)
-  const common = circuit.events
+  // tournaments of the meta both played: the sheets give everyone's place
+  const together = dataset
+    ? ea
+        .map((ra) => ({ x: dataset.tournaments[ra.t], ra, rb: eb.find((e) => e.t === ra.t) }))
+        .filter((m): m is { x: MetaTournament; ra: MetaEntry; rb: MetaEntry } => !!m.rb)
+        .map((m) => ({ ...m, win: better(m.ra.place, m.rb.place, true) }))
+    : []
+  const linked = new Set(together.map((m) => m.x.circuit?.replace(/\s+/g, ' ').trim()))
+  // circuit events both played without a sheet: who finished higher (outside the top 8 the order isn't known: a tie)
+  const circuitOnly = circuit.events
+    .filter((e) => !linked.has(e.name))
     .map((e) => ({ e, ra: a.events.find((x) => x.eventId === e.id), rb: b.events.find((x) => x.eventId === e.id) }))
     .filter((x) => x.ra && x.rb)
     .map((x) => ({ ...x, win: better(x.ra!.place ?? 99, x.rb!.place ?? 99, true) }))
+  const common = [...together, ...circuitOnly]
   const tally = { a: common.filter((c) => c.win === 'a').length, b: common.filter((c) => c.win === 'b').length, tie: common.filter((c) => c.win === 'tie').length }
 
   return (
@@ -434,7 +469,24 @@ export function ComparePage({
           </div>
         )}
         <ul className="card-list">
-          {common.map(({ e, ra, rb, win }) => (
+          {together
+            .sort((m, n) => (n.x.date ?? '').localeCompare(m.x.date ?? ''))
+            .map(({ x, ra, rb, win }) => {
+              const cmd = (e: MetaEntry) => (e.cmd >= 0 ? shortName(dataset!.commanders[e.cmd].name) : '—')
+              return (
+                <li key={x.id} className="event-row" onClick={() => openTournament(x.id)}>
+                  <span className={`place-badge ${win === 'a' ? 'win-a' : ''}`}>{placeLabel(ra.place, lang)}</span>
+                  <div className="event-main">
+                    <span className="ellipsis">{tournamentLabel(x, t)}</span>
+                    <span className="muted small ellipsis">
+                      <span className="side-a">{cmd(ra)}</span> · <span className="side-b">{cmd(rb)}</span>
+                    </span>
+                  </div>
+                  <span className={`place-badge ${win === 'b' ? 'win-b' : ''}`}>{placeLabel(rb.place, lang)}</span>
+                </li>
+              )
+            })}
+          {circuitOnly.map(({ e, ra, rb, win }) => (
             <li key={e.id} className="event-row" onClick={() => openEvent(e.id)}>
               <span className={`place-badge ${win === 'a' ? 'win-a' : ''}`}>{ra!.place ? placeLabel(ra!.place, lang) : '—'}</span>
               <div className="event-main">

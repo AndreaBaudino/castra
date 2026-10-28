@@ -60,16 +60,20 @@ export function leagues(c: Circuit) {
 
 export function CircuitPanel({
   circuit,
+  dataset,
   prefs,
   openPlayer,
   openEvent,
   openLeague,
+  openCommander,
 }: {
   circuit: Circuit
+  dataset: MetaDataset | null
   prefs: CircuitPrefs
   openPlayer: (key: string) => void
   openEvent: (id: string) => void
   openLeague: (season: string, name: string) => void
+  openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
   const [view, setView] = useStoredState<'ranking' | 'events' | 'leagues' | 'records'>('cc.circuit.view', 'ranking')
@@ -89,7 +93,7 @@ export function CircuitPanel({
       ) : view === 'leagues' ? (
         <LeagueList circuit={circuit} openLeague={openLeague} />
       ) : (
-        <Records circuit={circuit} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} />
+        <Records circuit={circuit} dataset={dataset} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} openCommander={openCommander} />
       )}
     </>
   )

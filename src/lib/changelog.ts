@@ -8,6 +8,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-10-28',
+    it: [
+      'Meta: i dati veri di tutti i tornei 2026 (Livelli 1 e 2, leghe S1 e S2, lega online), con filtri per stagione, tipo di torneo e lega',
+      'Pagina del comandante: quota meta, winrate, giocatori, tornei vinti, andamento mese per mese e liste Moxfield',
+      'Pagina torneo e tappa: classifica con mazzo e record di ogni giocatore e il meta del torneo',
+      'Scheda giocatore: winrate e record con ogni comandante, e tutte le tappe di lega giocate',
+      'Leghe: tappe con vincitore e mazzo, e il meta della lega',
+      'Confronto giocatori con winrate e mazzi; record dei mazzi',
+    ],
+    en: [
+      'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
+      'Commander page: meta share, winrate, players, tournaments won, month by month trend and Moxfield lists',
+      'Tournament and stage page: standings with every player\'s deck and record, and the tournament meta',
+      'Player page: winrate and record with each commander, and every league stage played',
+      'Leagues: stages with winner and deck, and the league meta',
+      'Head to head with winrate and decks; deck records',
+    ],
+  },
+  {
     date: '2026-10-27',
     it: [
       'Nuova icona e logo: l\'elmo di Castra',

@@ -761,3 +761,48 @@ export function LeagueMeta({
     </>
   )
 }
+
+// ---------- deck records (the circuit's Records view) ----------
+
+const MIN_GAMES_RECORD = 40
+
+export function DeckRecords({ dataset, openCommander }: { dataset: MetaDataset; openCommander: (name: string) => void }) {
+  const { t } = useI18n()
+  const recs = useMemo(() => {
+    const meta = aggregate(dataset, ALL)
+    const count = (pick: (e: MetaEntry) => boolean) => {
+      const n = new Map<number, number>()
+      dataset.entries.forEach((e) => e.cmd >= 0 && pick(e) && n.set(e.cmd, (n.get(e.cmd) ?? 0) + 1))
+      return meta.decks.map((d) => ({ d, v: n.get(d.id) ?? 0 })).filter((x) => x.v > 0)
+    }
+    return [
+      { id: 'wins', list: count((e) => e.place === 1), fmt: String },
+      { id: 'top8', list: count((e) => isEvent(dataset.tournaments[e.t]) && e.place <= 8), fmt: String },
+      { id: 'wr', list: meta.decks.filter((d) => d.wins + d.losses >= MIN_GAMES_RECORD).map((d) => ({ d, v: winrate(d) })), fmt: (v: number) => pct(v) },
+      { id: 'players', list: meta.decks.map((d) => ({ d, v: d.players })), fmt: String },
+    ] as const
+  }, [dataset])
+  return (
+    <>
+      {recs.map((r) => {
+        const ranked = [...r.list].sort((a, b) => b.v - a.v || b.d.entries - a.d.entries).slice(0, 5)
+        return (
+          <section key={r.id} className="card record">
+            <div className="card-title">{t(`meta.rec.${r.id}`)}</div>
+            {r.id === 'wr' && <p className="muted small no-margin">{t('meta.rec.wrMin', { n: MIN_GAMES_RECORD })}</p>}
+            <ol className="mini-list">
+              {ranked.map(({ d, v }, i) => (
+                <li key={d.id} onClick={() => openCommander(d.name)}>
+                  <span className="rank">{i + 1}</span>
+                  <span className="ellipsis grow">{shortName(d.name)}</span>
+                  <Pips colors={d.colors} size={9} />
+                  <b className="pts-inline">{r.fmt(v)}</b>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )
+      })}
+    </>
+  )
+}

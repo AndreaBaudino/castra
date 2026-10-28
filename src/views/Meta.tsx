@@ -158,7 +158,17 @@ export default function Meta({
         <>
           <LiveStatus circuit={circuit} status={circuitStatus} />
           {banner}
-          {circuit && <CircuitPanel circuit={circuit} prefs={prefs} openPlayer={openPlayer} openEvent={openEvent} openLeague={openLeague} />}
+          {circuit && (
+            <CircuitPanel
+              circuit={circuit}
+              dataset={dataset}
+              prefs={prefs}
+              openPlayer={openPlayer}
+              openEvent={openEvent}
+              openLeague={openLeague}
+              openCommander={openCommander}
+            />
+          )}
         </>
       ) : !dataset || !meta ? (
         <div className={`notice ${status === 'error' ? 'warn' : ''}`}>{t(status === 'error' ? 'meta.error' : 'meta.loading')}</div>
