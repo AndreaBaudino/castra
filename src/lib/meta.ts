@@ -117,11 +117,15 @@ export interface MetaFilter {
   season: Season | '' // '' = the whole year
   kind: TournamentKind | ''
   league: string
+  minPlayers?: number // only tournaments with at least this many players; missing = all
 }
 export const ALL: MetaFilter = { season: '', kind: '', league: '' }
 
 export const inFilter = (t: MetaTournament, f: MetaFilter) =>
-  (!f.season || t.season === f.season) && (!f.kind || t.kind === f.kind) && (!f.league || t.league === f.league)
+  (!f.season || t.season === f.season) &&
+  (!f.kind || t.kind === f.kind) &&
+  (!f.league || t.league === f.league) &&
+  t.players >= (f.minPlayers ?? 0)
 
 export const entriesOf = (ds: MetaDataset, f: MetaFilter) => ds.entries.filter((e) => inFilter(ds.tournaments[e.t], f))
 

@@ -14,6 +14,7 @@ export const META_FILTER_KEY = 'cc.meta.filter'
 
 type Sort = 'share' | 'wr' | 'games'
 export const MIN_OPTIONS = [0, 10, 20, 40]
+const MIN_PLAYERS = [0, 8, 12, 16, 24, 32]
 const KINDS: TournamentKind[] = ['league', 'l1', 'l2', 'online']
 
 export function metaSummary(decks: MetaDeck[], minGames: number) {
@@ -69,6 +70,18 @@ export function MetaFilters({
         {KINDS.map((k) => (
           <option key={k} value={k}>
             {t(`meta.kind.${k}`)}
+          </option>
+        ))}
+      </select>
+      <select
+        className="select-pill"
+        value={filter.minPlayers ?? 0}
+        onChange={(e) => setFilter({ ...filter, minPlayers: +e.target.value })}
+        aria-label={t('meta.minPlayers')}
+      >
+        {MIN_PLAYERS.map((n) => (
+          <option key={n} value={n}>
+            {n ? t('meta.minPlayersN', { n }) : t('meta.anySize')}
           </option>
         ))}
       </select>
