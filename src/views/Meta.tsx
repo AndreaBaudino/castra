@@ -14,7 +14,7 @@ export const META_FILTER_KEY = 'cc.meta.filter'
 
 type Sort = 'share' | 'wr' | 'games'
 export const MIN_OPTIONS = [0, 10, 20, 40]
-const MIN_PLAYERS = [0, 8, 12, 16, 24, 32]
+const SIZES = [0, 8, 12, 16, 24, 32] // players per tournament; 0 = no limit
 const KINDS: TournamentKind[] = ['league', 'l1', 'l2', 'online']
 
 export function metaSummary(decks: MetaDeck[], minGames: number) {
@@ -73,18 +73,38 @@ export function MetaFilters({
           </option>
         ))}
       </select>
-      <select
-        className="select-pill"
-        value={filter.minPlayers ?? 0}
-        onChange={(e) => setFilter({ ...filter, minPlayers: +e.target.value })}
-        aria-label={t('meta.minPlayers')}
-      >
-        {MIN_PLAYERS.map((n) => (
-          <option key={n} value={n}>
-            {n ? t('meta.minPlayersN', { n }) : t('meta.anySize')}
-          </option>
-        ))}
-      </select>
+      <div className={`select-pill range-pill ${filter.minPlayers || filter.maxPlayers ? 'on' : ''}`}>
+        <span>{t('meta.players')}</span>
+        <select
+          value={filter.minPlayers || 0}
+          onChange={(e) => {
+            const min = +e.target.value
+            setFilter({ ...filter, minPlayers: min, maxPlayers: filter.maxPlayers && filter.maxPlayers < min ? min : filter.maxPlayers })
+          }}
+          aria-label={t('meta.minPlayers')}
+        >
+          {SIZES.map((n) => (
+            <option key={n} value={n}>
+              {n || t('meta.sizeMin')}
+            </option>
+          ))}
+        </select>
+        <span>–</span>
+        <select
+          value={filter.maxPlayers || 0}
+          onChange={(e) => {
+            const max = +e.target.value
+            setFilter({ ...filter, maxPlayers: max, minPlayers: max && (filter.minPlayers ?? 0) > max ? max : filter.minPlayers })
+          }}
+          aria-label={t('meta.maxPlayers')}
+        >
+          {SIZES.map((n) => (
+            <option key={n} value={n}>
+              {n || t('meta.sizeMax')}
+            </option>
+          ))}
+        </select>
+      </div>
       {leagues && (filter.kind === '' || filter.kind === 'league') && (
         <select
           className="select-pill"

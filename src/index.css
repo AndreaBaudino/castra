@@ -2123,6 +2123,25 @@ textarea {
   color: var(--text);
   max-width: 100%;
 }
+/* a pill holding two selects: players per tournament, from – to */
+.range-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.range-pill > span:first-child {
+  color: var(--muted);
+}
+.range-pill select {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+.range-pill.on {
+  border-color: var(--gold);
+}
 .chip {
   display: inline-flex;
   align-items: center;
