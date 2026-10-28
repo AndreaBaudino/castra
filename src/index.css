@@ -708,36 +708,58 @@ button.kv.clickable b {
   flex-direction: column;
   gap: 8px;
 }
+/* the splash art fills the left of the tile, from its top, and fades into the tile's colour; name and cards on the right */
 .deck-tile {
+  --tile-bg: var(--surface);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px;
-  padding-right: 12px;
-  background: var(--surface);
+  min-height: 84px;
+  padding: 12px;
+  background: var(--tile-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  text-align: left;
+  text-align: right;
   color: var(--muted);
 }
 .deck-list.flush .deck-tile {
-  background: var(--surface-2);
+  --tile-bg: var(--surface-2);
   border-color: transparent;
 }
 .deck-art {
-  width: 52px;
-  height: 52px;
-  border-radius: 10px;
-  background: var(--surface-2) center/cover;
-  flex: none;
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 70%;
+  z-index: -1;
+  background: center top / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to right, #000 30%, transparent);
+  mask-image: linear-gradient(to right, #000 30%, transparent);
+}
+.deck-art:not([style]) {
+  display: none;
 }
 .deck-info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 4px;
   color: var(--text);
+  /* a halo of the tile's colour keeps the text readable over bright art, in both themes */
+  text-shadow:
+    0 0 4px var(--tile-bg),
+    0 0 8px var(--tile-bg);
+}
+.deck-info .name-line {
+  max-width: 100%;
+  font-size: 1rem;
+}
+.deck-info .sub-line {
+  justify-content: flex-end;
 }
 
 .deck-page {

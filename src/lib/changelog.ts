@@ -18,6 +18,7 @@ export const CHANGELOG: Release[] = [
       'Confronto giocatori con winrate e mazzi; record dei mazzi',
       'Scheda giocatore: le liste Moxfield presentate nei tornei',
       'Meta: se con il filtro scelto nessun comandante arriva al minimo di partite, un pulsante li mostra tutti',
+      'Mazzi: la splash art riempie il riquadro e sfuma nel colore del tema, con nome e carte a destra',
     ],
     en: [
       'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
@@ -28,6 +29,7 @@ export const CHANGELOG: Release[] = [
       'Head to head with winrate and decks; deck records',
       'Player page: the Moxfield lists submitted at tournaments',
       'Meta: when no commander reaches the minimum games with the chosen filter, a button shows them all',
+      'Decks: the splash art fills the tile and fades into the theme colour, with name and cards on the right',
     ],
   },
   {
