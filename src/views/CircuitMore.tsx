@@ -4,6 +4,8 @@ import { type Circuit, type League, type Player, eventDateLabel, potyStatus } fr
 import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
 import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
+import type { MetaDataset } from '../lib/meta'
+import { LeagueMeta, LeagueStages } from './MetaPages'
 
 // Leagues, season records and head-to-head: views built on the circuit model.
 
@@ -88,66 +90,92 @@ export function LeagueList({ circuit, openLeague }: { circuit: Circuit; openLeag
 
 export function LeaguePage({
   circuit,
+  dataset,
   season,
   name,
   prefs,
   onBack,
   openPlayer,
+  openTournament,
+  openCommander,
 }: {
   circuit: Circuit
+  dataset: MetaDataset | null
   season: string
   name: string
   prefs: CircuitPrefs
   onBack: () => void
   openPlayer: (key: string) => void
+  openTournament: (id: string) => void
+  openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
+  const [view, setView] = useStoredState<'ranking' | 'stages' | 'meta'>('cc.league.view', 'ranking')
   const l = circuit.leagues.find((x) => x.season === season && x.name === name)
   const byKey = useMemo(() => byKeyOf(circuit), [circuit])
   const poty = useMemo(() => potyStatus(circuit), [circuit])
-  if (!l) return <SubPageShell title="—" onBack={onBack} />
+  // the stages in the deck meta: leagues outside the circuit ranking have only these
+  const inMeta = !!dataset?.tournaments.some((x) => x.season === season && x.league === name)
+  if (!l && !inMeta) return <SubPageShell title="—" onBack={onBack} />
+  const views = [...(l ? (['ranking'] as const) : []), ...(inMeta ? (['stages', 'meta'] as const) : [])]
+  const shown = views.includes(view) ? view : views[0]
   return (
-    <SubPageShell title={`${l.name} · ${seasonLabel(l.season)}`} onBack={onBack}>
-      <div className="chips static">
-        <span className="tag big">{t('circuit.nPlayers', { n: l.players })}</span>
-        <span className="tag big">{t('circuit.nStages', { n: l.stages })}</span>
-        <span className="tag big">{t('circuit.avgShort', { n: mean(l.entries.map((e) => e.points)).toFixed(1) })}</span>
-      </div>
-      <ol className="meta-list">
-        {l.entries.map((e) => {
-          const p = byKey.get(e.key)
-          // played two leagues: only the best one counts in the leaderboard
-          const counted = !p || p[l.season]?.league === l.name
-          return (
-            <li key={e.key} className={`meta-row player-row ${e.key === prefs.me ? 'me' : ''}`} onClick={() => openPlayer(e.key)}>
-              <div className="meta-main">
-                <span className="rank wide">{e.rank}</span>
-                <div className="meta-name">
-                  <div className="name-line">
-                    <span className="ellipsis">{p?.name}</span>
-                    {prefs.claims.has(e.key) && <VerifiedTick />}
-                    {prefs.follow.includes(e.key) && (
-                      <span className="star-on">
-                        <Icon name="star" size={12} />
-                      </span>
-                    )}
-                    {e.key === prefs.me && <span className="tag me-tag">{t('circuit.you')}</span>}
+    <SubPageShell title={`${name} · ${seasonLabel(season as League['season'])}`} onBack={onBack}>
+      {l && (
+        <div className="chips static">
+          <span className="tag big">{t('circuit.nPlayers', { n: l.players })}</span>
+          <span className="tag big">{t('circuit.nStages', { n: l.stages })}</span>
+          <span className="tag big">{t('circuit.avgShort', { n: mean(l.entries.map((e) => e.points)).toFixed(1) })}</span>
+        </div>
+      )}
+      {views.length > 1 && (
+        <div className="seg wide">
+          {views.map((v) => (
+            <button key={v} className={shown === v ? 'on' : ''} onClick={() => setView(v)}>
+              {t(v === 'ranking' ? 'circuit.view.ranking' : `meta.view.${v}`)}
+            </button>
+          ))}
+        </div>
+      )}
+      {shown === 'stages' && dataset && <LeagueStages dataset={dataset} season={season} league={name} openTournament={openTournament} />}
+      {shown === 'meta' && dataset && <LeagueMeta dataset={dataset} season={season} league={name} openCommander={openCommander} />}
+      {shown === 'ranking' && l && (
+        <ol className="meta-list">
+          {l.entries.map((e) => {
+            const p = byKey.get(e.key)
+            // played two leagues: only the best one counts in the leaderboard
+            const counted = !p || p[l.season]?.league === l.name
+            return (
+              <li key={e.key} className={`meta-row player-row ${e.key === prefs.me ? 'me' : ''}`} onClick={() => openPlayer(e.key)}>
+                <div className="meta-main">
+                  <span className="rank wide">{e.rank}</span>
+                  <div className="meta-name">
+                    <div className="name-line">
+                      <span className="ellipsis">{p?.name}</span>
+                      {prefs.claims.has(e.key) && <VerifiedTick />}
+                      {prefs.follow.includes(e.key) && (
+                        <span className="star-on">
+                          <Icon name="star" size={12} />
+                        </span>
+                      )}
+                      {e.key === prefs.me && <span className="tag me-tag">{t('circuit.you')}</span>}
+                    </div>
+                    <div className="sub-line">
+                      {p && <span className="muted small">#{p.rank} {t('circuit.overall')}</span>}
+                      {p && poty.isIn(p) && <PotyTag invited={p.potyInvited} />}
+                      {!counted && <span className="tag">{t('circuit.notCounted', { l: p![l.season]!.league })}</span>}
+                    </div>
                   </div>
-                  <div className="sub-line">
-                    {p && <span className="muted small">#{p.rank} {t('circuit.overall')}</span>}
-                    {p && poty.isIn(p) && <PotyTag invited={p.potyInvited} />}
-                    {!counted && <span className="tag">{t('circuit.notCounted', { l: p![l.season]!.league })}</span>}
-                  </div>
+                  <span className="pts">
+                    <b>{e.points}</b>
+                    <small>{t('circuit.unitPts')}</small>
+                  </span>
                 </div>
-                <span className="pts">
-                  <b>{e.points}</b>
-                  <small>{t('circuit.unitPts')}</small>
-                </span>
-              </div>
-            </li>
-          )
-        })}
-      </ol>
+              </li>
+            )
+          })}
+        </ol>
+      )}
     </SubPageShell>
   )
 }

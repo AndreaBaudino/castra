@@ -7,6 +7,8 @@ import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
 import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
+import type { MetaDataset } from '../lib/meta'
+import { PlayerDecks, PlayerHistory } from './MetaPages'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
@@ -301,26 +303,43 @@ function EventList({ circuit, prefs, openEvent }: { circuit: Circuit; prefs: Cir
 
 export function PlayerPage({
   circuit,
+  dataset,
   playerKey,
   prefs,
   onBack,
   openEvent,
   openCompare,
+  openCommander,
+  openTournament,
 }: {
   circuit: Circuit
+  dataset: MetaDataset | null
   playerKey: string
   prefs: CircuitPrefs
   onBack: () => void
   openEvent: (id: string) => void
   openCompare: (a: string, b: string) => void
+  openCommander: (name: string) => void
+  openTournament: (id: string) => void
 }) {
   const { t, lang } = useI18n()
   const p = circuit.players.find((x) => x.key === playerKey)
   const poty = useMemo(() => potyStatus(circuit), [circuit])
-  if (!p) return <SubPageShell title="—" onBack={onBack} />
+  // the player's rows in the deck meta: every event and league stage, with deck and record
+  const mine = useMemo(() => dataset?.entries.filter((e) => e.key === playerKey) ?? [], [dataset, playerKey])
+  if (!p) {
+    if (!dataset || !mine.length) return <SubPageShell title="—" onBack={onBack} />
+    // in the meta but not in the circuit ranking (a league that doesn't count, or a name written differently)
+    return (
+      <SubPageShell title={mine[0].player!} onBack={onBack}>
+        <div className="notice">{t('meta.notInCircuit')}</div>
+        <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />
+        <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} openTournament={openTournament} openEvent={openEvent} />
+      </SubPageShell>
+    )
+  }
   const followed = prefs.follow.includes(p.key)
   const above = [...circuit.players].reverse().find((o) => o.total > p.total)
-  const evById = new Map(circuit.events.map((e) => [e.id, e]))
 
   return (
     <SubPageShell
@@ -386,53 +405,30 @@ export function PlayerPage({
         </div>
       </section>
 
-      {p.events.length > 0 && (
-        <>
-          <section className="card">
-            <div className="stats3 compact">
-              <div>
-                <div className="stat-num">{p.top8}</div>
-                <div className="stat-label">Top 8</div>
-              </div>
-              <div>
-                <div className="stat-num">{p.best ? placeLabel(p.best, lang) : '—'}</div>
-                <div className="stat-label">{t('circuit.best')}</div>
-              </div>
-              <div>
-                <div className="stat-num">{avg(p).toFixed(1)}</div>
-                <div className="stat-label">{t('circuit.avgPts')}</div>
-              </div>
-            </div>
-            <div className="card-title">{t('circuit.chartTitle')}</div>
-            <PointsChart circuit={circuit} p={p} />
-          </section>
+      {dataset && mine.length > 0 && <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />}
 
-          <section className="group">
-            <div className="group-title">{t('circuit.eventsPlayed')}</div>
-            <ul className="card-list">
-              {[...p.events].reverse().map((pe) => {
-                const e = evById.get(pe.eventId)!
-                return (
-                  <li key={pe.eventId} className="event-row" onClick={() => openEvent(pe.eventId)}>
-                    <span className={`place-badge ${pe.place ? (pe.place <= 4 ? 'top4' : 'top8') : ''}`}>
-                      {pe.place ? placeLabel(pe.place, lang) : '—'}
-                    </span>
-                    <div className="event-main">
-                      <span className="ellipsis">{e.name}</span>
-                      <span className="muted small">
-                        {eventDateLabel(e, lang)}
-                        {eventDateLabel(e, lang) ? ' · ' : ''}
-                        {t('circuit.nPlayers', { n: e.players })}
-                      </span>
-                    </div>
-                    {pe.poty ? <PotyTag invited /> : <b className="pts-inline">+{pe.points}</b>}
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-        </>
+      {p.events.length > 0 && (
+        <section className="card">
+          <div className="stats3 compact">
+            <div>
+              <div className="stat-num">{p.top8}</div>
+              <div className="stat-label">Top 8</div>
+            </div>
+            <div>
+              <div className="stat-num">{p.best ? placeLabel(p.best, lang) : '—'}</div>
+              <div className="stat-label">{t('circuit.best')}</div>
+            </div>
+            <div>
+              <div className="stat-num">{avg(p).toFixed(1)}</div>
+              <div className="stat-label">{t('circuit.avgPts')}</div>
+            </div>
+          </div>
+          <div className="card-title">{t('circuit.chartTitle')}</div>
+          <PointsChart circuit={circuit} p={p} />
+        </section>
       )}
+
+      <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} player={p} openTournament={openTournament} openEvent={openEvent} />
     </SubPageShell>
   )
 }

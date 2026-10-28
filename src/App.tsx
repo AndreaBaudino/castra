@@ -273,22 +273,28 @@ export default function App() {
             metaSub === 'p' ? (
               <PlayerPage
                 circuit={circuit.data}
+                dataset={dataset}
                 playerKey={metaArgs[0]}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openEvent={openEvent}
                 openCompare={openCompare}
+                openCommander={openCommander}
+                openTournament={openTournament}
               />
             ) : metaSub === 'e' ? (
               <EventPage circuit={circuit.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
             ) : metaSub === 'l' ? (
               <LeaguePage
                 circuit={circuit.data}
+                dataset={dataset}
                 season={metaArgs[0]}
                 name={metaArgs[1]}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
+                openTournament={openTournament}
+                openCommander={openCommander}
               />
             ) : (
               <ComparePage

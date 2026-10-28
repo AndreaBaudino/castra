@@ -19,7 +19,7 @@ import { useStoredState } from '../lib/storage'
 import { Icon, Pips, pct, wrClass } from '../components/ui'
 import { META_FILTER_KEY, MetaFilters } from './Meta'
 import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
-import type { Circuit, CircuitEvent } from '../lib/circuit'
+import type { Circuit, CircuitEvent, Player } from '../lib/circuit'
 import { commanderNames } from './Decks'
 
 // Pages built on the tournament data: a commander's page, and the shared bits (tournament labels, records)
@@ -426,7 +426,7 @@ export function TournamentPage({
   }, [dataset, x, circuit])
   if (!dataset || !x || !view) return <SubPageShell title="—" onBack={onBack} />
   const event = isEvent(x)
-  const hasLeague = x.kind === 'league' && circuit?.leagues.some((l) => l.season === x.season && l.name === x.league)
+  const hasLeague = x.kind === 'league' && !!circuit
 
   const row = (e: MetaEntry, i: number) => {
     const c = e.cmd >= 0 ? dataset.commanders[e.cmd] : null
@@ -468,7 +468,7 @@ export function TournamentPage({
 
       {hasLeague && (
         <button className="btn" onClick={() => openLeague(x.season, x.league!)}>
-          {t('meta.leagueRanking', { l: `${x.league} ${x.season.toUpperCase()}` })}
+          {t('meta.leaguePage', { l: `${x.league} ${x.season.toUpperCase()}` })}
           <Icon name="chevron" size={16} />
         </button>
       )}
@@ -516,5 +516,248 @@ export function TournamentPage({
         </section>
       )}
     </SubPageShell>
+  )
+}
+
+// ---------- player ----------
+
+/** A player's record over every tournament of the meta, overall and with each commander. */
+export function PlayerDecks({
+  dataset,
+  entries,
+  openCommander,
+}: {
+  dataset: MetaDataset
+  entries: MetaEntry[]
+  openCommander: (name: string) => void
+}) {
+  const { t } = useI18n()
+  const rec = recordOf(entries)
+  const by = new Map<number, MetaEntry[]>()
+  entries.forEach((e) => e.cmd >= 0 && by.set(e.cmd, [...(by.get(e.cmd) ?? []), e]))
+  const cmds = [...by]
+    .map(([id, list]) => ({ c: dataset.commanders[id], n: list.length, rec: recordOf(list) }))
+    .sort((a, b) => b.n - a.n || winrate(b.rec) - winrate(a.rec))
+  return (
+    <section className="card">
+      <div className="card-title">
+        {t('meta.playerDecks')}
+        <span className="muted small">{t('meta.nTournaments', { n: entries.length })}</span>
+      </div>
+      <div className="stats3">
+        <div>
+          <div className={`stat-num ${rec.games ? wrClass(winrate(rec)) : ''}`}>{rec.games ? pct(winrate(rec), 0) : '—'}</div>
+          <div className="stat-label">Winrate</div>
+        </div>
+        <div>
+          <div className="stat-num">{rec.games ? fmtRec(rec) : '—'}</div>
+          <div className="stat-label">{t('meta.wld')}</div>
+        </div>
+        <div>
+          <div className="stat-num">{cmds.length}</div>
+          <div className="stat-label">{t('meta.commanders')}</div>
+        </div>
+      </div>
+      {cmds.length > 0 && (
+        <ul className="mini-list">
+          {cmds.map(({ c, n, rec: r }) => (
+            <li key={c.id} className="clickable" onClick={() => openCommander(c.name)}>
+              <Pips colors={c.colors} size={9} />
+              <span className="ellipsis grow">
+                {shortName(c.name)} <span className="muted small">· {t('meta.nTournaments', { n })}</span>
+              </span>
+              {r.games > 0 && (
+                <>
+                  <span className="rec-inline">{fmtRec(r)}</span>
+                  <b className={`wr small-wr ${wrClass(winrate(r))}`}>{pct(winrate(r), 0)}</b>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <span className="muted small">{t('meta.byeNote')}</span>
+    </section>
+  )
+}
+
+const SHOW_HISTORY = 10
+const isoOf = (e: CircuitEvent) => (e.year && e.month ? `${e.year}-${String(e.month).padStart(2, '0')}-${String(e.day ?? 1).padStart(2, '0')}` : '')
+
+/**
+ * Every tournament of a player, newest first: events and league stages with deck and record, plus the circuit
+ * events that have no sheet in the meta (only their points).
+ */
+export function PlayerHistory({
+  dataset,
+  entries,
+  circuit,
+  player,
+  openTournament,
+  openEvent,
+}: {
+  dataset: MetaDataset | null
+  entries: MetaEntry[]
+  circuit: Circuit | null
+  player?: Player
+  openTournament: (id: string) => void
+  openEvent: (id: string) => void
+}) {
+  const { t, lang } = useI18n()
+  const [all, setAll] = useState(false)
+  const items = useMemo(() => {
+    const evByName = new Map(circuit?.events.map((e) => [e.name, e]))
+    const linked = new Set<string>()
+    const list = entries.map((e) => {
+      const x = dataset!.tournaments[e.t]
+      const ev = x.circuit ? evByName.get(x.circuit.replace(/\s+/g, ' ').trim()) : undefined
+      if (ev) linked.add(ev.id)
+      return { date: x.date ?? '', e, x, pe: ev && player?.events.find((pe) => pe.eventId === ev.id) }
+    })
+    const rest = (player?.events ?? [])
+      .filter((pe) => !linked.has(pe.eventId))
+      .map((pe) => ({ pe, ev: circuit!.events.find((e) => e.id === pe.eventId)! }))
+      .map(({ pe, ev }) => ({ date: isoOf(ev), pe, ev }))
+    return [...list, ...rest].sort((a, b) => b.date.localeCompare(a.date))
+  }, [dataset, entries, circuit, player])
+  if (!items.length) return null
+
+  return (
+    <section className="group">
+      <div className="group-title">{t('meta.played')}</div>
+      <ul className="card-list">
+        {(all ? items : items.slice(0, SHOW_HISTORY)).map((it, i) => {
+          const pts = it.pe && (it.pe.poty ? <PotyTag invited /> : <b className="pts-inline">+{it.pe.points}</b>)
+          if ('e' in it) {
+            const c = it.e.cmd >= 0 ? dataset!.commanders[it.e.cmd] : null
+            return (
+              <li key={i} className="event-row" onClick={() => openTournament(it.x.id)}>
+                <PlaceBadge place={it.e.place} event={isEvent(it.x)} />
+                <div className="event-main">
+                  <span className="ellipsis">{tournamentLabel(it.x, t)}</span>
+                  <span className="muted small cmd-link">
+                    <span>{dateLabel(it.x, lang, t)} ·</span>
+                    <span className="ellipsis">{c ? shortName(c.name) : t('meta.noCommander')}</span>
+                    {it.e.w != null && <span className="rec-tail">· {fmtRec(recordOf([it.e]))}</span>}
+                  </span>
+                </div>
+                {pts}
+              </li>
+            )
+          }
+          return (
+            <li key={i} className="event-row" onClick={() => openEvent(it.ev.id)}>
+              <span className={`place-badge ${it.pe.place ? (it.pe.place <= 4 ? 'top4' : 'top8') : ''}`}>
+                {it.pe.place ? placeLabel(it.pe.place, lang) : '—'}
+              </span>
+              <div className="event-main">
+                <span className="ellipsis">{it.ev.name}</span>
+                <span className="muted small">{t('circuit.nPlayers', { n: it.ev.players })}</span>
+              </div>
+              {pts}
+            </li>
+          )
+        })}
+        {items.length > SHOW_HISTORY && (
+          <li className="event-row more" onClick={() => setAll(!all)}>
+            {all ? t('meta.showLess') : t('meta.allTournaments', { n: items.length })}
+          </li>
+        )}
+      </ul>
+    </section>
+  )
+}
+
+// ---------- league ----------
+
+/** A league's stages, newest first, with the winner and their deck. */
+export function LeagueStages({
+  dataset,
+  season,
+  league,
+  openTournament,
+}: {
+  dataset: MetaDataset
+  season: string
+  league: string
+  openTournament: (id: string) => void
+}) {
+  const { t, lang } = useI18n()
+  const stages = dataset.tournaments.filter((x) => x.season === season && x.league === league).sort((a, b) => (b.stage ?? 0) - (a.stage ?? 0))
+  if (!stages.length) return <div className="notice">{t('meta.noStages')}</div>
+  return (
+    <ul className="card-list">
+      {stages.map((x) => {
+        const win = dataset.entries.find((e) => e.t === x.index && e.place === 1)
+        const c = win && win.cmd >= 0 ? dataset.commanders[win.cmd] : null
+        return (
+          <li key={x.id} className="event-row" onClick={() => openTournament(x.id)}>
+            <span className="place-badge">{x.stage}</span>
+            <div className="event-main">
+              <span className="ellipsis">
+                {dateLabel(x, lang, t)} · {t('circuit.nPlayers', { n: x.players })}
+              </span>
+              {win && (
+                <span className="muted small ellipsis">
+                  {t('meta.winner', { p: win.player ?? '—' })}
+                  {c && ` · ${shortName(c.name)}`}
+                </span>
+              )}
+            </div>
+            <Icon name="chevron" size={16} />
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+/** The commanders most played in a league, with their share and winrate there. */
+export function LeagueMeta({
+  dataset,
+  season,
+  league,
+  openCommander,
+}: {
+  dataset: MetaDataset
+  season: string
+  league: string
+  openCommander: (name: string) => void
+}) {
+  const { t } = useI18n()
+  const meta = aggregate(dataset, { season: season as MetaFilter['season'], kind: '', league })
+  if (!meta.decks.length) return <div className="notice">{t('meta.noStages')}</div>
+  const max = meta.decks[0].share
+  return (
+    <>
+      <p className="muted small">{t('meta.leagueMetaNote', { e: meta.entries, n: meta.tournaments })}</p>
+      <ol className="meta-list">
+        {meta.decks.map((d, i) => (
+          <li key={d.id} className="meta-row" onClick={() => openCommander(d.name)}>
+            <div className="meta-main">
+              <span className="rank">{i + 1}</span>
+              <div className="meta-name">
+                <div className="name-line">
+                  <span className="ellipsis">{shortName(d.name)}</span>
+                </div>
+                <div className="sub-line">
+                  <Pips colors={d.colors} size={10} />
+                  <span className="muted small">
+                    {t('meta.nEntries', { n: d.entries })} · {t('meta.nPlayers', { n: d.players })}
+                  </span>
+                </div>
+                <div className="share-bar">
+                  <span style={{ width: `${(d.share / max) * 100}%` }} />
+                </div>
+              </div>
+              <div className="meta-val">
+                <b>{pct(d.share)}</b>
+                <span className={`wr ${wrClass(winrate(d))}`}>{d.games ? `WR ${pct(winrate(d))}` : '—'}</span>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </>
   )
 }
