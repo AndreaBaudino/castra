@@ -6,6 +6,7 @@ import type { Circuit } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { CircuitPanel, type CircuitPrefs, LiveStatus } from './Circuit'
 import { MetaInfoButton } from './MetaInfo'
+import { MetaPie } from '../components/MetaPie'
 
 type Status = 'idle' | 'loading' | 'error'
 
@@ -17,6 +18,9 @@ type Sort = 'share' | 'wr' | 'games'
 export const MIN_OPTIONS = [0, 10, 20, 40]
 const SIZES = [0, 8, 12, 16, 24, 32] // players per tournament; 0 = no limit
 const KINDS: TournamentKind[] = ['league', 'l1', 'l2', 'online']
+// the summary's doughnut: a slice for each commander with at least this share, PIE_MAX at most
+const PIE_MIN = 0.02
+const PIE_MAX = 8
 
 export function metaSummary(decks: MetaDeck[], minGames: number) {
   const mostPlayed = [...decks].sort((a, b) => b.entries - a.entries)[0]
@@ -179,6 +183,7 @@ export default function Meta({
 
   const meta = useMemo(() => (dataset ? aggregate(dataset, filter) : null), [dataset, filter])
   const summary = useMemo(() => metaSummary(meta?.decks ?? [], minGames), [meta, minGames])
+  const aboveMin = meta?.decks.filter((d) => d.share >= PIE_MIN).length ?? 0
   // decks matching the search, before the min games threshold: tells "nothing found" from "all below the threshold"
   const found = useMemo(() => {
     const nq = normName(q)
@@ -270,6 +275,16 @@ export default function Meta({
                 {t('meta.mostPlayedText', { mp: shortName(summary.mostPlayed.name), mps: pct(summary.mostPlayed.share) })}
                 {summary.best && ` ${t('meta.bestText', { min: minGames, best: shortName(summary.best.name), bwr: pct(winrate(summary.best)) })}`}
               </p>
+            )}
+            <MetaPie
+              items={meta.decks.map((d) => ({ name: d.name, count: d.entries }))}
+              min={PIE_MIN}
+              max={PIE_MAX}
+              center={{ value: meta.decks.length, label: t('meta.pieCenter') }}
+              onOpen={openCommander}
+            />
+            {aboveMin > PIE_MAX && (
+              <p className="pie-note muted small">{t('meta.pieCapped', { n: aboveMin, p: pct(PIE_MIN, 0), m: PIE_MAX })}</p>
             )}
           </section>
 

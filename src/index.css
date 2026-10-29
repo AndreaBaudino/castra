@@ -20,6 +20,17 @@
   /* head-to-head series (validated for CVD and contrast on the surfaces) */
   --cmp-a: #b8862a;
   --cmp-b: #4583c8;
+  /* the meta's doughnut: eight hues that stay apart (also with colour blindness), then greys for the others */
+  --pie-1: #3987e5;
+  --pie-2: #d95926;
+  --pie-3: #199e70;
+  --pie-4: #c98500;
+  --pie-5: #d55181;
+  --pie-6: #008300;
+  --pie-7: #9085e9;
+  --pie-8: #e66767;
+  --pie-rest: #6f655d;
+  --pie-rest-2: #5a524b;
 
   --W: #f4ecd2;
   --U: #4f8fd6;
@@ -53,6 +64,16 @@
     --B: #2f2833;
     --cmp-a: #a8781c;
     --cmp-b: #2f6fb8;
+    --pie-1: #2a78d6;
+    --pie-2: #eb6834;
+    --pie-3: #1baf7a;
+    --pie-4: #eda100;
+    --pie-5: #e87ba4;
+    --pie-6: #008300;
+    --pie-7: #6250d6;
+    --pie-8: #e34948;
+    --pie-rest: #b5aa9e;
+    --pie-rest-2: #cbc1b5;
     color-scheme: light;
   }
 }
@@ -72,6 +93,16 @@
   --B: #2f2833;
   --cmp-a: #a8781c;
   --cmp-b: #2f6fb8;
+  --pie-1: #2a78d6;
+  --pie-2: #eb6834;
+  --pie-3: #1baf7a;
+  --pie-4: #eda100;
+  --pie-5: #e87ba4;
+  --pie-6: #008300;
+  --pie-7: #6250d6;
+  --pie-8: #e34948;
+  --pie-rest: #b5aa9e;
+  --pie-rest-2: #cbc1b5;
   color-scheme: light;
 }
 
@@ -3530,6 +3561,99 @@ a.menu-row {
   font-size: 0.85rem;
   line-height: 1.45;
   color: var(--muted);
+}
+
+/* ---------- the meta's doughnut (components/MetaPie.tsx) ---------- */
+.pie {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.pie-chart {
+  position: relative;
+  flex: none;
+}
+.pie-chart svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pie-chart circle {
+  fill: none;
+  stroke-width: 18;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.pie-chart circle.dim {
+  opacity: 0.3;
+}
+.pie-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22%;
+  text-align: center;
+  pointer-events: none;
+}
+.pie-center b {
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+.pie-center span {
+  font-size: 0.65rem;
+  line-height: 1.2;
+  color: var(--muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pie-legend button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  text-align: left;
+}
+.pie-legend button.on {
+  background: var(--surface-2);
+}
+.pie-legend b {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.pie-legend .swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.pie-legend .chev {
+  display: inline-grid;
+  color: var(--muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s;
+}
+.pie-legend .chev.up {
+  transform: rotate(-90deg);
+}
+.pie-note {
+  margin: 0;
 }
 
 /* ---------- desktop ---------- */

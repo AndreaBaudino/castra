@@ -18,6 +18,7 @@ import type { Deck } from '../lib/decks'
 import { useStoredState } from '../lib/storage'
 import { Icon, Pips, pct, wrClass } from '../components/ui'
 import { META_FILTER_KEY, MetaFilters } from './Meta'
+import { MetaPie } from '../components/MetaPie'
 import { MetaInfoButton } from './MetaInfo'
 import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
 import type { Circuit, CircuitEvent, Player } from '../lib/circuit'
@@ -427,12 +428,11 @@ export function TournamentPage({
     const rows = dataset.entries.filter((e) => e.t === x.index)
     const counts = new Map<number, number>()
     rows.forEach((e) => e.cmd >= 0 && counts.set(e.cmd, (counts.get(e.cmd) ?? 0) + 1))
-    const withCmd = [...counts.values()].reduce((s, n) => s + n, 0)
-    const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 5)
+    const cmds = [...counts].sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ name: dataset.commanders[id].name, count: n }))
     const incomplete = rows.some((e) => e.w == null || e.cmd < 0)
     const ev = circuit?.events.find((e) => x.circuit && x.circuit.replace(/\s+/g, ' ').trim() === e.name)
     const points = new Map(ev?.results.map((r) => [r.key, r]))
-    return { rows, top, withCmd, commanders: counts.size, incomplete, points }
+    return { rows, cmds, commanders: counts.size, incomplete, points }
   }, [dataset, x, circuit])
   if (!dataset || !x || !view) return <SubPageShell title="—" onBack={onBack} />
   const event = isEvent(x)
@@ -483,26 +483,21 @@ export function TournamentPage({
         </button>
       )}
 
-      {view.top.length > 0 && (
+      {view.cmds.length > 0 && (
         <section className="card">
           <div className="card-title">
             {t('meta.tournamentMeta')}
             <span className="muted small">{t('meta.nCommanders', { n: view.commanders })}</span>
           </div>
-          <ul className="mini-list">
-            {view.top.map(([id, n]) => {
-              const c = dataset.commanders[id]
-              return (
-                <li key={id} onClick={() => openCommander(c.name)} className="clickable">
-                  <span className="ellipsis grow">{shortName(c.name)}</span>
-                  <Pips colors={c.colors} size={9} />
-                  <b className="pts-inline">
-                    {n} · {pct(n / view.withCmd, 0)}
-                  </b>
-                </li>
-              )
-            })}
-          </ul>
+          {/* every commander has a slice: the first in colour, the others listed on demand */}
+          <MetaPie
+            items={view.cmds}
+            all
+            counts
+            size={120}
+            center={{ value: view.commanders, label: t('meta.pieCenter') }}
+            onOpen={openCommander}
+          />
         </section>
       )}
 

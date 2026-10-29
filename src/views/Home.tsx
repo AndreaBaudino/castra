@@ -13,6 +13,7 @@ import { InstallBanner } from '../components/AppBanners'
 import { Logo } from '../components/Logo'
 import type { Circuit } from '../lib/circuit'
 import { useWide } from '../lib/wide'
+import { MetaPie } from '../components/MetaPie'
 
 export default function Home({
   banner,
@@ -61,8 +62,8 @@ export default function Home({
   const seasonLabel = season ? `${dataset!.years.length > 1 ? `${dataset!.year} ` : ''}${season.toUpperCase()}` : ''
   const top = meta?.decks.slice(0, 5) ?? []
   const rec = record(matches)
-  // the meta's top commanders: art tiles (compact) or the list with names, share and winrate
-  const [metaView, setMetaView] = useStoredState<'strip' | 'list'>('cc.home.metaView', 'strip')
+  // the meta's top commanders: art tiles (compact), the list with names, share and winrate, or a doughnut
+  const [metaView, setMetaView] = useStoredState<'strip' | 'list' | 'pie'>('cc.home.metaView', 'strip')
   const recent = [...decks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3)
 
   // Compact, to fit a phone without scrolling: one row each for the stats and the circuit, and strips of art
@@ -142,9 +143,9 @@ export default function Home({
             </span>
             <span className="title-actions">
               <span className="seg icon-seg" role="group" aria-label={t('home.metaView')}>
-                {(['strip', 'list'] as const).map((v) => (
+                {(['strip', 'list', 'pie'] as const).map((v) => (
                   <button key={v} className={metaView === v ? 'on' : ''} onClick={() => setMetaView(v)} aria-label={t(`home.metaView.${v}`)}>
-                    <Icon name={v === 'strip' ? 'image' : 'list'} size={14} />
+                    <Icon name={v === 'strip' ? 'image' : v} size={14} />
                   </button>
                 ))}
               </span>
@@ -153,7 +154,17 @@ export default function Home({
               </button>
             </span>
           </div>
-          {metaView === 'list' ? (
+          {metaView === 'pie' ? (
+            meta && (
+              <MetaPie
+                items={meta.decks.map((d) => ({ name: d.name, count: d.entries }))}
+                max={5}
+                size={104}
+                center={{ value: meta.decks.length, label: t('meta.pieCenter') }}
+                onOpen={openCommander}
+              />
+            )
+          ) : metaView === 'list' ? (
             <ol className="mini-list">
               {top.map((d, i) => (
                 <li key={d.id} className="clickable" onClick={() => openCommander(d.name)}>
