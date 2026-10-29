@@ -13,7 +13,7 @@ export const META_DATA_URL = `https://raw.githubusercontent.com/AndreaBaudino/ca
 export const CIRCUIT_SHEET_ID = '186xE3qYmCdJeMQpmXXO7UqPL8ER2FUFos-K5OFWWtVQ'
 export const CIRCUIT_TABS = { leaderboard: '1845835181', s1: '638335391', s2: '722468170', events: '503261492' }
 /** Players invited to the Player of the Year by ranking (on top of those invited at events). */
-export const POTY_SPOTS = 36
+export const POTY_SPOTS = 16
 
 export const STARTING_LIFE = 25
 export const COMMANDER_DAMAGE_LETHAL = 21
