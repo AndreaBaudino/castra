@@ -31,6 +31,7 @@ export default function Home({
   circuitMe,
   openPlayer,
   findMe,
+  openCards,
   openCommander,
 }: {
   banner?: React.ReactNode
@@ -48,6 +49,7 @@ export default function Home({
   circuitMe: string | null
   openPlayer: (key: string) => void
   findMe: () => void
+  openCards: () => void
   openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
@@ -227,6 +229,14 @@ export default function Home({
           )}
         </section>
       </div>
+
+      {/* a desktop has Cards in the side menu */}
+      {!wide && (
+        <button className="search home-card-search" onClick={openCards}>
+          <Icon name="search" size={18} />
+          <span>{t('cards.search')}</span>
+        </button>
+      )}
     </div>
   )
 }

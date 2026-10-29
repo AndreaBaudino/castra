@@ -6,6 +6,12 @@
 export const META_DATA_URL = 'https://raw.githubusercontent.com/AndreaBaudino/castra/meta-data/meta.json'
 
 /**
+ * Where the app reads the errata (for each card whose text changed since its first printing, the text as printed
+ * there): the cards-data branch, rebuilt every week from MTGJSON by .github/workflows/cards.yml.
+ */
+export const CARDS_DATA_URL = 'https://raw.githubusercontent.com/AndreaBaudino/castra/cards-data/'
+
+/**
  * Google Sheet of the Centurion circuit: overall leaderboard, city leagues (S1, S2) and big events.
  * Read through the CSV export, by tab id (the gid=… in the tab's URL).
  */

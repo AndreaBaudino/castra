@@ -18,6 +18,7 @@ import {
 import { Icon, useBackCloses } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
 import { useDialog } from '../components/Dialog'
+import { CardLookupSheet } from './Cards'
 
 export interface PlayerState {
   life: number
@@ -275,6 +276,7 @@ export default function LifeCounter({
   const [menu, setMenu] = useState(false)
   useBackCloses(menu, () => setMenu(false))
   const [history, setHistory] = useState(false)
+  const [lookup, setLookup] = useState(false) // a card's text and rulings, without leaving the game
   useBackCloses(history, () => setHistory(false))
   const [recording, setRecording] = useState(false)
   const [roll, setRoll] = useState<Roll | null>(null)
@@ -383,6 +385,9 @@ export default function LifeCounter({
           onToggle={toggleTimer}
           onTurn={(d) => setTimer((x) => ({ ...x, turn: Math.max(0, x.turn + d) }))}
         />
+        <button className="bar-btn" onClick={() => setLookup(true)} aria-label={t('cards.search')}>
+          <Icon name="search" />
+        </button>
         <button className="bar-btn" onClick={() => setHistory(true)} aria-label={t('life.history')}>
           <Icon name="history" />
         </button>
@@ -412,6 +417,8 @@ export default function LifeCounter({
           </div>
         </div>
       )}
+
+      <CardLookupSheet open={lookup} onClose={() => setLookup(false)} />
 
       {history && (
         <div className="roll-overlay dim" onClick={() => setHistory(false)}>

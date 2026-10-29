@@ -1,0 +1,51 @@
+name: Update card data
+
+# Every Monday night: if MTGJSON has new data, rebuilds the errata (for each card whose text changed since its
+# first printing, the text as printed there, scripts/build-errata.mjs) and writes it to the cards-data branch,
+# which holds version.json and errata/<xx>.json alone (one commit, replaced every time). The app reads it from
+# there: main is not touched and the app is not deployed again.
+
+on:
+  schedule:
+    - cron: '17 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cards
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: New data on MTGJSON?
+        id: check
+        run: |
+          curl -fsS https://mtgjson.com/api/v5/Meta.json -o /tmp/version.json
+          version=$(node -p "require('/tmp/version.json').data.version")
+          published=$(git fetch --depth=1 origin cards-data 2>/dev/null && git show FETCH_HEAD:version.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0)).data.version" || true)
+          echo "MTGJSON $version, pubblicato ${published:-niente}"
+          if [ "$version" != "$published" ] || [ "${{ github.event_name }}" = workflow_dispatch ]; then echo "go=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Build the errata
+        if: steps.check.outputs.go
+        run: |
+          mkdir -p /tmp/sets
+          curl -fsS https://mtgjson.com/api/v5/AllSetFiles.tar.xz | tar -xJ -C /tmp/sets
+          node scripts/build-errata.mjs "$(dirname "$(find /tmp/sets -name LEA.json)")" /tmp/errata
+      - name: Publish to the cards-data branch
+        if: steps.check.outputs.go
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for f in /tmp/errata/*.json; do printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"; done > /tmp/errata.txt
+          errata=$(git mktree < /tmp/errata.txt)
+          tree=$(printf '100644 blob %s\tversion.json\n040000 tree %s\terrata\n' "$(git hash-object -w /tmp/version.json)" "$errata" | git mktree)
+          commit=$(git commit-tree "$tree" -m "Errata aggiornate da MTGJSON")
+          git push --force origin "$commit:refs/heads/cards-data"

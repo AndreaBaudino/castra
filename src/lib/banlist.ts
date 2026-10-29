@@ -64,4 +64,14 @@ export function banCheck(cards: DeckCard[]): BanCheck {
 
 export const isBanned = (name: string) => banned.has(norm(name))
 
+export type Legality = 'legal' | 'banned' | 'notCommander' | 'notPartner'
+
+/** One card on its own, for its page: banned, banned as commander or as a partner, or legal. */
+export function legalityOf(name: string, typeLine = ''): Legality {
+  if (banned.has(norm(name)) || /\b(attraction|stickers)\b/i.test(typeLine)) return 'banned'
+  if (bannedCommander.has(norm(name))) return 'notCommander'
+  if (bannedPartner.has(norm(name))) return 'notPartner'
+  return 'legal'
+}
+
 export const banCount = (b: BanCheck) => b.banned.length + b.asCommander.length + b.asPartner.length

@@ -127,3 +127,102 @@ export async function fetchNamed(name: string): Promise<CardInfo | undefined> {
   if (!res.ok) return
   return toInfo((await res.json()) as ScryCard)
 }
+
+// ---------- one card in full: Oracle text, Italian text, rulings ----------
+
+interface ScryFace {
+  name: string
+  mana_cost?: string
+  type_line?: string
+  oracle_text?: string
+  power?: string
+  toughness?: string
+  loyalty?: string
+  defense?: string
+  image_uris?: { normal: string; art_crop: string }
+  printed_name?: string
+  printed_type_line?: string
+  printed_text?: string
+}
+
+interface ScryFull extends ScryCard, ScryFace {
+  oracle_id: string
+  layout: string
+  scryfall_uri: string
+  legalities: Record<string, string>
+  card_faces?: ScryFace[]
+}
+
+export interface CardFace {
+  name: string
+  manaCost: string
+  typeLine: string
+  text: string
+  stats?: string // 2/3, loyalty 4, defense 5
+  image?: string
+}
+
+export interface CardDetails {
+  id: string
+  oracleId: string
+  name: string
+  faces: CardFace[]
+  image?: string // the card as a whole: split, adventure and flip cards have one image for all faces
+  scryfallUri: string
+  notLegal: boolean // not a tournament card (un-sets, test cards…)
+}
+
+const statsOf = (f: ScryFace) =>
+  f.power != null ? `${f.power}/${f.toughness}` : f.loyalty != null ? `◆ ${f.loyalty}` : f.defense != null ? `⛨ ${f.defense}` : undefined
+
+const facesOf = (c: ScryFull): ScryFace[] => c.card_faces ?? [c]
+
+export async function fetchCardDetails(name: string, signal?: AbortSignal): Promise<CardDetails | undefined> {
+  const res = await fetch(`${API}/cards/named?exact=${encodeURIComponent(name)}`, { signal })
+  if (!res.ok) return
+  const c = (await res.json()) as ScryFull
+  return {
+    id: c.id,
+    oracleId: c.oracle_id,
+    name: c.name,
+    faces: facesOf(c).map((f) => ({
+      name: f.name,
+      manaCost: f.mana_cost ?? '',
+      typeLine: f.type_line ?? '',
+      text: f.oracle_text ?? '',
+      stats: statsOf(f),
+      image: f.image_uris?.normal,
+    })),
+    image: c.image_uris?.normal,
+    scryfallUri: c.scryfall_uri.replace(/\?.*/, ''),
+    notLegal: c.legalities.commander === 'not_legal',
+  }
+}
+
+/** The card as printed in Italian, from its most recent Italian printing: name, type and text of each face. */
+export async function fetchItalian(name: string, signal?: AbortSignal): Promise<Pick<CardFace, 'name' | 'typeLine' | 'text'>[] | undefined> {
+  const q = `!"${front(name)}" lang:it`
+  const res = await fetch(`${API}/cards/search?q=${encodeURIComponent(q)}&unique=prints&order=released&dir=desc`, { signal })
+  if (!res.ok) return
+  const c = ((await res.json()) as { data: ScryFull[] }).data[0]
+  if (!c) return
+  const faces = facesOf(c)
+  if (!faces.some((f) => f.printed_text || f.printed_name)) return
+  return faces.map((f) => ({ name: f.printed_name ?? f.name, typeLine: f.printed_type_line ?? f.type_line ?? '', text: f.printed_text ?? '' }))
+}
+
+export interface Ruling {
+  date: string
+  text: string
+}
+
+/** Official rulings (Wizards' release notes and Gatherer), oldest first. */
+export async function fetchRulings(id: string, signal?: AbortSignal): Promise<Ruling[]> {
+  const res = await fetch(`${API}/cards/${id}/rulings`, { signal })
+  if (!res.ok) throw new Error(`Scryfall ${res.status}`)
+  const json = (await res.json()) as { data: { published_at: string; comment: string }[] }
+  return json.data.map((r) => ({ date: r.published_at, text: r.comment }))
+}
+
+/** Scryfall's picture of a mana or tap symbol, e.g. {W/U} → WU.svg. */
+export const symbolUrl = (symbol: string) => `https://svgs.scryfall.io/card-symbols/${symbol.replace(/[{}/]/g, '').toUpperCase()}.svg`

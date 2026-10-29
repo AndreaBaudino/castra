@@ -3212,6 +3212,136 @@ a.menu-row {
   text-decoration: none;
 }
 
+/* cards: search, a card's page and the lookup sheet */
+.home-card-search {
+  width: 100%;
+  min-height: 46px;
+  text-align: left;
+}
+.page > .sticky-search {
+  top: var(--safe-t);
+  box-shadow: 0 -12px 0 var(--bg);
+}
+.chips.wrap {
+  flex-wrap: wrap;
+}
+.recent-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.card-view-img {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.card-view-img img {
+  width: min(100%, 300px);
+  aspect-ratio: 63 / 88;
+  border-radius: 4.75% / 3.4%;
+  background: var(--surface-2);
+  display: block;
+}
+.card-view-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.tag.ok-tag {
+  background: color-mix(in srgb, var(--good) 20%, transparent);
+  color: var(--good);
+  font-weight: 700;
+}
+.card-face + .card-face {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.face-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.face-cost {
+  flex: none;
+}
+.oracle-text {
+  margin: 6px 0 0;
+  white-space: pre-line;
+  line-height: 1.5;
+  font-size: 0.92rem;
+}
+.face-stats {
+  margin-top: 6px;
+  font-weight: 700;
+  text-align: right;
+}
+.card-sym {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.17em;
+  margin: 0 1px;
+}
+a.btn {
+  color: inherit;
+  text-decoration: none;
+}
+.errata-card .collapse-head .card-title {
+  flex: 0 1 auto; /* a long title wraps instead of pushing the arrow out */
+  min-width: 0;
+}
+.errata-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.errata-block {
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.errata-block .oracle-text {
+  margin: 4px 0 0;
+}
+mark.diff-old,
+mark.diff-new {
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+mark.diff-old {
+  background: color-mix(in srgb, var(--bad) 28%, transparent);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--bad) 70%, transparent);
+}
+mark.diff-new {
+  background: color-mix(in srgb, var(--good) 28%, transparent);
+}
+.ruling-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ruling-list li + li {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.ruling-list p {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 /* collapsible card (deck stats) */
 .collapse-head {
   display: flex;
@@ -3984,5 +4114,19 @@ a.menu-row {
   .deck-tile.on {
     --tile-bg: var(--surface-2);
     border-color: var(--gold);
+  }
+}
+
+/* desktop: a card's page with the image beside the text */
+@media (min-width: 1024px) {
+  .split-page .card-view {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    align-items: start;
+    gap: 24px;
+  }
+  .split-page .card-view-img {
+    position: sticky;
+    top: 72px;
   }
 }

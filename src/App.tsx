@@ -17,6 +17,7 @@ import Meta, { META_MODE_KEY } from './views/Meta'
 import { CircuitNoticeCard, EventPage, PlayerPage } from './views/Circuit'
 import { CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPages'
 import { ComparePage, LeaguePage } from './views/CircuitMore'
+import { CardPage, CardsSearchPage } from './views/Cards'
 import Decks from './views/Decks'
 import DeckDetail from './views/DeckDetail'
 import Stats from './views/Stats'
@@ -27,9 +28,9 @@ import { UpdateBanner } from './components/AppBanners'
 import { SideNav } from './components/SideNav'
 import { useWide } from './lib/wide'
 
-type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account'
+type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
-const ROUTES: Tab[] = [...TABS, 'account']
+const ROUTES: Tab[] = [...TABS, 'account', 'cards']
 
 const fromHash = (): { tab: Tab; deck: string | null } => {
   const [tab, deck] = location.hash.slice(1).split('/')
@@ -176,6 +177,9 @@ export default function App() {
   const openCompare = (a: string, b: string) => go('meta', `c~${encodeURIComponent(a)}~${encodeURIComponent(b)}`, true)
   const openCommander = (name: string) => go('meta', `k~${encodeURIComponent(name)}`, true)
   const openTournament = (id: string) => go('meta', `t~${encodeURIComponent(id)}`, true)
+  // cards/<card name>: the name is encoded, as split cards have a slash ("Fire // Ice")
+  const openCard = (name: string) => go('cards', encodeURIComponent(name))
+  const cardName = route.tab === 'cards' && route.deck ? decodeURIComponent(route.deck) : undefined
   const findMe = () => {
     writeStored(META_MODE_KEY, 'circuit')
     writeStored('cc.circuit.view', 'ranking')
@@ -255,6 +259,7 @@ export default function App() {
             findMe={findMe}
             openCommander={openCommander}
             openDeck={(id) => go('decks', id)}
+            openCards={() => go('cards')}
             importDeck={() => {
               setImportOpen(true)
               go('decks')
@@ -368,6 +373,12 @@ export default function App() {
             ) : null,
             t('meta.pick'),
           )}
+        {route.tab === 'cards' &&
+          split(
+            <CardsSearchPage current={cardName} onOpen={openCard} onBack={() => go('home')} />,
+            cardName && <CardPage name={cardName} metaDecks={meta.decks} onBack={() => go('cards')} openCommander={openCommander} />,
+            t('cards.pick'),
+          )}
         {route.tab === 'decks' &&
           split(
             <Decks
@@ -402,7 +413,7 @@ export default function App() {
           {TABS.map((tab) => (
             <button
               key={tab}
-              className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && route.tab === 'account') ? 'on' : ''}`}
+              className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && (route.tab === 'account' || route.tab === 'cards')) ? 'on' : ''}`}
               onClick={() => go(tab)}
             >
               {tab === 'game' ? (

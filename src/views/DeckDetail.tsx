@@ -25,6 +25,7 @@ import { isBanned } from '../lib/banlist'
 import { SampleHand } from '../components/SampleHand'
 import { DeckAnalysis } from '../components/DeckAnalysis'
 import { summaryOf } from '../lib/analysis'
+import { CardDetails } from './Cards'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
 
@@ -177,6 +178,7 @@ export default function DeckDetail({
   const [editing, setEditing] = useState(false)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [choosingPrint, setChoosingPrint] = useState(false)
+  const [reading, setReading] = useState(false) // the card's Oracle text, errata and rulings, in place of its actions
   const [adding, setAdding] = useState(false)
   const [choosingCover, setChoosingCover] = useState(false)
   const [hand, setHand] = useState(false)
@@ -266,6 +268,7 @@ export default function DeckDetail({
   }
   const open = (c: DeckCard) => {
     setChoosingPrint(false)
+    setReading(false)
     setSelectedKey(cardKey(c))
   }
 
@@ -492,6 +495,13 @@ export default function DeckDetail({
               </button>
               <PrintsPicker name={selected.name} current={selected.info?.id} onPick={(p) => setPrint(selected, p)} />
             </>
+          ) : reading ? (
+            <>
+              <button className="btn ghost full" onClick={() => setReading(false)}>
+                <Icon name="back" size={16} /> {t('cards.backToCard')}
+              </button>
+              <CardDetails name={selected.name} />
+            </>
           ) : (
             <div className="card-preview">
               {selected.info?.image && <img src={selected.info.image} alt={selected.name} loading="lazy" />}
@@ -523,6 +533,9 @@ export default function DeckDetail({
                 </span>
               </div>
               <div className="btn-row">
+                <button className="btn ghost" onClick={() => setReading(true)}>
+                  <Icon name="search" size={16} /> {t('cards.textAndRulings')}
+                </button>
                 {selected.section !== 'commander' ? (
                   <button className="btn ghost" onClick={() => moveTo(selected, 'commander')}>
                     <Icon name="crown" size={16} /> {t('deck.setCommander')}

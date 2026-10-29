@@ -232,7 +232,7 @@ function CircuitIdentity({
           <div className="empty-inline">
             <p className="muted small">{cp.me && !circuit ? t('account.playerNoData') : t('circuit.linkPrompt')}</p>
             <button className="btn small primary" onClick={findMe}>
-              <Icon name="search" size={16} /> {t('circuit.findMe')}
+              <Icon name="userCheck" size={16} /> {t('circuit.findMe')}
             </button>
           </div>
         ) : (

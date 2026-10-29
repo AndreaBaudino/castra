@@ -3,8 +3,9 @@ import type { AppUser } from '../lib/auth'
 import { Icon } from './ui'
 import { Logo } from './Logo'
 
-type Main = 'home' | 'meta' | 'stats' | 'decks'
-const LINKS: Main[] = ['home', 'meta', 'stats', 'decks']
+type Main = 'home' | 'meta' | 'stats' | 'decks' | 'cards'
+const LINKS: Main[] = ['home', 'meta', 'stats', 'decks', 'cards']
+const ICONS: Partial<Record<Main, string>> = { meta: 'trophy', cards: 'search' }
 
 /** The desktop's menu, in place of the phone's tab bar: brand, the game button, the main pages and the account. */
 export function SideNav({
@@ -42,7 +43,7 @@ export function SideNav({
       <nav className="sidenav-links">
         {LINKS.map((l) => (
           <button key={l} className={tab === l ? 'on' : ''} onClick={() => go(l)} aria-current={tab === l ? 'page' : undefined}>
-            <Icon name={l === 'meta' ? 'trophy' : l} size={20} />
+            <Icon name={ICONS[l] ?? l} size={20} />
             {t(`nav.${l}`)}
           </button>
         ))}

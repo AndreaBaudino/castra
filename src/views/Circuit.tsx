@@ -829,7 +829,7 @@ export function CircuitCard({
         </span>
         {!p || !poty ? (
           <button className="btn small primary" onClick={findMe}>
-            <Icon name="search" size={14} /> {t('circuit.findMe')}
+            <Icon name="userCheck" size={14} /> {t('circuit.findMe')}
           </button>
         ) : (
           <button className="home-row-link" onClick={() => openPlayer(p.key)}>
@@ -858,7 +858,7 @@ export function CircuitCard({
         <div className="empty-inline">
           <p className="muted small">{t('circuit.linkPrompt')}</p>
           <button className="btn small primary" onClick={findMe}>
-            <Icon name="search" size={16} /> {t('circuit.findMe')}
+            <Icon name="userCheck" size={16} /> {t('circuit.findMe')}
           </button>
         </div>
       ) : (

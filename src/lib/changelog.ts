@@ -10,10 +10,14 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-10-29',
     it: [
+      'Ricerca carte: per ogni carta il testo Oracle (o quello della stampa italiana), la legalità in Centurion, i ruling ufficiali e, se il testo è cambiato dalla prima stampa, il confronto con le parti cambiate in evidenza. Dalla barra "Cerca una carta" in Home, dalla lente nella barra della partita (senza lasciarla), da "Testo e ruling" sulle carte dei mazzi e, su computer, da Carte nel menu laterale',
+      'Circuito: nuova icona per "Trova il mio nome"',
       'Versione per computer: menu laterale con Nuova partita sempre a portata, Home a riquadri affiancati, statistiche con lo storico accanto ai gruppi, e nel Circuito e nei Mazzi l\'elenco con la pagina aperta di fianco. Sul telefono non cambia niente',
       'Grafico a torta del meta: nel Sommario del Circuito (una fetta per ogni comandante sopra il 2% del meta, al massimo 8; la legenda mostra i primi 3 e si apre per gli altri), in Home come terza vista del Top del meta (i primi 5) e nella pagina di ogni torneo (tutti i comandanti: "Altri" si apre per vederli). Tocca una fetta per vederne la quota',
     ],
     en: [
+      'Card search: for every card the Oracle text (or the Italian printing\'s), its Centurion legality, the official rulings and, when the text changed since the first printing, the two texts with the changes highlighted. From the "Search a card" bar on the home, the magnifier in the game bar (without leaving the game), "Text and rulings" on deck cards and, on a computer, Cards in the side menu',
+      'Circuit: new icon for "Find my name"',
       'Desktop version: a side menu with New game always at hand, a home of side-by-side cards, stats with the history beside the groups, and in the Circuit and Decks the list with the open page next to it. Nothing changes on a phone',
       'Meta pie chart: in the Circuit summary (a slice for each commander above 2% of the meta, 8 at most; the legend shows the first 3 and opens for the rest), on the home as a third view of the meta\'s top commanders (the first 5) and on every tournament page (all the commanders: "others" opens to show them). Tap a slice to see its share',
     ],
