@@ -14,7 +14,7 @@ import { type CircuitNotice, type CircuitSnapshot, mergeNotices, noticeOf, snaps
 import { Icon } from './components/ui'
 import Home from './views/Home'
 import Meta, { META_MODE_KEY } from './views/Meta'
-import { CircuitNoticeCard, EventPage, PlayerPage } from './views/Circuit'
+import { CircuitNoticeCard, EventPage, PlayerPage, focusMeInRanking } from './views/Circuit'
 import { CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPages'
 import { ComparePage, LeaguePage } from './views/CircuitMore'
 import { CardPage, CardsSearchPage } from './views/Cards'
@@ -189,6 +189,13 @@ export default function App() {
     writeStored('cc.circuit.view', 'ranking')
     go('meta')
   }
+  // the overall ranking, centred on the linked player
+  const openRanking = () => {
+    writeStored('cc.circuit.sort', 'total')
+    writeStored('cc.circuit.league', '')
+    focusMeInRanking()
+    findMe()
+  }
   // meta/p~<player key>, meta/e~<event id>, meta/l~<season>~<league>, meta/c~<player a>~<player b>,
   // meta/k~<commander>, meta/t~<tournament id> (an event or a league stage of the deck meta)
   const [metaSub, ...metaArgs] = route.tab === 'meta' && route.deck ? route.deck.split('~').map(decodeURIComponent) : []
@@ -261,6 +268,7 @@ export default function App() {
             circuitMe={circuitMe}
             openPlayer={openPlayer}
             findMe={findMe}
+            openRanking={openRanking}
             openCommander={openCommander}
             openDeck={(id) => go('decks', id)}
             openCards={() => go('cards')}

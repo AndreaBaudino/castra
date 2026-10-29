@@ -31,6 +31,7 @@ export default function Home({
   circuitMe,
   openPlayer,
   findMe,
+  openRanking,
   openCards,
   openCommander,
 }: {
@@ -49,6 +50,7 @@ export default function Home({
   circuitMe: string | null
   openPlayer: (key: string) => void
   findMe: () => void
+  openRanking: () => void
   openCards: () => void
   openCommander: (name: string) => void
 }) {
@@ -134,7 +136,7 @@ export default function Home({
             </span>
           )}
         </button>
-        <CircuitCard compact circuit={circuit} status={circuitStatus} me={circuitMe} openPlayer={openPlayer} findMe={findMe} />
+        <CircuitCard compact circuit={circuit} status={circuitStatus} me={circuitMe} openPlayer={openPlayer} findMe={findMe} openRanking={openRanking} />
       </div>
 
       <div className="home-cols">

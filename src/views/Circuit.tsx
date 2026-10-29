@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CustomizeSheet, PlayerBadges, PlayerColors, PlayerCover, SignatureDeck, deckOf, signatureOf } from './PlayerCard'
 import { artUrl } from './MetaPages'
 import { useI18n } from '../i18n'
@@ -101,8 +101,25 @@ export function CircuitPanel({
   )
 }
 
+// set by focusMeInRanking(): the next ranking opened scrolls to the linked player's row
+let focusMe = false
+export function focusMeInRanking() {
+  focusMe = true
+}
+
 function Ranking({ circuit, prefs, openPlayer }: { circuit: Circuit; prefs: CircuitPrefs; openPlayer: (key: string) => void }) {
   const { t } = useI18n()
+  const listRef = useRef<HTMLOListElement>(null)
+  useEffect(() => {
+    if (!focusMe) return
+    focusMe = false
+    // on the next frame, after the app has scrolled the new page to the top. The row is sticky, so it reports
+    // where it's stuck rather than its place in the list: centre a neighbour instead
+    requestAnimationFrame(() => {
+      const me = listRef.current?.querySelector('.player-row.me')
+      ;(me?.previousElementSibling ?? me?.nextElementSibling ?? me)?.scrollIntoView({ block: 'center' })
+    })
+  }, [])
   const [q, setQ] = useState('')
   const [sort, setSort] = useStoredState<Sort>('cc.circuit.sort', 'total')
   const [league, setLeague] = useStoredState('cc.circuit.league', '')
@@ -155,7 +172,7 @@ function Ranking({ circuit, prefs, openPlayer }: { circuit: Circuit; prefs: Circ
         </button>
       </div>
 
-      <ol className="meta-list">
+      <ol className="meta-list" ref={listRef}>
         {list.map((p, i) => (
           <PlayerRow
             key={p.key}
@@ -806,6 +823,7 @@ export function CircuitCard({
   me,
   openPlayer,
   findMe,
+  openRanking,
   compact,
 }: {
   circuit: Circuit | null
@@ -813,6 +831,7 @@ export function CircuitCard({
   me: string | null
   openPlayer: (k: string) => void
   findMe: () => void
+  openRanking: () => void // the compact row: the ranking, on the linked player's row
   compact?: boolean // one row, for the home
 }) {
   const { t } = useI18n()
@@ -832,7 +851,7 @@ export function CircuitCard({
             <Icon name="userCheck" size={14} /> {t('circuit.findMe')}
           </button>
         ) : (
-          <button className="home-row-link" onClick={() => openPlayer(p.key)}>
+          <button className="home-row-link" onClick={openRanking}>
             <b>#{p.rank}</b>
             <span className="muted small">{t('circuit.nPts', { n: p.total })}</span>
             {poty.isIn(p) && <PotyTag invited={p.potyInvited} />}
