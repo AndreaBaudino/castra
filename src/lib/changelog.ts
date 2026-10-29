@@ -29,6 +29,7 @@ export const CHANGELOG: Release[] = [
       'Home più compatta, senza scorrere: statistiche e circuito in una riga ciascuno, Top del meta e mazzi a strisce di immagini',
       'Home: nel Top del meta uno switch per passare dalle immagini all\'elenco con quota e winrate',
       'Zona POTY corretta: 16 posti in classifica',
+      'Meta: la (i) accanto al Sommario e nella pagina del comandante spiega come sono calcolati quote, winrate e gli altri numeri',
     ],
     en: [
       'Meta: real data from every 2026 tournament (Levels 1 and 2, S1 and S2 leagues, online league), filtered by season, tournament type and league',
@@ -50,6 +51,7 @@ export const CHANGELOG: Release[] = [
       'A more compact home that fits without scrolling: one row each for stats and circuit, image strips for the meta and decks',
       'Home: a switch in the meta\'s top commanders, from images to the list with share and winrate',
       'POTY zone fixed: 16 ranking spots',
+      'Meta: the (i) next to the Summary and on a commander\'s page explains how shares, winrates and the other numbers are computed',
     ],
   },
   {

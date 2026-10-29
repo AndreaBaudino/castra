@@ -18,6 +18,7 @@ import type { Deck } from '../lib/decks'
 import { useStoredState } from '../lib/storage'
 import { Icon, Pips, pct, wrClass } from '../components/ui'
 import { META_FILTER_KEY, MetaFilters } from './Meta'
+import { MetaInfoButton } from './MetaInfo'
 import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
 import type { Circuit, CircuitEvent, Player } from '../lib/circuit'
 import { commanderNames } from './Decks'
@@ -149,7 +150,8 @@ export function CommanderPage({
         <div className="notice">{t('meta.noEntries')}</div>
       ) : (
         <>
-          <section className="card">
+          <section className="card with-info">
+            <MetaInfoButton />
             <div className="stats3">
               <div>
                 <div className="stat-num">{pct(deck.share)}</div>

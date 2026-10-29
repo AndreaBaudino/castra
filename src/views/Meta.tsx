@@ -5,6 +5,7 @@ import { Icon, Pips, pct, wrClass } from '../components/ui'
 import type { Circuit } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { CircuitPanel, type CircuitPrefs, LiveStatus } from './Circuit'
+import { MetaInfoButton } from './MetaInfo'
 
 type Status = 'idle' | 'loading' | 'error'
 
@@ -224,7 +225,10 @@ export default function Meta({
 
           <section className="card">
             <div className="card-title">
-              {t('meta.summary')}
+              <span className="title-live">
+                {t('meta.summary')}
+                <MetaInfoButton />
+              </span>
               <span className="muted small">
                 {t('meta.updated')} {new Date(meta.updatedAt).toLocaleDateString(lang)}
               </span>

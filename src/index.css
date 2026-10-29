@@ -3496,3 +3496,37 @@ a.menu-row {
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
 }
+
+/* "how the numbers are computed": a small (i) next to the meta's numbers, and its sheet */
+.icon-btn.info-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 0;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+}
+.card.with-info {
+  position: relative;
+}
+.card.with-info > .info-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+.info-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+.info-sheet h3 {
+  margin: 0 0 4px;
+  font-size: 0.92rem;
+}
+.info-sheet p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
