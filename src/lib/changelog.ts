@@ -8,6 +8,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-10-29',
+    it: [
+      'Versione per computer: menu laterale con Nuova partita sempre a portata, Home a riquadri affiancati, statistiche con lo storico accanto ai gruppi, e nel Circuito e nei Mazzi l\'elenco con la pagina aperta di fianco. Sul telefono non cambia niente',
+    ],
+    en: [
+      'Desktop version: a side menu with New game always at hand, a home of side-by-side cards, stats with the history beside the groups, and in the Circuit and Decks the list with the open page next to it. Nothing changes on a phone',
+    ],
+  },
+  {
     date: '2026-10-28',
     it: [
       'Meta: i dati veri di tutti i tornei 2026 (Livelli 1 e 2, leghe S1 e S2, lega online), con filtri per stagione, tipo di torneo e lega',

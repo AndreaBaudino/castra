@@ -9,6 +9,7 @@ import { Icon, Sheet, pct, wrClass } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
 import { useDialog } from '../components/Dialog'
 import { useStoredState } from '../lib/storage'
+import { useWide } from '../lib/wide'
 
 type Filter = 'all' | Match['kind']
 type Period = 'all' | '30' | '90' | 'year'
@@ -27,7 +28,7 @@ export function ResultDots({ matches, n = 10 }: { matches: Match[]; n?: number }
   )
 }
 
-function HistoryRow({ m, deckName, onLongPress }: { m: Match; deckName: string; onLongPress: () => void }) {
+function HistoryRow({ m, deckName, onLongPress, more }: { m: Match; deckName: string; onLongPress: () => void; more?: boolean }) {
   const { t, lang } = useI18n()
   const press = useLongPress(() => {}, onLongPress)
   return (
@@ -46,6 +47,19 @@ function HistoryRow({ m, deckName, onLongPress }: { m: Match; deckName: string; 
           {m.notes ? ` · ${m.notes}` : ''}
         </span>
       </span>
+      {/* a desktop has no press-and-hold: the actions get their own button */}
+      {more && (
+        <button
+          className="icon-btn more-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onLongPress()
+          }}
+          aria-label={t('stats.matchActions')}
+        >
+          <Icon name="more" size={18} />
+        </button>
+      )}
     </li>
   )
 }
@@ -142,6 +156,7 @@ export default function Stats({
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
+  const wide = useWide()
   const [filter, setFilter] = useStoredState<Filter>('cc.stats.kind', 'all')
   const [period, setPeriod] = useStoredState<Period>('cc.stats.period', 'all')
   const [format, setFormat] = useStoredState<FormatFilter>('cc.stats.format', 'all')
@@ -179,7 +194,7 @@ export default function Stats({
   const filtered = filter !== 'all' || period !== 'all' || format !== 'all'
 
   return (
-    <div className="page">
+    <div className="page stats-page">
       <header className="page-head">
         <div className="head-left">
           <h1>{t('stats.title')}</h1>
@@ -189,26 +204,29 @@ export default function Stats({
         </button>
       </header>
 
-      <div className="seg wide">
-        {(['all', 'tournament', 'casual'] as Filter[]).map((f) => (
-          <button key={f} className={filter === f ? 'on' : ''} onClick={() => setFilter(f)}>
-            {t(f === 'all' ? 'stats.all' : f === 'tournament' ? 'match.tournament' : 'match.casual')}
-          </button>
-        ))}
-      </div>
-      <div className="filter-row">
-        <select className="select-pill" value={period} onChange={(e) => setPeriod(e.target.value as Period)} aria-label={t('stats.period')}>
-          {(['all', '30', '90', 'year'] as Period[]).map((p) => (
-            <option key={p} value={p}>
-              {t(`stats.period.${p}`)}
-            </option>
+      {/* one row on a desktop */}
+      <div className="stats-filters">
+        <div className="seg wide">
+          {(['all', 'tournament', 'casual'] as Filter[]).map((f) => (
+            <button key={f} className={filter === f ? 'on' : ''} onClick={() => setFilter(f)}>
+              {t(f === 'all' ? 'stats.all' : f === 'tournament' ? 'match.tournament' : 'match.casual')}
+            </button>
           ))}
-        </select>
-        <select className="select-pill" value={format} onChange={(e) => setFormat(e.target.value as FormatFilter)} aria-label={t('account.format')}>
-          <option value="all">Bo1 + Bo3</option>
-          <option value="bo1">Bo1</option>
-          <option value="bo3">Bo3</option>
-        </select>
+        </div>
+        <div className="filter-row">
+          <select className="select-pill" value={period} onChange={(e) => setPeriod(e.target.value as Period)} aria-label={t('stats.period')}>
+            {(['all', '30', '90', 'year'] as Period[]).map((p) => (
+              <option key={p} value={p}>
+                {t(`stats.period.${p}`)}
+              </option>
+            ))}
+          </select>
+          <select className="select-pill" value={format} onChange={(e) => setFormat(e.target.value as FormatFilter)} aria-label={t('account.format')}>
+            <option value="all">Bo1 + Bo3</option>
+            <option value="bo1">Bo1</option>
+            <option value="bo3">Bo3</option>
+          </select>
+        </div>
       </div>
 
       {!shown.length ? (
@@ -218,7 +236,7 @@ export default function Stats({
         </div>
       ) : (
         <>
-          <section className="card">
+          <section className="card stats-summary">
             <div className="stats3">
               <div>
                 <div className="stat-num">{rec.games}</div>
@@ -257,111 +275,116 @@ export default function Stats({
 
           {shown.length >= MIN_FOR_TREND && <TrendChart matches={shown} />}
 
-          <section className="group">
-            <div className="group-title">{t('stats.byDeck')}</div>
-            <ul className="card-list">
-              {byDeck.map((g) => {
-                const m = metaOf(g.name)
-                return (
-                  <li key={g.name} className="stat-row">
-                    <span className="ellipsis grow">{g.name}</span>
-                    {m && <span className="muted small">{t('stats.vsMeta', { wr: pct(winrate(m), 0) })}</span>}
-                    <RecordCells rec={g.rec} />
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
+          {/* on a desktop: the history on the left, the groups beside it */}
+          <div className="stats-cols">
+            <div className="stats-side">
+              <section className="group">
+                <div className="group-title">{t('stats.byDeck')}</div>
+                <ul className="card-list">
+                  {byDeck.map((g) => {
+                    const m = metaOf(g.name)
+                    return (
+                      <li key={g.name} className="stat-row">
+                        <span className="ellipsis grow">{g.name}</span>
+                        {m && <span className="muted small">{t('stats.vsMeta', { wr: pct(winrate(m), 0) })}</span>}
+                        <RecordCells rec={g.rec} />
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
 
-          <section className="group">
-            <div className="group-title">{t('stats.byOpponent')}</div>
-            <ul className="card-list">
-              {byOpp.map((g) => {
-                const open = openMatchup === g.name
-                const mine = groupBy(g.list, deckName)
-                const m = metaOf(g.name)
-                return (
-                  <li key={g.name} className={`matchup ${open ? 'open' : ''}`}>
-                    <button className="stat-row" onClick={() => setOpenMatchup(open ? null : g.name)} aria-expanded={open}>
-                      <span className="ellipsis grow">{g.name}</span>
-                      <RecordCells rec={g.rec} />
-                      <span className="chev">
-                        <Icon name="chevron" size={14} />
-                      </span>
-                    </button>
-                    {open && (
-                      <ul className="matchup-decks">
-                        {m && (
-                          <li className="stat-row sub clickable" onClick={() => openCommander(m.name)}>
-                            <span className="ellipsis grow">
-                              <span className="muted">{t('stats.inMeta')}</span> {shortName(m.name)}
-                            </span>
-                            <span className="muted small">{pct(m.share)}</span>
-                            <b className={`wr small-wr ${wrClass(winrate(m))}`}>{pct(winrate(m), 0)}</b>
+              <section className="group">
+                <div className="group-title">{t('stats.byOpponent')}</div>
+                <ul className="card-list">
+                  {byOpp.map((g) => {
+                    const open = openMatchup === g.name
+                    const mine = groupBy(g.list, deckName)
+                    const m = metaOf(g.name)
+                    return (
+                      <li key={g.name} className={`matchup ${open ? 'open' : ''}`}>
+                        <button className="stat-row" onClick={() => setOpenMatchup(open ? null : g.name)} aria-expanded={open}>
+                          <span className="ellipsis grow">{g.name}</span>
+                          <RecordCells rec={g.rec} />
+                          <span className="chev">
                             <Icon name="chevron" size={14} />
-                          </li>
-                        )}
-                        {mine.map((d) => (
-                          <li key={d.name} className="stat-row sub">
-                            <span className="ellipsis grow">
-                              <span className="muted">{t('stats.with')}</span> {d.name}
-                            </span>
-                            <RecordCells rec={d.rec} />
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-
-          {byPlayer.length > 0 && (
-            <section className="group">
-              <div className="group-title">{t('stats.byPlayer')}</div>
-              <ul className="card-list">
-                {byPlayer.map((g) => {
-                  const key = g.list.find((m) => m.opponentPlayer)?.opponentPlayer
-                  const row = (
-                    <>
-                      <span className="ellipsis grow">{g.name}</span>
-                      <RecordCells rec={g.rec} />
-                      {key && (
-                        <span className="chev">
-                          <Icon name="chevron" size={14} />
-                        </span>
-                      )}
-                    </>
-                  )
-                  return (
-                    <li key={g.name}>
-                      {key ? (
-                        <button className="stat-row" onClick={() => openPlayer(key)}>
-                          {row}
+                          </span>
                         </button>
-                      ) : (
-                        <div className="stat-row">{row}</div>
-                      )}
-                    </li>
-                  )
-                })}
+                        {open && (
+                          <ul className="matchup-decks">
+                            {m && (
+                              <li className="stat-row sub clickable" onClick={() => openCommander(m.name)}>
+                                <span className="ellipsis grow">
+                                  <span className="muted">{t('stats.inMeta')}</span> {shortName(m.name)}
+                                </span>
+                                <span className="muted small">{pct(m.share)}</span>
+                                <b className={`wr small-wr ${wrClass(winrate(m))}`}>{pct(winrate(m), 0)}</b>
+                                <Icon name="chevron" size={14} />
+                              </li>
+                            )}
+                            {mine.map((d) => (
+                              <li key={d.name} className="stat-row sub">
+                                <span className="ellipsis grow">
+                                  <span className="muted">{t('stats.with')}</span> {d.name}
+                                </span>
+                                <RecordCells rec={d.rec} />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+
+              {byPlayer.length > 0 && (
+                <section className="group">
+                  <div className="group-title">{t('stats.byPlayer')}</div>
+                  <ul className="card-list">
+                    {byPlayer.map((g) => {
+                      const key = g.list.find((m) => m.opponentPlayer)?.opponentPlayer
+                      const row = (
+                        <>
+                          <span className="ellipsis grow">{g.name}</span>
+                          <RecordCells rec={g.rec} />
+                          {key && (
+                            <span className="chev">
+                              <Icon name="chevron" size={14} />
+                            </span>
+                          )}
+                        </>
+                      )
+                      return (
+                        <li key={g.name}>
+                          {key ? (
+                            <button className="stat-row" onClick={() => openPlayer(key)}>
+                              {row}
+                            </button>
+                          ) : (
+                            <div className="stat-row">{row}</div>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )}
+            </div>
+
+            <section className="group">
+              <div className="group-title">{t('stats.history')}</div>
+              <ul className="card-list">
+                {shown.map((m) => (
+                  <HistoryRow key={m.id} m={m} deckName={deckName(m)} onLongPress={() => setActions(m)} more={wide} />
+                ))}
               </ul>
             </section>
-          )}
-
-          <section className="group">
-            <div className="group-title">{t('stats.history')}</div>
-            <ul className="card-list">
-              {shown.map((m) => (
-                <HistoryRow key={m.id} m={m} deckName={deckName(m)} onLongPress={() => setActions(m)} />
-              ))}
-            </ul>
-          </section>
+          </div>
         </>
       )}
 
-      {shown.length > 0 && <p className="muted small center">{t('stats.longPressHint')}</p>}
+      {shown.length > 0 && <p className="muted small center">{t(wide ? 'stats.rightClickHint' : 'stats.longPressHint')}</p>}
 
       <Sheet open={!!actions} onClose={() => setActions(null)} title={t('stats.matchActions')}>
         <div className="form">

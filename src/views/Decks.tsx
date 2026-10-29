@@ -7,6 +7,7 @@ import { type MetaDeck, findMetaDeck, normName, winrate } from '../lib/meta'
 import { fetchCollection, requestKey } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { useDialog } from '../components/Dialog'
+import { useWide } from '../lib/wide'
 
 export function commanderNames(deck: Deck) {
   return deck.cards.filter((c) => c.section === 'commander').map((c) => c.name)
@@ -18,11 +19,13 @@ export function DeckTile({
   metaDecks,
   onClick,
   onLongPress,
+  on,
 }: {
   deck: Deck
   metaDecks: MetaDeck[]
   onClick: () => void
   onLongPress?: () => void
+  on?: boolean // open beside the list, on a desktop
 }) {
   const { t } = useI18n()
   const check = checkDeck(deck)
@@ -30,7 +33,7 @@ export function DeckTile({
   const m = findMetaDeck(metaDecks, commanderNames(deck))
   const press = useLongPress(onClick, onLongPress)
   return (
-    <button className="deck-tile" {...press}>
+    <button className={on ? 'deck-tile on' : 'deck-tile'} {...press}>
       <div className="deck-art" style={art ? { backgroundImage: `url(${art})` } : undefined} />
       <div className="deck-info">
         <div className="name-line">
@@ -158,16 +161,19 @@ export default function Decks({
   onOpen,
   importOpen,
   setImportOpen,
+  current,
 }: {
   decks: Deck[]
   setDecks: (fn: (d: Deck[]) => Deck[]) => void
   metaDecks: MetaDeck[]
+  current?: string // the deck open beside the list, on a desktop
   onOpen: (id: string) => void
   importOpen: boolean
   setImportOpen: (v: boolean) => void
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
+  const wide = useWide()
   const [tag, setTag] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [actions, setActions] = useState<Deck | null>(null)
@@ -223,6 +229,7 @@ export default function Decks({
             key={d.id}
             deck={d}
             metaDecks={metaDecks}
+            on={d.id === current}
             onClick={() => onOpen(d.id)}
             onLongPress={() => {
               setRenaming(null)
@@ -231,7 +238,7 @@ export default function Decks({
           />
         ))}
       </div>
-      {decks.length > 0 && <p className="muted small center">{t('decks.longPressHint')}</p>}
+      {decks.length > 0 && <p className="muted small center">{t(wide ? 'decks.rightClickHint' : 'decks.longPressHint')}</p>}
 
       <Sheet open={!!actions} onClose={() => setActions(null)} title={actions?.name}>
         {actions && (

@@ -3531,3 +3531,333 @@ a.menu-row {
   line-height: 1.45;
   color: var(--muted);
 }
+
+/* ---------- desktop ---------- */
+/* layout-only wrappers: a phone ignores them, a desktop lays their content side by side */
+.home-pair,
+.home-cols,
+.deck-groups,
+.stats-filters,
+.stats-cols,
+.stats-side {
+  display: contents;
+}
+
+/* From this width up (the same as in lib/wide.ts): a side menu in place of the tab bar, wider pages, and the
+   circuit and the decks with the list and the open page side by side. Nothing here applies to a phone. */
+@media (min-width: 1024px) {
+  :root {
+    --tabbar-h: 0px;
+    --side-w: 248px;
+  }
+  .app {
+    display: flex;
+    align-items: flex-start;
+  }
+  .app main {
+    flex: 1;
+    min-width: 0;
+    padding: 0 24px 32px;
+  }
+
+  /* side menu */
+  .sidenav {
+    position: sticky;
+    top: 0;
+    flex: none;
+    width: var(--side-w);
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 16px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+  }
+  .sidenav .brand-mark {
+    padding: 0 6px;
+  }
+  .sidenav .brand-kicker {
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+  }
+  .sidenav-name {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.1;
+  }
+  .sidenav .hero-btn {
+    padding: 10px 12px;
+    gap: 12px;
+  }
+  .sidenav .hero-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex: none;
+  }
+  .sidenav .hero-text strong {
+    font-size: 1rem;
+  }
+  .sidenav .hero-btn.on {
+    box-shadow:
+      0 0 0 2px var(--gold),
+      0 6px 18px color-mix(in srgb, var(--red) 25%, transparent);
+  }
+  .sidenav-links {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sidenav-links button,
+  .sidenav-account {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    text-align: left;
+  }
+  .sidenav-links button:hover,
+  .sidenav-account:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .sidenav-links button.on {
+    background: var(--surface-2);
+    color: var(--gold);
+  }
+  .sidenav-account {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  .sidenav-account.on {
+    border-color: var(--gold);
+  }
+  .sidenav-account img,
+  .sidenav-account .avatar {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .sidenav-account .avatar:has(svg) {
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  /* bottom sheets become dialogs in the middle of the screen */
+  .sheet-backdrop {
+    align-items: center;
+    padding: 24px;
+  }
+  .sheet {
+    max-height: 88vh;
+    border-radius: 20px;
+    animation: fade 0.15s ease;
+  }
+
+  /* the life counter fills the screen beside the menu */
+  .life-root {
+    inset: 0 0 0 var(--side-w);
+  }
+
+  /* home: a dashboard */
+  .page.home-compact,
+  .page.stats-page {
+    max-width: 1120px;
+  }
+  .home-compact {
+    gap: 14px;
+  }
+  .home-pair {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .home-compact .home-pair .card {
+    padding: 16px 20px;
+  }
+  .home-pair .home-row {
+    min-height: 84px;
+  }
+  .home-pair .home-row .title-live {
+    font-size: 1rem;
+  }
+  .home-pair .home-row-link b {
+    font-size: 1.7rem;
+  }
+  .home-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 14px;
+  }
+  .home-compact .home-cols .card {
+    padding: 16px 18px;
+    gap: 12px;
+  }
+  .home-meta .strip-tile {
+    flex: 1 1 0;
+    max-width: none;
+    height: 160px;
+  }
+  .home-meta .strip-text {
+    padding: 28px 10px 8px;
+    font-size: 0.8rem;
+  }
+  .home-meta .mini-list li {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+  .home-decks .strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+  .home-decks .strip-tile {
+    max-width: none;
+    height: 100px;
+  }
+
+  /* my stats: filters in one row, the summary in two columns, the history beside the groups */
+  .stats-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .stats-filters .seg.wide {
+    flex: 1 1 360px;
+    max-width: 520px;
+  }
+  .stats-filters .filter-row {
+    margin: 0;
+  }
+  .stats-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 12px 16px;
+    align-items: start;
+  }
+  .stats-summary .play-draw {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .stats-summary .kv {
+    grid-column: 1 / -1;
+  }
+  .stats-summary:not(:has(.play-draw)) .stats3 {
+    grid-column: 1 / -1;
+  }
+  .stats-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .stats-cols > .group {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .stats-side {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .icon-btn.more-btn {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: var(--muted);
+  }
+  .icon-btn.more-btn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  /* circuit and decks: the list, and the page open beside it */
+  .split {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  .split-list {
+    flex: 0 1 420px;
+    min-width: 340px;
+  }
+  .split-page {
+    flex: 1;
+    min-width: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-left: 1px solid var(--line);
+    padding-left: 8px;
+  }
+  .split-page .page {
+    max-width: 960px;
+  }
+  .split-page .deck-hero {
+    border-radius: var(--radius);
+  }
+  .split-page .piles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .split-page .deck-groups.list {
+    display: block;
+    columns: 2;
+    column-gap: 16px;
+  }
+  .split-page .deck-groups.list > .group {
+    break-inside: avoid;
+    margin-bottom: 14px;
+  }
+  .split-page .card-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .split-empty {
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .split-empty p {
+    margin: 0;
+    max-width: 320px;
+  }
+  .meta-row:hover {
+    background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
+  }
+  .meta-row.on {
+    background: var(--surface-2);
+    box-shadow: inset 3px 0 0 var(--gold);
+  }
+  .deck-tile.on {
+    --tile-bg: var(--surface-2);
+    border-color: var(--gold);
+  }
+}

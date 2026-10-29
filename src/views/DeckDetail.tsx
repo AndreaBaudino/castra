@@ -440,44 +440,47 @@ export default function DeckDetail({
           ))}
         </div>
       ) : (
-        groups.map(([g, cards]) => (
-          <section key={g} className="group">
-            <div className="group-title">
-              {t(GROUP_KEY[g])} <span className="muted">{cards.reduce((s, c) => s + c.qty, 0)}</span>
-            </div>
-            {view === 'grid' ? (
-              <div className="card-grid">
-                {cards.map((c) => (
-                  <CardImage key={cardKey(c)} card={c} onClick={() => open(c)} />
-                ))}
+        // two columns of lists on a desktop
+        <div className={`deck-groups ${view}`}>
+          {groups.map(([g, cards]) => (
+            <section key={g} className="group">
+              <div className="group-title">
+                {t(GROUP_KEY[g])} <span className="muted">{cards.reduce((s, c) => s + c.qty, 0)}</span>
               </div>
-            ) : (
-              <ul className="card-list">
-                {cards.map((c) => (
-                  <li key={cardKey(c)} className="card-row">
-                    <button className="card-row-main" onClick={() => open(c)}>
-                      <span className="qty">{c.qty}</span>
-                      <span className={`ellipsis ${c.info ? '' : 'warn-text'}`}>{c.name}</span>
-                      {isBanned(c.name) && <span className="tag ban-tag">BAN</span>}
-                      {(c.info?.set ?? c.set) && <span className="set-code">{(c.info?.set ?? c.set)!.toUpperCase()}</span>}
-                      {c.info && <ManaCost cost={c.info.manaCost} />}
-                    </button>
-                    {editing && (
-                      <span className="qty-ctrl">
-                        <button onClick={() => changeQty(c, -1)} aria-label="-">
-                          <Icon name="minus" size={14} />
-                        </button>
-                        <button onClick={() => changeQty(c, 1)} aria-label="+">
-                          <Icon name="plus" size={14} />
-                        </button>
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ))
+              {view === 'grid' ? (
+                <div className="card-grid">
+                  {cards.map((c) => (
+                    <CardImage key={cardKey(c)} card={c} onClick={() => open(c)} />
+                  ))}
+                </div>
+              ) : (
+                <ul className="card-list">
+                  {cards.map((c) => (
+                    <li key={cardKey(c)} className="card-row">
+                      <button className="card-row-main" onClick={() => open(c)}>
+                        <span className="qty">{c.qty}</span>
+                        <span className={`ellipsis ${c.info ? '' : 'warn-text'}`}>{c.name}</span>
+                        {isBanned(c.name) && <span className="tag ban-tag">BAN</span>}
+                        {(c.info?.set ?? c.set) && <span className="set-code">{(c.info?.set ?? c.set)!.toUpperCase()}</span>}
+                        {c.info && <ManaCost cost={c.info.manaCost} />}
+                      </button>
+                      {editing && (
+                        <span className="qty-ctrl">
+                          <button onClick={() => changeQty(c, -1)} aria-label="-">
+                            <Icon name="minus" size={14} />
+                          </button>
+                          <button onClick={() => changeQty(c, 1)} aria-label="+">
+                            <Icon name="plus" size={14} />
+                          </button>
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ))}
+        </div>
       )}
 
       <Sheet open={!!selected} onClose={() => setSelectedKey(null)} title={selected?.name}>

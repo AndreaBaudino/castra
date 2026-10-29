@@ -138,6 +138,7 @@ export default function Meta({
   openEvent,
   openLeague,
   openCommander,
+  current,
 }: {
   banner?: React.ReactNode
   dataset: MetaDataset | null
@@ -151,6 +152,7 @@ export default function Meta({
   openEvent: (id: string) => void
   openLeague: (season: string, name: string) => void
   openCommander: (name: string) => void
+  current?: string // the commander open beside the list, on a desktop
 }) {
   const { t, lang } = useI18n()
   const [mode, setMode] = useStoredState<'decks' | 'circuit'>(META_MODE_KEY, 'decks')
@@ -284,7 +286,7 @@ export default function Meta({
             {list.map((d, i) => {
               const wr = winrate(d)
               return (
-                <li key={d.id} className="meta-row" onClick={() => openCommander(d.name)}>
+                <li key={d.id} className={d.name === current ? 'meta-row on' : 'meta-row'} onClick={() => openCommander(d.name)}>
                   <div className="meta-main">
                     <span className="rank">{i + 1}</span>
                     <div className="meta-name">
