@@ -280,12 +280,11 @@ export default function Meta({
               items={meta.decks.map((d) => ({ name: d.name, count: d.entries }))}
               min={PIE_MIN}
               max={PIE_MAX}
+              fold={3}
+              note={aboveMin > PIE_MAX ? t('meta.pieCapped', { n: aboveMin, p: pct(PIE_MIN, 0), m: PIE_MAX }) : undefined}
               center={{ value: meta.decks.length, label: t('meta.pieCenter') }}
               onOpen={openCommander}
             />
-            {aboveMin > PIE_MAX && (
-              <p className="pie-note muted small">{t('meta.pieCapped', { n: aboveMin, p: pct(PIE_MIN, 0), m: PIE_MAX })}</p>
-            )}
           </section>
 
           <div className="search">

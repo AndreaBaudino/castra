@@ -3653,7 +3653,8 @@ a.menu-row {
   transform: rotate(-90deg);
 }
 .pie-note {
-  margin: 0;
+  padding: 6px 6px 2px;
+  line-height: 1.35;
 }
 
 /* ---------- desktop ---------- */

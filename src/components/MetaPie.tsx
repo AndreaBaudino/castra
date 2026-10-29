@@ -19,7 +19,7 @@ const GAP = 2
  * - `min`: only the commanders with at least this share get a slice, `max` at most; the rest is one grey "others"
  * - `all`: every commander gets a slice, those past the first `max` in grey; the legend lists them on demand
  * Tapping a slice (or hovering it, or its legend row, with a mouse) shows its share in the middle; a legend row
- * opens the commander.
+ * opens the commander. With `fold`, the legend shows that many rows and opens on demand, to keep the chart short.
  */
 export function MetaPie({
   items,
@@ -27,6 +27,8 @@ export function MetaPie({
   min = 0,
   all = false,
   counts = false,
+  fold,
+  note,
   center,
   onOpen,
   size = 132,
@@ -36,6 +38,8 @@ export function MetaPie({
   min?: number
   all?: boolean
   counts?: boolean // show the number of decks beside the share
+  fold?: number // legend rows shown before "show more"
+  note?: string // under the legend, once it is open
   center: { value: string | number; label: string }
   onOpen: (name: string) => void
   size?: number
@@ -44,6 +48,7 @@ export function MetaPie({
   const [picked, setPicked] = useState<number | null>(null)
   const [hover, setHover] = useState<number | null>(null)
   const [open, setOpen] = useState(false)
+  const [full, setFull] = useState(false)
   const total = items.reduce((s, x) => s + x.count, 0)
   if (!total) return null
 
@@ -70,6 +75,10 @@ export function MetaPie({
     return arc
   })
   const mouse = (e: React.PointerEvent) => e.pointerType === 'mouse'
+  // the named rows and "others": past `fold` rows, the rest waits behind "show more"
+  const legendRows = named.length + (restCount ? 1 : 0)
+  const foldable = fold != null && legendRows > fold + 1
+  const folded = foldable && !full
 
   const row = (x: PieItem, i: number, color: string) => (
     <li key={x.name}>
@@ -123,8 +132,8 @@ export function MetaPie({
       </div>
 
       <ul className="pie-legend">
-        {named.map((x, i) => row(x, i, `var(--pie-${i + 1})`))}
-        {restCount > 0 && (
+        {named.slice(0, folded ? fold : undefined).map((x, i) => row(x, i, `var(--pie-${i + 1})`))}
+        {restCount > 0 && !folded && (
           <li>
             {all ? (
               <button onClick={() => setOpen(!open)} aria-expanded={open}>
@@ -150,6 +159,17 @@ export function MetaPie({
           </li>
         )}
         {all && open && rest.map((x, i) => row(x, named.length + i, `var(--pie-rest${i % 2 ? '-2' : ''})`))}
+        {note && !folded && <li className="pie-note muted small">{note}</li>}
+        {foldable && (
+          <li>
+            <button onClick={() => setFull(!full)} aria-expanded={full}>
+              <span className="ellipsis grow muted">{full ? t('meta.pieLess') : t('meta.pieMore', { n: legendRows - fold })}</span>
+              <span className={`chev ${full ? 'up' : ''}`}>
+                <Icon name="chevron" size={14} />
+              </span>
+            </button>
+          </li>
+        )}
       </ul>
     </div>
   )
