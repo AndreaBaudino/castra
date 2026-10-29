@@ -3436,6 +3436,17 @@ a.menu-row {
 .home-row-link b {
   font-size: 1.1rem;
 }
+/* the meta card's title: images / list switch, then "see all" */
+.title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.seg.icon-seg button {
+  padding: 3px 8px;
+  display: grid;
+  place-items: center;
+}
 /* the meta's top commanders and the latest decks: art tiles in a row */
 .strip {
   display: flex;

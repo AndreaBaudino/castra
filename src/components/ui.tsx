@@ -148,6 +148,7 @@ const paths: Record<string, ReactNode> = {
       <path d="M4 21a8 8 0 0 1 16 0" />
     </>
   ),
+  list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
   image: (
     <>
       <rect x="3" y="4" width="18" height="16" rx="2" />

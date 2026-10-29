@@ -3,7 +3,8 @@ import { type Deck, deckCover } from '../lib/decks'
 import { type Match, fmtRecord, record } from '../lib/matches'
 import { type MetaDataset, type MetaDeck, type Season, aggregate, findMetaDeck, shortName, winrate } from '../lib/meta'
 import type { AppUser } from '../lib/auth'
-import { Icon, pct, wrClass } from '../components/ui'
+import { Icon, Pips, pct, wrClass } from '../components/ui'
+import { useStoredState } from '../lib/storage'
 import { commanderNames } from './Decks'
 import { artUrl } from './MetaPages'
 import { ResultDots } from './Stats'
@@ -56,6 +57,8 @@ export default function Home({
   const meta = dataset && season ? aggregate(dataset, { season, kind: '', league: '' }) : null
   const top = meta?.decks.slice(0, 5) ?? []
   const rec = record(matches)
+  // the meta's top commanders: art tiles (compact) or the list with names, share and winrate
+  const [metaView, setMetaView] = useStoredState<'strip' | 'list'>('cc.home.metaView', 'strip')
   const recent = [...decks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3)
 
   // Compact, to fit a phone without scrolling: one row each for the stats and the circuit, and strips of art
@@ -117,23 +120,46 @@ export default function Home({
           <span>
             {t('home.metaSnapshot')} {season && <span className="muted small">· {season.toUpperCase()}</span>}
           </span>
-          <button className="link" onClick={() => go('meta')}>
-            {t('home.seeAll')}
-          </button>
-        </div>
-        <div className="strip">
-          {top.map((d, i) => (
-            <button key={d.id} className="strip-tile" style={{ backgroundImage: `url("${artUrl(d.name)}")` }} onClick={() => openCommander(d.name)}>
-              <span className="strip-rank">{i + 1}</span>
-              <span className="strip-text">
-                <span className="ellipsis">{shortName(d.name).split(',')[0]}</span>
-                <span>
-                  {pct(d.share, 0)} · <b className={wrClass(winrate(d))}>{pct(winrate(d), 0)}</b>
-                </span>
-              </span>
+          <span className="title-actions">
+            <span className="seg icon-seg" role="group" aria-label={t('home.metaView')}>
+              {(['strip', 'list'] as const).map((v) => (
+                <button key={v} className={metaView === v ? 'on' : ''} onClick={() => setMetaView(v)} aria-label={t(`home.metaView.${v}`)}>
+                  <Icon name={v === 'strip' ? 'image' : 'list'} size={14} />
+                </button>
+              ))}
+            </span>
+            <button className="link" onClick={() => go('meta')}>
+              {t('home.seeAll')}
             </button>
-          ))}
+          </span>
         </div>
+        {metaView === 'list' ? (
+          <ol className="mini-list">
+            {top.map((d, i) => (
+              <li key={d.id} className="clickable" onClick={() => openCommander(d.name)}>
+                <span className="rank">{i + 1}</span>
+                <span className="ellipsis grow">{shortName(d.name)}</span>
+                <Pips colors={d.colors} size={9} />
+                <span className="small muted">{pct(d.share, 0)}</span>
+                <span className={`wr small-wr ${wrClass(winrate(d))}`}>{pct(winrate(d), 0)}</span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="strip">
+            {top.map((d, i) => (
+              <button key={d.id} className="strip-tile" style={{ backgroundImage: `url("${artUrl(d.name)}")` }} onClick={() => openCommander(d.name)}>
+                <span className="strip-rank">{i + 1}</span>
+                <span className="strip-text">
+                  <span className="ellipsis">{shortName(d.name).split(',')[0]}</span>
+                  <span>
+                    {pct(d.share, 0)} · <b className={wrClass(winrate(d))}>{pct(winrate(d), 0)}</b>
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="card">
