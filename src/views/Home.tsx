@@ -57,6 +57,8 @@ export default function Home({
     null,
   )?.s
   const meta = dataset && season ? aggregate(dataset, { season, kind: '', league: '' }) : null
+  // with more than one year of data, which one: "2026 S2"
+  const seasonLabel = season ? `${dataset!.years.length > 1 ? `${dataset!.year} ` : ''}${season.toUpperCase()}` : ''
   const top = meta?.decks.slice(0, 5) ?? []
   const rec = record(matches)
   // the meta's top commanders: art tiles (compact) or the list with names, share and winrate
@@ -71,7 +73,7 @@ export default function Home({
       {wide ? (
         <header className="page-head">
           <div>
-            {season && <div className="brand-kicker">{t('home.season', { s: season.toUpperCase() })}</div>}
+            {season && <div className="brand-kicker">{t('home.season', { s: seasonLabel })}</div>}
             <h1>{t('nav.home')}</h1>
           </div>
         </header>
@@ -136,7 +138,7 @@ export default function Home({
         <section className="card home-meta">
           <div className="card-title">
             <span>
-              {t('home.metaSnapshot')} {season && <span className="muted small">· {season.toUpperCase()}</span>}
+              {t('home.metaSnapshot')} {season && <span className="muted small">· {seasonLabel}</span>}
             </span>
             <span className="title-actions">
               <span className="seg icon-seg" role="group" aria-label={t('home.metaView')}>

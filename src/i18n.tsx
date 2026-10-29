@@ -29,6 +29,8 @@ const it = {
 
   'meta.title': 'Circuito',
   'meta.pick': 'Scegli un comandante, un giocatore o un evento dall\'elenco per aprirlo qui.',
+  'meta.year': 'Anno',
+  'meta.wholeYear': 'Anno intero',
   'meta.demo': 'Dati dimostrativi: verranno sostituiti dal foglio ufficiale.',
   'meta.updated': 'Aggiornato',
   'meta.summary': 'Sommario',
@@ -654,6 +656,8 @@ const en: Record<Key, string> = {
 
   'meta.title': 'Circuit',
   'meta.pick': 'Pick a commander, a player or an event from the list to open it here.',
+  'meta.year': 'Year',
+  'meta.wholeYear': 'Full year',
   'meta.demo': 'Demo data: will be replaced by the official sheet.',
   'meta.updated': 'Updated',
   'meta.summary': 'Summary',

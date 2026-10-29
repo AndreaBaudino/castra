@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { META_DATA_URL, META_YEAR } from '../config'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { META_DATA_URL } from '../config'
 import { playerKey } from './circuit'
 import { readStored, writeStored } from './storage'
 
 // The deck meta of the circuit, from the tournament sheets (built by scripts/build-meta.mjs into
-// public/meta-<year>.json): every player's result at every event and league stage. Everything shown
+// public/meta.json, one dataset per year): every player's result at every event and league stage. Everything shown
 // (shares, winrates, a commander's or a player's record) is computed here from those rows, for any filter.
 
 export type Season = 's1' | 's2'
@@ -45,6 +45,7 @@ export interface MetaEntry {
 
 export interface MetaDataset {
   year: number
+  years: number[] // every year with data, the newest first
   updated: string
   tournaments: MetaTournament[]
   commanders: MetaCommander[]
@@ -188,10 +189,14 @@ interface RawMeta {
   c: { n: string; c: string }[]
   e: RawEntry[]
 }
+/** public/meta.json: every year, the newest first. A single year (RawMeta) is the file of earlier versions. */
+type RawFile = { v: 2; years: RawMeta[] } | RawMeta
+const yearsOf = (f: RawFile) => ('years' in f ? [...f.years].sort((a, b) => b.year - a.year) : [f])
 
-function fromRaw(raw: RawMeta): MetaDataset {
+function fromRaw(raw: RawMeta, years: number[]): MetaDataset {
   return {
     year: raw.year,
+    years,
     updated: raw.updated,
     tournaments: raw.t.map((t, index) => ({
       index,
@@ -232,16 +237,36 @@ export function metaCommanderOf(ds: MetaDataset | null, name: string) {
 }
 
 const CACHE_KEY = 'cc.meta.data'
-const bundledUrl = `${import.meta.env.BASE_URL}meta-${META_YEAR}.json`
+const bundledUrl = `${import.meta.env.BASE_URL}meta.json`
 
 async function fetchJson(url: string) {
   const res = await fetch(url, { cache: 'no-cache' })
   if (!res.ok) throw new Error(String(res.status))
-  return (await res.json()) as RawMeta
+  return (await res.json()) as RawFile
+}
+
+// The year shown everywhere (meta, commander pages, deck winrates): the one picked, else the newest. Picking the
+// newest saves nothing, so a new year shows up by itself.
+const YEAR_KEY = 'cc.meta.year'
+let picked = readStored<number | null>(YEAR_KEY, null)
+const yearListeners = new Set<() => void>()
+const useMetaYear = () =>
+  useSyncExternalStore(
+    (cb) => {
+      yearListeners.add(cb)
+      return () => yearListeners.delete(cb)
+    },
+    () => picked,
+  )
+export function pickMetaYear(year: number, newest: number) {
+  picked = year === newest ? null : year
+  writeStored(YEAR_KEY, picked)
+  yearListeners.forEach((cb) => cb())
 }
 
 export function useMeta() {
-  const [raw, setRaw] = useState<RawMeta | null>(() => readStored<RawMeta | null>(CACHE_KEY, null))
+  const [raw, setRaw] = useState<RawFile | null>(() => readStored<RawFile | null>(CACHE_KEY, null))
+  const year = useMetaYear()
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
 
   const refresh = useCallback(async () => {
@@ -261,7 +286,11 @@ export function useMeta() {
     refresh()
   }, [refresh])
 
-  const dataset = useMemo(() => (raw ? fromRaw(raw) : null), [raw])
+  const dataset = useMemo(() => {
+    const all = raw ? yearsOf(raw) : []
+    const shown = all.find((y) => y.year === year) ?? all[0]
+    return shown ? fromRaw(shown, all.map((y) => y.year)) : null
+  }, [raw, year])
   const data = useMemo<MetaData>(
     () => (dataset ? aggregate(dataset, ALL) : { decks: [], entries: 0, tournaments: 0, updatedAt: '' }),
     [dataset],

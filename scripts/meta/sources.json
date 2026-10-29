@@ -1,6 +1,5 @@
 {
-  "year": 2026,
-  "note": "One entry per Google Sheet. drive = file id in the sheet's link. Events (l1, l2): one tournament per file, read from the 'Classifica' tab. Leagues (league, online): one tournament per numbered tab (the stages). league = the league's name as in the circuit sheet. circuit = the event's title in the circuit sheet, to link the two.",
+  "note": "One entry per Google Sheet, of any year: each tournament goes in the year of its date (events) or of its year field (leagues: \"year\": 2027 for next year's). The app shows one year at a time, with a picker when there are more. drive = file id in the sheet's link. Events (l1, l2): one tournament per file, read from the 'Classifica' tab. Leagues (league, online): one tournament per numbered tab (the stages). league = the league's name as in the circuit sheet. circuit = the event's title in the circuit sheet, to link the two.",
   "tournaments": [
     { "drive": "1pDyFNFEu7b1b5RQkkiptmocGDnTbC0WF", "kind": "l1", "name": "MR Magic Savona", "date": "2026-01-25", "circuit": "MR MAGIC - 25/01 - 50 PL" },
     { "drive": "1uu0GwxfeXu7IcF1DBqOPK2QH1QaUrI_d", "kind": "l1", "name": "Damnation Lucca", "date": "2026-02-01", "circuit": "Damnation Lucca - FEB 01 - 23 PL" },
@@ -30,21 +29,21 @@
     { "drive": "1FFedec5jYBl4-8o8X3_13aM_58PdCU76myVsL7V-pK4", "kind": "l1", "name": "Dungeon Street", "date": "2026-11-15" },
     { "drive": "16Ojxm9Dilnka9bNNuGK9QFXDh6kAeG2IltCGuLwZfZ4", "kind": "l1", "name": "Vice District", "date": "2026-11-15" },
 
-    { "drive": "1Rngg221eJ7WIjmfC_Hmm1qVnASzjrDx4OPZJ-3SMSq4", "kind": "league", "season": "s1", "league": "Sanremo" },
-    { "drive": "1-qGyoAOoZw6AhI_35nOz8f7196EwiueixqXLo2XDmRQ", "kind": "league", "season": "s1", "league": "Magic Lair" },
-    { "drive": "17rwbutxjOUxFVDaRjzBFblxLCHYG3IVkT_1iHqNr4jU", "kind": "league", "season": "s1", "league": "Genova", "venue": "Cogoleto" },
-    { "drive": "1BoI2eLxuwBEZXcCVMZORnpl6eGkAdytHAl56ItAs3z0", "kind": "league", "season": "s1", "league": "Savona" },
-    { "drive": "1jvUhYQOJvF3JsLUmKIzERI0kW6Mu-446NvCgf_4sNuc", "kind": "league", "season": "s1", "league": "Roma" },
-    { "drive": "123zfDIO22C1YXe49zQ0B7o-xlQhluNt18UWGluQHVXk", "kind": "league", "season": "s1", "league": "Arena Games" },
-    { "drive": "1VFs6epTTLsHOgzYAGzvRekDkXNEJzRuFzuEooudvbp8", "kind": "league", "season": "s1", "league": "Ciriè" },
-    { "drive": "1Qck40xjQ_zODQtI3YY6qFGFq1adeHsMiUCwPIhZ7mvw", "kind": "league", "season": "s2", "league": "Savona" },
-    { "drive": "1dfh9cKagU9M2vRLRV0WtR1Id3tW8440tBJOg_iKFV-Y", "kind": "league", "season": "s2", "league": "Isola d'Elba" },
-    { "drive": "16KGdsGO4jlwR_tiL5_yaxXt4piezo55Vw9wyNrgpTy4", "kind": "league", "season": "s2", "league": "Genova", "venue": "ComicSans" },
-    { "drive": "1YNyAgDY_nqySGU_3aAnzCZSQic5SCxuYrRtjsFxWvSM", "kind": "league", "season": "s2", "league": "Vice District" },
-    { "drive": "1IYlri8MY1gvAkCBGyzKNgwVhu3Puj7QGsZthiBvLd5k", "kind": "league", "season": "s2", "league": "Latina / Frosinone" },
-    { "drive": "1mIS7XJvUjVnSzTj-tIAH82z822_yvMzPZ9mGLDop4ZA", "kind": "league", "season": "s2", "league": "Sanremo" },
-    { "drive": "1EFJfXheicUN7X4mbdGw5F-VgtXmSFqOrqH7uu4Uxj04", "kind": "league", "season": "s2", "league": "Roma" },
-    { "drive": "123LYooPqakR9rcwqC1RLdBks3dyu9rgXDSF2RSOGpdA", "kind": "league", "season": "s2", "league": "Orbassano" },
-    { "drive": "1j3CFGkfMdR89PCKMghsE_gkLn5A-SjIieo1LnWnyyBo", "kind": "online", "season": "s2", "league": "Lega Online" }
+    { "drive": "1Rngg221eJ7WIjmfC_Hmm1qVnASzjrDx4OPZJ-3SMSq4", "kind": "league", "year": 2026, "season": "s1", "league": "Sanremo" },
+    { "drive": "1-qGyoAOoZw6AhI_35nOz8f7196EwiueixqXLo2XDmRQ", "kind": "league", "year": 2026, "season": "s1", "league": "Magic Lair" },
+    { "drive": "17rwbutxjOUxFVDaRjzBFblxLCHYG3IVkT_1iHqNr4jU", "kind": "league", "year": 2026, "season": "s1", "league": "Genova", "venue": "Cogoleto" },
+    { "drive": "1BoI2eLxuwBEZXcCVMZORnpl6eGkAdytHAl56ItAs3z0", "kind": "league", "year": 2026, "season": "s1", "league": "Savona" },
+    { "drive": "1jvUhYQOJvF3JsLUmKIzERI0kW6Mu-446NvCgf_4sNuc", "kind": "league", "year": 2026, "season": "s1", "league": "Roma" },
+    { "drive": "123zfDIO22C1YXe49zQ0B7o-xlQhluNt18UWGluQHVXk", "kind": "league", "year": 2026, "season": "s1", "league": "Arena Games" },
+    { "drive": "1VFs6epTTLsHOgzYAGzvRekDkXNEJzRuFzuEooudvbp8", "kind": "league", "year": 2026, "season": "s1", "league": "Ciriè" },
+    { "drive": "1Qck40xjQ_zODQtI3YY6qFGFq1adeHsMiUCwPIhZ7mvw", "kind": "league", "year": 2026, "season": "s2", "league": "Savona" },
+    { "drive": "1dfh9cKagU9M2vRLRV0WtR1Id3tW8440tBJOg_iKFV-Y", "kind": "league", "year": 2026, "season": "s2", "league": "Isola d'Elba" },
+    { "drive": "16KGdsGO4jlwR_tiL5_yaxXt4piezo55Vw9wyNrgpTy4", "kind": "league", "year": 2026, "season": "s2", "league": "Genova", "venue": "ComicSans" },
+    { "drive": "1YNyAgDY_nqySGU_3aAnzCZSQic5SCxuYrRtjsFxWvSM", "kind": "league", "year": 2026, "season": "s2", "league": "Vice District" },
+    { "drive": "1IYlri8MY1gvAkCBGyzKNgwVhu3Puj7QGsZthiBvLd5k", "kind": "league", "year": 2026, "season": "s2", "league": "Latina / Frosinone" },
+    { "drive": "1mIS7XJvUjVnSzTj-tIAH82z822_yvMzPZ9mGLDop4ZA", "kind": "league", "year": 2026, "season": "s2", "league": "Sanremo" },
+    { "drive": "1EFJfXheicUN7X4mbdGw5F-VgtXmSFqOrqH7uu4Uxj04", "kind": "league", "year": 2026, "season": "s2", "league": "Roma" },
+    { "drive": "123LYooPqakR9rcwqC1RLdBks3dyu9rgXDSF2RSOGpdA", "kind": "league", "year": 2026, "season": "s2", "league": "Orbassano" },
+    { "drive": "1j3CFGkfMdR89PCKMghsE_gkLn5A-SjIieo1LnWnyyBo", "kind": "online", "year": 2026, "season": "s2", "league": "Lega Online" }
   ]
 }

@@ -1,8 +1,9 @@
 name: Update meta
 
-# Every night at midnight, Italian time: downloads the tournament sheets, rebuilds meta-<year>.json and, if
-# anything changed, writes it to the meta-data branch, which holds that file alone (one commit, replaced every
-# time). The app reads it from there: main is not touched and the app is not deployed again.
+# Every night at midnight, Italian time: downloads the tournament sheets, rebuilds meta.json (every year's data)
+# and, if anything changed, writes it to the meta-data branch, which holds that file alone plus one meta-<year>.json
+# per year for app versions from before meta.json (one commit, replaced every time). The app reads it from there:
+# main is not touched and the app is not deployed again.
 # Cron runs in UTC, so both 22:00 and 23:00 are scheduled and only the one that is midnight in Rome
 # goes on (22:00 with summer time, 23:00 without).
 
@@ -48,24 +49,28 @@ jobs:
       - name: Build the meta
         if: steps.when.outputs.go
         run: |
-          file="meta-$(node -p "require('./scripts/meta/sources.json').year").json"
-          echo "FILE=$file" >> "$GITHUB_ENV"
-          # start from the published data, so its update time stays put when nothing changed
-          if git fetch --depth=1 origin meta-data 2>/dev/null && git cat-file -e "FETCH_HEAD:$file" 2>/dev/null; then
-            git show "FETCH_HEAD:$file" > "public/$file"
-            git show "FETCH_HEAD:$file" > /tmp/published.json
+          # start from the published data, so each year's update time stays put when nothing changed
+          if git fetch --depth=1 origin meta-data 2>/dev/null && git cat-file -e FETCH_HEAD:meta.json 2>/dev/null; then
+            git show FETCH_HEAD:meta.json > public/meta.json
+            git show FETCH_HEAD:meta.json > /tmp/published.json
           fi
           npm run meta
       - name: Publish to the meta-data branch
         if: steps.when.outputs.go
         run: |
-          if cmp -s "public/$FILE" /tmp/published.json; then
+          if cmp -s public/meta.json /tmp/published.json; then
             echo "Nessuna novità nei fogli"
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          blob=$(git hash-object -w "public/$FILE")
-          tree=$(printf '100644 blob %s\t%s\n' "$blob" "$FILE" | git mktree)
+          # meta.json, and each year on its own as older app versions read it (meta-2026.json)
+          mkdir -p /tmp/years
+          node -e "for (const y of require('./public/meta.json').years) require('fs').writeFileSync('/tmp/years/meta-' + y.year + '.json', JSON.stringify(y))"
+          {
+            printf '100644 blob %s\tmeta.json\n' "$(git hash-object -w public/meta.json)"
+            for f in /tmp/years/*.json; do printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"; done
+          } > /tmp/tree.txt
+          tree=$(git mktree < /tmp/tree.txt)
           commit=$(git commit-tree "$tree" -m "Meta aggiornato dai fogli dei tornei")
           git push --force origin "$commit:refs/heads/meta-data"

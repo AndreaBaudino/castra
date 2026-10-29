@@ -1,4 +1,5 @@
-// Builds public/meta-<year>.json from the tournament sheets listed in scripts/meta/sources.json.
+// Builds public/meta.json from the tournament sheets listed in scripts/meta/sources.json: one dataset per year, each
+// tournament in the year of its date (events) or of its "year" field (leagues).
 //
 // The sheets are private, so they are read from local copies: download each one as .xlsx into
 // .meta-cache/<drive id>.xlsx (scripts/fetch-meta.mjs does it, as in the nightly workflow), then run `npm run meta`. Commander names are resolved on Scryfall
@@ -209,7 +210,7 @@ const slug = (s) =>
     .replace(/^-|-$/g, '')
 const seasonOf = (date) => (date && +date.slice(5, 7) <= 5 ? 's1' : 's2')
 
-const tables = [] // { t: tournament, rows }
+const tables = [] // { year, t: tournament, players, rows }
 for (const src of sources.tournaments) {
   const file = new URL(`.meta-cache/${src.drive}.xlsx`, root)
   const label = src.name ?? `${src.league} ${src.season?.toUpperCase() ?? ''}`.trim()
@@ -224,10 +225,18 @@ for (const src of sources.tournaments) {
     const tab = ws && readTable(ws, label)
     if (!tab?.rows.length) continue // not played yet
     const date = src.date ?? tab.date
+    if (!date) {
+      warn(label, 'senza data: non si sa di che anno è')
+      continue
+    }
     const t = { id: `${src.kind}-${date}-${slug(src.name)}`, k: src.kind, s: seasonOf(date), n: src.name, d: date }
     if (src.circuit) t.c = src.circuit
-    tables.push({ t, players: tab.players, rows: tab.rows })
+    tables.push({ year: +date.slice(0, 4), t, players: tab.players, rows: tab.rows })
   } else {
+    if (!src.year) {
+      warn(label, 'manca "year" in sources.json')
+      continue
+    }
     const stages = wb.worksheets.filter((ws) => /^\d+$/.test(ws.name.trim()))
     for (const ws of stages) {
       const stage = +ws.name.trim()
@@ -237,34 +246,43 @@ for (const src of sources.tournaments) {
       const t = { id: `${src.season}-${slug(src.league)}-${stage}`, k: src.kind, s: src.season, n: src.venue ?? src.league, lg: src.league, st: stage }
       if (tab.date) t.d = tab.date
       else warn(where, 'senza data')
-      tables.push({ t, players: tab.players, rows: tab.rows })
+      if (tab.date && +tab.date.slice(0, 4) !== src.year) warn(where, `data ${tab.date} fuori dall'anno ${src.year}`)
+      tables.push({ year: src.year, t, players: tab.players, rows: tab.rows })
     }
   }
 }
 
 await resolveCards(tables.flatMap(({ rows }) => rows.flatMap((r) => (r.commander ? splitPartners(r.commander).map(frontFace) : []))))
 
-const commanders = []
-const cmdIndex = new Map()
-const entries = []
-const tournaments = []
-for (const { t, players, rows } of tables) {
-  const ti = tournaments.length
-  tournaments.push({ ...t, p: players || rows.length }) // as declared in the sheet: some rows can be drops or duplicates
-  rows.forEach((r, i) => {
-    let ci = -1
-    if (r.commander) {
-      const c = commanderOf(r.commander, t.id)
-      if (!cmdIndex.has(c.name)) {
-        cmdIndex.set(c.name, commanders.length)
-        commanders.push({ n: c.name, c: c.colors })
+// one dataset per year, the newest first: tournaments, commanders and entries, each indexed within its year
+function build(tables) {
+  const commanders = []
+  const cmdIndex = new Map()
+  const entries = []
+  const tournaments = []
+  for (const { t, players, rows } of tables) {
+    const ti = tournaments.length
+    tournaments.push({ ...t, p: players || rows.length }) // as declared in the sheet: some rows can be drops or duplicates
+    rows.forEach((r, i) => {
+      let ci = -1
+      if (r.commander) {
+        const c = commanderOf(r.commander, t.id)
+        if (!cmdIndex.has(c.name)) {
+          cmdIndex.set(c.name, commanders.length)
+          commanders.push({ n: c.name, c: c.colors })
+        }
+        ci = cmdIndex.get(c.name)
       }
-      ci = cmdIndex.get(c.name)
-    }
-    // [tournament, player, commander, place, wins, losses, draws, bye ticked, list]
-    entries.push([ti, r.player && playerOf(r.player), ci, i + 1, r.wins, r.losses, r.draws, r.bye ? 1 : 0, r.list])
-  })
+      // [tournament, player, commander, place, wins, losses, draws, bye ticked, list]
+      entries.push([ti, r.player && playerOf(r.player), ci, i + 1, r.wins, r.losses, r.draws, r.bye ? 1 : 0, r.list])
+    })
+  }
+  return { t: tournaments, c: commanders, e: entries }
 }
+const yearList = [...new Set(tables.map((x) => x.year))].sort((a, b) => b - a)
+const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.year === year)) }))
+// the circuit sheet is this year's
+const entries = built[0]?.e ?? []
 
 // players missing from the circuit leaderboard: usually a typo, fixed with an alias
 try {
@@ -282,13 +300,21 @@ try {
   warn('circuito', `classifica non scaricata (${e.message})`)
 }
 
-// the update time moves only when the data does, so the nightly run commits nothing on quiet days
-const outUrl = new URL(`public/meta-${sources.year}.json`, root)
-const prev = existsSync(outUrl) ? readJson(outUrl) : null
-const out = { v: 1, year: sources.year, updated: new Date().toISOString(), t: tournaments, c: commanders, e: entries }
-if (prev && JSON.stringify({ ...prev, updated: '' }) === JSON.stringify({ ...out, updated: '' })) out.updated = prev.updated
-writeFileSync(outUrl, JSON.stringify(out))
+// each year's update time moves only when its data does, so the nightly run publishes nothing on quiet days
+const outUrl = new URL('public/meta.json', root)
+const prev = existsSync(outUrl) ? readJson(outUrl).years : []
+const rebuilt = built.map(({ year, t, c, e }) => {
+  const out = { v: 1, year, updated: new Date().toISOString(), t, c, e }
+  const old = prev.find((y) => y.year === year)
+  if (old && JSON.stringify({ ...old, updated: '' }) === JSON.stringify({ ...out, updated: '' })) out.updated = old.updated
+  return out
+})
+// a year with no sheet read this time (none downloaded, or taken out of sources.json) keeps its published data
+const kept = prev.filter((y) => !yearList.includes(y.year))
+for (const y of kept) warn(String(y.year), 'nessun foglio letto: restano i dati già pubblicati')
+const years = [...rebuilt, ...kept].sort((a, b) => b.year - a.year)
+writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
 writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).sort()), null, 1) + '\n')
 
-console.log(`${tournaments.length} tornei, ${entries.length} presenze, ${commanders.length} comandanti`)
+for (const y of years) console.log(`${y.year}: ${y.t.length} tornei, ${y.e.length} presenze, ${y.c.length} comandanti`)
 if (warnings.length) console.log(`\nDa controllare (${warnings.length}):\n- ${warnings.join('\n- ')}`)

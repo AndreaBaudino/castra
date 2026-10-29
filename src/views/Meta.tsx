@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
-import { ALL, type MetaDataset, type MetaDeck, type MetaFilter, type TournamentKind, aggregate, normName, shortName, winrate } from '../lib/meta'
+import { ALL, type MetaDataset, type MetaDeck, type MetaFilter, type TournamentKind, aggregate, normName, pickMetaYear, shortName, winrate } from '../lib/meta'
 import { Icon, Pips, pct, wrClass } from '../components/ui'
 import type { Circuit } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
@@ -24,7 +24,7 @@ export function metaSummary(decks: MetaDeck[], minGames: number) {
   return { mostPlayed, best }
 }
 
-/** Season chips and the kind / league pickers, above the list and on a commander's page. */
+/** Year, season chips and the kind / league pickers, above the list and on a commander's page. */
 export function MetaFilters({
   dataset,
   filter,
@@ -52,12 +52,28 @@ export function MetaFilters({
   useEffect(() => {
     if (onlineLeague) setFilter({ ...filter, kind: 'online', league: '' })
   }, [onlineLeague, filter, setFilter])
+  // with more than one year of data, the year has a picker of its own and its first chip is the whole year
+  const manyYears = dataset.years.length > 1
   return (
     <div className="filters wrap">
+      {manyYears && (
+        <select
+          className="select-pill"
+          value={dataset.year}
+          onChange={(e) => pickMetaYear(+e.target.value, dataset.years[0])}
+          aria-label={t('meta.year')}
+        >
+          {dataset.years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+      )}
       <div className="seg">
         {(['', 's1', 's2'] as const).map((s) => (
           <button key={s} className={filter.season === s ? 'on' : ''} onClick={() => setFilter({ ...filter, season: s })}>
-            {s ? s.toUpperCase() : dataset.year}
+            {s ? s.toUpperCase() : manyYears ? t('meta.wholeYear') : dataset.year}
           </button>
         ))}
       </div>
