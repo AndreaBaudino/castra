@@ -2995,6 +2995,22 @@ textarea {
   color: var(--muted);
   border: 2px dashed var(--line);
 }
+.profile-link {
+  width: 100%;
+  text-align: left;
+  color: inherit;
+}
+.profile-link:disabled {
+  opacity: 1;
+}
+.profile-link .profile-text {
+  flex: 1;
+  min-width: 0;
+}
+.profile-link .chev {
+  color: var(--muted);
+  display: inline-flex;
+}
 .profile-card .profile-text {
   gap: 3px;
   align-items: flex-start;

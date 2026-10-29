@@ -482,8 +482,23 @@ function MenuRow({ icon, label, note, onClick }: { icon: string; label: string; 
   )
 }
 
-/** The account card at the top of the menu: who is signed in and their circuit player. */
-function ProfileCard({ circuit, cp, onLogin }: { circuit: Circuit | null; cp: CircuitPrefs; onLogin: () => void }) {
+/**
+ * The account card at the top of the menu: who is signed in and their circuit player. A tap opens that player's
+ * card or, when no player is linked yet, the circuit section where to link one.
+ */
+function ProfileCard({
+  circuit,
+  cp,
+  onLogin,
+  openPlayer,
+  onLink,
+}: {
+  circuit: Circuit | null
+  cp: CircuitPrefs
+  onLogin: () => void
+  openPlayer: (key: string) => void
+  onLink: () => void
+}) {
   const { t, lang } = useI18n()
   const { user } = useAuth()
   const poty = useMemo(() => circuit && potyStatus(circuit), [circuit])
@@ -502,9 +517,11 @@ function ProfileCard({ circuit, cp, onLogin }: { circuit: Circuit | null; cp: Ci
         </button>
       </section>
     )
+  // linked but the circuit not loaded yet: nothing to open
+  const open = me ? () => openPlayer(me.key) : !cp.me ? onLink : undefined
   return (
     <section className="card profile-card">
-      <div className="profile">
+      <button className="profile profile-link" onClick={open} disabled={!open}>
         {user.photo ? <img src={user.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{(user.name ?? user.email ?? '?')[0].toUpperCase()}</span>}
         <div className="profile-text">
           <strong className="ellipsis">{user.name ?? user.email}</strong>
@@ -516,13 +533,19 @@ function ProfileCard({ circuit, cp, onLogin }: { circuit: Circuit | null; cp: Ci
           ) : (
             user.name && <span className="muted small ellipsis">{user.email}</span>
           )}
+          {!cp.me && <span className="link">{t('account.linkName')}</span>}
           {me && cp.claims.get(me.key)?.uid === cp.uid && (
             <span className="verified">
               <Icon name="check" size={13} /> {t('circuit.verified')}
             </span>
           )}
         </div>
-      </div>
+        {open && (
+          <span className="chev">
+            <Icon name="chevron" size={16} />
+          </span>
+        )}
+      </button>
     </section>
   )
 }
@@ -641,7 +664,13 @@ export default function Account({
           ) : !ready ? (
             <div className="empty">…</div>
           ) : (
-            <ProfileCard circuit={circuit} cp={circuitPrefs} onLogin={() => openSection('login')} />
+            <ProfileCard
+              circuit={circuit}
+              cp={circuitPrefs}
+              onLogin={() => openSection('login')}
+              openPlayer={openPlayer}
+              onLink={() => openSection('circuit')}
+            />
           )}
           <section className="card menu-card">
             <MenuRow
