@@ -5,7 +5,7 @@ import { Icon, Sheet } from '../components/ui'
 // How the meta's numbers are computed, in plain words: opened from the summary on the meta list and from
 // a commander's stats.
 
-const SECTIONS = ['source', 'share', 'winrate', 'byes', 'missing', 'interval', 'minGames', 'filters'] as const
+const SECTIONS = ['source', 'updates', 'share', 'winrate', 'byes', 'missing', 'interval', 'minGames', 'filters'] as const
 
 export function MetaInfoButton() {
   const { t } = useI18n()
