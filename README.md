@@ -82,3 +82,13 @@ Setup (una tantum, piano gratuito "Spark"):
 5. **Project settings → Your apps → Web (</>)**: registra l'app e copia l'oggetto `firebaseConfig`
    in `FIREBASE_CONFIG` dentro `src/config.ts`. Questi valori sono pubblici per design: la sicurezza
    è garantita dalle regole del punto 4.
+
+### Admin
+
+Gli account admin vedono **Area admin** nel Profilo: l'elenco dei giocatori del circuito collegati a un account, con
+la possibilità di revocare un collegamento (il giocatore torna libero e quell'account non può più collegarlo, chiunque
+altro sì; la revoca si può annullare) e di azzerare la carta di sfondo e il mazzo preferito scelti per la sua pagina.
+
+Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
+dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può
+scrivere in `admins`: lo decidono solo le regole di `firestore.rules`, che vanno ripubblicate quando cambiano.

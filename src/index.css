@@ -2891,6 +2891,31 @@ textarea {
   min-width: 0;
   font-weight: 600;
 }
+/* the admin area: claimed players with the account that claimed them */
+.admin-avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.admin-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.admin-row .icon-btn {
+  flex: none;
+}
+.icon-btn.danger {
+  color: var(--bad);
+}
 .sync-line {
   display: flex;
   align-items: flex-start;

@@ -1,6 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // admins are listed in admins/{uid}, written only from the Firebase console
+    function isAdmin() {
+      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // each account can see whether it is an admin, and nobody can make themselves one
+    match /admins/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
     // each user can read and write only their own data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -23,7 +33,10 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at'])
         // the account must point to this very player, so one account holds one claim
-        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.circuitMe == playerKey;
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.circuitMe == playerKey
+        // an account whose claim an admin revoked can't take that player back
+        && !(exists(/databases/$(database)/documents/revoked/$(playerKey))
+          && get(/databases/$(database)/documents/revoked/$(playerKey)).data.uid == request.auth.uid);
       // the claimer can also customise their page: the art behind their picture and their favourite deck
       allow update: if request.auth != null
         && resource.data.uid == request.auth.uid
@@ -35,7 +48,22 @@ service cloud.firestore {
           || (request.resource.data.coverArt is string
             && request.resource.data.coverArt.size() <= 300
             && request.resource.data.coverArt.matches('https://cards[.]scryfall[.]io/.*')));
-      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      // an admin can only clear that customisation, leaving the claim as it is
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverName', 'coverArt', 'deck'])
+        && request.resource.data.get('coverName', null) == null
+        && request.resource.data.get('coverArt', null) == null
+        && request.resource.data.get('deck', null) == null;
+      allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // claims revoked by an admin: the account in `uid` can't claim that player again (anyone else can)
+    match /revoked/{playerKey} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'at', 'by'])
+        && request.resource.data.uid is string
+        && request.resource.data.by == request.auth.uid;
     }
   }
 }

@@ -79,7 +79,11 @@ export default function App() {
     if (!claimsLoaded || !circuitMe || syncPaused()) return // paused: the account is being deleted
     const claim = claims.get(circuitMe)
     if (claim && claim.uid !== uid) setCircuitMe(null) // someone else's
-    else if (!claim && user) claimPlayer(user, circuitMe, null).catch(() => {}) // linked before claims existed
+    // linked before claims existed, or released by an admin: refused when the admin revoked it for this account
+    else if (!claim && user)
+      claimPlayer(user, circuitMe, null).catch((e) => {
+        if ((e as { code?: string }).code === 'permission-denied') setCircuitMe(null)
+      })
   }, [claims, claimsLoaded, circuitMe, uid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // compare the circuit with what the user saw last time: their position, the followed players, new events

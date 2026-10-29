@@ -17,6 +17,8 @@ import { BANLIST_URL, FEEDBACK_URL, FORMAT_SITE_URL } from '../config'
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
+import { useIsAdmin } from '../lib/admin'
+import Admin from './Admin'
 
 function GoogleLogo() {
   return (
@@ -467,8 +469,8 @@ function Info() {
   )
 }
 
-export type AccountSection = 'login' | 'circuit' | 'prefs' | 'look' | 'data' | 'info'
-const SECTIONS: AccountSection[] = ['login', 'circuit', 'prefs', 'look', 'data', 'info']
+export type AccountSection = 'login' | 'circuit' | 'prefs' | 'look' | 'data' | 'info' | 'admin'
+const SECTIONS: AccountSection[] = ['login', 'circuit', 'prefs', 'look', 'data', 'info', 'admin']
 export const isAccountSection = (s: string | null): s is AccountSection => SECTIONS.includes(s as AccountSection)
 
 function MenuRow({ icon, label, note, onClick }: { icon: string; label: string; note?: string; onClick: () => void }) {
@@ -592,6 +594,7 @@ export default function Account({
   const dialog = useDialog()
   const { user, ready, signOut } = useAuth()
   const sync = useSyncStatus()
+  const isAdmin = useIsAdmin(user?.uid ?? null)
   const [deleting, setDeleting] = useState(false)
 
   // signed in from the login page: back to the menu
@@ -641,6 +644,7 @@ export default function Account({
     look: t('theme.title'),
     data: t('account.data'),
     info: t('account.infoLinks'),
+    admin: t('admin.title'),
   }
   const syncNote = !user
     ? t('account.matchesCount', { m: matches.length })
@@ -683,6 +687,7 @@ export default function Account({
             <MenuRow icon="palette" label={titles.look} onClick={() => openSection('look')} />
             <MenuRow icon="database" label={titles.data} note={syncNote} onClick={() => openSection('data')} />
             <MenuRow icon="info" label={titles.info} note={versionLabel.split(' · ')[0]} onClick={() => openSection('info')} />
+            {isAdmin && <MenuRow icon="shield" label={titles.admin} onClick={() => openSection('admin')} />}
           </section>
           <section className="card menu-card">
             {(
@@ -724,6 +729,12 @@ export default function Account({
         <ThemeEditor theme={theme} setTheme={setTheme} />
       ) : section === 'data' ? (
         <DataSection decks={decks} matches={matches} restore={restore} onDeleteAccount={user && !deleting ? removeAccount : undefined} />
+      ) : section === 'admin' ? (
+        isAdmin ? (
+          <Admin circuit={circuit} claims={circuitPrefs.claims} openPlayer={openPlayer} />
+        ) : (
+          <div className="notice">{t('admin.notAdmin')}</div>
+        )
       ) : (
         <Info />
       )}
