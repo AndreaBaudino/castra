@@ -2916,6 +2916,25 @@ textarea {
 .icon-btn.danger {
   color: var(--bad);
 }
+.bad-text {
+  color: var(--bad);
+}
+.admin-notes {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.admin-notes.bad {
+  color: var(--bad);
+}
+.form .field-hint {
+  font-weight: 400;
+}
 .sync-line {
   display: flex;
   align-items: flex-start;

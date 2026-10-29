@@ -57,6 +57,38 @@ service cloud.firestore {
       allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
+    // the tournament sheets read by the nightly meta update, one per drive file id: public (the update reads them
+    // without signing in), kept by the admins
+    match /sources/{drive} {
+      function optionalString(d, field, max) {
+        return d.get(field, null) == null || (d[field] is string && d[field].size() <= max);
+      }
+      function requiredString(d, field, max) {
+        return d.get(field, null) is string && d[field].size() > 0 && d[field].size() <= max;
+      }
+      function validSource(d) {
+        return d.keys().hasOnly(['drive', 'kind', 'name', 'date', 'circuit', 'year', 'season', 'league', 'venue', 'at', 'by'])
+          && d.drive == drive
+          && drive.matches('[-_A-Za-z0-9]{20,100}')
+          && d.by == request.auth.uid
+          && optionalString(d, 'circuit', 150)
+          && optionalString(d, 'venue', 80)
+          && ((d.kind in ['l1', 'l2']
+              && requiredString(d, 'name', 80)
+              && d.get('date', null) is string
+              && d.date.matches('20[0-9]{2}-[01][0-9]-[0-3][0-9]'))
+            || (d.kind in ['league', 'online']
+              && d.get('year', null) is int
+              && d.year >= 2020 && d.year <= 2100
+              && d.get('season', null) in ['s1', 's2']
+              && requiredString(d, 'league', 80)));
+      }
+
+      allow read: if true;
+      allow create, update: if isAdmin() && validSource(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
     // claims revoked by an admin: the account in `uid` can't claim that player again (anyone else can)
     match /revoked/{playerKey} {
       allow read, delete: if isAdmin();

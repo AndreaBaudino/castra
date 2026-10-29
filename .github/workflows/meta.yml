@@ -1,9 +1,11 @@
 name: Update meta
 
-# Every night at midnight, Italian time: downloads the tournament sheets, rebuilds meta.json (every year's data)
-# and, if anything changed, writes it to the meta-data branch, which holds that file alone plus one meta-<year>.json
-# per year for app versions from before meta.json (one commit, replaced every time). The app reads it from there:
-# main is not touched and the app is not deployed again.
+# Every night at midnight, Italian time: reads the list of tournament sheets (Firestore's sources collection, kept
+# from the app's admin area), downloads them, rebuilds meta.json (every year's data) and writes it to the meta-data
+# branch, with one meta-<year>.json per year for app versions from before meta.json, status.json (how the update
+# went, for the admin area) and sources.json (the list it used), in one commit replaced every time. When the
+# sheets can't be read the published meta stays as it was and only status.json changes. The app reads it from
+# there: main is not touched and the app is not deployed again.
 # Cron runs in UTC, so both 22:00 and 23:00 are scheduled and only the one that is midnight in Rome
 # goes on (22:00 with summer time, 23:00 without).
 
@@ -40,37 +42,51 @@ jobs:
           cache: npm
       - if: steps.when.outputs.go
         run: npm ci
+      # what is published now: the build starts from it, and it stays when this run can't rebuild the meta
+      - name: Fetch the published data
+        if: steps.when.outputs.go
+        run: git fetch --depth=1 origin meta-data || true
       - name: Download the sheets
+        id: fetch
         if: steps.when.outputs.go
         run: node scripts/fetch-meta.mjs
         env:
           META_SCRIPT_URL: ${{ secrets.META_SCRIPT_URL }}
           META_SCRIPT_KEY: ${{ secrets.META_SCRIPT_KEY }}
       - name: Build the meta
+        id: build
         if: steps.when.outputs.go
         run: |
           # start from the published data, so each year's update time stays put when nothing changed
-          if git fetch --depth=1 origin meta-data 2>/dev/null && git cat-file -e FETCH_HEAD:meta.json 2>/dev/null; then
+          if git cat-file -e FETCH_HEAD:meta.json 2>/dev/null; then
             git show FETCH_HEAD:meta.json > public/meta.json
-            git show FETCH_HEAD:meta.json > /tmp/published.json
           fi
           npm run meta
+      # also when something failed: status.json tells the app's admin area how the update went
       - name: Publish to the meta-data branch
-        if: steps.when.outputs.go
+        if: always() && steps.when.outputs.go
+        env:
+          BUILT: ${{ steps.build.outcome }}
         run: |
-          if cmp -s public/meta.json /tmp/published.json; then
-            echo "Nessuna novità nei fogli"
-            exit 0
+          mkdir -p /tmp/out
+          if git cat-file -e FETCH_HEAD:meta.json 2>/dev/null; then
+            for f in $(git ls-tree --name-only FETCH_HEAD); do git show "FETCH_HEAD:$f" > "/tmp/out/$f"; done
           fi
+          if [ "$BUILT" = success ]; then
+            cp public/meta.json /tmp/out/meta.json
+            # each year on its own too, as older app versions read it (meta-2026.json)
+            node -e "for (const y of require('./public/meta.json').years) require('fs').writeFileSync('/tmp/out/meta-' + y.year + '.json', JSON.stringify(y))"
+          fi
+          if [ ! -f /tmp/out/meta.json ]; then
+            echo "Niente da pubblicare: meta.json manca"
+            exit 1
+          fi
+          node scripts/meta-status.mjs > /tmp/out/status.json
+          # the list of sheets this run used, readable on the branch
+          if [ -f .meta-cache/sources.json ]; then cp .meta-cache/sources.json /tmp/out/sources.json; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          # meta.json, and each year on its own as older app versions read it (meta-2026.json)
-          mkdir -p /tmp/years
-          node -e "for (const y of require('./public/meta.json').years) require('fs').writeFileSync('/tmp/years/meta-' + y.year + '.json', JSON.stringify(y))"
-          {
-            printf '100644 blob %s\tmeta.json\n' "$(git hash-object -w public/meta.json)"
-            for f in /tmp/years/*.json; do printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"; done
-          } > /tmp/tree.txt
+          for f in /tmp/out/*; do printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"; done > /tmp/tree.txt
           tree=$(git mktree < /tmp/tree.txt)
           commit=$(git commit-tree "$tree" -m "Meta aggiornato dai fogli dei tornei")
           git push --force origin "$commit:refs/heads/meta-data"

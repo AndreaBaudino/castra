@@ -1,5 +1,6 @@
-// Builds public/meta.json from the tournament sheets listed in scripts/meta/sources.json: one dataset per year, each
-// tournament in the year of its date (events) or of its "year" field (leagues).
+// Builds public/meta.json from the tournament sheets: one dataset per year, each tournament in the year of its date
+// (events) or of its "year" field (leagues). The list of sheets is the one fetch-meta.mjs used
+// (.meta-cache/sources.json, from Firestore), or scripts/meta/sources.json when there is none.
 //
 // The sheets are private, so they are read from local copies: download each one as .xlsx into
 // .meta-cache/<drive id>.xlsx (scripts/fetch-meta.mjs does it, as in the nightly workflow), then run `npm run meta`. Commander names are resolved on Scryfall
@@ -15,7 +16,8 @@ const dir = new URL('./meta/', import.meta.url)
 const root = new URL('../', import.meta.url)
 const readJson = (url) => JSON.parse(readFileSync(url, 'utf8'))
 
-const sources = readJson(new URL('sources.json', dir))
+const fetched = new URL('.meta-cache/sources.json', root)
+const sources = readJson(existsSync(fetched) ? fetched : new URL('sources.json', dir))
 const aliases = readJson(new URL('aliases.json', dir))
 const cardsUrl = new URL('cards.json', dir)
 const cards = existsSync(cardsUrl) ? readJson(cardsUrl) : {}
@@ -211,7 +213,9 @@ const slug = (s) =>
 const seasonOf = (date) => (date && +date.slice(5, 7) <= 5 ? 's1' : 's2')
 
 const tables = [] // { year, t: tournament, players, rows }
+const read = {} // tournaments read from each sheet, by drive id: 0 = not played yet
 for (const src of sources.tournaments) {
+  read[src.drive] = 0
   const file = new URL(`.meta-cache/${src.drive}.xlsx`, root)
   const label = src.name ?? `${src.league} ${src.season?.toUpperCase() ?? ''}`.trim()
   if (!existsSync(file)) {
@@ -232,6 +236,7 @@ for (const src of sources.tournaments) {
     const t = { id: `${src.kind}-${date}-${slug(src.name)}`, k: src.kind, s: seasonOf(date), n: src.name, d: date }
     if (src.circuit) t.c = src.circuit
     tables.push({ year: +date.slice(0, 4), t, players: tab.players, rows: tab.rows })
+    read[src.drive]++
   } else {
     if (!src.year) {
       warn(label, 'manca "year" in sources.json')
@@ -248,6 +253,7 @@ for (const src of sources.tournaments) {
       else warn(where, 'senza data')
       if (tab.date && +tab.date.slice(0, 4) !== src.year) warn(where, `data ${tab.date} fuori dall'anno ${src.year}`)
       tables.push({ year: src.year, t, players: tab.players, rows: tab.rows })
+      read[src.drive]++
     }
   }
 }
@@ -315,6 +321,10 @@ for (const y of kept) warn(String(y.year), 'nessun foglio letto: restano i dati 
 const years = [...rebuilt, ...kept].sort((a, b) => b.year - a.year)
 writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
 writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).sort()), null, 1) + '\n')
+
+// for the update's report (scripts/meta-status.mjs)
+const summary = years.map((y) => ({ year: y.year, t: y.t.length, e: y.e.length, c: y.c.length }))
+if (existsSync(new URL('.meta-cache/', root))) writeFileSync(new URL('.meta-cache/report.json', root), JSON.stringify({ warnings, read, years: summary }))
 
 for (const y of years) console.log(`${y.year}: ${y.t.length} tornei, ${y.e.length} presenze, ${y.c.length} comandanti`)
 if (warnings.length) console.log(`\nDa controllare (${warnings.length}):\n- ${warnings.join('\n- ')}`)

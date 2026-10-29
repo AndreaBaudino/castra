@@ -3,16 +3,18 @@
 // Deployed as a web app from the account that can open the sheets: "Execute as: Me", "Who has access: Anyone".
 // GET ?key=<KEY>&id=<drive id> answers with the file as .xlsx, base64-encoded. KEY is a script property
 // (Project settings → Script properties) and the same value is the META_SCRIPT_KEY secret on GitHub.
-// Only the files listed in the repository's scripts/meta/sources.json are served.
+// Only the files in the list of tournament sheets are served: Firestore's sources collection (kept from the app's
+// admin area) and the repository's scripts/meta/sources.json.
 
 const SOURCES_URL = 'https://raw.githubusercontent.com/AndreaBaudino/castra/main/scripts/meta/sources.json'
+const FIRESTORE_URL = 'https://firestore.googleapis.com/v1/projects/castra-a69ab/databases/(default)/documents/sources'
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 function doGet(e) {
   const key = PropertiesService.getScriptProperties().getProperty('KEY')
   const p = e.parameter
   if (!key || p.key !== key) return text('error: chiave non valida')
-  if (!allowed().includes(p.id)) return text('error: file non presente in sources.json')
+  if (!allowed().includes(p.id)) return text('error: file non presente nell\'elenco dei tornei')
   try {
     return text(Utilities.base64Encode(xlsxOf(p.id).getBytes()))
   } catch (err) {
@@ -20,15 +22,23 @@ function doGet(e) {
   }
 }
 
-/** The drive ids in sources.json, cached for ten minutes. */
+/** The drive ids in the list, cached for two minutes. */
 function allowed() {
   const cache = CacheService.getScriptCache()
-  let json = cache.get('sources')
+  let json = cache.get('drives')
   if (!json) {
-    json = UrlFetchApp.fetch(SOURCES_URL).getContentText()
-    cache.put('sources', json, 600)
+    const ids = JSON.parse(UrlFetchApp.fetch(SOURCES_URL).getContentText()).tournaments.map((t) => t.drive)
+    let page = ''
+    do {
+      const url = FIRESTORE_URL + '?pageSize=300' + (page ? '&pageToken=' + encodeURIComponent(page) : '')
+      const body = JSON.parse(UrlFetchApp.fetch(url).getContentText())
+      for (const d of body.documents || []) if (d.fields && d.fields.drive) ids.push(d.fields.drive.stringValue)
+      page = body.nextPageToken || ''
+    } while (page)
+    json = JSON.stringify(ids)
+    cache.put('drives', json, 120)
   }
-  return JSON.parse(json).tournaments.map((t) => t.drive)
+  return JSON.parse(json)
 }
 
 /** Google Sheets are exported, uploaded Excel files are read as they are. */
