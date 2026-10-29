@@ -24,6 +24,8 @@ import Account, { isAccountSection } from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
 import { useDialog } from './components/Dialog'
 import { UpdateBanner } from './components/AppBanners'
+import { SideNav } from './components/SideNav'
+import { useWide } from './lib/wide'
 
 type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
@@ -57,6 +59,7 @@ export default function App() {
   const { user } = useAuth()
   const uid = user?.uid ?? null
   const { claims, loaded: claimsLoaded } = useClaims()
+  const wide = useWide()
 
   useCollectionSync(uid, 'decks', decks, setDecks, (l, r) => l.updatedAt > r.updatedAt)
   useCollectionSync(uid, 'matches', matches, setMatches)
@@ -109,8 +112,14 @@ export default function App() {
     addEventListener('popstate', onPop)
     return () => removeEventListener('popstate', onPop)
   }, [])
+  // on a desktop the circuit and the decks show the list and the open page side by side: moving between pages
+  // of the same list scrolls only the open page, so the list stays where it was
+  const detail = useRef<HTMLDivElement>(null)
+  const lastTab = useRef(route.tab)
   useEffect(() => {
-    window.scrollTo(0, 0)
+    if (detail.current && lastTab.current === route.tab) detail.current.scrollTo(0, 0)
+    else window.scrollTo(0, 0)
+    lastTab.current = route.tab
   }, [route.tab, route.deck])
 
   // Home is the first entry, so the phone's back button closes the app only from there. Every other main page
@@ -179,10 +188,45 @@ export default function App() {
   const circuitEvent = metaSub === 'e' ? circuit.data?.events.find((e) => e.id === metaArgs[0]) : undefined
   const eventTournament = circuitEvent && tournamentOfEvent(dataset, circuitEvent)
   const gameInProgress = isGameInProgress(readStored<GameState>(GAME_KEY, defaultGame()))
+  const metaList = (
+    <Meta
+      current={metaSub === 'k' ? metaArgs[0] : undefined}
+      banner={noticeCard}
+      dataset={dataset}
+      status={status}
+      onRefresh={refresh}
+      circuit={circuit.data}
+      circuitStatus={circuit.status}
+      onCircuitRefresh={circuit.refresh}
+      prefs={circuitPrefs}
+      openPlayer={openPlayer}
+      openEvent={openEvent}
+      openLeague={openLeague}
+      openCommander={openCommander}
+    />
+  )
+  // a phone shows the open page in place of its list; a desktop shows them side by side
+  const split = (list: React.ReactNode, page: React.ReactNode, pick: string) =>
+    !wide ? (
+      (page ?? list)
+    ) : (
+      <div className="split">
+        <div className="split-list">{list}</div>
+        <div className="split-page" ref={detail}>
+          {page ?? (
+            <div className="split-empty">
+              <Icon name="list" size={36} />
+              <p>{pick}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
 
   return (
     <div className="app">
       <UpdateBanner />
+      {wide && <SideNav tab={route.tab} go={(tab) => go(tab)} user={user} gameInProgress={gameInProgress} />}
       <main>
         {route.tab === 'game' && (
           <LifeCounter
@@ -258,127 +302,121 @@ export default function App() {
           />
         )}
         {route.tab === 'meta' &&
-          (metaSub === 'k' ? (
-            <CommanderPage
-              dataset={dataset}
-              name={metaArgs[0]}
-              decks={decks}
-              onBack={() => history.back()}
-              openPlayer={openPlayer}
-              openTournament={openTournament}
-              openDeck={(id) => go('decks', id)}
-            />
-          ) : metaSub === 't' || (metaSub === 'e' && eventTournament) ? (
-            <TournamentPage
-              dataset={dataset}
-              id={metaSub === 't' ? metaArgs[0] : eventTournament!.id}
-              circuit={circuit.data}
-              prefs={circuitPrefs}
-              onBack={() => history.back()}
-              openPlayer={openPlayer}
-              openCommander={openCommander}
-              openLeague={openLeague}
-            />
-          ) : metaSub && circuit.data ? (
-            metaSub === 'p' ? (
-              <PlayerPage
-                circuit={circuit.data}
+          split(
+            metaList,
+            metaSub === 'k' ? (
+              <CommanderPage
                 dataset={dataset}
-                playerKey={metaArgs[0]}
-                prefs={circuitPrefs}
-                onBack={() => history.back()}
-                openEvent={openEvent}
-                openCompare={openCompare}
-                openCommander={openCommander}
-                openTournament={openTournament}
-              />
-            ) : metaSub === 'e' ? (
-              <EventPage circuit={circuit.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
-            ) : metaSub === 'l' ? (
-              <LeaguePage
-                circuit={circuit.data}
-                dataset={dataset}
-                season={metaArgs[0]}
-                name={metaArgs[1]}
-                prefs={circuitPrefs}
+                name={metaArgs[0]}
+                decks={decks}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
                 openTournament={openTournament}
-                openCommander={openCommander}
+                openDeck={(id) => go('decks', id)}
               />
-            ) : (
-              <ComparePage
-                circuit={circuit.data}
+            ) : metaSub === 't' || (metaSub === 'e' && eventTournament) ? (
+              <TournamentPage
                 dataset={dataset}
-                a={metaArgs[0]}
-                b={metaArgs[1]}
+                id={metaSub === 't' ? metaArgs[0] : eventTournament!.id}
+                circuit={circuit.data}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
-                openEvent={openEvent}
-                openTournament={openTournament}
+                openCommander={openCommander}
+                openLeague={openLeague}
               />
-            )
-          ) : (
-            <Meta
-              banner={noticeCard}
-              dataset={dataset}
-              status={status}
-              onRefresh={refresh}
-              circuit={circuit.data}
-              circuitStatus={circuit.status}
-              onCircuitRefresh={circuit.refresh}
-              prefs={circuitPrefs}
-              openPlayer={openPlayer}
-              openEvent={openEvent}
-              openLeague={openLeague}
-              openCommander={openCommander}
-            />
-          ))}
+            ) : metaSub && circuit.data ? (
+              metaSub === 'p' ? (
+                <PlayerPage
+                  circuit={circuit.data}
+                  dataset={dataset}
+                  playerKey={metaArgs[0]}
+                  prefs={circuitPrefs}
+                  onBack={() => history.back()}
+                  openEvent={openEvent}
+                  openCompare={openCompare}
+                  openCommander={openCommander}
+                  openTournament={openTournament}
+                />
+              ) : metaSub === 'e' ? (
+                <EventPage circuit={circuit.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
+              ) : metaSub === 'l' ? (
+                <LeaguePage
+                  circuit={circuit.data}
+                  dataset={dataset}
+                  season={metaArgs[0]}
+                  name={metaArgs[1]}
+                  prefs={circuitPrefs}
+                  onBack={() => history.back()}
+                  openPlayer={openPlayer}
+                  openTournament={openTournament}
+                  openCommander={openCommander}
+                />
+              ) : (
+                <ComparePage
+                  circuit={circuit.data}
+                  dataset={dataset}
+                  a={metaArgs[0]}
+                  b={metaArgs[1]}
+                  prefs={circuitPrefs}
+                  onBack={() => history.back()}
+                  openPlayer={openPlayer}
+                  openEvent={openEvent}
+                  openTournament={openTournament}
+                />
+              )
+            ) : null,
+            t('meta.pick'),
+          )}
         {route.tab === 'decks' &&
-          (openDeck ? (
-            <DeckDetail
-              deck={openDeck}
-              metaDecks={meta.decks}
-              matches={matches}
-              onChange={(d) => setDecks((ds) => ds.map((x) => (x.id === d.id ? d : x)))}
-              onDelete={() => {
-                setDecks((ds) => ds.filter((x) => x.id !== openDeck.id))
-                go('decks')
-              }}
-              onBack={() => go('decks')}
-              openCommander={openCommander}
-            />
-          ) : (
+          split(
             <Decks
               decks={decks}
               setDecks={setDecks}
               metaDecks={meta.decks}
+              current={openDeck?.id}
               onOpen={(id) => go('decks', id)}
               importOpen={importOpen}
               setImportOpen={setImportOpen}
-            />
-          ))}
+            />,
+            openDeck && (
+              <DeckDetail
+                deck={openDeck}
+                metaDecks={meta.decks}
+                matches={matches}
+                onChange={(d) => setDecks((ds) => ds.map((x) => (x.id === d.id ? d : x)))}
+                onDelete={() => {
+                  setDecks((ds) => ds.filter((x) => x.id !== openDeck.id))
+                  go('decks')
+                }}
+                onBack={() => go('decks')}
+                openCommander={openCommander}
+              />
+            ),
+            t('decks.pick'),
+          )}
       </main>
 
-      <nav className="tabbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && route.tab === 'account') ? 'on' : ''}`}
-            onClick={() => go(tab)}
-          >
-            {tab === 'game' ? (
-              <span className="fab">
-                <Icon name="game" size={28} />
-              </span>
-            ) : (
-              <Icon name={tab === 'meta' ? 'trophy' : tab} size={22} />
-            )}
-            <span>{t(`nav.${tab}`)}</span>
-          </button>
-        ))}
-      </nav>
+      {!wide && (
+        <nav className="tabbar">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && route.tab === 'account') ? 'on' : ''}`}
+              onClick={() => go(tab)}
+            >
+              {tab === 'game' ? (
+                <span className="fab">
+                  <Icon name="game" size={28} />
+                </span>
+              ) : (
+                <Icon name={tab === 'meta' ? 'trophy' : tab} size={22} />
+              )}
+              <span>{t(`nav.${tab}`)}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   )
 }

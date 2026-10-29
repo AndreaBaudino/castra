@@ -51,6 +51,13 @@ const paths: Record<string, ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.2" fill="currentColor" />
+    </>
+  ),
   minus: <path d="M5 12h14" />,
   back: <path d="M15 18l-6-6 6-6" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
@@ -201,6 +208,10 @@ function settle() {
 addEventListener('popstate', () => {
   popping = false
   setTimeout(settle)
+})
+// on a computer, Escape closes the top overlay, as the phone's back button does
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && (open.sheet || open.dialog) && (history.state?.sheet || history.state?.dialog)) history.back()
 })
 
 export function useBackCloses(isOpen: boolean, onClose: () => void, layer: Layer = 'sheet') {
