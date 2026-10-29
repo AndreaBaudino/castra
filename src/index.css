@@ -1152,7 +1152,8 @@ button.kv.clickable b {
   overflow-y: auto;
   background: var(--surface);
   border-radius: 20px 20px 0 0;
-  padding: 8px 16px calc(var(--safe-b) + 20px);
+  /* no top padding: the sticky head covers the top edge, so scrolled content never shows above it */
+  padding: 0 16px calc(var(--safe-b) + 20px);
   animation: up 0.2s ease;
 }
 .sheet-head {
@@ -1160,7 +1161,7 @@ button.kv.clickable b {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  padding: 4px 0 8px;
+  padding: 12px 0 8px;
   position: sticky;
   top: 0;
   background: var(--surface);
@@ -1989,7 +1990,7 @@ button.kv.clickable b {
 
 .sticky-search {
   position: sticky;
-  top: 44px;
+  top: 60px; /* right under the sheet's sticky head (12 + 40 + 8) */
   z-index: 2;
   margin-bottom: 10px;
 }
