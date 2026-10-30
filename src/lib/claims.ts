@@ -3,7 +3,7 @@ import type { AppUser } from './auth'
 import { fb, useLiveCollection } from './firebase'
 
 // A circuit player claimed by an account ("this is me"): one account per player, shared by everyone.
-// Stored at claims/{player key}; the Firestore rules let only the claimer change or drop it.
+// Stored at claims/{player key}; the Firestore rules let only the claimer change or drop it, and only an admin verify it.
 
 export interface Claim {
   uid: string
@@ -14,6 +14,7 @@ export interface Claim {
   coverName?: string | null // the card whose art is behind their picture
   coverArt?: string | null // its art crop on Scryfall
   deck?: string | null // the commander shown as their favourite deck
+  verified?: boolean // set by an admin who knows the player: until then the claim is only "linked"
 }
 
 export type ClaimLook = Pick<Claim, 'coverName' | 'coverArt' | 'deck'>
@@ -28,7 +29,8 @@ export async function claimPlayer(user: AppUser, key: string, previous: string |
   const { db, fs } = await fb()
   const batch = fs.writeBatch(db)
   if (previous && previous !== key) batch.delete(fs.doc(db, 'claims', previous))
-  batch.set(fs.doc(db, 'claims', key), { uid: user.uid, name: user.name ?? user.email, photo: user.photo, at: new Date().toISOString() })
+  // everyone can read the claims: the account's name only, never its email
+  batch.set(fs.doc(db, 'claims', key), { uid: user.uid, name: user.name ?? null, photo: user.photo, at: new Date().toISOString() })
   // the rules check that the account points to the player it claims
   batch.set(fs.doc(db, 'users', user.uid), { circuitMe: key }, { merge: true })
   await batch.commit()

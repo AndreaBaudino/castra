@@ -29,7 +29,7 @@ service cloud.firestore {
       }
     }
 
-    // circuit players claimed by an account ("this is me"): everyone can see who is verified,
+    // circuit players claimed by an account ("this is me"): everyone can see who is linked (and verified),
     // a free player can be claimed once, and only the claimer can change or release it
     match /claims/{playerKey} {
       // a field that is missing, null, or text up to `max` characters
@@ -62,11 +62,13 @@ service cloud.firestore {
         // an account whose claim an admin revoked can't take that player back
         && !(exists(/databases/$(database)/documents/revoked/$(playerKey))
           && get(/databases/$(database)/documents/revoked/$(playerKey)).data.uid == request.auth.uid);
-      // the claimer can also customise their page: the art behind their picture and their favourite deck
+      // the claimer can also customise their page: the art behind their picture and their favourite deck; the
+      // "verified" tick stays as an admin left it
       allow update: if request.auth != null
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at', 'coverName', 'coverArt', 'deck'])
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at', 'coverName', 'coverArt', 'deck', 'verified'])
+        && request.resource.data.get('verified', null) == resource.data.get('verified', null)
         && optionalText('name', 200)
         && pictures()
         && optionalText('coverName', 150)
@@ -77,6 +79,10 @@ service cloud.firestore {
         && request.resource.data.get('coverName', null) == null
         && request.resource.data.get('coverArt', null) == null
         && request.resource.data.get('deck', null) == null;
+      // an admin who knows the player gives (or takes back) the "verified" tick, and changes nothing else
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verified'])
+        && request.resource.data.get('verified', false) is bool;
       allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
     }
 

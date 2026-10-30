@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#14110f" />
+    <meta name="robots" content="noindex" />
+    <title>Privacy · Castra</title>
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <!-- Castra's privacy notice: a plain page with its own address, linked from the app and from Google's sign-in -->
+    <style>
+      :root {
+        --bg: #f6f1ea;
+        --surface: #fffdfa;
+        --text: #1b150f;
+        --muted: #6b5f55;
+        --line: #e6dccf;
+        --gold: #a87a1e;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14110f;
+          --surface: #1e1a17;
+          --text: #f3ede6;
+          --muted: #b5a99c;
+          --line: #332c27;
+          --gold: #d4a64a;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.55 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 32px 16px 64px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      header img {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+      }
+      .kicker {
+        color: var(--gold);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+      h1 {
+        font-family: Georgia, 'Times New Roman', serif;
+        margin: 0;
+        font-size: 1.7rem;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 28px 0 6px;
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      ul {
+        padding-left: 20px;
+      }
+      a {
+        color: var(--gold);
+      }
+      section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 4px 20px 16px;
+        margin-bottom: 24px;
+      }
+      nav {
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+      }
+      .updated {
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icon.svg" alt="" />
+        <div>
+          <div class="kicker">Every legion needs a camp</div>
+          <h1>Privacy · Castra</h1>
+        </div>
+      </header>
+      <nav><a href="#en">English version below</a></nav>
+
+      <section lang="it">
+        <p class="updated">Ultimo aggiornamento: 30 ottobre 2026</p>
+        <p>
+          Castra è un'app gratuita e indipendente per i giocatori di Centurion Commander: meta dei tornei, classifiche
+          del circuito, contapunti, mazzi e statistiche personali. Qui spieghiamo quali dati usa e perché.
+        </p>
+
+        <h2>Chi gestisce i dati</h2>
+        <p>
+          Titolare del trattamento è Andrea Baudino, che sviluppa e gestisce Castra. Per qualsiasi domanda o richiesta
+          scrivi a <a href="mailto:centvrioncommander@gmail.com">centvrioncommander@gmail.com</a>.
+        </p>
+
+        <h2>Senza account</h2>
+        <p>
+          Puoi usare Castra senza registrarti. Mazzi, partite e preferenze restano solo sul tuo dispositivo (nella
+          memoria del browser) e non arrivano a noi. Per mostrarti i dati pubblici, l'app li chiede a questi servizi,
+          che come ogni sito ricevono l'indirizzo IP del tuo dispositivo:
+        </p>
+        <ul>
+          <li>GitHub, che ospita l'app e i dati del meta;</li>
+          <li>Google Sheets, per la classifica del circuito;</li>
+          <li>Google Firebase, per la banlist e i giocatori collegati;</li>
+          <li>Scryfall, per i testi e le immagini delle carte.</li>
+        </ul>
+
+        <h2>Con un account</h2>
+        <p>
+          Se accedi (con Google o con email e password), Castra salva su Google Firebase: l'email dell'account (e, con
+          Google, nome e foto del profilo), i tuoi mazzi, le partite registrate, le preferenze e il giocatore del circuito
+          che hai collegato. Servono solo a ritrovare i tuoi dati su ogni dispositivo. I server di Google possono
+          trovarsi anche fuori dall'Unione europea; Google li protegge con le clausole contrattuali standard e
+          l'adesione all'EU-US Data Privacy Framework.
+        </p>
+
+        <h2>Cosa è visibile agli altri</h2>
+        <p>
+          Mazzi, partite e statistiche sono privati. Se colleghi il tuo nome nella classifica ("questo sono io"), sulla
+          tua pagina giocatore diventano visibili a tutti la foto del tuo account Google e le scelte con cui la
+          personalizzi (immagine di copertina e mazzo preferito). La tua email non viene mai mostrata.
+        </p>
+
+        <h2>I dati del circuito</h2>
+        <p>
+          Nomi dei giocatori, risultati e mazzi giocati ai tornei arrivano dai fogli pubblici degli organizzatori del
+          circuito Centurion Commander: Castra li mostra e ne calcola le statistiche, per l'interesse della community a
+          seguire il circuito. Se preferisci non comparire o vuoi correggere un dato, scrivici.
+        </p>
+
+        <h2>Niente tracciamento</h2>
+        <p>
+          Castra non usa strumenti di analisi, pubblicità o cookie di profilazione. Il browser conserva solo quello che
+          serve all'app per funzionare (i tuoi dati locali e, se hai un account, la sessione di accesso).
+        </p>
+
+        <h2>Per quanto tempo e i tuoi diritti</h2>
+        <p>
+          I dati dell'account restano finché l'account esiste. Da Profilo puoi esportarli (backup e CSV delle partite)
+          ed eliminare l'account, che cancella tutto dal cloud e dal dispositivo. Puoi inoltre chiedere di accedere ai
+          tuoi dati, correggerli o opporti al loro uso scrivendo all'indirizzo sopra, e presentare reclamo al Garante per
+          la protezione dei dati personali (<a href="https://www.garanteprivacy.it">garanteprivacy.it</a>).
+        </p>
+      </section>
+
+      <section lang="en" id="en">
+        <p class="updated">Last updated: 30 October 2026</p>
+        <p>
+          Castra is a free, independent app for Centurion Commander players: tournament meta, circuit rankings, life
+          counter, decks and personal stats. This page explains which data it uses and why.
+        </p>
+
+        <h2>Who handles the data</h2>
+        <p>
+          The data controller is Andrea Baudino, who develops and runs Castra. For any question or request, write to
+          <a href="mailto:centvrioncommander@gmail.com">centvrioncommander@gmail.com</a>.
+        </p>
+
+        <h2>Without an account</h2>
+        <p>
+          You can use Castra without signing up. Decks, games and preferences stay on your device only (in the
+          browser's storage) and never reach us. To show you public data, the app asks these services for it, which
+          like any website receive your device's IP address:
+        </p>
+        <ul>
+          <li>GitHub, which hosts the app and the meta data;</li>
+          <li>Google Sheets, for the circuit ranking;</li>
+          <li>Google Firebase, for the banlist and the linked players;</li>
+          <li>Scryfall, for card texts and images.</li>
+        </ul>
+
+        <h2>With an account</h2>
+        <p>
+          If you sign in (with Google or with email and password), Castra stores on Google Firebase: the account's email
+          (and, with Google, your profile name and picture), your decks, recorded games, preferences and the circuit
+          player you linked. They are only used to give you your data on every device. Google's servers may be outside
+          the European Union; Google protects them with standard contractual clauses and the EU-US Data Privacy
+          Framework.
+        </p>
+
+        <h2>What others can see</h2>
+        <p>
+          Decks, games and stats are private. If you link your name in the ranking ("this is me"), your Google account
+          picture and the choices you customise your player page with (cover image and favourite deck) become visible to
+          everyone. Your email is never shown.
+        </p>
+
+        <h2>Circuit data</h2>
+        <p>
+          Player names, results and decks played at tournaments come from the public sheets of the Centurion Commander
+          circuit organisers: Castra shows them and computes their statistics, in the community's interest in following
+          the circuit. If you'd rather not appear, or want to correct something, write to us.
+        </p>
+
+        <h2>No tracking</h2>
+        <p>
+          Castra uses no analytics, advertising or profiling cookies. The browser only keeps what the app needs to work
+          (your local data and, with an account, your sign-in session).
+        </p>
+
+        <h2>How long, and your rights</h2>
+        <p>
+          Account data is kept as long as the account exists. From Profile you can export it (backup and games CSV) and
+          delete the account, which erases everything from the cloud and the device. You can also ask to access, correct
+          or object to the use of your data by writing to the address above, and lodge a complaint with your data
+          protection authority.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

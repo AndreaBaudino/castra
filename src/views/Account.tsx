@@ -13,10 +13,10 @@ import { useSyncStatus } from '../lib/sync'
 import { deleteAccount } from '../lib/account'
 import { backupName, csvName, download, makeBackup, matchesCsv, mergeById, parseBackup } from '../lib/backup'
 import { CHANGELOG } from '../lib/changelog'
-import { BANLIST_URL, FEEDBACK_URL, FORMAT_SITE_URL } from '../config'
+import { BANLIST_URL, FEEDBACK_URL, FORMAT_SITE_URL, PRIVACY_URL } from '../config'
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
-import { type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
+import { ClaimBadge, type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
 import { useIsAdmin } from '../lib/admin'
 import { useBanlist } from '../lib/banlist'
 import Admin from './Admin'
@@ -105,6 +105,9 @@ function LoginForm() {
           </button>
         )}
       </div>
+      <a className="muted small center" href={PRIVACY_URL} target="_blank" rel="noopener noreferrer">
+        {t('auth.privacy')}
+      </a>
     </section>
   )
 }
@@ -243,11 +246,7 @@ function CircuitIdentity({
             <button className="linked-player" onClick={() => openPlayer(me.key)}>
               <span className="linked-name">
                 <strong className="ellipsis">{me.name}</strong>
-                {cp.claims.get(me.key)?.uid === cp.uid && (
-                  <span className="verified">
-                    <Icon name="check" size={13} /> {t('circuit.verified')}
-                  </span>
-                )}
+                {cp.claims.get(me.key)?.uid === cp.uid && <ClaimBadge claim={cp.claims.get(me.key)!} />}
               </span>
               <Icon name="chevron" size={18} />
             </button>
@@ -302,7 +301,7 @@ function CircuitIdentity({
                   <span className="follow-rank">{p.rank ? placeLabel(p.rank, lang) : '—'}</span>
                   <span className="follow-name ellipsis">
                     {p.name}
-                    {cp.claims.has(p.key) && <VerifiedTick />}
+                    {cp.claims.get(p.key)?.verified && <VerifiedTick />}
                   </span>
                   <span className="muted small">{p.total} pt</span>
                 </button>
@@ -537,11 +536,7 @@ function ProfileCard({
             user.name && <span className="muted small ellipsis">{user.email}</span>
           )}
           {!cp.me && <span className="link">{t('account.linkName')}</span>}
-          {me && cp.claims.get(me.key)?.uid === cp.uid && (
-            <span className="verified">
-              <Icon name="check" size={13} /> {t('circuit.verified')}
-            </span>
-          )}
+          {me && cp.claims.get(me.key)?.uid === cp.uid && <ClaimBadge claim={cp.claims.get(me.key)!} />}
         </div>
         {open && (
           <span className="chev">
@@ -698,6 +693,7 @@ export default function Account({
               [
                 ['globe', 'account.formatSite', FORMAT_SITE_URL],
                 ['ban', 'account.banlist', BANLIST_URL],
+                ['shield', 'account.privacy', PRIVACY_URL],
               ] as const
             ).map(([icon, label, href]) => (
               <a key={href} className="menu-row" href={href} target="_blank" rel="noopener noreferrer">

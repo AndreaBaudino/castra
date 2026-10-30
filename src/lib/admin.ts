@@ -66,3 +66,9 @@ export async function clearClaimLook(key: string) {
   const { db, fs } = await fb()
   await fs.updateDoc(fs.doc(db, 'claims', key), { coverName: null, coverArt: null, deck: null })
 }
+
+/** The "verified" tick on a claim: given by an admin who knows the player. */
+export async function setClaimVerified(key: string, verified: boolean) {
+  const { db, fs } = await fb()
+  await fs.updateDoc(fs.doc(db, 'claims', key), { verified })
+}

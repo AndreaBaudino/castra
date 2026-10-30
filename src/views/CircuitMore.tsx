@@ -152,7 +152,7 @@ export function LeaguePage({
                   <div className="meta-name">
                     <div className="name-line">
                       <span className="ellipsis">{p?.name}</span>
-                      {prefs.claims.has(e.key) && <VerifiedTick />}
+                      {prefs.claims.get(e.key)?.verified && <VerifiedTick />}
                       {prefs.follow.includes(e.key) && (
                         <span className="star-on">
                           <Icon name="star" size={12} />
@@ -252,7 +252,7 @@ export function Records({
                   <span className="rank">{pos(v)}</span>
                   <span className="ellipsis grow">
                     {p.name}
-                    {prefs.claims.has(p.key) && <VerifiedTick />}
+                    {prefs.claims.get(p.key)?.verified && <VerifiedTick />}
                   </span>
                   <b className="pts-inline">{fmt(v)}</b>
                 </li>
@@ -346,7 +346,7 @@ export function ComparePicker({ circuit, p, prefs, onPick }: { circuit: Circuit;
             <span className="rank">{x.rank}</span>
             <span className="ellipsis grow">
               {x.name}
-              {prefs.claims.has(x.key) && <VerifiedTick />}
+              {prefs.claims.get(x.key)?.verified && <VerifiedTick />}
             </span>
             <span className="muted small">{x.total}</span>
           </li>
@@ -431,7 +431,7 @@ export function ComparePage({
             <span className="h2h-swatch" />
             <strong className="ellipsis">
               {p.name}
-              {prefs.claims.has(p.key) && <VerifiedTick />}
+              {prefs.claims.get(p.key)?.verified && <VerifiedTick />}
             </strong>
             <span className="muted small">
               #{p.rank} · {p.total} {t('circuit.unitPts')}

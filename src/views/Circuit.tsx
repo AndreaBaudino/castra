@@ -224,7 +224,7 @@ function PlayerRow({
           <div className="meta-name">
             <div className="name-line">
               <span className="ellipsis">{p.name}</span>
-              {prefs.claims.has(p.key) && <VerifiedTick />}
+              {prefs.claims.get(p.key)?.verified && <VerifiedTick />}
               {prefs.follow.includes(p.key) && (
                 <span className="star-on">
                   <Icon name="star" size={12} />
@@ -309,7 +309,7 @@ function EventList({ circuit, prefs, openEvent }: { circuit: Circuit; prefs: Cir
                 {winner && (
                   <div className="small winner">
                     <Icon name="trophy" size={13} /> {byKey.get(winner.key)?.name}
-                    {prefs.claims.has(winner.key) && <VerifiedTick />}
+                    {prefs.claims.get(winner.key)?.verified && <VerifiedTick />}
                     {winner.poty && <span className="muted"> · {t('circuit.top4Poty')}</span>}
                   </div>
                 )}
@@ -549,6 +549,16 @@ export function VerifiedTick() {
   )
 }
 
+/** "Verified" once an admin vouched for the claim, "linked" until then. */
+export function ClaimBadge({ claim }: { claim: Claim }) {
+  const { t } = useI18n()
+  return (
+    <span className={`verified ${claim.verified ? '' : 'linked'}`}>
+      <Icon name={claim.verified ? 'check' : 'user'} size={13} /> {t(claim.verified ? 'circuit.verified' : 'circuit.linked')}
+    </span>
+  )
+}
+
 /** The claimer's picture, the "verified" tick and the button to claim or release the player. */
 function ClaimBox({ p, prefs, cover }: { p: Player; prefs: CircuitPrefs; cover?: string }) {
   const { t } = useI18n()
@@ -577,11 +587,7 @@ function ClaimBox({ p, prefs, cover }: { p: Player; prefs: CircuitPrefs; cover?:
           )}
         </span>
       </PlayerCover>
-      {claim && (
-        <span className="verified">
-          <Icon name="check" size={13} /> {t('circuit.verified')}
-        </span>
-      )}
+      {claim && <ClaimBadge claim={claim} />}
       {mine ? (
         <button className="btn primary" disabled={busy} onClick={() => run(null)}>
           <Icon name="user" size={16} /> {t('circuit.isMe')}
@@ -712,7 +718,7 @@ export function EventPage({
       <span className={`place-badge ${r.place ? (r.place <= 4 ? 'top4' : 'top8') : ''}`}>{r.place ? placeLabel(r.place, lang) : '—'}</span>
       <span className="ellipsis grow">
         {byKey.get(r.key)?.name}
-        {prefs.claims.has(r.key) && <VerifiedTick />}
+        {prefs.claims.get(r.key)?.verified && <VerifiedTick />}
         {prefs.follow.includes(r.key) && (
           <span className="star-on">
             {' '}
@@ -971,7 +977,7 @@ export function CircuitNoticeCard({
               </span>
               <span className="ellipsis grow">
                 {f.name}
-                {claims.has(f.key) && <VerifiedTick />}
+                {claims.get(f.key)?.verified && <VerifiedTick />}
               </span>
               <span className="small">
                 {pos(f.from)} → <b>{pos(f.to)}</b>

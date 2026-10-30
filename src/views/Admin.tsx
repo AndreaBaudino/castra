@@ -3,7 +3,7 @@ import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import type { Circuit } from '../lib/circuit'
 import type { Claim } from '../lib/claims'
-import { clearClaimLook, revokeClaim, unrevokeClaim, useRevoked } from '../lib/admin'
+import { clearClaimLook, revokeClaim, setClaimVerified, unrevokeClaim, useRevoked } from '../lib/admin'
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { useStoredState } from '../lib/storage'
@@ -107,6 +107,16 @@ function Claims({
                       {c.name ?? t('admin.noName')} · {day(c.at)}
                     </span>
                   </span>
+                </button>
+                <button
+                  className={`icon-btn verify-btn ${c.verified ? 'on' : ''}`}
+                  aria-label={t(c.verified ? 'admin.unverify' : 'admin.verify')}
+                  aria-pressed={!!c.verified}
+                  title={t(c.verified ? 'admin.unverify' : 'admin.verify')}
+                  disabled={busy === key}
+                  onClick={() => run(key, () => setClaimVerified(key, !c.verified))}
+                >
+                  <Icon name="check" size={18} />
                 </button>
                 {hasLook(c) && (
                   <button

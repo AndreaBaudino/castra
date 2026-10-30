@@ -447,7 +447,7 @@ export function TournamentPage({
         <div className="event-main">
           <span className="ellipsis">
             {e.player ?? <span className="muted">{t('meta.anonymous')}</span>}
-            {e.key && prefs.claims.has(e.key) && <VerifiedTick />}
+            {e.key && prefs.claims.get(e.key)?.verified && <VerifiedTick />}
           </span>
           <span
             className="muted small cmd-link"

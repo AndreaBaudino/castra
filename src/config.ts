@@ -50,3 +50,5 @@ export const FORMAT_SITE_URL = 'https://www.centurioncommander.eu/it/home-ita/'
 export const BANLIST_URL = 'https://www.centurioncommander.eu/it/ban-list-it/'
 /** Where "Report a problem" leads: an issue on the app's repository. */
 export const FEEDBACK_URL = 'https://github.com/AndreaBaudino/castra/issues/new'
+/** the privacy notice: a plain page published with the app (public/privacy.html) */
+export const PRIVACY_URL = `${import.meta.env.BASE_URL}privacy.html`

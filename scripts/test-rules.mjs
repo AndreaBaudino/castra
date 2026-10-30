@@ -63,6 +63,21 @@ await allowed(
 // in the CSS url("…") the page puts it in, a quote would add an image from anywhere
 await denied('art that adds another image', updateDoc(doc(bob, 'claims', 'peach'), { coverArt: 'https://cards.scryfall.io/a"), url("https://spy.example/p.png' }))
 await denied("customising someone else's page", updateDoc(doc(alice, 'claims', 'peach'), { coverName: 'Sol Ring', coverArt: null, deck: null }))
+
+// the "verified" tick: only an admin gives or takes it, and the claimer can still customise their page
+const carol = env.authenticatedContext('carol').firestore()
+await asAdmin((db) => setDoc(doc(db, 'admins', 'carol'), {}))
+await denied('verifying your own claim', updateDoc(doc(bob, 'claims', 'peach'), { verified: true }))
+await denied('verifying, by a non-admin', updateDoc(doc(alice, 'claims', 'peach'), { verified: true }))
+await allowed('verifying, by an admin', updateDoc(doc(carol, 'claims', 'peach'), { verified: true }))
+await denied('an admin changing the claim while verifying', updateDoc(doc(carol, 'claims', 'peach'), { verified: false, name: 'X' }))
+await allowed('customising a verified page', updateDoc(doc(bob, 'claims', 'peach'), { coverName: 'Sol Ring', coverArt: null, deck: null }))
+await denied('dropping your own tick', updateDoc(doc(bob, 'claims', 'peach'), { verified: false }))
+const preVerified = writeBatch(alice)
+preVerified.delete(doc(alice, 'claims', 'luigi'))
+preVerified.set(doc(alice, 'claims', 'daisy'), { uid: 'alice', name: 'A', photo: null, at: 'x', verified: true })
+preVerified.set(doc(alice, 'users', 'alice'), { circuitMe: 'daisy' }, { merge: true })
+await denied('a claim that arrives already verified', preVerified.commit())
 await allowed('releasing the claim', unclaim(alice, 'alice', 'luigi'))
 await allowed('claiming again after releasing', claim(alice, 'alice', 'mario'))
 

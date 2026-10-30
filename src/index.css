@@ -2790,6 +2790,16 @@ textarea {
 .verified svg {
   stroke-width: 3;
 }
+.verify-btn.on {
+  color: var(--good);
+}
+.verified.linked {
+  color: var(--muted);
+  background: var(--surface-2);
+}
+.verified.linked svg {
+  stroke-width: 2;
+}
 
 /* ---------- Castra's confirm / alert ---------- */
 .dialog-backdrop {
