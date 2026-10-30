@@ -200,7 +200,8 @@ function Issues({ status, all, onFix, onConfirm }: { status: MetaStatus; all: Al
         <span className="muted small">{list.length}</span>
       </div>
       {!list.length ? (
-        <p className="muted small no-margin">{t('aliases.noIssues')}</p>
+        // a report from before the list existed, or from a failed update, says nothing about the names
+        <p className="muted small no-margin">{t(!status.ok ? 'aliases.noReportFailed' : !status.issues ? 'aliases.noReport' : 'aliases.noIssues')}</p>
       ) : (
         <>
           <p className="muted small no-margin">{t('aliases.issuesHint')}</p>
