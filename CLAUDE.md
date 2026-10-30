@@ -110,10 +110,13 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 ## Plugin e strumenti consigliati
 I plugin non si installano dall'interno di una sessione: li installa il proprietario in Claude Code con `/plugin`
 (o da claude.ai). Una volta installati, Claude li trova da solo nelle sessioni successive.
-- **Ponytail** — spinge l'agente a scrivere meno codice (comandi `/ponytail`, `/ponytail-review`, `/ponytail-audit`,
-  livelli lite/full/ultra). È un plugin di terze parti con hook Node che girano con i permessi dell'utente: prima di
-  installarlo controlla su GitHub il repository giusto e il suo README, poi `/plugin marketplace add <utente>/ponytail`
-  e `/plugin install` come indicato lì. Le regole "scrivi il minimo codice" qui sopra valgono comunque.
+- **Ponytail** ([DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail), l'unica fonte ufficiale: non
+  `dietrichayala/ponytail`, che non esiste) — spinge l'agente a scrivere meno codice; `/ponytail-review` rivede le
+  modifiche (bug, sicurezza, test, codice da togliere), `/ponytail-audit` tutto il repository. Si installa con
+  `/plugin marketplace add DietrichGebert/ponytail` e poi `/plugin install ponytail@ponytail`.
+  Usa hook Node (serve `node` nel PATH) e, se non lo si spegne, scrive costi e token di ogni attività in
+  `~/.config/ponytail/band/`; il webhook resta spento finché non gli si dà un indirizzo. Le regole "scrivi il minimo
+  codice" qui sopra valgono comunque, con o senza plugin.
 - **frontend-design** (Anthropic, directory ufficiale dei plugin) — utile per le pagine e i componenti nuovi.
 - Già disponibili senza installare niente: `/code-review` (bug nelle modifiche), `/simplify` (pulizia e riuso),
   `/security-review` (utile quando si toccano `firestore.rules`, l'area admin o il login).
