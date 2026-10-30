@@ -2615,6 +2615,27 @@ textarea {
 .notice-card.down {
   border-color: color-mix(in srgb, var(--bad) 55%, var(--line));
 }
+/* the banlist notice: what changed, a line per kind, and the decks hit */
+.ban-notice li {
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 6px;
+  row-gap: 2px;
+}
+.ban-notice li > span:first-child:not(.grow) {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.ban-notice li.ban-deck {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+.link-inline {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 2px;
+}
 .notice-me {
   display: flex;
   align-items: center;

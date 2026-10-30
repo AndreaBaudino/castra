@@ -1,5 +1,5 @@
 import type { AppUser } from './auth'
-import { type Banlist, cardKey, setBanlist } from './banlist'
+import { BAN_LISTS, type BanList, type Banlist, setBanlist } from './banlist'
 import { fb } from './firebase'
 
 // The admin area's banlist update: reads the banlist from the format's site, checks every card on Scryfall, and
@@ -19,10 +19,8 @@ const SECTIONS = {
   commander: /Carte vietate solo come Comandante/i,
   partner: /Carte vietate solo come partner/i,
   banned: /Carte vietate in tutte le partite/i,
-} as const
+} satisfies Record<BanList, RegExp>
 const END = /Ultimi aggiornamenti/i
-export type BanList = keyof typeof SECTIONS
-export const BAN_LISTS: BanList[] = ['banned', 'commander', 'partner']
 
 const text = (html: string) => new DOMParser().parseFromString(html, 'text/html').body.textContent?.replace(/\s+/g, ' ').trim() ?? ''
 
@@ -97,15 +95,6 @@ export async function readSiteBanlist(): Promise<Banlist> {
   const sorted = (k: BanList) => lists[k].map((n) => known.get(n)!).sort((a, b) => a.localeCompare(b))
   return { v: 1, checked: new Date().toISOString(), announcement: await latestAnnouncement(), banned: sorted('banned'), commander: sorted('commander'), partner: sorted('partner') }
 }
-
-/** Cards in `a` and not in `b`, list by list ("Tamiyo, Inquisitive Student" is "Tamiyo, Inquisitive Student // …"). */
-export const banlistMinus = (a: Banlist, b: Banlist) =>
-  Object.fromEntries(
-    BAN_LISTS.map((k) => {
-      const inB = new Set(b[k].map(cardKey))
-      return [k, a[k].filter((n) => !inB.has(cardKey(n)))]
-    }),
-  ) as Record<BanList, string[]>
 
 /** Publishes the banlist for every app, and uses it here at once. */
 export async function publishBanlist(admin: AppUser, b: Banlist) {

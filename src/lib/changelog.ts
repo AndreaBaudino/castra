@@ -11,9 +11,11 @@ export const CHANGELOG: Release[] = [
     date: '2026-10-30',
     it: [
       'Banlist aggiornata senza aspettare una nuova versione: quando esce un annuncio, l\'app riceve la nuova banlist presa dal sito di Centurion all\'avvio. Vale per il controllo dei mazzi e per la legalità nella ricerca carte; nel Profilo, accanto a Banlist, la data dell\'ultimo aggiornamento',
+      'Quando cambia la banlist, un riquadro in Home dice quali carte sono state vietate o riammesse (toccale per aprirle) e quali tuoi mazzi ora hanno una carta vietata; resta finché non lo chiudi',
     ],
     en: [
       "Banlist updated without waiting for a new version: when an announcement comes out, the app gets the new banlist from Centurion's site when it starts. It applies to the deck check and to the legality in card search; in the Profile, next to Banlist, the date of the latest update",
+      'When the banlist changes, a card on the home tells which cards were banned or allowed again (tap them to open them) and which of your decks now hold a banned card; it stays until you close it',
     ],
   },
   {

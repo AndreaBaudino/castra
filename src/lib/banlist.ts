@@ -55,6 +55,9 @@ export interface Banlist {
   builtIn?: true // the copy shipped with the app, never published
 }
 
+export type BanList = 'banned' | 'commander' | 'partner'
+export const BAN_LISTS: BanList[] = ['banned', 'commander', 'partner']
+
 const BUILT_IN: Banlist = {
   v: 1,
   checked: '2026-10-15',
@@ -67,11 +70,14 @@ const BUILT_IN: Banlist = {
 // read through Firestore's REST API: no need to load Firebase for it, nor to be signed in
 const URL_ = FIREBASE_CONFIG && `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/config/banlist`
 const CACHE_KEY = 'cc.banlist'
+// the banlist the user knew before the one in use arrived, until they close the notice of what changed
+const SEEN_KEY = 'cc.banlist.seen'
 
 // curly apostrophes, case, and the back face of double-faced cards don't matter
 export const cardKey = (name: string) => name.split('//')[0].trim().replace(/[’‘]/g, "'").toLowerCase()
 const norm = cardKey
 let current = BUILT_IN
+let seen: Banlist | null = null
 let banned = new Set<string>()
 let bannedCommander = new Set<string>()
 let bannedPartner = new Set<string>()
@@ -88,6 +94,7 @@ const valid = (b: unknown): b is Banlist => {
   return !!x && x.v === 1 && [x.banned, x.commander, x.partner].every((l) => Array.isArray(l) && l.every((n) => typeof n === 'string')) && x.banned.length >= 30
 }
 apply(((b) => (valid(b) ? b : BUILT_IN))(readStored<unknown>(CACHE_KEY, null)))
+seen = ((b) => (valid(b) ? b : null))(readStored<unknown>(SEEN_KEY, null))
 
 let loading: Promise<void> | null = null
 /** Reads the published banlist once per session; offline, the last one read stays. */
@@ -97,7 +104,13 @@ export function loadBanlist() {
     .then((res) => (res.ok ? res.json() : null))
     .then((doc: { fields?: { json?: { stringValue?: string } } } | null) => {
       const b: unknown = JSON.parse(doc?.fields?.json?.stringValue ?? 'null')
-      if (valid(b) && JSON.stringify(b) !== JSON.stringify(current)) setBanlist(b)
+      if (!valid(b) || JSON.stringify(b) === JSON.stringify(current)) return
+      // a notice of what changed since the banlist the user knew: kept across updates until they close it
+      if (!seen) {
+        seen = current
+        writeStored(SEEN_KEY, seen)
+      }
+      setBanlist(b)
     })
     .catch(() => {}))
 }
@@ -110,13 +123,39 @@ export function setBanlist(b: Banlist) {
 
 /** The banlist in use; components calling this re-render when a newer one arrives. */
 export function useBanlist() {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l)
-      return () => listeners.delete(l)
-    },
-    () => current,
-  )
+  return useSyncExternalStore(subscribe, () => current)
+}
+function subscribe(l: () => void) {
+  listeners.add(l)
+  return () => {
+    listeners.delete(l)
+  }
+}
+
+/** Cards in `a` and not in `b`, list by list ("Tamiyo, Inquisitive Student" is "Tamiyo, Inquisitive Student // …"). */
+export const banlistMinus = (a: Banlist, b: Banlist) =>
+  Object.fromEntries(
+    BAN_LISTS.map((k) => {
+      const inB = new Set(b[k].map(cardKey))
+      return [k, a[k].filter((n) => !inB.has(cardKey(n)))]
+    }),
+  ) as Record<BanList, string[]>
+
+/** What changed since the banlist the user knew, until they close the notice; null when nothing did. */
+export function useBanlistChanges() {
+  const now = useBanlist()
+  const before = useSyncExternalStore(subscribe, () => seen)
+  if (!before) return null
+  const added = banlistMinus(now, before)
+  const removed = banlistMinus(before, now)
+  if (!BAN_LISTS.some((k) => added[k].length || removed[k].length)) return null
+  return { added, removed, announcement: now.announcement?.date !== before.announcement?.date ? now.announcement : null }
+}
+
+export function dismissBanlistChanges() {
+  seen = null
+  writeStored(SEEN_KEY, null)
+  listeners.forEach((l) => l())
 }
 
 export interface BanCheck {

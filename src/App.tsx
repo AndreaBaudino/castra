@@ -11,6 +11,7 @@ import { useMeta } from './lib/meta'
 import { readStored, useStoredState, writeStored } from './lib/storage'
 import { claimPlayer, unclaimPlayer, useClaims } from './lib/claims'
 import { loadBanlist } from './lib/banlist'
+import { BanlistNoticeCard } from './views/BanlistNotice'
 import { type CircuitNotice, type CircuitSnapshot, mergeNotices, noticeOf, snapshotOf, useCircuit } from './lib/circuit'
 import { Icon } from './components/ui'
 import Home from './views/Home'
@@ -259,7 +260,12 @@ export default function App() {
         )}
         {route.tab === 'home' && (
           <Home
-            banner={noticeCard}
+            banner={
+              <>
+                <BanlistNoticeCard decks={decks} openDeck={(id) => go('decks', id)} openCard={openCard} />
+                {noticeCard}
+              </>
+            }
             dataset={dataset}
             metaDecks={meta.decks}
             decks={decks}
