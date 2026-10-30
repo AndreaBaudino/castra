@@ -88,8 +88,9 @@ export function groupOf(c: DeckCard): Group {
 
 const SECTION_HEADERS: [RegExp, Section | null][] = [
   [/^(\/\/\s*)?(commanders?|comandant[ei]|command zone)\s*:?$/i, 'commander'],
-  [/^(\/\/\s*)?(sideboard|side|maybeboard|considering|fuori mazzo)\s*:?$/i, 'side'],
-  [/^(\/\/\s*)?(deck|main|mainboard|mazzo|companion)\s*:?$/i, 'main'],
+  // the companion starts outside the 100, like a sideboard card (Arena exports it under its own heading)
+  [/^(\/\/\s*)?(sideboard|side|maybeboard|considering|fuori mazzo|companion)\s*:?$/i, 'side'],
+  [/^(\/\/\s*)?(deck|main|mainboard|mazzo)\s*:?$/i, 'main'],
 ]
 
 export function parseDecklist(text: string): DeckCard[] {
