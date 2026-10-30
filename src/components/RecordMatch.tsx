@@ -5,6 +5,8 @@ import { type Format, type Match, type Result, playedGames, resultOfScore, score
 import { useStoredState } from '../lib/storage'
 import { readPrefs } from '../lib/prefs'
 import { playerKey } from '../lib/circuit'
+import { normName } from '../lib/meta'
+import { commanderNames } from '../views/Decks'
 import { Icon, Sheet } from './ui'
 
 const RESULTS = [
@@ -40,6 +42,8 @@ export function RecordMatch({
 }) {
   const { t } = useI18n()
   const [lastDeck, setLastDeck] = useStoredState<string>('cc.lastDeck', '')
+  // what was written when the last match wasn't played with one of the app's decks
+  const [lastDeckName, setLastDeckName] = useStoredState<string>('cc.lastDeckName', '')
   // the kind and format of the last match recorded: a new one starts from them, editing an old one leaves them alone
   const [lastKind, setLastKind] = useStoredState<Match['kind']>('cc.lastKind', 'casual')
   const [lastFormat, setLastFormat] = useStoredState<Format>('cc.lastFormat', 'bo1')
@@ -47,8 +51,9 @@ export function RecordMatch({
   const [format, setFormat] = useState(lastFormat)
   const [result, setResult] = useState<Result | null>(null)
   const [games, setGames] = useState<(Result | undefined)[]>([])
+  // one field for the deck: free text, or one of the app's decks picked from the suggestions
+  const [deckText, setDeckText] = useState('')
   const [deckId, setDeckId] = useState('')
-  const [deckFree, setDeckFree] = useState('')
   const [opponent, setOpponent] = useState('')
   const [notes, setNotes] = useState('')
   const [start, setStart] = useState<Match['start'] | null>(null)
@@ -57,14 +62,14 @@ export function RecordMatch({
   useEffect(() => {
     if (!open) return
     if (editing) {
-      const known = decks.some((d) => d.id === editing.deckId)
+      const known = decks.find((d) => d.id === editing.deckId)
       setFormat(editing.format ?? 'bo1')
       setResult(editing.result)
       // older bo3s only have the score: rebuild the games from it
       const [w, l] = editing.score ?? [0, 0]
       setGames(editing.games ?? [...Array<Result>(w).fill('W'), ...Array<Result>(l).fill('L')])
-      setDeckId(known ? editing.deckId! : '')
-      setDeckFree(known ? '' : editing.deckName)
+      setDeckId(known?.id ?? '')
+      setDeckText(known?.name ?? editing.deckName)
       setOpponent(editing.opponent)
       setKind(editing.kind)
       setNotes(editing.notes ?? '')
@@ -78,16 +83,18 @@ export function RecordMatch({
     setKind(prefs.kind !== 'last' ? prefs.kind : lastKind)
     setResult(suggestedResult ?? null)
     setGames([])
-    setDeckId(decks.some((d) => d.id === lastDeck) ? lastDeck : '')
-    setDeckFree('')
+    const last = decks.find((d) => d.id === lastDeck)
+    setDeckId(last?.id ?? '')
+    setDeckText(last?.name ?? lastDeckName)
     setOpponent('')
     setNotes('')
     setStart(null)
     setOppName('')
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const deck = decks.find((d) => d.id === deckId)
-  const deckName = deck?.name ?? deckFree.trim()
+  // picked from the list, or written exactly as one of the decks is called
+  const deck = decks.find((d) => d.id === deckId) ?? decks.find((d) => normName(d.name) === normName(deckText.trim()))
+  const deckName = deck?.name ?? deckText.trim()
   const played = playedGames(games)
   const score = scoreOf(played)
   const finalResult = format === 'bo3' ? (played.length ? resultOfScore(score) : null) : result
@@ -99,7 +106,8 @@ export function RecordMatch({
   const save = () => {
     if (!finalResult || !deckName) return
     if (!editing) {
-      setLastDeck(deckId)
+      setLastDeck(deck?.id ?? '')
+      setLastDeckName(deckName)
       setLastKind(kind)
       setLastFormat(format)
     }
@@ -183,23 +191,19 @@ export function RecordMatch({
             ))}
           </div>
         </div>
-        <label>
-          <span>{t('match.myDeck')}</span>
-          <select value={deckId} onChange={(e) => setDeckId(e.target.value)}>
-            <option value="">{t('match.noDeck')}</option>
-            {decks.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {!deckId && (
-          <label>
-            <span>{t('match.deckFree')}</span>
-            <input value={deckFree} onChange={(e) => setDeckFree(e.target.value)} list="meta-names" />
-          </label>
-        )}
+        <DeckField
+          value={deckText}
+          decks={decks}
+          metaNames={metaNames}
+          onType={(v) => {
+            setDeckText(v)
+            setDeckId('')
+          }}
+          onPick={(d) => {
+            setDeckText(d.name)
+            setDeckId(d.id)
+          }}
+        />
         <label>
           <span>{t('match.opponent')}</span>
           <input value={opponent} onChange={(e) => setOpponent(e.target.value)} list="meta-names" />
@@ -246,5 +250,67 @@ export function RecordMatch({
         </button>
       </div>
     </Sheet>
+  )
+}
+
+/** "My deck": whatever the player writes, with their decks in the app and the meta's commanders as suggestions. */
+function DeckField({
+  value,
+  decks,
+  metaNames,
+  onType,
+  onPick,
+}: {
+  value: string
+  decks: Deck[]
+  metaNames: string[]
+  onType: (v: string) => void
+  onPick: (d: Deck) => void
+}) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const q = normName(value.trim())
+  const mine = decks.filter((d) => !q || normName([d.name, ...commanderNames(d)].join(' ')).includes(q)).slice(0, 5)
+  const cmds = q ? metaNames.filter((n) => normName(n).includes(q) && n !== value).slice(0, 5) : []
+  const pick = (fn: () => void) => () => {
+    fn()
+    setOpen(false)
+  }
+  return (
+    <div className="deck-field" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}>
+      <label>
+        <span>{t('match.myDeck')}</span>
+        <input
+          value={value}
+          placeholder={t('match.deckHint')}
+          autoComplete="off"
+          onFocus={() => setOpen(true)}
+          onChange={(e) => {
+            onType(e.target.value)
+            setOpen(true)
+          }}
+        />
+      </label>
+      {open && mine.length + cmds.length > 0 && (
+        // keeps the focus in the field, so the tap reaches the button before the list closes
+        <ul className="ac-list" onPointerDown={(e) => e.preventDefault()}>
+          {mine.length > 0 && <li className="ac-head">{t('match.yourDecks')}</li>}
+          {mine.map((d) => (
+            <li key={d.id}>
+              <button onClick={pick(() => onPick(d))}>
+                <b className="ellipsis">{d.name}</b>
+                <span className="muted small ellipsis">{commanderNames(d).filter((n) => n !== d.name).join(' / ')}</span>
+              </button>
+            </li>
+          ))}
+          {cmds.length > 0 && <li className="ac-head">{t('match.commanders')}</li>}
+          {cmds.map((n) => (
+            <li key={n}>
+              <button onClick={pick(() => onType(n))}>{n}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

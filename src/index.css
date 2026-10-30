@@ -1094,22 +1094,36 @@ button.kv.clickable b {
   display: grid;
   place-items: center;
 }
-.add-card {
-  position: relative;
-}
 .ac-list {
   list-style: none;
-  margin: 4px 0 0;
+  margin: 0;
   padding: 4px;
   background: var(--surface-2);
   border-radius: 12px;
   border: 1px solid var(--line);
 }
 .ac-list button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
   text-align: left;
   padding: 9px 10px;
   border-radius: 8px;
+  color: var(--text);
+}
+.ac-head {
+  padding: 8px 10px 2px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.deck-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .ac-list button:active {
   background: var(--line);
