@@ -347,7 +347,8 @@ export default function AdminSources({ circuit }: { circuit: Circuit | null }) {
               </button>
             ))}
           </div>
-          <AdminCircuit year={year} />
+          {/* a new year starts closed: an edit left open belongs to the year it was opened for */}
+          <AdminCircuit key={year} year={year} />
           <button className="btn primary" onClick={() => setEditing('new')}>
             <Icon name="plus" size={16} /> {t('sources.add')}
           </button>
