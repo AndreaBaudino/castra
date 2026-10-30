@@ -397,7 +397,7 @@ export function ComparePage({
     [t('circuit.sort.events'), a.eventPoints, b.eventPoints],
     [t('circuit.sort.played'), a.events.length, b.events.length],
     ['Top 8', a.top8, b.top8],
-    [t('circuit.rec.wins'), wins(a), wins(b)],
+    [t('meta.won'), wins(a), wins(b)],
     [t('circuit.best'), a.best, b.best, true, (v) => placeLabel(v, lang)],
     [t('circuit.avgPts'), a.events.length ? avg(a) : undefined, b.events.length ? avg(b) : undefined, false, (v) => v.toFixed(1)],
     [t('meta.tournaments'), ea.length || undefined, eb.length || undefined],
