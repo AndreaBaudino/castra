@@ -19,6 +19,8 @@ export const CHANGELOG: Release[] = [
       'Fine partita: quando qualcuno arriva a 0 vite, sotto le tue compare chi ha vinto con il pulsante "Registra risultato" (già impostato su vittoria o sconfitta) e, se non vuoi salvarla, "Nuova partita senza registrare"',
       'Registrare una partita: se "Salva" è spento, sotto c\'è scritto cosa manca (il risultato o il tuo mazzo)',
       'Un link a un giocatore, un torneo o una lega che non c\'è (vecchio o di un altro anno) ora dice "Pagina non trovata" invece di aprire una pagina vuota',
+      'Circuito: "Come funziona" nelle Classifiche (e la (i) accanto alla zona POTY nella pagina di un giocatore) spiega punti, POTY, invitati, zona POTY, Livelli 1 e 2 e V-S-P',
+      'Sul computer, nel menu a sinistra, la voce del profilo si chiama "Profilo" come la sua pagina e, finché non accedi, ricorda che da lì si accede o ci si registra',
       'Ritocchi: il record vittorie-sconfitte-pareggi non va più a capo nei riquadri; "Le mie stats" senza partite non mostra filtri inutili; "Mazzi" vuoto ha un solo pulsante Importa e ricorda che vanno bene anche le liste di Archidekt, MTGO e Arena',
     ],
     en: [
@@ -31,6 +33,8 @@ export const CHANGELOG: Release[] = [
       'End of the game: when someone reaches 0 life, under your life total you see who won with a "Record result" button (already set to win or loss) and, if you don\'t want to save it, "New game without recording"',
       'Recording a game: when "Save" is off, a line below says what is missing (the result or your deck)',
       'A link to a player, tournament or league that isn\'t there (old, or from another year) now says "Page not found" instead of opening an empty page',
+      'Circuit: "How it works" in the Leaderboards (and the (i) next to the POTY zone on a player\'s page) explains points, POTY, invited players, POTY zone, Levels 1 and 2 and W-L-D',
+      'On a computer, in the menu on the left, the profile entry is called "Profile" like its page and, until you sign in, reminds you that you sign in or sign up from there',
       'Touch-ups: the win-loss-draw record no longer wraps in the stat tiles; "My stats" with no games shows no useless filters; an empty "Decks" has a single Import button and mentions that Archidekt, MTGO and Arena lists work too',
     ],
   },

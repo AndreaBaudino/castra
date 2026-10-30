@@ -55,7 +55,15 @@ export function SideNav({
         ) : (
           <span className="avatar">{user ? (user.name ?? user.email ?? '?')[0].toUpperCase() : <Icon name="user" size={18} />}</span>
         )}
-        <span className="ellipsis">{user?.name ?? user?.email ?? t('auth.title')}</span>
+        {user ? (
+          <span className="ellipsis">{user.name ?? user.email}</span>
+        ) : (
+          // signed out: what the page is, and what it's for
+          <span className="sidenav-who">
+            {t('account.title')}
+            <small>{t('auth.signInOrUp')}</small>
+          </span>
+        )}
       </button>
     </aside>
   )

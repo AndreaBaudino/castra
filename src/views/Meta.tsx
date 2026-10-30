@@ -5,7 +5,8 @@ import { Icon, Pips, pct, wrClass } from '../components/ui'
 import type { Circuit } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { CircuitPanel, type CircuitPrefs, LiveStatus } from './Circuit'
-import { MetaInfoButton } from './MetaInfo'
+import { CircuitInfoButton, MetaInfoButton } from './MetaInfo'
+import { POTY_SPOTS } from '../config'
 import { MetaPie } from '../components/MetaPie'
 
 type Status = 'idle' | 'loading' | 'error'
@@ -246,7 +247,10 @@ export default function Meta({
             </div>
           )}
           {circuitYears.includes(circuitYear) ? (
-            <LiveStatus circuit={circuit} status={circuitStatus} />
+            <div className="live-row">
+              <LiveStatus circuit={circuit} status={circuitStatus} />
+              <CircuitInfoButton spots={circuit?.poty ?? POTY_SPOTS} withLabel />
+            </div>
           ) : (
             <div className="notice">{t('circuit.noYear', { y: circuitYear })}</div>
           )}

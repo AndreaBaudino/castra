@@ -92,7 +92,7 @@ export default function Home({
             </div>
           </div>
           <div className="head-right">
-            <button className="account-btn" onClick={() => go('account')} aria-label={t('auth.title')}>
+            <button className="account-btn" onClick={() => go('account')} aria-label={t('account.title')}>
               {user?.photo ? (
                 <img src={user.photo} alt="" referrerPolicy="no-referrer" />
               ) : user ? (

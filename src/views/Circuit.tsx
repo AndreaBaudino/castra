@@ -11,6 +11,8 @@ import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
 import type { MetaDataset } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
+import { CircuitInfoButton } from './MetaInfo'
+import { POTY_SPOTS } from '../config'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
@@ -433,7 +435,7 @@ export function PlayerPage({
             <div className="stat-label">{t('circuit.events')}</div>
           </div>
         </div>
-        <PotyNote p={p} poty={poty} />
+        <PotyNote p={p} poty={poty} spots={circuit.poty ?? POTY_SPOTS} />
         {above && <div className="muted small">{t('circuit.gapAbove', { n: above.total - p.total, r: above.rank ?? '' })}</div>}
       </section>
 
@@ -606,14 +608,20 @@ function ClaimBox({ p, prefs, cover }: { p: Player; prefs: CircuitPrefs; cover?:
   )
 }
 
-function PotyNote({ p, poty }: { p: Player; poty: ReturnType<typeof potyStatus> }) {
+function PotyNote({ p, poty, spots }: { p: Player; poty: ReturnType<typeof potyStatus>; spots: number }) {
   const { t } = useI18n()
-  if (p.potyInvited) return <div className="check ok">{t('circuit.potyByEvent')}</div>
-  if (poty.zone.has(p.key)) {
-    const pos = [...poty.zone].indexOf(p.key) + 1
-    return <div className="check ok">{t('circuit.potyInZone', { pos, n: poty.zone.size })}</div>
-  }
-  return <div className="check">{t('circuit.potyGap', { n: Math.max(1, poty.cutoff - p.total), c: poty.cutoff })}</div>
+  const pos = [...poty.zone].indexOf(p.key) + 1
+  const [cls, text] = p.potyInvited
+    ? ['ok', t('circuit.potyByEvent')]
+    : pos
+      ? ['ok', t('circuit.potyInZone', { pos, n: poty.zone.size })]
+      : ['', t('circuit.potyGap', { n: Math.max(1, poty.cutoff - p.total), c: poty.cutoff })]
+  return (
+    <div className={`check poty-note ${cls}`}>
+      <span className="grow">{text}</span>
+      <CircuitInfoButton spots={spots} />
+    </div>
+  )
 }
 
 /** Event points piling up over the season: one point per event of the circuit, a dot where the player scored. */
@@ -906,7 +914,7 @@ export function CircuitCard({
               <div className="stat-label">Top 8</div>
             </div>
           </div>
-          <PotyNote p={p} poty={poty} />
+          <PotyNote p={p} poty={poty} spots={circuit.poty ?? POTY_SPOTS} />
         </>
       )}
     </section>
