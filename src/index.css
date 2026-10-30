@@ -1302,6 +1302,46 @@ button.kv.clickable b {
   font-weight: 800;
   font-size: 0.8rem;
 }
+/* game over: the life total moves up to make room for recording the result */
+.life-center.ended {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.life-center.ended .life-num {
+  font-size: clamp(3.5rem, 16vw, 6.5rem);
+}
+.life-center.ended .life-delta {
+  display: none; /* no room for it above the smaller total */
+}
+.game-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+.game-end-title {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.game-end-btn {
+  border-radius: 999px;
+  padding: 0 22px;
+  background: #f3ede6;
+  color: #1b150f;
+}
+.game-end-skip {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  min-height: 32px;
+}
 .counters {
   display: grid;
   grid-template-columns: 1fr 1fr;

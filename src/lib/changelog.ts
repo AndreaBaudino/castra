@@ -16,6 +16,7 @@ export const CHANGELOG: Release[] = [
       'Importazione dei mazzi: il compagno di una lista esportata per Arena ("Companion") va nel sideboard e non più tra le 100 carte, così il mazzo non risulta di 101 carte e un compagno vietato viene segnalato',
       'Circuito: la ricerca dei giocatori ignora gli accenti ("nicolo" trova Nicolò), in classifica e nel confronto',
       'Registrare una partita: correggere una partita vecchia non cambia più formato e tipo con cui parte la prossima',
+      'Fine partita: quando qualcuno arriva a 0 vite, sotto le tue compare chi ha vinto con il pulsante "Registra risultato" (già impostato su vittoria o sconfitta) e, se non vuoi salvarla, "Nuova partita senza registrare"',
     ],
     en: [
       "Banlist updated without waiting for a new version: when an announcement comes out, the app gets the new banlist from Centurion's site when it starts. It applies to the deck check and to the legality in card search; in the Profile, next to Banlist, the date of the latest update",
@@ -24,6 +25,7 @@ export const CHANGELOG: Release[] = [
       'Deck import: the companion of a list exported for Arena ("Companion") goes to the sideboard instead of the 100 cards, so the deck no longer counts 101 cards and a banned companion is flagged',
       'Circuit: player search ignores accents ("nicolo" finds Nicolò), in the ranking and in the comparison',
       'Recording a game: editing an old game no longer changes the format and kind the next one starts with',
+      'End of the game: when someone reaches 0 life, under your life total you see who won with a "Record result" button (already set to win or loss) and, if you don\'t want to save it, "New game without recording"',
     ],
   },
   {

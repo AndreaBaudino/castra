@@ -107,10 +107,12 @@ function PlayerPanel({
   idx,
   p,
   update,
+  end,
 }: {
   idx: 0 | 1
   p: PlayerState
   update: (fn: (p: PlayerState) => PlayerState) => void
+  end?: React.ReactNode // the game is over: shown under the life total in place of "defeated"
 }) {
   const { t } = useI18n()
   const [delta, setDelta] = useState(0)
@@ -165,10 +167,10 @@ function PlayerPanel({
         <button className="life-tap minus" {...minus} aria-label="-1">
           <span>−</span>
         </button>
-        <div className="life-center">
+        <div className={`life-center ${end ? 'ended' : ''}`}>
           <div className="life-num">{p.life}</div>
           <div className={`life-delta ${delta ? 'show' : ''}`}>{delta > 0 ? `+${delta}` : delta || ''}</div>
-          {isDead(p) && <div className="life-dead">{t('life.lost')}</div>}
+          {end ?? (isDead(p) && <div className="life-dead">{t('life.lost')}</div>)}
         </div>
         <button className="life-tap plus" {...plus} aria-label="+1">
           <span>+</span>
@@ -396,7 +398,24 @@ export default function LifeCounter({
         </button>
       </div>
 
-      <PlayerPanel idx={1} p={game.players[1]} update={update(1)} />
+      <PlayerPanel
+        idx={1}
+        p={game.players[1]}
+        update={update(1)}
+        end={
+          someoneDead && (
+            <div className="game-end">
+              <div className="game-end-title">{t(suggested === 'W' ? 'life.won' : suggested === 'L' ? 'life.youLost' : 'life.over')}</div>
+              <button className="btn game-end-btn" onClick={() => setRecording(true)}>
+                <Icon name="meta" size={16} /> {t('game.record')}
+              </button>
+              <button className="game-end-skip" onClick={() => reset()}>
+                {t('life.newNoRecord')}
+              </button>
+            </div>
+          )
+        }
+      />
 
       {banner && (
         <div className="timer-banner" onClick={() => setBanner('')}>
