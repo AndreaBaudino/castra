@@ -14,7 +14,7 @@
   `src/index.css` (stesso valore di `src/lib/wide.ts`) e non devono cambiare il layout mobile.
 
 ## Come lavorare in fretta e bene
-- In ogni attività sul codice segui la skill `ponytail` (`.claude/skills/ponytail`, livello full), anche senza che
+- In ogni attività sul codice segui la skill `ponytail` (`.claude/skills/ponytail`, livello ultra), anche senza che
   venga richiamata. I resoconti di `/ponytail-review` e `/ponytail-audit` vanno scritti in italiano.
 - Scrivi il minimo codice che serve: riusa le funzioni di `src/lib/` e i
   componenti di `src/components/ui.tsx` prima di scriverne di nuovi, niente astrazioni "per il futuro", niente nuove
