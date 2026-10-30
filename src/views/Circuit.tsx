@@ -4,7 +4,7 @@ import { artUrl } from './MetaPages'
 import { useI18n } from '../i18n'
 import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type RankChange, eventDateLabel, playerKey, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
-import { Icon } from '../components/ui'
+import { Icon, ShareButton } from '../components/ui'
 import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
 import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
@@ -390,6 +390,7 @@ export function PlayerPage({
       onBack={onBack}
       actions={
         <div className="hero-actions">
+          <ShareButton text={t('share.player', { name: p.name, pos: p.rank ?? '—', pts: p.total })} />
           {/* the claimer customises their own page, like a deck's edit button */}
           {claim && claim.uid === prefs.uid && (
             <button className="icon-btn" onClick={() => setCustomizing(true)} aria-label={t('player.customize')}>
@@ -731,7 +732,7 @@ export function EventPage({
   )
 
   return (
-    <SubPageShell title={e.name} onBack={onBack}>
+    <SubPageShell title={e.name} onBack={onBack} actions={<ShareButton text={t('share.results', { name: e.name })} />}>
       <div className="chips static">
         {eventDateLabel(e, lang) && <span className="tag big">{eventDateLabel(e, lang)}</span>}
         <span className="tag big">{t('circuit.nPlayers', { n: e.players })}</span>

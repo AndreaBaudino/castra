@@ -1,4 +1,5 @@
-import { type ReactNode, useEffect, useId, useRef } from 'react'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { useI18n } from '../i18n'
 
 export function Pips({ colors, size = 12 }: { colors: string | string[]; size?: number }) {
   const list = typeof colors === 'string' ? colors.split('') : colors
@@ -92,6 +93,14 @@ const paths: Record<string, ReactNode> = {
   star: <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />,
   download: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
   upload: <path d="M12 16V5M7 10l5-5 5 5M5 20h14" />,
+  share: (
+    <>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+    </>
+  ),
   external: <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
   globe: (
     <>
@@ -187,6 +196,31 @@ export function Icon({ name, size = 20 }: { name: keyof typeof paths | string; s
     >
       {paths[name]}
     </svg>
+  )
+}
+
+/** Shares the page being shown: the phone's share menu, or the link copied where there is none. */
+export function ShareButton({ text, onImage }: { text: string; onImage?: boolean }) {
+  const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
+  const share = async () => {
+    const url = location.href
+    if (navigator.share) return navigator.share({ title: 'Castra', text, url }).catch(() => {}) // closed: nothing to do
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      /* clipboard blocked */
+    }
+  }
+  return (
+    <>
+      <button className={`icon-btn ${onImage ? 'on-image' : ''}`} onClick={share} aria-label={t('share.label')}>
+        <Icon name="share" />
+      </button>
+      {copied && <div className="toast">{t('share.copied')}</div>}
+    </>
   )
 }
 

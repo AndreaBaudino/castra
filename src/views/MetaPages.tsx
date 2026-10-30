@@ -16,7 +16,7 @@ import {
 } from '../lib/meta'
 import type { Deck } from '../lib/decks'
 import { useStoredState } from '../lib/storage'
-import { Icon, Pips, RecNum, pct, wrClass } from '../components/ui'
+import { Icon, Pips, RecNum, ShareButton, pct, wrClass } from '../components/ui'
 import { META_FILTER_KEY, MetaFilters } from './Meta'
 import { MetaPie } from '../components/MetaPie'
 import { MetaInfoButton } from './MetaInfo'
@@ -136,6 +136,9 @@ export function CommanderPage({
           <button className="icon-btn on-image" onClick={onBack} aria-label="back">
             <Icon name="back" />
           </button>
+          {deck && (
+            <ShareButton onImage text={t('share.commander', { name: cmd.name, share: pct(deck.share), wr: pct(winrate(deck)) })} />
+          )}
         </div>
         <div className="deck-hero-body">
           <h1 className="sub-title">{cmd.name}</h1>
@@ -469,7 +472,7 @@ export function TournamentPage({
   }
 
   return (
-    <SubPageShell title={tournamentLabel(x, t)} onBack={onBack}>
+    <SubPageShell title={tournamentLabel(x, t)} onBack={onBack} actions={<ShareButton text={t('share.results', { name: tournamentLabel(x, t) })} />}>
       <div className="chips static">
         <span className="tag big">{x.date ? new Date(`${x.date}T12:00:00`).toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' }) : t('meta.noDate')}</span>
         <span className="tag big">{t('circuit.nPlayers', { n: x.players })}</span>
