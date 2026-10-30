@@ -190,6 +190,13 @@ export function Icon({ name, size = 20 }: { name: keyof typeof paths | string; s
   )
 }
 
+/** A W-L-D record in a stat tile, kept on one line. */
+export const RecNum = ({ text }: { text: string }) => (
+  <div className="stat-num rec" style={{ '--n': text.length } as React.CSSProperties}>
+    {text}
+  </div>
+)
+
 export const pct = (v: number, digits = 1) => `${(v * 100).toFixed(digits)}%`
 
 /** Winrate color: below 45% red, 45–55 neutral, above 55 green. */

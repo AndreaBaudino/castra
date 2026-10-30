@@ -511,6 +511,14 @@ h1 {
   font-size: 1.25rem;
   font-variant-numeric: tabular-nums;
 }
+/* a W-L-D record stays on one line: the longer it is, the smaller (--n = its length) */
+.stats3 > div {
+  container-type: inline-size;
+}
+.stat-num.rec {
+  white-space: nowrap;
+  font-size: min(1.25rem, calc(140cqi / var(--n)));
+}
 .stat-label {
   color: var(--muted);
   font-size: 0.72rem;

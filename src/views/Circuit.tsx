@@ -352,7 +352,7 @@ export function PlayerPage({
   const mine = useMemo(() => dataset?.entries.filter((e) => e.key === playerKey) ?? [], [dataset, playerKey])
   const [customizing, setCustomizing] = useState(false)
   if (!p) {
-    if (!dataset || !mine.length) return <SubPageShell title="—" onBack={onBack} />
+    if (!dataset || !mine.length) return <MissingPage loaded={!!dataset && circuit.players.length > 0} onBack={onBack} />
     const auto = signatureOf(dataset, mine)
     // in the meta but not in the circuit ranking (a league that doesn't count, or a name written differently)
     return (
@@ -691,7 +691,7 @@ export function EventPage({
   const { t, lang } = useI18n()
   const e = circuit.events.find((x) => x.id === eventId)
   const byKey = useMemo(() => new Map(circuit.players.map((p) => [p.key, p])), [circuit])
-  if (!e) return <SubPageShell title="—" onBack={onBack} />
+  if (!e) return <MissingPage loaded={circuit.players.length > 0} onBack={onBack} />
   const top = e.results.filter((r) => r.place).sort((a, b) => a.place! - b.place!)
   const rest = e.results.filter((r) => !r.place).sort((a, b) => (byKey.get(a.key)?.name ?? '').localeCompare(byKey.get(b.key)?.name ?? ''))
 
@@ -733,6 +733,16 @@ export function EventPage({
           <ul className="card-list">{rest.map(row)}</ul>
         </section>
       )}
+    </SubPageShell>
+  )
+}
+
+/** A link to something that isn't there (an old link, another year): blank while the data is still loading. */
+export function MissingPage({ loaded, title, onBack }: { loaded: boolean; title?: string; onBack: () => void }) {
+  const { t } = useI18n()
+  return (
+    <SubPageShell title={title ?? (loaded ? t('common.notFound') : '—')} onBack={onBack}>
+      {loaded && <p className="muted center pad">{t('common.notFoundHint')}</p>}
     </SubPageShell>
   )
 }

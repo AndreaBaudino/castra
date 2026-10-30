@@ -16,11 +16,11 @@ import {
 } from '../lib/meta'
 import type { Deck } from '../lib/decks'
 import { useStoredState } from '../lib/storage'
-import { Icon, Pips, pct, wrClass } from '../components/ui'
+import { Icon, Pips, RecNum, pct, wrClass } from '../components/ui'
 import { META_FILTER_KEY, MetaFilters } from './Meta'
 import { MetaPie } from '../components/MetaPie'
 import { MetaInfoButton } from './MetaInfo'
-import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
+import { type CircuitPrefs, MissingPage, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
 import type { Circuit, CircuitEvent, Player } from '../lib/circuit'
 import { commanderNames } from './Decks'
 
@@ -123,7 +123,7 @@ export function CommanderPage({
     }
   }, [dataset, cmd, filter])
 
-  if (!dataset || !cmd || !view) return <SubPageShell title={name} onBack={onBack} />
+  if (!dataset || !cmd || !view) return <MissingPage loaded={!!dataset} title={name} onBack={onBack} />
   const { deck } = view
   const mine = deck ? decks.filter((d) => findMetaDeck([deck], commanderNames(d))) : []
   const [lo, hi] = deck ? wilson(deck.wins, deck.wins + deck.losses) : [0, 0]
@@ -434,7 +434,7 @@ export function TournamentPage({
     const points = new Map(ev?.results.map((r) => [r.key, r]))
     return { rows, cmds, commanders: counts.size, incomplete, points }
   }, [dataset, x, circuit])
-  if (!dataset || !x || !view) return <SubPageShell title="—" onBack={onBack} />
+  if (!dataset || !x || !view) return <MissingPage loaded={!!dataset} onBack={onBack} />
   const event = isEvent(x)
   const hasLeague = x.kind === 'league' && !!circuit
 
@@ -555,7 +555,7 @@ export function PlayerDecks({
           <div className="stat-label">Winrate</div>
         </div>
         <div>
-          <div className="stat-num">{rec.games ? fmtRec(rec) : '—'}</div>
+          <RecNum text={rec.games ? fmtRec(rec) : '—'} />
           <div className="stat-label">{t('meta.wld')}</div>
         </div>
         <div>

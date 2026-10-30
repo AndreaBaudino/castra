@@ -3,7 +3,7 @@ import { useI18n } from '../i18n'
 import { type Circuit, type League, type Player, eventDateLabel, playerKey, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { Icon, pct } from '../components/ui'
-import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
+import { type CircuitPrefs, MissingPage, PotyTag, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
 import { type MetaDataset, type MetaEntry, type MetaTournament, recordOf, shortName, winrate } from '../lib/meta'
 import { DeckRecords, LeagueMeta, LeagueStages, tournamentLabel } from './MetaPages'
 
@@ -116,7 +116,7 @@ export function LeaguePage({
   const poty = useMemo(() => potyStatus(circuit), [circuit])
   // the stages in the deck meta: leagues outside the circuit ranking have only these
   const inMeta = !!dataset?.tournaments.some((x) => x.season === season && x.league === name)
-  if (!l && !inMeta) return <SubPageShell title="—" onBack={onBack} />
+  if (!l && !inMeta) return <MissingPage loaded={!!dataset && circuit.players.length > 0} onBack={onBack} />
   const views = [...(l ? (['ranking'] as const) : []), ...(inMeta ? (['stages', 'meta'] as const) : [])]
   const shown = views.includes(view) ? view : views[0]
   return (
@@ -385,7 +385,7 @@ export function ComparePage({
   const b = byKey.get(kb)
   // both players in the deck meta: winrate, and every tournament played together with places and decks
   const [ea, eb] = useMemo(() => [ka, kb].map((k) => dataset?.entries.filter((e) => e.key === k) ?? []), [dataset, ka, kb])
-  if (!a || !b) return <SubPageShell title="—" onBack={onBack} />
+  if (!a || !b) return <MissingPage loaded={circuit.players.length > 0} onBack={onBack} />
   const [recA, recB] = [recordOf(ea), recordOf(eb)]
 
   // [label, value a, value b, lower is better]

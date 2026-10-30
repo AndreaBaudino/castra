@@ -5,7 +5,7 @@ import { type Match, type Record3, fmtRecord, groupBy, record, resultLabel } fro
 import { useLongPress } from '../lib/longPress'
 import { commanderNames } from './Decks'
 import { type MetaDeck, findMetaDeck, normName, shortName, winrate } from '../lib/meta'
-import { Icon, Sheet, pct, wrClass } from '../components/ui'
+import { Icon, RecNum, Sheet, pct, wrClass } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
 import { useDialog } from '../components/Dialog'
 import { useStoredState } from '../lib/storage'
@@ -204,30 +204,32 @@ export default function Stats({
         </button>
       </header>
 
-      {/* one row on a desktop */}
-      <div className="stats-filters">
-        <div className="seg wide">
-          {(['all', 'tournament', 'casual'] as Filter[]).map((f) => (
-            <button key={f} className={filter === f ? 'on' : ''} onClick={() => setFilter(f)}>
-              {t(f === 'all' ? 'stats.all' : f === 'tournament' ? 'match.tournament' : 'match.casual')}
-            </button>
-          ))}
-        </div>
-        <div className="filter-row">
-          <select className="select-pill" value={period} onChange={(e) => setPeriod(e.target.value as Period)} aria-label={t('stats.period')}>
-            {(['all', '30', '90', 'year'] as Period[]).map((p) => (
-              <option key={p} value={p}>
-                {t(`stats.period.${p}`)}
-              </option>
+      {/* one row on a desktop; nothing to filter before the first match */}
+      {matches.length > 0 && (
+        <div className="stats-filters">
+          <div className="seg wide">
+            {(['all', 'tournament', 'casual'] as Filter[]).map((f) => (
+              <button key={f} className={filter === f ? 'on' : ''} onClick={() => setFilter(f)}>
+                {t(f === 'all' ? 'stats.all' : f === 'tournament' ? 'match.tournament' : 'match.casual')}
+              </button>
             ))}
-          </select>
-          <select className="select-pill" value={format} onChange={(e) => setFormat(e.target.value as FormatFilter)} aria-label={t('account.format')}>
-            <option value="all">Bo1 + Bo3</option>
-            <option value="bo1">Bo1</option>
-            <option value="bo3">Bo3</option>
-          </select>
+          </div>
+          <div className="filter-row">
+            <select className="select-pill" value={period} onChange={(e) => setPeriod(e.target.value as Period)} aria-label={t('stats.period')}>
+              {(['all', '30', '90', 'year'] as Period[]).map((p) => (
+                <option key={p} value={p}>
+                  {t(`stats.period.${p}`)}
+                </option>
+              ))}
+            </select>
+            <select className="select-pill" value={format} onChange={(e) => setFormat(e.target.value as FormatFilter)} aria-label={t('account.format')}>
+              <option value="all">Bo1 + Bo3</option>
+              <option value="bo1">Bo1</option>
+              <option value="bo3">Bo3</option>
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       {!shown.length ? (
         <div className="empty-state">
@@ -243,7 +245,7 @@ export default function Stats({
                 <div className="stat-label">{t('stats.games')}</div>
               </div>
               <div>
-                <div className="stat-num">{fmtRecord(rec)}</div>
+                <RecNum text={fmtRecord(rec)} />
                 <div className="stat-label">{t('stats.record')}</div>
               </div>
               <div>

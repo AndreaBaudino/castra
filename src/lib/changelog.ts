@@ -17,6 +17,9 @@ export const CHANGELOG: Release[] = [
       'Circuito: la ricerca dei giocatori ignora gli accenti ("nicolo" trova Nicolò), in classifica e nel confronto',
       'Registrare una partita: correggere una partita vecchia non cambia più formato e tipo con cui parte la prossima',
       'Fine partita: quando qualcuno arriva a 0 vite, sotto le tue compare chi ha vinto con il pulsante "Registra risultato" (già impostato su vittoria o sconfitta) e, se non vuoi salvarla, "Nuova partita senza registrare"',
+      'Registrare una partita: se "Salva" è spento, sotto c\'è scritto cosa manca (il risultato o il tuo mazzo)',
+      'Un link a un giocatore, un torneo o una lega che non c\'è (vecchio o di un altro anno) ora dice "Pagina non trovata" invece di aprire una pagina vuota',
+      'Ritocchi: il record vittorie-sconfitte-pareggi non va più a capo nei riquadri; "Le mie stats" senza partite non mostra filtri inutili; "Mazzi" vuoto ha un solo pulsante Importa e ricorda che vanno bene anche le liste di Archidekt, MTGO e Arena',
     ],
     en: [
       "Banlist updated without waiting for a new version: when an announcement comes out, the app gets the new banlist from Centurion's site when it starts. It applies to the deck check and to the legality in card search; in the Profile, next to Banlist, the date of the latest update",
@@ -26,6 +29,9 @@ export const CHANGELOG: Release[] = [
       'Circuit: player search ignores accents ("nicolo" finds Nicolò), in the ranking and in the comparison',
       'Recording a game: editing an old game no longer changes the format and kind the next one starts with',
       'End of the game: when someone reaches 0 life, under your life total you see who won with a "Record result" button (already set to win or loss) and, if you don\'t want to save it, "New game without recording"',
+      'Recording a game: when "Save" is off, a line below says what is missing (the result or your deck)',
+      'A link to a player, tournament or league that isn\'t there (old, or from another year) now says "Page not found" instead of opening an empty page',
+      'Touch-ups: the win-loss-draw record no longer wraps in the stat tiles; "My stats" with no games shows no useless filters; an empty "Decks" has a single Import button and mentions that Archidekt, MTGO and Arena lists work too',
     ],
   },
   {

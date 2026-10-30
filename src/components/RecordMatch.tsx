@@ -240,6 +240,7 @@ export function RecordMatch({
           <span>{t('match.notes')}</span>
           <input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
+        {!canSave && <p className="muted small center no-margin">{t(finalResult ? 'match.needDeck' : 'match.needResult')}</p>}
         <button className="btn primary" disabled={!canSave} onClick={save}>
           {editing ? t('match.update') : (saveLabel ?? t('match.save'))}
         </button>

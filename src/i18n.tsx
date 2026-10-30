@@ -251,7 +251,7 @@ const it = {
 
   'decks.title': 'Mazzi',
   'decks.import': 'Importa',
-  'decks.empty': 'Nessun mazzo. Esporta la lista da Moxfield (Export → Copy as plain text) e incollala qui.',
+  'decks.empty': 'Nessun mazzo. Esporta la lista come testo da Moxfield, Archidekt, MTGO o Arena e incollala qui.',
   'decks.name': 'Nome del mazzo',
   'decks.paste': 'Incolla la lista',
   'decks.pasteHint':
@@ -366,6 +366,8 @@ const it = {
   'match.save': 'Salva partita',
   'match.saveAndReset': 'Salva e nuova partita',
   'match.saved': 'Partita salvata!',
+  'match.needResult': 'Per salvare, scegli il risultato.',
+  'match.needDeck': 'Per salvare, indica il tuo mazzo o il tuo comandante.',
 
   'stats.emptyShort': 'Nessuna partita',
   'stats.title': 'Le mie statistiche',
@@ -565,6 +567,8 @@ const it = {
 
   'common.lang': 'Lingua',
   'common.cancel': 'Annulla',
+  'common.notFound': 'Pagina non trovata',
+  'common.notFoundHint': 'Il link potrebbe essere vecchio, o di un anno diverso da quello scelto.',
   'deck.stats': 'Statistiche',
   'deck.statsAvg': 'costo medio {n}',
   'deck.statsLands': '{n} terre',
@@ -1110,7 +1114,7 @@ const en: Record<Key, string> = {
 
   'decks.title': 'Decks',
   'decks.import': 'Import',
-  'decks.empty': 'No decks. Export your list from Moxfield (Export → Copy as plain text) and paste it here.',
+  'decks.empty': 'No decks. Export your list as text from Moxfield, Archidekt, MTGO or Arena and paste it here.',
   'decks.name': 'Deck name',
   'decks.paste': 'Paste the list',
   'decks.pasteHint':
@@ -1225,6 +1229,8 @@ const en: Record<Key, string> = {
   'match.save': 'Save game',
   'match.saveAndReset': 'Save and new game',
   'match.saved': 'Game saved!',
+  'match.needResult': 'To save, pick the result.',
+  'match.needDeck': 'To save, enter your deck or your commander.',
 
   'stats.emptyShort': 'No games yet',
   'stats.title': 'My stats',
@@ -1424,6 +1430,8 @@ const en: Record<Key, string> = {
 
   'common.lang': 'Language',
   'common.cancel': 'Cancel',
+  'common.notFound': 'Page not found',
+  'common.notFoundHint': 'The link may be old, or from a year other than the one picked.',
   'deck.stats': 'Stats',
   'deck.statsAvg': 'avg mana value {n}',
   'deck.statsLands': '{n} lands',

@@ -190,9 +190,12 @@ export default function Decks({
     <div className="page">
       <header className="page-head">
         <h1>{t('decks.title')}</h1>
-        <button className="btn small primary" onClick={() => setImportOpen(true)}>
-          <Icon name="plus" size={16} /> {t('decks.import')}
-        </button>
+        {/* with no decks, the button in the middle of the page is enough */}
+        {decks.length > 0 && (
+          <button className="btn small primary" onClick={() => setImportOpen(true)}>
+            <Icon name="plus" size={16} /> {t('decks.import')}
+          </button>
+        )}
       </header>
 
       {decks.length > 3 && (
@@ -220,7 +223,7 @@ export default function Decks({
           <Icon name="decks" size={40} />
           <p>{t('decks.empty')}</p>
           <button className="btn primary" onClick={() => setImportOpen(true)}>
-            {t('decks.import')}
+            <Icon name="plus" size={16} /> {t('decks.import')}
           </button>
         </div>
       )}
