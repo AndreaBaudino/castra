@@ -69,6 +69,9 @@ export default function Home({
   // the meta's top commanders: art tiles (compact), the list with names, share and winrate, or a doughnut
   const [metaView, setMetaView] = useStoredState<'strip' | 'list' | 'pie'>('cc.home.metaView', 'strip')
   const recent = [...decks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3)
+  // first visit: what the app is for, until it's closed or the player starts using it
+  const [welcomeClosed, setWelcomeClosed] = useStoredState('cc.welcomeClosed', false)
+  const welcome = !welcomeClosed && !decks.length && !matches.length && !circuitMe
 
   // Compact, to fit a phone without scrolling: one row each for the stats and the circuit, and strips of art
   // for the meta and the decks.
@@ -87,7 +90,7 @@ export default function Home({
           <div className="brand-mark">
             <Logo />
             <div>
-              <div className="brand-kicker">Centurion Commander</div>
+              <div className="brand-kicker">{t('app.slogan')}</div>
               <h1>Castra</h1>
             </div>
           </div>
@@ -105,7 +108,30 @@ export default function Home({
         </header>
       )}
 
-      <InstallBanner />
+      {welcome ? (
+        <section className="card welcome">
+          <div className="brand-kicker">{t('home.welcome')}</div>
+          {(
+            [
+              ['meta', 'trophy', 'home.welcomeMeta'],
+              ['game', 'game', 'home.welcomeGame'],
+              ['decks', 'decks', 'home.welcomeDecks'],
+            ] as const
+          ).map(([tab, icon, key]) => (
+            <button key={tab} className="welcome-row" onClick={() => go(tab)}>
+              <Icon name={icon} size={18} />
+              <span className="grow">{t(key)}</span>
+              <Icon name="chevron" size={16} />
+            </button>
+          ))}
+          <button className="btn ghost small" onClick={() => setWelcomeClosed(true)}>
+            {t('home.welcomeOk')}
+          </button>
+        </section>
+      ) : (
+        // one card at a time for a newcomer: installing comes after the welcome
+        <InstallBanner />
+      )}
       {banner}
 
       {!wide && (

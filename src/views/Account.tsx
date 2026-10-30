@@ -164,7 +164,7 @@ function ThemeEditor({ theme, setTheme }: { theme: Theme; setTheme: (fn: (t: The
         <div className="tp-brand">
           <Logo size={40} />
           <div>
-            <div className="brand-kicker">Centurion Commander</div>
+            <div className="brand-kicker">{t('app.slogan')}</div>
             <div className="tp-title">Castra</div>
           </div>
         </div>

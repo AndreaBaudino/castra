@@ -25,7 +25,7 @@ export function SideNav({
       <div className="brand-mark">
         <Logo size={44} />
         <div>
-          <div className="brand-kicker">Centurion Commander</div>
+          <div className="brand-kicker">{t('app.slogan')}</div>
           <div className="sidenav-name">Castra</div>
         </div>
       </div>

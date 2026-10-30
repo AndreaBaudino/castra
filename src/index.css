@@ -3787,6 +3787,31 @@ mark.diff-new {
   text-align: left;
   color: var(--text);
 }
+.welcome {
+  border-color: var(--gold);
+  gap: 4px;
+}
+.welcome .brand-kicker {
+  margin-bottom: 4px;
+}
+.welcome-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  text-align: left;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.welcome-row svg:first-child {
+  color: var(--gold);
+}
+.welcome-row svg:last-child {
+  color: var(--muted);
+}
+.welcome .btn {
+  align-self: flex-end;
+}
 .home-row .title-live {
   font-weight: 700;
   font-size: 0.92rem;
