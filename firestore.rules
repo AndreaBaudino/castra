@@ -13,7 +13,17 @@ service cloud.firestore {
 
     // each user can read and write only their own data
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // the player the account points to (circuitMe) changes only once the account's claim on it is gone, as the
+      // claim rules trust circuitMe to keep one claim per account
+      function releasesClaim() {
+        let old = resource == null ? null : resource.data.get('circuitMe', null);
+        return old == null
+          || request.resource.data.get('circuitMe', null) == old
+          || !existsAfter(/databases/$(database)/documents/claims/$(old))
+          || getAfter(/databases/$(database)/documents/claims/$(old)).data.uid != request.auth.uid;
+      }
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId && releasesClaim();
       match /{collection}/{docId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
@@ -32,6 +42,9 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at'])
+        // every app downloads all the claims: no oversized names
+        && optionalText('name', 200)
+        && optionalText('photo', 1000)
         // the account must point to this very player, so one account holds one claim
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.circuitMe == playerKey
         // an account whose claim an admin revoked can't take that player back
@@ -42,6 +55,8 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at', 'coverName', 'coverArt', 'deck'])
+        && optionalText('name', 200)
+        && optionalText('photo', 1000)
         && optionalText('coverName', 150)
         && optionalText('deck', 200)
         && (request.resource.data.get('coverArt', null) == null
