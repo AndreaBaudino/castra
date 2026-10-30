@@ -1,11 +1,12 @@
 import { useSyncExternalStore } from 'react'
 import type { DeckCard } from './decks'
-import { META_DATA_URL } from '../config'
+import { FIREBASE_CONFIG } from '../config'
 import { readStored, writeStored } from './storage'
 
-// Centurion Commander banlist, from https://www.centurioncommander.eu/it/ban-list-it/. Read from the site every night
-// (scripts/fetch-banlist.mjs, published as banlist.json next to meta.json): the lists below are the copy shipped with
-// the app, used until the published one has been read once (then it's kept on the device).
+// Centurion Commander banlist, from https://www.centurioncommander.eu/it/ban-list-it/. An admin reads it from the site
+// and publishes it from the admin area (src/lib/banlistSync.ts) at config/banlist on Firestore, where every app reads
+// it at start: the lists below are the copy shipped with the app, used until the published one has been read once
+// (then it's kept on the device).
 
 /** Not allowed anywhere in the game. */
 const BANNED = [
@@ -51,6 +52,7 @@ export interface Banlist {
   banned: string[]
   commander: string[]
   partner: string[]
+  builtIn?: true // the copy shipped with the app, never published
 }
 
 const BUILT_IN: Banlist = {
@@ -60,12 +62,15 @@ const BUILT_IN: Banlist = {
   banned: BANNED,
   commander: BANNED_AS_COMMANDER,
   partner: BANNED_AS_PARTNER,
+  builtIn: true,
 }
-const URL_ = META_DATA_URL.replace(/[^/]+$/, 'banlist.json')
+// read through Firestore's REST API: no need to load Firebase for it, nor to be signed in
+const URL_ = FIREBASE_CONFIG && `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/config/banlist`
 const CACHE_KEY = 'cc.banlist'
 
 // curly apostrophes, case, and the back face of double-faced cards don't matter
-const norm = (name: string) => name.split('//')[0].trim().replace(/[’‘]/g, "'").toLowerCase()
+export const cardKey = (name: string) => name.split('//')[0].trim().replace(/[’‘]/g, "'").toLowerCase()
+const norm = cardKey
 let current = BUILT_IN
 let banned = new Set<string>()
 let bannedCommander = new Set<string>()
@@ -87,14 +92,20 @@ apply(((b) => (valid(b) ? b : BUILT_IN))(readStored<unknown>(CACHE_KEY, null)))
 let loading: Promise<void> | null = null
 /** Reads the published banlist once per session; offline, the last one read stays. */
 export function loadBanlist() {
+  if (!URL_) return Promise.resolve()
   return (loading ??= fetch(URL_, { cache: 'no-cache' })
     .then((res) => (res.ok ? res.json() : null))
-    .then((b: unknown) => {
-      if (!valid(b) || JSON.stringify(b) === JSON.stringify(current)) return
-      writeStored(CACHE_KEY, b)
-      apply(b)
+    .then((doc: { fields?: { json?: { stringValue?: string } } } | null) => {
+      const b: unknown = JSON.parse(doc?.fields?.json?.stringValue ?? 'null')
+      if (valid(b) && JSON.stringify(b) !== JSON.stringify(current)) setBanlist(b)
     })
     .catch(() => {}))
+}
+
+/** Uses a banlist from now on, on this device too. */
+export function setBanlist(b: Banlist) {
+  writeStored(CACHE_KEY, b)
+  apply(b)
 }
 
 /** The banlist in use; components calling this re-render when a newer one arrives. */

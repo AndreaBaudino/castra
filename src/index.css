@@ -2919,6 +2919,12 @@ textarea {
 .bad-text {
   color: var(--bad);
 }
+.good-text {
+  color: var(--good);
+}
+.ban-changes .muted {
+  font-size: 0.75rem;
+}
 .admin-notes {
   margin: 0;
   padding-left: 18px;

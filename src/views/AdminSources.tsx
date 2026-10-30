@@ -58,7 +58,6 @@ function UpdateStatus({ status, names }: { status: ReturnType<typeof useMetaStat
             </ul>
           )}
           {s.origin === 'file' && <p className="muted small no-margin">{t('sources.fromFile')}</p>}
-          {s.banlist && <BanlistStatus b={s.banlist} />}
           {s.warnings.length > 0 && (
             <>
               <button className="link" onClick={() => setOpen(!open)}>
@@ -80,38 +79,6 @@ function UpdateStatus({ status, names }: { status: ReturnType<typeof useMetaStat
         <Icon name="external" size={16} /> {t('sources.runNow')}
       </a>
     </section>
-  )
-}
-
-/** The banlist read from the format's site in the same update: what changed, or why it wasn't read. */
-function BanlistStatus({ b }: { b: NonNullable<MetaStatus['banlist']> }) {
-  const { t, lang } = useI18n()
-  const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })
-  const changes = (['banned', 'commander', 'partner'] as const).flatMap((k) => [
-    ...(b.added?.[k] ?? []).map((n) => `+ ${n} (${t(`sources.ban.${k}`)})`),
-    ...(b.removed?.[k] ?? []).map((n) => `− ${n} (${t(`sources.ban.${k}`)})`),
-  ])
-  return (
-    <div className={`sync-line ${b.ok ? 'ok' : 'error'}`}>
-      <span className="sync-dot" />
-      <div>
-        <div>{b.ok ? t('sources.banlistOk') : t('sources.banlistFailed')}</div>
-        {b.error && <div className="muted small">{b.error}</div>}
-        {!b.ok && b.previous && <div className="muted small">{t('sources.banlistKept', { d: day(b.previous) })}</div>}
-        {b.announcement && (
-          <a className="link" href={b.announcement.url} target="_blank" rel="noopener noreferrer">
-            {t('sources.banlistAnnouncement', { d: day(b.announcement.date) })}
-          </a>
-        )}
-        {changes.length > 0 && (
-          <ul className="admin-notes">
-            {changes.map((c) => (
-              <li key={c}>{c}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
   )
 }
 

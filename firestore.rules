@@ -89,6 +89,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // the banlist read from the format's site and published by an admin, as JSON: every app reads it, without signing in
+    match /config/banlist {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['json', 'at', 'by'])
+        && request.resource.data.json is string
+        && request.resource.data.json.size() <= 100000
+        && request.resource.data.by == request.auth.uid;
+    }
+
     // claims revoked by an admin: the account in `uid` can't claim that player again (anyone else can)
     match /revoked/{playerKey} {
       allow read, delete: if isAdmin();

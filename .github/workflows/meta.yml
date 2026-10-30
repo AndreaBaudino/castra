@@ -2,9 +2,8 @@ name: Update meta
 
 # Every night at midnight, Italian time: reads the list of tournament sheets (Firestore's sources collection, kept
 # from the app's admin area), downloads them, rebuilds meta.json (every year's data) and writes it to the meta-data
-# branch, with one meta-<year>.json per year for app versions from before meta.json, banlist.json (read from the
-# format's site, scripts/fetch-banlist.mjs), status.json (how the update went, for the admin area) and sources.json
-# (the list it used), in one commit replaced every time. When the
+# branch, with one meta-<year>.json per year for app versions from before meta.json, status.json (how the update
+# went, for the admin area) and sources.json (the list it used), in one commit replaced every time. When the
 # sheets can't be read the published meta stays as it was and only status.json changes. The app reads it from
 # there: main is not touched and the app is not deployed again.
 # Cron runs in UTC, so both 22:00 and 23:00 are scheduled and only the one that is midnight in Rome
@@ -47,14 +46,6 @@ jobs:
       - name: Fetch the published data
         if: steps.when.outputs.go
         run: git fetch --depth=1 origin meta-data || true
-      # the banlist from the format's site: when it can't be read, the last one published stays
-      - name: Read the banlist
-        id: banlist
-        if: steps.when.outputs.go
-        continue-on-error: true
-        run: |
-          mkdir -p .meta-cache
-          node scripts/fetch-banlist.mjs .meta-cache/banlist.json 2> .meta-cache/banlist.err || { cat .meta-cache/banlist.err >&2; exit 1; }
       - name: Download the sheets
         id: fetch
         if: steps.when.outputs.go
@@ -76,7 +67,6 @@ jobs:
         if: always() && steps.when.outputs.go
         env:
           BUILT: ${{ steps.build.outcome }}
-          BANLIST: ${{ steps.banlist.outcome }}
         run: |
           mkdir -p /tmp/out
           if git cat-file -e FETCH_HEAD:meta.json 2>/dev/null; then
@@ -91,8 +81,6 @@ jobs:
             echo "Niente da pubblicare: meta.json manca"
             exit 1
           fi
-          if [ -f /tmp/out/banlist.json ]; then cp /tmp/out/banlist.json .meta-cache/banlist-prev.json; fi
-          if [ "$BANLIST" = success ]; then cp .meta-cache/banlist.json /tmp/out/banlist.json; fi
           node scripts/meta-status.mjs > /tmp/out/status.json
           # the list of sheets this run used, readable on the branch
           if [ -f .meta-cache/sources.json ]; then cp .meta-cache/sources.json /tmp/out/sources.json; fi
@@ -102,5 +90,3 @@ jobs:
           tree=$(git mktree < /tmp/tree.txt)
           commit=$(git commit-tree "$tree" -m "Meta aggiornato dai fogli dei tornei")
           git push --force origin "$commit:refs/heads/meta-data"
-          # the run stays red when the banlist couldn't be read
-          [ "$BANLIST" != failure ]

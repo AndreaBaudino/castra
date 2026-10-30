@@ -1,7 +1,6 @@
 // Prints the nightly update's report, published as status.json on the meta-data branch and shown in the app's admin
 // area: when it ran, whether the meta was rebuilt, the sheets that couldn't be downloaded, what each sheet gave and
-// the build's warnings, and the banlist read from the format's site with what changed since the last one. BUILT and
-// BANLIST are the outcomes of the build and banlist steps ("success" when meta.json, banlist.json were rebuilt).
+// the build's warnings. BUILT is the outcome of the build step ("success" when meta.json was rebuilt).
 
 import { existsSync, readFileSync } from 'node:fs'
 
@@ -17,22 +16,6 @@ const read = (name) => {
 const fetched = read('fetch.json')
 const built = read('report.json')
 const ok = process.env.BUILT === 'success'
-
-// the banlist: what it says, what changed since the one published before, or why it couldn't be read
-const banlistOk = process.env.BANLIST === 'success'
-const banlist = banlistOk ? read('banlist.json') : null
-const previous = read('banlist-prev.json')
-const LISTS = ['banned', 'commander', 'partner']
-const diff = (a, b) => Object.fromEntries(LISTS.map((k) => [k, (a?.[k] ?? []).filter((n) => !(b?.[k] ?? []).includes(n))]))
-let banlistError = null
-if (!banlistOk) {
-  try {
-    banlistError = readFileSync(new URL('.meta-cache/banlist.err', root), 'utf8').trim().split('\n').filter(Boolean).pop() ?? null
-  } catch {
-    // the step didn't run
-  }
-  banlistError ??= 'banlist non letta'
-}
 
 const error = ok
   ? null
@@ -54,15 +37,5 @@ console.log(
     read: ok ? (built?.read ?? {}) : {},
     years: ok ? (built?.years ?? []) : [],
     warnings: ok ? (built?.warnings ?? []) : [],
-    banlist: {
-      ok: banlistOk,
-      error: banlistError,
-      announcement: (banlist ?? previous)?.announcement ?? null,
-      counts: banlist && Object.fromEntries(LISTS.map((k) => [k, banlist[k].length])),
-      // compared with the one published before; nothing the first time
-      added: banlist && previous ? diff(banlist, previous) : null,
-      removed: banlist && previous ? diff(previous, banlist) : null,
-      previous: !banlistOk ? (previous?.checked ?? null) : null, // the one the app keeps using
-    },
   }),
 )
