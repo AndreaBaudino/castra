@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { AppUser } from './auth'
 import type { Claim } from './claims'
-import { cloudEnabled, fb } from './firebase'
+import { cloudEnabled, fb, useLiveCollection } from './firebase'
 
 // The admin area: the accounts listed in admins/{uid} (added from the Firebase console) can revoke the claims of
 // circuit players and clear what a claimer put on their page. The Firestore rules enforce all of it.
@@ -38,26 +38,9 @@ export function useIsAdmin(uid: string | null) {
 }
 
 /** The revoked claims, by player key: only admins can read them. */
-export function useRevoked(enabled: boolean) {
-  const [revoked, setRevoked] = useState<Map<string, Revoked>>(new Map())
-  useEffect(() => {
-    if (!cloudEnabled || !enabled) return
-    let unsub = () => {}
-    let cancelled = false
-    fb().then(({ db, fs }) => {
-      if (cancelled) return
-      unsub = fs.onSnapshot(
-        fs.collection(db, 'revoked'),
-        (snap) => setRevoked(new Map(snap.docs.map((d) => [d.id, d.data() as Revoked]))),
-        () => {},
-      )
-    })
-    return () => {
-      cancelled = true
-      unsub()
-    }
-  }, [enabled])
-  return revoked
+export function useRevoked() {
+  const { docs } = useLiveCollection<Revoked>('revoked')
+  return useMemo(() => new Map(docs), [docs])
 }
 
 /**

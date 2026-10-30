@@ -273,7 +273,7 @@ export default function AdminSources({ circuit }: { circuit: Circuit | null }) {
   const { t, lang } = useI18n()
   const { user } = useAuth()
   const dialog = useDialog()
-  const { sources, loaded } = useSources(true)
+  const { sources, loaded } = useSources()
   const status = useMetaStatus()
   const report = typeof status === 'object' ? status : null
   const [editing, setEditing] = useState<Source | 'new' | { preset: Partial<Source> } | null>(null)

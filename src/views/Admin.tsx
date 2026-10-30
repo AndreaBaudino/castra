@@ -53,7 +53,7 @@ function Claims({
   const { t, lang } = useI18n()
   const { user } = useAuth()
   const dialog = useDialog()
-  const revoked = useRevoked(true)
+  const revoked = useRevoked()
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState<string | null>(null) // the player key being changed
   const names = useMemo(() => new Map(circuit?.players.map((p) => [p.key, p.name])), [circuit])

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import type { AppUser } from './auth'
-import { cloudEnabled, fb } from './firebase'
+import { fb, useLiveCollection } from './firebase'
 
 // A circuit player claimed by an account ("this is me"): one account per player, shared by everyone.
 // Stored at claims/{player key}; the Firestore rules let only the claimer change or drop it.
@@ -19,30 +19,8 @@ export interface Claim {
 export type ClaimLook = Pick<Claim, 'coverName' | 'coverArt' | 'deck'>
 
 export function useClaims() {
-  const [claims, setClaims] = useState<Map<string, Claim>>(new Map())
-  const [loaded, setLoaded] = useState(false) // confirmed by the server, not just the offline cache
-  useEffect(() => {
-    if (!cloudEnabled) return
-    let unsub = () => {}
-    let cancelled = false
-    fb().then(({ db, fs }) => {
-      if (cancelled) return
-      unsub = fs.onSnapshot(
-        fs.collection(db, 'claims'),
-        { includeMetadataChanges: true },
-        (snap) => {
-          setClaims(new Map(snap.docs.map((d) => [d.id, d.data() as Claim])))
-          if (!snap.metadata.fromCache) setLoaded(true)
-        },
-        () => {}, // rules not deployed yet, or offline: no claims shown
-      )
-    })
-    return () => {
-      cancelled = true
-      unsub()
-    }
-  }, [])
-  return { claims, loaded }
+  const { docs, loaded } = useLiveCollection<Claim>('claims')
+  return { claims: useMemo(() => new Map(docs), [docs]), loaded }
 }
 
 /** Claims `key` for the user, dropping their previous claim in the same write. */

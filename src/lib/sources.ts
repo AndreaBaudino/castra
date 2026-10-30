@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { AppUser } from './auth'
-import { cloudEnabled, fb } from './firebase'
+import { fb, useLiveCollection } from './firebase'
 import { META_DATA_URL } from '../config'
 
 // The tournament sheets read by the nightly meta update (.github/workflows/meta.yml), kept by the admins at
@@ -37,31 +37,9 @@ export function driveIdOf(text: string) {
   return m?.[1] ?? null
 }
 
-export function useSources(enabled: boolean) {
-  const [sources, setSources] = useState<Source[]>([])
-  const [loaded, setLoaded] = useState(false) // confirmed by the server, not just the offline cache
-  useEffect(() => {
-    if (!cloudEnabled || !enabled) return
-    let unsub = () => {}
-    let cancelled = false
-    fb().then(({ db, fs }) => {
-      if (cancelled) return
-      unsub = fs.onSnapshot(
-        fs.collection(db, 'sources'),
-        { includeMetadataChanges: true },
-        (snap) => {
-          setSources(snap.docs.map((d) => d.data() as Source))
-          if (!snap.metadata.fromCache) setLoaded(true)
-        },
-        () => {},
-      )
-    })
-    return () => {
-      cancelled = true
-      unsub()
-    }
-  }, [enabled])
-  return { sources, loaded }
+export function useSources() {
+  const { docs, loaded } = useLiveCollection<Source>('sources')
+  return { sources: useMemo(() => docs.map(([, s]) => s), [docs]), loaded }
 }
 
 // only the fields of its kind, with nothing empty: the rules accept no others

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import type { AppUser } from './auth'
 import { playerKey } from './circuit'
-import { cloudEnabled, fb } from './firebase'
+import { fb, useLiveCollection } from './firebase'
 
 // The name corrections applied by the nightly meta update while reading the tournament sheets (scripts/meta/aliases.mjs):
 // "where the sheet says X, it means Y". Kept by the admins at aliases/{id}; until that collection is filled the update
@@ -25,31 +25,9 @@ export const aliasKey = (kind: AliasKind, name: string) => (kind === 'player' ? 
 /** A player's name corrected to itself: confirmed, though not in the circuit leaderboard. */
 export const isConfirm = (a: Alias) => aliasKey(a.kind, a.to) === a.key
 
-export function useAliases(enabled: boolean) {
-  const [aliases, setAliases] = useState<Alias[]>([])
-  const [loaded, setLoaded] = useState(false)
-  useEffect(() => {
-    if (!cloudEnabled || !enabled) return
-    let unsub = () => {}
-    let cancelled = false
-    fb().then(({ db, fs }) => {
-      if (cancelled) return
-      unsub = fs.onSnapshot(
-        fs.collection(db, 'aliases'),
-        { includeMetadataChanges: true },
-        (snap) => {
-          setAliases(snap.docs.map((d) => ({ ...(d.data() as Omit<Alias, 'id'>), id: d.id })))
-          if (!snap.metadata.fromCache) setLoaded(true)
-        },
-        () => {},
-      )
-    })
-    return () => {
-      cancelled = true
-      unsub()
-    }
-  }, [enabled])
-  return { aliases, loaded }
+export function useAliases() {
+  const { docs, loaded } = useLiveCollection<Omit<Alias, 'id'>>('aliases')
+  return { aliases: useMemo(() => docs.map(([id, a]): Alias => ({ ...a, id })), [docs]), loaded }
 }
 
 const sameScope = (a: Pick<Alias, 'year' | 'drive'>, b: Pick<Alias, 'year' | 'drive'>) => (a.year ?? 0) === (b.year ?? 0) && (a.drive ?? '') === (b.drive ?? '')
