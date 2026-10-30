@@ -29,6 +29,8 @@
   `npm run build` per i cambi a Vite/PWA.
 - Test: Vitest, in `src/lib/parsers.test.ts` (liste dei mazzi, foglio del circuito, salvataggio con memoria piena);
   girano anche nel deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
+- Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
+  il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.
 - A inizio sessione `node_modules` non c'è: `npm ci`.
 - Per vedere una modifica: `npm run dev` (http://localhost:5173) e Playwright/Chromium già installati nel container
   (`require('playwright')`), con viewport da telefono (es. 390×844) e, per il layout da computer, ≥1024 px.

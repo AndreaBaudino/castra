@@ -1,0 +1,30 @@
+name: Test Firestore rules
+
+# The rules are the only protection of the data: when they (or their test) change, scripts/test-rules.mjs checks
+# them on the Firestore emulator. The emulator's tools are installed here only, so the app's dependencies and its
+# deploy stay as they are. Publishing the rules is still done by hand, from the Firebase console.
+
+on:
+  push:
+    paths: [firestore.rules, scripts/test-rules.mjs, .github/workflows/rules.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm i --no-save firebase-tools@13 @firebase/rules-unit-testing@4
+      - run: npx firebase emulators:exec --only firestore --project demo-castra 'node scripts/test-rules.mjs'
