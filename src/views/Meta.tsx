@@ -15,14 +15,14 @@ export const META_MODE_KEY = 'cc.metaMode'
 export const META_FILTER_KEY = 'cc.meta.filter'
 
 type Sort = 'share' | 'wr' | 'games'
-export const MIN_OPTIONS = [0, 10, 20, 40]
+const MIN_OPTIONS = [0, 10, 20, 40]
 const SIZES = [0, 8, 12, 16, 24, 32] // players per tournament; 0 = no limit
 const KINDS: TournamentKind[] = ['league', 'l1', 'l2', 'online']
 // the summary's doughnut: a slice for each commander with at least this share, PIE_MAX at most
 const PIE_MIN = 0.02
 const PIE_MAX = 8
 
-export function metaSummary(decks: MetaDeck[], minGames: number) {
+function metaSummary(decks: MetaDeck[], minGames: number) {
   const mostPlayed = [...decks].sort((a, b) => b.entries - a.entries)[0]
   const best = decks.filter((d) => d.games >= minGames).sort((a, b) => winrate(b) - winrate(a))[0]
   return { mostPlayed, best }

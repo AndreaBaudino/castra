@@ -39,7 +39,7 @@ export function tournamentLabel(x: MetaTournament, t: T) {
 export const dateLabel = (x: MetaTournament, lang: string, t: T) =>
   x.date ? new Date(`${x.date}T12:00:00`).toLocaleDateString(lang, { day: 'numeric', month: 'short' }) : t('meta.noDate')
 
-export const fmtRec = (r: { wins: number; losses: number; draws: number }) => `${r.wins}-${r.losses}-${r.draws}`
+const fmtRec = (r: { wins: number; losses: number; draws: number }) => `${r.wins}-${r.losses}-${r.draws}`
 
 /** Front face of the first commander: its art for the page header. */
 export const artUrl = (name: string) =>

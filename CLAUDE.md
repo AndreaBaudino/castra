@@ -25,8 +25,8 @@
   `Record<Key, string>` di `en` fa fallire `tsc` se ne manca una). Il plurale usa la variante `chiave.one` quando
   `{n}` vale 1. Tono: italiano semplice e diretto, come le stringhe già presenti.
 - Prima del commit: `npx tsc -b` (deve passare pulito), `npm test` e `npm run lint`. Lo stato noto del lint prima di
-  una modifica è 1 errore già presente (`src/lib/circuit.ts`, `_` non usato) e ~25 warning
-  `react-refresh/only-export-components`: non aggiungerne altri. `npm run build` per i cambi a Vite/PWA.
+  una modifica è 0 errori e 22 warning `react-refresh/only-export-components`: non aggiungerne altri.
+  `npm run build` per i cambi a Vite/PWA.
 - Test: Vitest, in `src/lib/parsers.test.ts` (liste dei mazzi, foglio del circuito, salvataggio con memoria piena);
   girano anche nel deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - A inizio sessione `node_modules` non c'è: `npm ci`.
