@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CustomizeSheet, PlayerBadges, PlayerColors, PlayerCover, SignatureDeck, deckOf, signatureOf } from './PlayerCard'
 import { artUrl } from './MetaPages'
 import { useI18n } from '../i18n'
-import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type RankChange, eventDateLabel, potyStatus } from '../lib/circuit'
+import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type RankChange, eventDateLabel, playerKey, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { Icon } from '../components/ui'
 import { ComparePicker, LeagueList, Records } from './CircuitMore'
@@ -128,12 +128,12 @@ function Ranking({ circuit, prefs, openPlayer }: { circuit: Circuit; prefs: Circ
   const allLeagues = useMemo(() => leagues(circuit), [circuit])
 
   const list = useMemo(() => {
-    const nq = q.trim().toLowerCase()
+    const nq = playerKey(q) // the key has no accents: "nicolo" finds Nicolò
     return circuit.players
       .filter(
         (p) =>
           qualifies(p, sort) &&
-          (!nq || p.name.toLowerCase().includes(nq)) &&
+          (!nq || p.key.includes(nq)) &&
           (!league || playerLeagues(p).includes(league)) &&
           (!onlyFollowed || prefs.follow.includes(p.key) || p.key === prefs.me),
       )

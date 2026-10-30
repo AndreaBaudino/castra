@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
-import { type Circuit, type League, type Player, eventDateLabel, potyStatus } from '../lib/circuit'
+import { type Circuit, type League, type Player, eventDateLabel, playerKey, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { Icon, pct } from '../components/ui'
 import { type CircuitPrefs, PotyTag, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
@@ -313,9 +313,9 @@ export function ComparePicker({ circuit, p, prefs, onPick }: { circuit: Circuit;
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const me = prefs.me && prefs.me !== p.key ? circuit.players.find((x) => x.key === prefs.me) : undefined
-  const nq = q.trim().toLowerCase()
+  const nq = playerKey(q) // the key has no accents: "nicolo" finds Nicolò
   const followed = circuit.players.filter((x) => x.key !== p.key && x.key !== me?.key && prefs.follow.includes(x.key))
-  const results = nq ? circuit.players.filter((x) => x.key !== p.key && x.name.toLowerCase().includes(nq)).slice(0, 20) : followed
+  const results = nq ? circuit.players.filter((x) => x.key !== p.key && x.key.includes(nq)).slice(0, 20) : followed
   if (!open)
     return (
       <button className="btn ghost" onClick={() => setOpen(true)}>
