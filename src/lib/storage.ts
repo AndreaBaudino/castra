@@ -9,11 +9,20 @@ export function readStored<T>(key: string, fallback: T): T {
   }
 }
 
+// copies of downloaded data, the largest values stored: they make room for the user's own data when storage is full
+const isCache = (key: string) => key === 'cc.meta.data' || key.startsWith('cc.circuit.v2')
+
 export function writeStored<T>(key: string, value: T) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
-    // storage full or unavailable: the app keeps working in memory
+    if (isCache(key)) return // downloaded again next time
+    try {
+      for (const k of Object.keys(localStorage)) if (isCache(k)) localStorage.removeItem(k)
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch {
+      // still full, or unavailable: the app keeps working in memory
+    }
   }
 }
 
