@@ -13,6 +13,7 @@
 import ExcelJS from 'exceljs'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { aliasLookup, commanderKey, loadAliases, playerKey } from './meta/aliases.mjs'
+import { firestoreDocs } from './meta/firestore.mjs'
 
 const dir = new URL('./meta/', import.meta.url)
 const root = new URL('../', import.meta.url)
@@ -320,13 +321,8 @@ const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.ye
 async function circuitSheets() {
   const config = readFileSync(new URL('src/config.ts', root), 'utf8')
   const sheets = { 2026: { sheet: config.match(/CIRCUIT_SHEET_ID = '([^']+)'/)[1], leaderboard: config.match(/leaderboard: '(\d+)'/)[1] } }
-  const project = config.match(/projectId: '([^']+)'/)[1]
   try {
-    const res = await fetch(`https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents/circuits?pageSize=100`)
-    for (const d of (await res.json()).documents ?? []) {
-      const f = d.fields
-      sheets[+f.year.integerValue] = { sheet: f.sheet.stringValue, leaderboard: f.tabs.mapValue.fields.leaderboard.stringValue }
-    }
+    for (const d of await firestoreDocs('circuits')) sheets[d.year] = { sheet: d.sheet, leaderboard: d.tabs.leaderboard }
   } catch (e) {
     warn('circuito', `fogli della classifica non letti da Firestore (${e.message})`)
   }

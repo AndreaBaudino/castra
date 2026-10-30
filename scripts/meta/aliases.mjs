@@ -8,11 +8,7 @@
 // Corrections apply once: Y is never corrected in turn.
 
 import { readFileSync } from 'node:fs'
-
-const root = new URL('../../', import.meta.url)
-const config = readFileSync(new URL('src/config.ts', root), 'utf8')
-const project = config.match(/projectId: '([^']+)'/)[1]
-const API = `https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents/aliases`
+import { firestoreDocs } from './firestore.mjs'
 
 /** The key a name is looked up by: as the app's admin area writes it. */
 export const commanderKey = (name) => name.replace(/\s+/g, ' ').trim().toLowerCase()
@@ -25,10 +21,8 @@ export const playerKey = (name) =>
     .trim()
     .toLowerCase()
 
-const plain = (v) => ('stringValue' in v ? v.stringValue : 'integerValue' in v ? +v.integerValue : null)
-
 function fromFile() {
-  const file = JSON.parse(readFileSync(new URL('scripts/meta/aliases.json', root), 'utf8'))
+  const file = JSON.parse(readFileSync(new URL('aliases.json', import.meta.url), 'utf8'))
   return [
     ...Object.entries(file.commanders).map(([key, to]) => ({ id: `file:commander:${key}`, kind: 'commander', key, to })),
     ...Object.entries(file.players).map(([key, to]) => ({ id: `file:player:${key}`, kind: 'player', key, to })),
@@ -36,23 +30,16 @@ function fromFile() {
 }
 
 export async function loadAliases() {
-  const docs = []
-  let page = ''
-  do {
-    const res = await fetch(`${API}?pageSize=300${page ? `&pageToken=${encodeURIComponent(page)}` : ''}`)
+  let docs
+  try {
+    docs = await firestoreDocs('aliases')
+  } catch (e) {
     // no rules for the collection yet: corrections still come from the file
-    if (res.status === 403 && !docs.length) return { origin: 'file', list: fromFile() }
-    if (!res.ok) throw new Error(`Firestore ${res.status}: correzioni non lette`)
-    const body = await res.json()
-    docs.push(...(body.documents ?? []))
-    page = body.nextPageToken ?? ''
-  } while (page)
+    if (e.status === 403) return { origin: 'file', list: fromFile() }
+    throw new Error(`${e.message}: correzioni non lette`)
+  }
   if (!docs.length) return { origin: 'file', list: fromFile() }
-  const list = docs.map((d) => {
-    const a = { id: d.name.split('/').pop() }
-    for (const k of ['kind', 'key', 'to', 'year', 'drive']) if (d.fields[k]) a[k] = plain(d.fields[k])
-    return a
-  })
+  const list = docs.map((d) => Object.fromEntries(['id', 'kind', 'key', 'to', 'year', 'drive'].filter((k) => d[k] != null).map((k) => [k, d[k]])))
   return { origin: 'firestore', list: list.filter((a) => (a.kind === 'commander' || a.kind === 'player') && a.key && a.to) }
 }
 
