@@ -122,12 +122,6 @@ export const searchCards = (q: string, signal?: AbortSignal) =>
 /** All printings of a card, newest first. */
 export const fetchPrints = (name: string) => search(`!"${front(name)}"`, '&unique=prints&order=released&dir=desc')
 
-export async function fetchNamed(name: string): Promise<CardInfo | undefined> {
-  const res = await fetch(`${API}/cards/named?exact=${encodeURIComponent(name)}`)
-  if (!res.ok) return
-  return toInfo((await res.json()) as ScryCard)
-}
-
 // ---------- one card in full: Oracle text, Italian text, rulings ----------
 
 interface ScryFace {

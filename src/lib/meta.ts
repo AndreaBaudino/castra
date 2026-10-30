@@ -226,16 +226,6 @@ function fromRaw(raw: RawMeta, years: number[]): MetaDataset {
   }
 }
 
-/**
- * The commander name of a match or deck as the meta writes it, so the user's own stats line up with it.
- * Partners in any order and the front face of a double-faced card are enough.
- */
-export function metaCommanderOf(ds: MetaDataset | null, name: string) {
-  if (!ds) return
-  const n = normName(name)
-  return ds.commanders.find((c) => normName(c.name) === n || normName(c.name.split(' // ')[0]) === n)
-}
-
 const CACHE_KEY = 'cc.meta.data'
 const bundledUrl = `${import.meta.env.BASE_URL}meta.json`
 
