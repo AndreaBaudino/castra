@@ -9,6 +9,7 @@ import { useDialog } from '../components/Dialog'
 import { useStoredState } from '../lib/storage'
 import AdminSources from './AdminSources'
 import AdminBanlist from './AdminBanlist'
+import AdminAliases from './AdminAliases'
 
 // The admin area, inside the profile: the claimed circuit players and the claims revoked by an admin, and the
 // tournament sheets read by the nightly meta update (AdminSources).
@@ -17,17 +18,25 @@ const hasLook = (c: Claim) => !!(c.coverName || c.coverArt || c.deck)
 
 export default function Admin(props: { circuit: Circuit | null; claims: Map<string, Claim>; openPlayer: (key: string) => void }) {
   const { t } = useI18n()
-  const [tab, setTab] = useStoredState<'players' | 'sources' | 'banlist'>('cc.admin.tab', 'players')
+  const [tab, setTab] = useStoredState<'players' | 'sources' | 'aliases' | 'banlist'>('cc.admin.tab', 'players')
   return (
     <>
       <div className="seg wide">
-        {(['players', 'sources', 'banlist'] as const).map((v) => (
+        {(['players', 'sources', 'aliases', 'banlist'] as const).map((v) => (
           <button key={v} className={tab === v ? 'on' : ''} onClick={() => setTab(v)}>
             {t(`admin.tab.${v}`)}
           </button>
         ))}
       </div>
-      {tab === 'players' ? <Claims {...props} /> : tab === 'sources' ? <AdminSources circuit={props.circuit} /> : <AdminBanlist />}
+      {tab === 'players' ? (
+        <Claims {...props} />
+      ) : tab === 'sources' ? (
+        <AdminSources circuit={props.circuit} />
+      ) : tab === 'aliases' ? (
+        <AdminAliases circuit={props.circuit} />
+      ) : (
+        <AdminBanlist />
+      )}
     </>
   )
 }

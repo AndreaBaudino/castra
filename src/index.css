@@ -2962,6 +2962,19 @@ textarea {
 .form .field-hint {
   font-weight: 400;
 }
+.admin-row > .admin-text {
+  padding: 8px 0;
+}
+.alias-row {
+  width: 100%;
+  text-align: left;
+  padding: 8px 0;
+  justify-content: space-between;
+}
+.chips.wrap-chips {
+  flex-wrap: wrap;
+  overflow: visible;
+}
 .sync-line {
   display: flex;
   align-items: flex-start;

@@ -60,6 +60,7 @@ function UpdateStatus({ status, names }: { status: ReturnType<typeof useMetaStat
             </ul>
           )}
           {s.origin === 'file' && <p className="muted small no-margin">{t('sources.fromFile')}</p>}
+          {!!s.issues?.length && <p className="muted small no-margin">{t('sources.issues', { n: s.issues.length })}</p>}
           {s.warnings.length > 0 && (
             <>
               <button className="link" onClick={() => setOpen(!open)}>

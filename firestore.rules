@@ -111,6 +111,24 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // the name corrections applied to the tournament sheets by the nightly meta update ("where the sheet says X, it
+    // means Y"): the update reads them without signing in; kept by the admins
+    match /aliases/{id} {
+      function valid(d) {
+        return d.keys().hasOnly(['kind', 'key', 'from', 'to', 'year', 'drive', 'at', 'by'])
+          && d.kind in ['commander', 'player']
+          && d.key is string && d.key.size() > 0 && d.key.size() <= 200
+          && d.from is string && d.from.size() > 0 && d.from.size() <= 200
+          && d.to is string && d.to.size() > 0 && d.to.size() <= 200
+          && (d.get('year', null) == null || (d.year is int && d.year >= 2020 && d.year <= 2100))
+          && (d.get('drive', null) == null || (d.drive is string && d.drive.matches('[-_A-Za-z0-9]{20,100}')))
+          && d.by == request.auth.uid;
+      }
+      allow read: if true;
+      allow create, update: if isAdmin() && valid(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
     // the banlist read from the format's site and published by an admin, as JSON: every app reads it, without signing in
     match /config/banlist {
       allow read: if true;

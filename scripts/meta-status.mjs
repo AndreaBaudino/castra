@@ -37,5 +37,9 @@ console.log(
     read: ok ? (built?.read ?? {}) : {},
     years: ok ? (built?.years ?? []) : [],
     warnings: ok ? (built?.warnings ?? []) : [],
+    // names still to correct, and how much each correction was used (from the app's admin area)
+    issues: ok ? (built?.issues ?? []) : [],
+    aliases: ok ? (built?.aliases ?? {}) : {},
+    aliasOrigin: ok ? (built?.aliasOrigin ?? null) : null,
   }),
 )

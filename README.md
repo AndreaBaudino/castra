@@ -22,8 +22,13 @@ dati di ogni anno, che viene pubblicato con l'app.
 1. Scarica ogni foglio come .xlsx in `.meta-cache/<id del file>.xlsx` (l'id è quello nel link del foglio).
 2. `npm run meta`: legge i fogli, riconosce i comandanti su Scryfall e stampa quello che va controllato
    (vittorie e sconfitte che non tornano, giocatori senza comandante, nomi non riconosciuti).
-3. Nomi scritti male: si correggono in `scripts/meta/aliases.json` (comandanti → nome Scryfall, giocatori → nome
-   come nel foglio del circuito).
+3. Nomi scritti male: si correggono dall'app, Area admin → Nomi (comandanti → nome Scryfall, giocatori → nome come
+   nella classifica del circuito). L'ultimo aggiornamento elenca i nomi che non ha riconosciuto, con "Correggi" e,
+   per i giocatori giusti ma fuori classifica, ✓. Le correzioni sono su Firestore (`aliases/{id}`) e si applicano
+   leggendo i fogli, che non vengono mai modificati: se un nome viene sistemato nel foglio, la sua correzione smette
+   di servire e l'area admin la segna come "non più usata". Valgono ovunque, oppure solo in un anno o in un foglio
+   (per i giocatori, quando quel nome altrove potrebbe essere di un altro); si applicano una volta sola, senza
+   catene. Finché la raccolta è vuota vale `scripts/meta/aliases.json`, che l'area admin importa con un tocco.
 
 Per aggiungere un torneo: Area admin → Tornei → Aggiungi torneo, con il link al foglio (Google Sheets o Excel su Drive,
 leggibile dall'account Google dell'Apps Script qui sotto). Entra nel meta al primo aggiornamento notturno. I bye spuntati nella colonna BYE non contano

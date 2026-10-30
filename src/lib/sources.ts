@@ -117,6 +117,21 @@ export interface MetaStatus {
   read: Record<string, number> // tournaments read from each sheet: 0 = no results yet
   years: { year: number; t: number; e: number; c: number }[]
   warnings: string[]
+  // names still to correct, and how much each correction was used (missing in reports from before corrections)
+  issues?: NameIssue[]
+  aliases?: Record<string, { n: number; where: string[] }> // by correction id
+  aliasOrigin?: 'firestore' | 'file' | null
+}
+
+/** A name the update couldn't place: a commander not on Scryfall (or read by its fuzzy search, `guess`), a player not
+ * in their year's circuit leaderboard. */
+export interface NameIssue {
+  kind: 'commander' | 'player'
+  name: string
+  guess?: string
+  where: string[] // tournaments
+  years: number[]
+  drives: string[]
 }
 
 const STATUS_URL = META_DATA_URL.replace(/[^/]+$/, 'status.json')

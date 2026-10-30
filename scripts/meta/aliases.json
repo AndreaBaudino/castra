@@ -1,5 +1,5 @@
 {
-  "note": "Keys in lower case. commanders: name as written in the sheets -> Scryfall name. players: name as written (lower case, no accents) -> name as in the circuit sheet.",
+  "note": "Used only while Firestore's aliases collection is empty: the corrections are kept from the app (Profile → Admin area → Names), which imports this file once. Keys in lower case. commanders: name as written in the sheets -> Scryfall name. players: name as written (lower case, no accents) -> name as in the circuit sheet.",
   "commanders": {
     "cultist of absolute": "Cultist of the Absolute",
     "ephara, god of polis": "Ephara, God of the Polis",

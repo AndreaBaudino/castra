@@ -4,13 +4,15 @@
 //
 // The sheets are private, so they are read from local copies: download each one as .xlsx into
 // .meta-cache/<drive id>.xlsx (scripts/fetch-meta.mjs does it, as in the nightly workflow), then run `npm run meta`. Commander names are resolved on Scryfall
-// (cached in scripts/meta/cards.json); misspellings and name variants are fixed in scripts/meta/aliases.json.
+// (cached in scripts/meta/cards.json); misspellings and name variants are fixed by the corrections of
+// scripts/meta/aliases.mjs (kept from the app's admin area). Names still to correct are reported as `issues`.
 //
 // Byes: a bye ticked in the BYE column is taken out of that player's wins. An unticked bye stays in as a
 // win, as the sheet reports it: once someone ticks it, the next run takes it out.
 
 import ExcelJS from 'exceljs'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { aliasLookup, commanderKey, loadAliases, playerKey } from './meta/aliases.mjs'
 
 const dir = new URL('./meta/', import.meta.url)
 const root = new URL('../', import.meta.url)
@@ -18,11 +20,36 @@ const readJson = (url) => JSON.parse(readFileSync(url, 'utf8'))
 
 const fetched = new URL('.meta-cache/sources.json', root)
 const sources = readJson(existsSync(fetched) ? fetched : new URL('sources.json', dir))
-const aliases = readJson(new URL('aliases.json', dir))
+const aliases = await loadAliases()
+const lookup = aliasLookup(aliases.list)
 const cardsUrl = new URL('cards.json', dir)
 const cards = existsSync(cardsUrl) ? readJson(cardsUrl) : {}
 const warnings = []
 const warn = (where, msg) => warnings.push(`${where}: ${msg}`)
+
+// names to correct, for the app's admin area: one per name, with where it shows up
+const issues = new Map()
+function issue(kind, name, ctx, guess) {
+  const k = `${kind}|${kind === 'player' ? playerKey(name) : commanderKey(name)}`
+  const x = issues.get(k) ?? { kind, name, guess, where: new Set(), years: new Set(), drives: new Set() }
+  x.where.add(ctx.label)
+  x.years.add(ctx.year)
+  x.drives.add(ctx.drive)
+  issues.set(k, x)
+}
+
+// each correction's use in this run: how many rows, in which tournaments (none: the sheets don't need it any more)
+const usage = {}
+function corrected(kind, name, ctx, count) {
+  const a = lookup(kind, kind === 'player' ? playerKey(name) : commanderKey(name), ctx)
+  if (!a) return { name }
+  if (count) {
+    const u = (usage[a.id] ??= { n: 0, where: new Set() })
+    u.n++
+    u.where.add(ctx.label)
+  }
+  return { name: a.to, alias: a }
+}
 
 // ---------- cells ----------
 
@@ -111,7 +138,6 @@ function readTable(ws, where) {
 const WUBRG = 'WUBRG'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const HEADERS = { 'User-Agent': 'castra-meta/1.0', Accept: 'application/json' }
-const aliasOf = (map, name) => map[name.toLowerCase()] ?? name
 
 async function resolveCards(names) {
   const missing = [...new Set(names.map((n) => n.toLowerCase()))].filter((n) => !(n in cards))
@@ -141,23 +167,20 @@ async function resolveCards(names) {
   }
 }
 
-// "A / B" are partners (or a background); "A // B" is one double-faced card
-const splitPartners = (raw) =>
+// "A / B" are partners (or a background); "A // B" is one double-faced card. Each one corrected on its own.
+const splitPartners = (raw, ctx, count) =>
   raw
     .split(/(?<!\/)\/(?!\/)/)
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => aliasOf(aliases.commanders, p))
+    .map((p) => corrected('commander', p, ctx, count).name)
 const frontFace = (name) => name.split('//')[0].trim()
 
-function commanderOf(raw, where) {
-  const parts = splitPartners(raw).map((p) => {
+function commanderOf(raw, ctx) {
+  const parts = splitPartners(raw, ctx, true).map((p) => {
     const card = cards[frontFace(p).toLowerCase()]
-    if (!card) warn(where, `comandante non trovato su Scryfall: "${p}"`)
-    else if (card.fuzzy && !warnedFuzzy.has(p)) {
-      warnedFuzzy.add(p)
-      warn(where, `"${p}" letto come "${card.name}" (aggiungi un alias se è sbagliato)`)
-    }
+    // not on Scryfall, or read by its fuzzy search: a correction makes it sure
+    if (!card || card.fuzzy) issue('commander', p, ctx, card?.name)
     return card ?? { name: p, colors: '' }
   })
   // both faces of one card written as partners ("Brigid, Clachan's Heart / Brigid Doun's Mind")
@@ -166,7 +189,6 @@ function commanderOf(raw, where) {
   const colors = [...WUBRG].filter((c) => parts.some((p) => p.colors.includes(c))).join('')
   return { name: parts.map((p) => p.name).join(' / '), colors }
 }
-const warnedFuzzy = new Set()
 
 // ---------- players ----------
 
@@ -191,15 +213,20 @@ function parseCsv(text) {
   return rows
 }
 
-const playerKey = (name) =>
-  name
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[’`]/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase()
-const playerOf = (name) => aliases.players[playerKey(name)] ?? name
+// every player's name after the corrections, by year, for the check on the circuit leaderboard; a correction of a name
+// to itself confirms a name that isn't in the leaderboard
+const seen = new Map()
+function playerOf(name, ctx) {
+  const c = corrected('player', name, ctx, true)
+  const year = seen.get(ctx.year) ?? new Map()
+  seen.set(ctx.year, year)
+  const k = playerKey(c.name)
+  const x = year.get(k) ?? { name: c.name, ctxs: [], confirmed: false }
+  x.ctxs.push(ctx)
+  if (c.alias && playerKey(c.alias.to) === c.alias.key) x.confirmed = true
+  year.set(k, x)
+  return c.name
+}
 
 // ---------- build ----------
 
@@ -235,7 +262,8 @@ for (const src of sources.tournaments) {
     }
     const t = { id: `${src.kind}-${date}-${slug(src.name)}`, k: src.kind, s: seasonOf(date), n: src.name, d: date }
     if (src.circuit) t.c = src.circuit
-    tables.push({ year: +date.slice(0, 4), t, players: tab.players, rows: tab.rows })
+    const year = +date.slice(0, 4)
+    tables.push({ year, t, players: tab.players, rows: tab.rows, ctx: { year, drive: src.drive, label } })
     read[src.drive]++
   } else {
     if (!src.year) {
@@ -252,13 +280,13 @@ for (const src of sources.tournaments) {
       if (tab.date) t.d = tab.date
       else warn(where, 'senza data')
       if (tab.date && +tab.date.slice(0, 4) !== src.year) warn(where, `data ${tab.date} fuori dall'anno ${src.year}`)
-      tables.push({ year: src.year, t, players: tab.players, rows: tab.rows })
+      tables.push({ year: src.year, t, players: tab.players, rows: tab.rows, ctx: { year: src.year, drive: src.drive, label: where } })
       read[src.drive]++
     }
   }
 }
 
-await resolveCards(tables.flatMap(({ rows }) => rows.flatMap((r) => (r.commander ? splitPartners(r.commander).map(frontFace) : []))))
+await resolveCards(tables.flatMap(({ rows, ctx }) => rows.flatMap((r) => (r.commander ? splitPartners(r.commander, ctx, false).map(frontFace) : []))))
 
 // one dataset per year, the newest first: tournaments, commanders and entries, each indexed within its year
 function build(tables) {
@@ -266,13 +294,13 @@ function build(tables) {
   const cmdIndex = new Map()
   const entries = []
   const tournaments = []
-  for (const { t, players, rows } of tables) {
+  for (const { t, players, rows, ctx } of tables) {
     const ti = tournaments.length
     tournaments.push({ ...t, p: players || rows.length }) // as declared in the sheet: some rows can be drops or duplicates
     rows.forEach((r, i) => {
       let ci = -1
       if (r.commander) {
-        const c = commanderOf(r.commander, t.id)
+        const c = commanderOf(r.commander, ctx)
         if (!cmdIndex.has(c.name)) {
           cmdIndex.set(c.name, commanders.length)
           commanders.push({ n: c.name, c: c.colors })
@@ -280,7 +308,7 @@ function build(tables) {
         ci = cmdIndex.get(c.name)
       }
       // [tournament, player, commander, place, wins, losses, draws, bye ticked, list]
-      entries.push([ti, r.player && playerOf(r.player), ci, i + 1, r.wins, r.losses, r.draws, r.bye ? 1 : 0, r.list])
+      entries.push([ti, r.player && playerOf(r.player, ctx), ci, i + 1, r.wins, r.losses, r.draws, r.bye ? 1 : 0, r.list])
     })
   }
   return { t: tournaments, c: commanders, e: entries }
@@ -305,7 +333,7 @@ async function circuitSheets() {
   return sheets
 }
 const sheets = await circuitSheets()
-for (const { year, e: entries } of built) {
+for (const { year } of built) {
   const sheet = sheets[year]
   if (!sheet) {
     warn(`circuito ${year}`, 'nessun foglio della classifica per questo anno: giocatori non controllati')
@@ -317,8 +345,7 @@ for (const { year, e: entries } of built) {
     const h = rows.findIndex((r) => r.some((c) => /player name/i.test(c)))
     const col = rows[h].findIndex((c) => /player name/i.test(c))
     const known = new Set(rows.slice(h + 1).map((r) => playerKey(r[col] ?? '')))
-    const unknown = [...new Set(entries.map((e) => e[1]).filter((p) => p && !known.has(playerKey(p))))]
-    if (unknown.length) warn(`circuito ${year}`, `${unknown.length} giocatori non presenti nella classifica: ${unknown.sort().join(', ')}`)
+    for (const [k, p] of seen.get(year) ?? []) if (!known.has(k) && !p.confirmed) for (const ctx of p.ctxs) issue('player', p.name, ctx)
   } catch (e) {
     warn(`circuito ${year}`, `classifica non scaricata (${e.message})`)
   }
@@ -342,7 +369,17 @@ writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).
 
 // for the update's report (scripts/meta-status.mjs)
 const summary = years.map((y) => ({ year: y.year, t: y.t.length, e: y.e.length, c: y.c.length }))
-if (existsSync(new URL('.meta-cache/', root))) writeFileSync(new URL('.meta-cache/report.json', root), JSON.stringify({ warnings, read, years: summary }))
+const issueList = [...issues.values()].map((x) => ({ ...x, where: [...x.where], years: [...x.years], drives: [...x.drives] }))
+const aliasUse = Object.fromEntries(Object.entries(usage).map(([id, u]) => [id, { n: u.n, where: [...u.where].slice(0, 8) }]))
+if (existsSync(new URL('.meta-cache/', root)))
+  writeFileSync(
+    new URL('.meta-cache/report.json', root),
+    JSON.stringify({ warnings, read, years: summary, issues: issueList, aliases: aliasUse, aliasOrigin: aliases.origin }),
+  )
 
 for (const y of years) console.log(`${y.year}: ${y.t.length} tornei, ${y.e.length} presenze, ${y.c.length} comandanti`)
+const unused = aliases.list.filter((a) => !usage[a.id]).length
+console.log(`Correzioni (${aliases.origin === 'firestore' ? 'Firestore' : 'aliases.json'}): ${aliases.list.length}, ${unused} non usate`)
+if (issueList.length)
+  console.log(`\nNomi da correggere (${issueList.length}):\n- ${issueList.map((x) => `${x.kind === 'player' ? 'giocatore' : 'comandante'} "${x.name}"${x.guess ? ` (forse ${x.guess})` : ''}: ${x.where.slice(0, 3).join(', ')}`).join('\n- ')}`)
 if (warnings.length) console.log(`\nDa controllare (${warnings.length}):\n- ${warnings.join('\n- ')}`)
