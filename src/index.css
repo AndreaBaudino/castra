@@ -2965,6 +2965,29 @@ textarea {
 .admin-row > .admin-text {
   padding: 8px 0;
 }
+.link-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.link-row:first-child {
+  border-top: 0;
+}
+.link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.link-actions .btn.primary {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
 .alias-row {
   width: 100%;
   text-align: left;

@@ -22,6 +22,7 @@ import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { leagues } from './Circuit'
 import AdminCircuit from './AdminCircuit'
+import AdminLinks from './AdminLinks'
 import { useCircuitSheets } from '../lib/circuits'
 
 // The admin area's tournaments: the sheets read by the nightly meta update, one year at a time, and how the last
@@ -95,13 +96,25 @@ function stateOf(s: Source, status: MetaStatus | null): { text: 'error' | 'new' 
   return { text: n ? 'read' : 'empty' }
 }
 
-function SourceForm({ initial, existing, circuit, onDone }: { initial: Source | null; existing: Source[]; circuit: Circuit | null; onDone: () => void }) {
+function SourceForm({
+  initial,
+  preset,
+  existing,
+  circuit,
+  onDone,
+}: {
+  initial: Source | null
+  preset?: Partial<Source> // a new one's fields known already (from an event of the circuit)
+  existing: Source[]
+  circuit: Circuit | null
+  onDone: () => void
+}) {
   const { t } = useI18n()
   const { user } = useAuth()
   const dialog = useDialog()
   const thisYear = new Date().getFullYear()
   const [link, setLink] = useState(initial?.drive ?? '')
-  const [s, setS] = useState<Source>(initial ?? { drive: '', kind: 'l1', year: thisYear, season: 's1' })
+  const [s, setS] = useState<Source>(initial ?? { drive: '', kind: 'l1', year: thisYear, season: 's1', ...preset })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const set = <K extends keyof Source>(k: K, v: Source[K]) => {
@@ -263,7 +276,7 @@ export default function AdminSources({ circuit }: { circuit: Circuit | null }) {
   const { sources, loaded } = useSources(true)
   const status = useMetaStatus()
   const report = typeof status === 'object' ? status : null
-  const [editing, setEditing] = useState<Source | 'new' | null>(null)
+  const [editing, setEditing] = useState<Source | 'new' | { preset: Partial<Source> } | null>(null)
   const [importing, setImporting] = useState(false)
   const thisYear = new Date().getFullYear()
   const circuitSheets = useCircuitSheets()
@@ -280,7 +293,15 @@ export default function AdminSources({ circuit }: { circuit: Circuit | null }) {
   }, [editing])
 
   if (editing)
-    return <SourceForm initial={editing === 'new' ? null : editing} existing={sources} circuit={circuit} onDone={() => setEditing(null)} />
+    return (
+      <SourceForm
+        initial={editing === 'new' || 'preset' in editing ? null : editing}
+        preset={editing !== 'new' && 'preset' in editing ? editing.preset : undefined}
+        existing={sources}
+        circuit={circuit}
+        onDone={() => setEditing(null)}
+      />
+    )
 
   const ofYear = sources.filter((s) => sourceYear(s) === year)
   const events = ofYear.filter((s) => isEvent(s.kind)).sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
@@ -350,6 +371,7 @@ export default function AdminSources({ circuit }: { circuit: Circuit | null }) {
           </div>
           {/* a new year starts closed: an edit left open belongs to the year it was opened for */}
           <AdminCircuit key={year} year={year} />
+          <AdminLinks year={year} sources={sources} onAdd={(preset) => setEditing({ preset })} />
           <button className="btn primary" onClick={() => setEditing('new')}>
             <Icon name="plus" size={16} /> {t('sources.add')}
           </button>
