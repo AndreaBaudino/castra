@@ -74,6 +74,7 @@ export interface Circuit {
   poty?: number // players invited to the Player of the Year by ranking (POTY_SPOTS when missing)
 }
 
+// the same as scripts/meta/aliases.mjs: the nightly update looks up with it the corrections the admin area keys here
 export const playerKey = (name: string) =>
   name
     .normalize('NFD')

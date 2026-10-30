@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs'
 import { firestoreDocs } from './firestore.mjs'
 
-/** The key a name is looked up by: as the app's admin area writes it. */
+/** The key a name is looked up by: as the app's admin area writes it (playerKey: the same as src/lib/circuit.ts). */
 export const commanderKey = (name) => name.replace(/\s+/g, ' ').trim().toLowerCase()
 export const playerKey = (name) =>
   name

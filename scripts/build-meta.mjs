@@ -193,6 +193,7 @@ function commanderOf(raw, ctx) {
 
 // ---------- players ----------
 
+// the circuit leaderboard, read by the app with parseCsv in src/lib/meta.ts: a fix here is likely needed there too
 function parseCsv(text) {
   const rows = []
   let row = []

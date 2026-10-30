@@ -294,6 +294,8 @@ export function useMeta() {
 
 // ---------- CSV (the circuit sheet) ----------
 
+// scripts/build-meta.mjs reads the same sheet with its own copy: a fix here is likely needed there too
+
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
