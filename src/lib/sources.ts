@@ -117,6 +117,15 @@ export interface MetaStatus {
   read: Record<string, number> // tournaments read from each sheet: 0 = no results yet
   years: { year: number; t: number; e: number; c: number }[]
   warnings: string[]
+  // the banlist read from the format's site (missing in reports from before it was read)
+  banlist?: {
+    ok: boolean
+    error: string | null
+    announcement: { date: string; title: string; url: string } | null
+    added: Record<'banned' | 'commander' | 'partner', string[]> | null // since the banlist published before
+    removed: Record<'banned' | 'commander' | 'partner', string[]> | null
+    previous: string | null // when it failed: when the banlist still in use was read
+  }
 }
 
 const STATUS_URL = META_DATA_URL.replace(/[^/]+$/, 'status.json')

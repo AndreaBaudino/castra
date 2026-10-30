@@ -10,6 +10,7 @@ import type { Match } from './lib/matches'
 import { useMeta } from './lib/meta'
 import { readStored, useStoredState, writeStored } from './lib/storage'
 import { claimPlayer, unclaimPlayer, useClaims } from './lib/claims'
+import { loadBanlist } from './lib/banlist'
 import { type CircuitNotice, type CircuitSnapshot, mergeNotices, noticeOf, snapshotOf, useCircuit } from './lib/circuit'
 import { Icon } from './components/ui'
 import Home from './views/Home'
@@ -73,6 +74,9 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+  useEffect(() => {
+    loadBanlist()
+  }, [])
 
   // keep the local "me" in line with the shared claims
   useEffect(() => {

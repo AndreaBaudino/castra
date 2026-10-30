@@ -18,6 +18,7 @@ import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
 import { useIsAdmin } from '../lib/admin'
+import { useBanlist } from '../lib/banlist'
 import Admin from './Admin'
 
 function GoogleLogo() {
@@ -590,11 +591,14 @@ export default function Account({
   /** clears this device's copy of the account's data */
   onSignOut: () => void
 }) {
-  const { t, setLang } = useI18n()
+  const { t, lang, setLang } = useI18n()
   const dialog = useDialog()
   const { user, ready, signOut } = useAuth()
   const sync = useSyncStatus()
   const isAdmin = useIsAdmin(user?.uid ?? null)
+  // the latest banlist update, read from the format's site every night
+  const { announcement } = useBanlist()
+  const banlistDate = announcement && new Date(announcement.date).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })
   const [deleting, setDeleting] = useState(false)
 
   // signed in from the login page: back to the menu
@@ -699,6 +703,7 @@ export default function Account({
               <a key={href} className="menu-row" href={href} target="_blank" rel="noopener noreferrer">
                 <Icon name={icon} size={20} />
                 <span className="menu-label">{t(label)}</span>
+                {href === BANLIST_URL && banlistDate && <span className="muted small ellipsis menu-note">{t('account.banlistUpdated', { d: banlistDate })}</span>}
                 <Icon name="external" size={16} />
               </a>
             ))}

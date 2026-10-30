@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { DECK_SIZE } from '../config'
 import { useI18n } from '../i18n'
 import { useLongPress } from '../lib/longPress'
+import { useBanlist } from '../lib/banlist'
 import { type Deck, checkDeck, deckCover, isValid, newId, parseDecklist, sortColors } from '../lib/decks'
 import { type MetaDeck, findMetaDeck, normName, winrate } from '../lib/meta'
 import { fetchCollection, requestKey } from '../lib/scryfall'
@@ -28,6 +29,7 @@ export function DeckTile({
   on?: boolean // open beside the list, on a desktop
 }) {
   const { t } = useI18n()
+  useBanlist() // a newer banlist changes the check
   const check = checkDeck(deck)
   const art = deckCover(deck)
   const m = findMetaDeck(metaDecks, commanderNames(deck))

@@ -1,8 +1,11 @@
+import { useSyncExternalStore } from 'react'
 import type { DeckCard } from './decks'
+import { META_DATA_URL } from '../config'
+import { readStored, writeStored } from './storage'
 
-// Centurion Commander banlist, from https://www.centurioncommander.eu/it/ban-list-it/
-// Update these lists (and the date) with every banlist announcement.
-export const BANLIST_UPDATED = '2026-10-15'
+// Centurion Commander banlist, from https://www.centurioncommander.eu/it/ban-list-it/. Read from the site every night
+// (scripts/fetch-banlist.mjs, published as banlist.json next to meta.json): the lists below are the copy shipped with
+// the app, used until the published one has been read once (then it's kept on the device).
 
 /** Not allowed anywhere in the game. */
 const BANNED = [
@@ -22,7 +25,10 @@ const BANNED = [
   'Ancient Tomb', "Gaea's Cradle", 'Karakas', "Mishra's Workshop", 'Strip Mine', 'The Tabernacle at Pendrell Vale', 'Tolarian Academy',
   // planeswalkers
   'Comet, Stellar Pup',
-  // ante, physical and subgame cards
+]
+
+/** Ante, physical and subgame cards: the format's rules rather than its banlist, so not on the site's lists. */
+const NEVER_LEGAL = [
   'Amulet of Quoz', 'Bronze Tablet', 'Contract from Below', 'Darkpact', 'Demonic Attorney', 'Jeweled Bird', 'Rebirth',
   'Tempest Efreet', 'Timmerian Fiends', 'Falling Star', 'Chaos Orb', 'Shahrazad',
 ]
@@ -37,11 +43,70 @@ const BANNED_AS_COMMANDER = [
 /** Fine as a lone commander or in the 99, not next to another commander or as a companion. */
 const BANNED_AS_PARTNER = ['Lutri, the Spellchaser']
 
+/** The banlist as published by scripts/fetch-banlist.mjs. */
+export interface Banlist {
+  v: 1
+  checked: string // when it was read from the site
+  announcement: { date: string; title: string; url: string } | null // the latest banlist update on the site
+  banned: string[]
+  commander: string[]
+  partner: string[]
+}
+
+const BUILT_IN: Banlist = {
+  v: 1,
+  checked: '2026-10-15',
+  announcement: { date: '2026-10-15', title: 'Banlist Update – 15 ottobre 2026', url: 'https://www.centurioncommander.eu/it/banlist-update-15-ottobre-2026/' },
+  banned: BANNED,
+  commander: BANNED_AS_COMMANDER,
+  partner: BANNED_AS_PARTNER,
+}
+const URL_ = META_DATA_URL.replace(/[^/]+$/, 'banlist.json')
+const CACHE_KEY = 'cc.banlist'
+
 // curly apostrophes, case, and the back face of double-faced cards don't matter
 const norm = (name: string) => name.split('//')[0].trim().replace(/[’‘]/g, "'").toLowerCase()
-const banned = new Set(BANNED.map(norm))
-const bannedCommander = new Set(BANNED_AS_COMMANDER.map(norm))
-const bannedPartner = new Set(BANNED_AS_PARTNER.map(norm))
+let current = BUILT_IN
+let banned = new Set<string>()
+let bannedCommander = new Set<string>()
+let bannedPartner = new Set<string>()
+const listeners = new Set<() => void>()
+function apply(b: Banlist) {
+  current = b
+  banned = new Set([...b.banned, ...NEVER_LEGAL].map(norm))
+  bannedCommander = new Set(b.commander.map(norm))
+  bannedPartner = new Set(b.partner.map(norm))
+  listeners.forEach((l) => l())
+}
+const valid = (b: unknown): b is Banlist => {
+  const x = b as Banlist
+  return !!x && x.v === 1 && [x.banned, x.commander, x.partner].every((l) => Array.isArray(l) && l.every((n) => typeof n === 'string')) && x.banned.length >= 30
+}
+apply(((b) => (valid(b) ? b : BUILT_IN))(readStored<unknown>(CACHE_KEY, null)))
+
+let loading: Promise<void> | null = null
+/** Reads the published banlist once per session; offline, the last one read stays. */
+export function loadBanlist() {
+  return (loading ??= fetch(URL_, { cache: 'no-cache' })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((b: unknown) => {
+      if (!valid(b) || JSON.stringify(b) === JSON.stringify(current)) return
+      writeStored(CACHE_KEY, b)
+      apply(b)
+    })
+    .catch(() => {}))
+}
+
+/** The banlist in use; components calling this re-render when a newer one arrives. */
+export function useBanlist() {
+  return useSyncExternalStore(
+    (l) => {
+      listeners.add(l)
+      return () => listeners.delete(l)
+    },
+    () => current,
+  )
+}
 
 export interface BanCheck {
   banned: string[] // anywhere in the deck

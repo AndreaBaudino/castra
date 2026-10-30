@@ -739,6 +739,14 @@ const it = {
   'sources.err.name': 'Scrivi il nome del torneo.',
   'sources.err.date': 'Scegli la data del torneo.',
   'sources.err.league': 'Scrivi il nome della lega.',
+  'sources.banlistOk': 'Banlist letta dal sito di Centurion',
+  'sources.banlistFailed': 'Banlist non letta dal sito di Centurion',
+  'sources.banlistKept': 'L\'app continua a usare quella letta il {d}.',
+  'sources.banlistAnnouncement': 'Ultimo annuncio: {d}',
+  'sources.ban.banned': 'vietata',
+  'sources.ban.commander': 'vietata come comandante',
+  'sources.ban.partner': 'vietata come partner',
+  'account.banlistUpdated': 'Aggiornata al {d}',
   'account.feedback': 'Segnala un problema o un suggerimento',
 }
 
@@ -1480,6 +1488,14 @@ const en: Record<Key, string> = {
   'sources.err.name': "Write the tournament's name.",
   'sources.err.date': "Pick the tournament's date.",
   'sources.err.league': "Write the league's name.",
+  'sources.banlistOk': "Banlist read from Centurion's site",
+  'sources.banlistFailed': "Banlist not read from Centurion's site",
+  'sources.banlistKept': 'The app keeps using the one read on {d}.',
+  'sources.banlistAnnouncement': 'Latest announcement: {d}',
+  'sources.ban.banned': 'banned',
+  'sources.ban.commander': 'banned as commander',
+  'sources.ban.partner': 'banned as partner',
+  'account.banlistUpdated': 'Updated {d}',
   'account.feedback': 'Report a problem or a suggestion',
 }
 

@@ -21,7 +21,7 @@ import { fetchCollection, fetchPrints, requestKey, searchCards } from '../lib/sc
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
 import { useDialog } from '../components/Dialog'
-import { isBanned } from '../lib/banlist'
+import { isBanned, useBanlist } from '../lib/banlist'
 import { SampleHand } from '../components/SampleHand'
 import { DeckAnalysis } from '../components/DeckAnalysis'
 import { summaryOf } from '../lib/analysis'
@@ -185,7 +185,8 @@ export default function DeckDetail({
   const [statsOpen, setStatsOpen] = useState(false)
   useEffect(() => setStatsOpen(false), [deck.id])
   const [toast, setToast] = useState('')
-  const check = useMemo(() => checkDeck(deck), [deck])
+  const banlist = useBanlist()
+  const check = useMemo(() => checkDeck(deck), [deck, banlist]) // eslint-disable-line react-hooks/exhaustive-deps
   const meta = findMetaDeck(metaDecks, commanderNames(deck))
   const art = deckCover(deck)
   const mine = record(matches.filter((m) => m.deckId === deck.id))

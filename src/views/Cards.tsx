@@ -12,7 +12,7 @@ import {
   symbolUrl,
 } from '../lib/scryfall'
 import { type Errata, RECENT_CARDS_KEY, addRecent, diffWords, fetchErrata } from '../lib/cards'
-import { legalityOf } from '../lib/banlist'
+import { legalityOf, useBanlist } from '../lib/banlist'
 import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
 import { useStoredState } from '../lib/storage'
 import { Icon, Sheet, pct, wrClass } from '../components/ui'
@@ -195,6 +195,7 @@ const isCommanderCard = (d: Details) =>
 export function CardDetails({ name, metaDecks, openCommander }: { name: string; metaDecks?: MetaDeck[]; openCommander?: (name: string) => void }) {
   const { t, lang } = useI18n()
   const card = useLoad((signal) => fetchCardDetails(name, signal), [name])
+  useBanlist() // a newer banlist changes the legality
   const details = card.state === 'done' ? card.value : undefined
   const italian = useLoad((signal) => (details ? fetchItalian(details.name, signal).then((v) => v ?? null) : Promise.resolve(null)), [details?.id])
   const errata = useLoad(() => (details ? fetchErrata(details.oracleId) : Promise.resolve(null)), [details?.oracleId])

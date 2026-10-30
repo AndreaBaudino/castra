@@ -8,6 +8,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-10-30',
+    it: [
+      'Banlist sempre aggiornata: l\'app la legge ogni notte dal sito di Centurion, senza aspettare una nuova versione. Vale per il controllo dei mazzi e per la legalità nella ricerca carte; nel Profilo, accanto a Banlist, la data dell\'ultimo aggiornamento',
+    ],
+    en: [
+      "Banlist always up to date: the app reads it every night from Centurion's site, without waiting for a new version. It applies to the deck check and to the legality in card search; in the Profile, next to Banlist, the date of the latest update",
+    ],
+  },
+  {
     date: '2026-10-29',
     it: [
       'Ricerca carte: per ogni carta il testo Oracle (o quello della stampa italiana), la legalità in Centurion, i ruling ufficiali e, se il testo è cambiato dalla prima stampa, il confronto con le parti cambiate in evidenza. Dalla barra "Cerca una carta" in Home, dalla lente nella barra della partita (senza lasciarla), da "Testo e ruling" sulle carte dei mazzi e, su computer, da Carte nel menu laterale',

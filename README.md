@@ -66,6 +66,16 @@ sul ramo main). Se modifichi
 `Code.gs`, va pubblicata una nuova versione dello stesso deployment (Gestisci deployment → modifica → Nuova versione),
 così l'URL resta lo stesso.
 
+### Banlist (ogni notte)
+
+Lo stesso aggiornamento notturno legge la banlist dalla [pagina del formato](https://www.centurioncommander.eu/it/ban-list-it/)
+(`scripts/fetch-banlist.mjs`): le carte vietate ovunque, come comandante e come partner, controllate una per una su
+Scryfall, e la data dell'ultimo annuncio. La pubblica come `banlist.json` sul ramo `meta-data`, dove la legge l'app;
+`status.json` dice cos'è cambiato rispetto alla sera prima. Se la pagina non si legge o sembra cambiata (un titolo
+sparito, molte meno carte, un nome sconosciuto) resta la banlist di prima. Le liste in `src/lib/banlist.ts` sono
+la copia inclusa nell'app, usata finché non ha letto quella pubblicata; le carte ante, fisiche e di sottogioco sono
+regole del formato e restano lì.
+
 ## Mazzi
 
 Import da testo (Moxfield → Export → Copy as plain text, o formato MTGO/Arena).
