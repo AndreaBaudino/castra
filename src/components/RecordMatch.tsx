@@ -40,8 +40,11 @@ export function RecordMatch({
 }) {
   const { t } = useI18n()
   const [lastDeck, setLastDeck] = useStoredState<string>('cc.lastDeck', '')
-  const [kind, setKind] = useStoredState<Match['kind']>('cc.lastKind', 'casual')
-  const [format, setFormat] = useStoredState<Format>('cc.lastFormat', 'bo1')
+  // the kind and format of the last match recorded: a new one starts from them, editing an old one leaves them alone
+  const [lastKind, setLastKind] = useStoredState<Match['kind']>('cc.lastKind', 'casual')
+  const [lastFormat, setLastFormat] = useStoredState<Format>('cc.lastFormat', 'bo1')
+  const [kind, setKind] = useState(lastKind)
+  const [format, setFormat] = useState(lastFormat)
   const [result, setResult] = useState<Result | null>(null)
   const [games, setGames] = useState<(Result | undefined)[]>([])
   const [deckId, setDeckId] = useState('')
@@ -71,8 +74,8 @@ export function RecordMatch({
     }
     // a fixed choice from the account's preferences, otherwise the last one used
     const prefs = readPrefs()
-    if (prefs.format !== 'last') setFormat(prefs.format)
-    if (prefs.kind !== 'last') setKind(prefs.kind)
+    setFormat(prefs.format !== 'last' ? prefs.format : lastFormat)
+    setKind(prefs.kind !== 'last' ? prefs.kind : lastKind)
     setResult(suggestedResult ?? null)
     setGames([])
     setDeckId(decks.some((d) => d.id === lastDeck) ? lastDeck : '')
@@ -95,7 +98,11 @@ export function RecordMatch({
 
   const save = () => {
     if (!finalResult || !deckName) return
-    if (!editing) setLastDeck(deckId)
+    if (!editing) {
+      setLastDeck(deckId)
+      setLastKind(kind)
+      setLastFormat(format)
+    }
     onSave({
       ...editing,
       id: editing?.id ?? newId(),
