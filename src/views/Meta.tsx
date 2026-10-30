@@ -153,6 +153,8 @@ export default function Meta({
   circuit,
   circuitStatus,
   onCircuitRefresh,
+  circuitYears,
+  circuitYear,
   prefs,
   openPlayer,
   openEvent,
@@ -167,6 +169,8 @@ export default function Meta({
   circuit: Circuit | null
   circuitStatus: Status
   onCircuitRefresh: () => void
+  circuitYears: number[] // the years with a circuit sheet, newest first
+  circuitYear: number // the year shown
   prefs: CircuitPrefs
   openPlayer: (key: string) => void
   openEvent: (id: string) => void
@@ -225,8 +229,28 @@ export default function Meta({
 
       {mode === 'circuit' ? (
         <>
-          <LiveStatus circuit={circuit} status={circuitStatus} />
-          {banner}
+          {circuitYears.length > 1 && (
+            <div className="filters">
+              <select
+                className="select-pill"
+                value={circuitYear}
+                onChange={(e) => pickMetaYear(+e.target.value, circuitYears[0])}
+                aria-label={t('meta.year')}
+              >
+                {[...new Set([circuitYear, ...circuitYears])].sort((a, b) => b - a).map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {circuitYears.includes(circuitYear) ? (
+            <LiveStatus circuit={circuit} status={circuitStatus} />
+          ) : (
+            <div className="notice">{t('circuit.noYear', { y: circuitYear })}</div>
+          )}
+          {circuitYear === circuitYears[0] && banner}
           {circuit && (
             <CircuitPanel
               circuit={circuit}

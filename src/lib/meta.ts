@@ -250,7 +250,8 @@ async function fetchJson(url: string) {
 const YEAR_KEY = 'cc.meta.year'
 let picked = readStored<number | null>(YEAR_KEY, null)
 const yearListeners = new Set<() => void>()
-const useMetaYear = () =>
+/** The year picked for the meta and the circuit, null for the newest (of each). */
+export const usePickedYear = () =>
   useSyncExternalStore(
     (cb) => {
       yearListeners.add(cb)
@@ -258,6 +259,9 @@ const useMetaYear = () =>
     },
     () => picked,
   )
+/** Back to the newest year: the circuit seen from the home or the profile is this year's. */
+export const resetPickedYear = () => picked !== null && pickMetaYear(0, 0)
+
 export function pickMetaYear(year: number, newest: number) {
   picked = year === newest ? null : year
   writeStored(YEAR_KEY, picked)
@@ -266,7 +270,7 @@ export function pickMetaYear(year: number, newest: number) {
 
 export function useMeta() {
   const [raw, setRaw] = useState<RawFile | null>(() => readStored<RawFile | null>(CACHE_KEY, null))
-  const year = useMetaYear()
+  const year = usePickedYear()
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
 
   const refresh = useCallback(async () => {

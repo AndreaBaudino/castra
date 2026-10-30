@@ -21,6 +21,8 @@ import {
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { leagues } from './Circuit'
+import AdminCircuit from './AdminCircuit'
+import { useCircuitSheets } from '../lib/circuits'
 
 // The admin area's tournaments: the sheets read by the nightly meta update, one year at a time, and how the last
 // update went.
@@ -263,7 +265,11 @@ export default function AdminSources({ circuit }: { circuit: Circuit | null }) {
   const [editing, setEditing] = useState<Source | 'new' | null>(null)
   const [importing, setImporting] = useState(false)
   const thisYear = new Date().getFullYear()
-  const years = [...new Set([thisYear, ...sources.map(sourceYear).filter((y): y is number => !!y)])].sort((a, b) => b - a)
+  const circuitSheets = useCircuitSheets()
+  // next year too: its circuit sheet and tournaments can be set up before it starts
+  const years = [...new Set([thisYear + 1, thisYear, ...circuitSheets.map((c) => c.year), ...sources.map(sourceYear).filter((y): y is number => !!y)])].sort(
+    (a, b) => b - a,
+  )
   const [picked, setYear] = useStoredState<number>('cc.admin.sourcesYear', thisYear)
   const year = years.includes(picked) ? picked : thisYear
   const names = useMemo(() => new Map(sources.map((s) => [s.drive, sourceLabel(s)])), [sources])
@@ -341,6 +347,7 @@ export default function AdminSources({ circuit }: { circuit: Circuit | null }) {
               </button>
             ))}
           </div>
+          <AdminCircuit year={year} />
           <button className="btn primary" onClick={() => setEditing('new')}>
             <Icon name="plus" size={16} /> {t('sources.add')}
           </button>

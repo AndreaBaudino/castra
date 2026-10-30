@@ -34,8 +34,13 @@ nel winrate; quelli non spuntati restano vittorie finché qualcuno non li spunta
 Ogni torneo va nell'anno della sua data (eventi); le leghe, che non hanno una data sola, hanno un anno scelto nel
 modulo (`"year"`). Per il 2027 basta quindi aggiungere i nuovi tornei, lasciando quelli del 2026 dove sono: l'app
 mostra l'anno più recente e, quando ci sono più anni, un selettore per tornare agli altri; l'area admin mostra
-l'elenco un anno alla volta. Se il circuito 2027 ha un nuovo foglio delle
-classifiche, va cambiato anche `CIRCUIT_SHEET_ID` (e le schede) in `src/config.ts`.
+l'elenco un anno alla volta.
+
+Il foglio delle classifiche del circuito di ogni anno si imposta da Area admin → Tornei, sotto l'anno: link al foglio,
+numeri (gid) delle quattro schede e posti POTY, con "Prova a leggerlo" prima di salvare. Una copia del foglio
+dell'anno prima tiene gli stessi numeri delle schede, quindi di solito basta il link nuovo. È salvato su Firestore
+(`circuits/{anno}`); quello del 2026 in `src/config.ts` è la copia inclusa nell'app. Nella scheda Circuito l'anno si
+sceglie con lo stesso selettore del meta; Home, Profilo e avvisi di classifica usano sempre l'anno più recente.
 
 ### Aggiornamento automatico (ogni notte)
 

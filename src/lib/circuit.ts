@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CIRCUIT_SHEET_ID, CIRCUIT_TABS, POTY_SPOTS } from '../config'
+import { POTY_SPOTS } from '../config'
+import type { CircuitSheet } from './circuits'
 import { parseCsv } from './meta'
 import { readStored, writeStored } from './storage'
 
@@ -69,6 +70,8 @@ export interface Circuit {
   leagues: League[]
   events: CircuitEvent[] // in sheet (chronological) order
   updatedAt: string
+  year?: number // missing in caches from before there was one sheet per year
+  poty?: number // players invited to the Player of the Year by ranking (POTY_SPOTS when missing)
 }
 
 export const playerKey = (name: string) =>
@@ -279,7 +282,7 @@ export function buildCircuit(sheets: { leaderboard: string; s1: string; s2: stri
 // ---------- POTY ----------
 
 /**
- * The Player of the Year invites: whoever won one at an event, plus the best POTY_SPOTS of the others
+ * The Player of the Year invites: whoever won one at an event, plus the best POTY spots of the others
  * by total points (an invited player in the top spots lets the next one in).
  */
 export function potyStatus(c: Circuit) {
@@ -287,7 +290,7 @@ export function potyStatus(c: Circuit) {
   let cutoff = 0
   for (const p of c.players) {
     if (p.potyInvited) continue
-    if (zone.size >= POTY_SPOTS) break
+    if (zone.size >= (c.poty ?? POTY_SPOTS)) break
     zone.add(p.key)
     cutoff = p.total
   }
@@ -296,44 +299,57 @@ export function potyStatus(c: Circuit) {
 
 // ---------- hook ----------
 
-const CACHE_KEY = 'cc.circuit.v2' // bumped when the model changes
-const csvUrl = (gid: string) => `https://docs.google.com/spreadsheets/d/${CIRCUIT_SHEET_ID}/export?format=csv&gid=${gid}`
+const cacheKey = (year: number) => `cc.circuit.v2.${year}` // bumped when the model changes
+const OLD_CACHE_KEY = 'cc.circuit.v2' // 2026, from before there was one sheet per year
+const csvUrl = (sheet: string, gid: string) => `https://docs.google.com/spreadsheets/d/${sheet}/export?format=csv&gid=${gid}`
 
-export function useCircuit() {
-  const [data, setData] = useState<Circuit | null>(() => {
-    try {
-      localStorage.removeItem('cc.circuit.cache') // the first model's cache
-    } catch {
-      // storage unavailable
-    }
-    return readStored<Circuit | null>(CACHE_KEY, null)
-  })
+/** Reads a year's leaderboard sheet: fails on a sheet that can't be read or has no players. */
+export async function fetchCircuit(s: CircuitSheet): Promise<Circuit> {
+  // export keeps text cells such as "invito Poty" (the gviz endpoint drops them from numeric columns)
+  const [leaderboard, s1, s2, events] = await Promise.all(
+    [s.tabs.leaderboard, s.tabs.s1, s.tabs.s2, s.tabs.events].map(async (gid) => {
+      const res = await fetch(csvUrl(s.sheet, gid))
+      if (!res.ok) throw new Error(String(res.status))
+      return res.text()
+    }),
+  )
+  const c = buildCircuit({ leaderboard, s1, s2, events })
+  if (!c.players.length) throw new Error('empty')
+  return { ...c, year: s.year, poty: s.poty }
+}
+
+function cached(year: number) {
+  const c = readStored<Circuit | null>(cacheKey(year), null)
+  if (c || year !== 2026) return c
+  const old = readStored<Circuit | null>(OLD_CACHE_KEY, null)
+  return old && { ...old, year }
+}
+
+/** One year's circuit, from its sheet (null: none); the last one read is kept for offline. */
+export function useCircuit(sheet: CircuitSheet | null) {
+  const year = sheet?.year ?? null
+  const [data, setData] = useState<Circuit | null>(() => (year ? cached(year) : null))
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const key = sheet && JSON.stringify(sheet)
 
   const refresh = useCallback(async () => {
+    if (!sheet) return
     setStatus('loading')
     try {
-      // export keeps text cells such as "invito Poty" (the gviz endpoint drops them from numeric columns)
-      const [leaderboard, s1, s2, events] = await Promise.all(
-        [CIRCUIT_TABS.leaderboard, CIRCUIT_TABS.s1, CIRCUIT_TABS.s2, CIRCUIT_TABS.events].map(async (gid) => {
-          const res = await fetch(csvUrl(gid))
-          if (!res.ok) throw new Error(String(res.status))
-          return res.text()
-        }),
-      )
-      const next = buildCircuit({ leaderboard, s1, s2, events })
-      if (!next.players.length) throw new Error('empty')
-      writeStored(CACHE_KEY, next)
+      const next = await fetchCircuit(sheet)
+      writeStored(cacheKey(sheet.year), next)
       setData(next)
       setStatus('idle')
     } catch {
       setStatus('error')
     }
-  }, [])
+  }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    setData(year ? cached(year) : null)
+    setStatus('idle')
     refresh()
-  }, [refresh])
+  }, [refresh]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { data, status, refresh }
 }
@@ -350,6 +366,7 @@ export function eventDateLabel(e: CircuitEvent, lang: string) {
 
 /** What the user saw last time: their position, the followed players', the events. */
 export interface CircuitSnapshot {
+  year?: number // a new year's circuit starts from scratch: nothing to compare with the last one
   me?: { key: string; rank: number; total: number }
   follow: Record<string, { rank: number; total: number }>
   events: string[]
@@ -378,11 +395,12 @@ export function snapshotOf(c: Circuit, me: string | null, follow: string[]): Cir
     const p = at(k)
     if (p) f[k] = { rank: p.rank ?? 0, total: p.total }
   })
-  return { me: m && { key: m.key, rank: m.rank ?? 0, total: m.total }, follow: f, events: c.events.map((e) => e.name) }
+  return { year: c.year, me: m && { key: m.key, rank: m.rank ?? 0, total: m.total }, follow: f, events: c.events.map((e) => e.name) }
 }
 
 /** The differences worth telling, or null. A newly linked or followed player is not a change. */
 export function noticeOf(prev: CircuitSnapshot, next: CircuitSnapshot, c: Circuit): CircuitNotice | null {
+  if ((prev.year ?? 2026) !== (next.year ?? 2026)) return null
   const name = (k: string) => c.players.find((p) => p.key === k)?.name ?? k
   const change = (k: string, a: { rank: number; total: number }, b: { rank: number; total: number }): RankChange | undefined =>
     a.rank !== b.rank || a.total !== b.total ? { key: k, name: name(k), from: a.rank, to: b.rank, points: b.total - a.total } : undefined

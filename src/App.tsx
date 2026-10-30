@@ -7,7 +7,8 @@ import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
 import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
 import type { Deck } from './lib/decks'
 import type { Match } from './lib/matches'
-import { useMeta } from './lib/meta'
+import { resetPickedYear, useMeta, usePickedYear } from './lib/meta'
+import { loadCircuitSheets, useCircuitSheets } from './lib/circuits'
 import { readStored, useStoredState, writeStored } from './lib/storage'
 import { claimPlayer, unclaimPlayer, useClaims } from './lib/claims'
 import { loadBanlist } from './lib/banlist'
@@ -55,7 +56,14 @@ export default function App() {
   const [prefs, setPrefs] = useStoredState<Prefs>(PREFS_KEY, readPrefs())
   const [timerSettings, setTimerSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
   const { dataset, data: meta, status, refresh } = useMeta()
-  const circuit = useCircuit()
+  // the newest year's circuit (home, profile, ranking notices), and the one of the year picked in the Circuit tab
+  const circuitSheets = useCircuitSheets()
+  const pickedYear = usePickedYear()
+  const shownSheet = pickedYear === null ? circuitSheets[0] : (circuitSheets.find((s) => s.year === pickedYear) ?? null)
+  const circuit = useCircuit(circuitSheets[0])
+  // an older year is read only while the Circuit tab is open
+  const pastCircuit = useCircuit(route.tab === 'meta' && shownSheet && shownSheet.year !== circuitSheets[0].year ? shownSheet : null)
+  const shown = shownSheet?.year === circuitSheets[0].year ? circuit : pastCircuit
   const [circuitMe, setCircuitMe] = useStoredState<string | null>('cc.circuit.me', null)
   const [follow, setFollow] = useStoredState<string[]>('cc.circuit.follow', [])
   const [notice, setNotice] = useStoredState<CircuitNotice | null>('cc.circuit.notice', null)
@@ -77,6 +85,7 @@ export default function App() {
   }, [theme])
   useEffect(() => {
     loadBanlist()
+    loadCircuitSheets()
   }, [])
 
   // keep the local "me" in line with the shared claims
@@ -157,7 +166,7 @@ export default function App() {
       claims={claims}
       openPlayer={(k) => {
         setNotice(null)
-        openPlayer(k)
+        openCurrentPlayer(k)
       }}
       onClose={() => setNotice(null)}
     />
@@ -186,10 +195,16 @@ export default function App() {
   const openCompare = (a: string, b: string) => go('meta', `c~${encodeURIComponent(a)}~${encodeURIComponent(b)}`, true)
   const openCommander = (name: string) => go('meta', `k~${encodeURIComponent(name)}`, true)
   const openTournament = (id: string) => go('meta', `t~${encodeURIComponent(id)}`, true)
+  // from the home, the profile and the notices: the player in this year's circuit, whatever year the tab shows
+  const openCurrentPlayer = (key: string) => {
+    resetPickedYear()
+    openPlayer(key)
+  }
   // cards/<card name>: the name is encoded, as split cards have a slash ("Fire // Ice")
   const openCard = (name: string) => go('cards', encodeURIComponent(name))
   const cardName = route.tab === 'cards' && route.deck ? decodeURIComponent(route.deck) : undefined
   const findMe = () => {
+    resetPickedYear()
     writeStored(META_MODE_KEY, 'circuit')
     writeStored('cc.circuit.view', 'ranking')
     go('meta')
@@ -205,7 +220,7 @@ export default function App() {
   // meta/k~<commander>, meta/t~<tournament id> (an event or a league stage of the deck meta)
   const [metaSub, ...metaArgs] = route.tab === 'meta' && route.deck ? route.deck.split('~').map(decodeURIComponent) : []
   // a circuit event with its sheet opens as a tournament of the meta: same players, plus decks and records
-  const circuitEvent = metaSub === 'e' ? circuit.data?.events.find((e) => e.id === metaArgs[0]) : undefined
+  const circuitEvent = metaSub === 'e' ? shown.data?.events.find((e) => e.id === metaArgs[0]) : undefined
   const eventTournament = circuitEvent && tournamentOfEvent(dataset, circuitEvent)
   const gameInProgress = isGameInProgress(readStored<GameState>(GAME_KEY, defaultGame()))
   const metaList = (
@@ -215,9 +230,11 @@ export default function App() {
       dataset={dataset}
       status={status}
       onRefresh={refresh}
-      circuit={circuit.data}
-      circuitStatus={circuit.status}
-      onCircuitRefresh={circuit.refresh}
+      circuit={shown.data}
+      circuitStatus={shown.status}
+      onCircuitRefresh={shown.refresh}
+      circuitYears={circuitSheets.map((c) => c.year)}
+      circuitYear={pickedYear ?? circuitSheets[0].year}
       prefs={circuitPrefs}
       openPlayer={openPlayer}
       openEvent={openEvent}
@@ -276,7 +293,7 @@ export default function App() {
             circuit={circuit.data}
             circuitStatus={circuit.status}
             circuitMe={circuitMe}
-            openPlayer={openPlayer}
+            openPlayer={openCurrentPlayer}
             findMe={findMe}
             openRanking={openRanking}
             openCommander={openCommander}
@@ -301,7 +318,7 @@ export default function App() {
             setMatches={setMatches}
             circuit={circuit.data}
             circuitPrefs={circuitPrefs}
-            openPlayer={openPlayer}
+            openPlayer={openCurrentPlayer}
             findMe={findMe}
             section={isAccountSection(route.deck) ? route.deck : null}
             openSection={(sec) => go('account', sec, true)}
@@ -324,7 +341,7 @@ export default function App() {
             decks={decks}
             metaDecks={meta.decks}
             players={circuit.data?.players}
-            openPlayer={openPlayer}
+            openPlayer={openCurrentPlayer}
             openCommander={openCommander}
           />
         )}
@@ -345,17 +362,17 @@ export default function App() {
               <TournamentPage
                 dataset={dataset}
                 id={metaSub === 't' ? metaArgs[0] : eventTournament!.id}
-                circuit={circuit.data}
+                circuit={shown.data}
                 prefs={circuitPrefs}
                 onBack={() => history.back()}
                 openPlayer={openPlayer}
                 openCommander={openCommander}
                 openLeague={openLeague}
               />
-            ) : metaSub && circuit.data ? (
+            ) : metaSub && shown.data ? (
               metaSub === 'p' ? (
                 <PlayerPage
-                  circuit={circuit.data}
+                  circuit={shown.data}
                   dataset={dataset}
                   playerKey={metaArgs[0]}
                   prefs={circuitPrefs}
@@ -366,10 +383,10 @@ export default function App() {
                   openTournament={openTournament}
                 />
               ) : metaSub === 'e' ? (
-                <EventPage circuit={circuit.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
+                <EventPage circuit={shown.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
               ) : metaSub === 'l' ? (
                 <LeaguePage
-                  circuit={circuit.data}
+                  circuit={shown.data}
                   dataset={dataset}
                   season={metaArgs[0]}
                   name={metaArgs[1]}
@@ -381,7 +398,7 @@ export default function App() {
                 />
               ) : (
                 <ComparePage
-                  circuit={circuit.data}
+                  circuit={shown.data}
                   dataset={dataset}
                   a={metaArgs[0]}
                   b={metaArgs[1]}

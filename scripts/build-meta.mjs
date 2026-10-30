@@ -287,23 +287,41 @@ function build(tables) {
 }
 const yearList = [...new Set(tables.map((x) => x.year))].sort((a, b) => b - a)
 const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.year === year)) }))
-// the circuit sheet is this year's
-const entries = built[0]?.e ?? []
-
-// players missing from the circuit leaderboard: usually a typo, fixed with an alias
-try {
+// players missing from their year's circuit leaderboard: usually a typo, fixed with an alias. The leaderboard sheet of
+// each year is on Firestore (circuits/{year}, set from the app's admin area); 2026's is also in src/config.ts.
+async function circuitSheets() {
   const config = readFileSync(new URL('src/config.ts', root), 'utf8')
-  const id = config.match(/CIRCUIT_SHEET_ID = '([^']+)'/)[1]
-  const gid = config.match(/leaderboard: '(\d+)'/)[1]
-  const csv = await (await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`)).text()
-  const rows = parseCsv(csv)
-  const h = rows.findIndex((r) => r.some((c) => /player name/i.test(c)))
-  const col = rows[h].findIndex((c) => /player name/i.test(c))
-  const known = new Set(rows.slice(h + 1).map((r) => playerKey(r[col] ?? '')))
-  const unknown = [...new Set(entries.map((e) => e[1]).filter((p) => p && !known.has(playerKey(p))))]
-  if (unknown.length) warn('circuito', `${unknown.length} giocatori non presenti nella classifica: ${unknown.sort().join(', ')}`)
-} catch (e) {
-  warn('circuito', `classifica non scaricata (${e.message})`)
+  const sheets = { 2026: { sheet: config.match(/CIRCUIT_SHEET_ID = '([^']+)'/)[1], leaderboard: config.match(/leaderboard: '(\d+)'/)[1] } }
+  const project = config.match(/projectId: '([^']+)'/)[1]
+  try {
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents/circuits?pageSize=100`)
+    for (const d of (await res.json()).documents ?? []) {
+      const f = d.fields
+      sheets[+f.year.integerValue] = { sheet: f.sheet.stringValue, leaderboard: f.tabs.mapValue.fields.leaderboard.stringValue }
+    }
+  } catch (e) {
+    warn('circuito', `fogli della classifica non letti da Firestore (${e.message})`)
+  }
+  return sheets
+}
+const sheets = await circuitSheets()
+for (const { year, e: entries } of built) {
+  const sheet = sheets[year]
+  if (!sheet) {
+    warn(`circuito ${year}`, 'nessun foglio della classifica per questo anno: giocatori non controllati')
+    continue
+  }
+  try {
+    const csv = await (await fetch(`https://docs.google.com/spreadsheets/d/${sheet.sheet}/export?format=csv&gid=${sheet.leaderboard}`)).text()
+    const rows = parseCsv(csv)
+    const h = rows.findIndex((r) => r.some((c) => /player name/i.test(c)))
+    const col = rows[h].findIndex((c) => /player name/i.test(c))
+    const known = new Set(rows.slice(h + 1).map((r) => playerKey(r[col] ?? '')))
+    const unknown = [...new Set(entries.map((e) => e[1]).filter((p) => p && !known.has(playerKey(p))))]
+    if (unknown.length) warn(`circuito ${year}`, `${unknown.length} giocatori non presenti nella classifica: ${unknown.sort().join(', ')}`)
+  } catch (e) {
+    warn(`circuito ${year}`, `classifica non scaricata (${e.message})`)
+  }
 }
 
 // each year's update time moves only when its data does, so the nightly run publishes nothing on quiet days

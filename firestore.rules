@@ -89,6 +89,28 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // the circuit's leaderboard sheet of each year: every app reads them, without signing in; kept by the admins
+    match /circuits/{year} {
+      function tab(d, k) {
+        return d.tabs.get(k, null) is string && d.tabs[k].matches('[0-9]{1,12}');
+      }
+      allow read: if true;
+      allow write: if isAdmin()
+        && year.matches('20[0-9]{2}')
+        && request.resource.data.keys().hasOnly(['year', 'sheet', 'tabs', 'poty', 'at', 'by'])
+        && request.resource.data.year == int(year)
+        && request.resource.data.sheet is string
+        && request.resource.data.sheet.matches('[-_A-Za-z0-9]{20,100}')
+        && request.resource.data.tabs is map
+        && request.resource.data.tabs.keys().hasOnly(['leaderboard', 's1', 's2', 'events'])
+        && tab(request.resource.data, 'leaderboard') && tab(request.resource.data, 's1')
+        && tab(request.resource.data, 's2') && tab(request.resource.data, 'events')
+        && request.resource.data.poty is int
+        && request.resource.data.poty >= 1 && request.resource.data.poty <= 100
+        && request.resource.data.by == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
     // the banlist read from the format's site and published by an admin, as JSON: every app reads it, without signing in
     match /config/banlist {
       allow read: if true;
