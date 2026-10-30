@@ -167,7 +167,7 @@ export default function Stats({
   const shown = useMemo(() => {
     const now = new Date()
     const from =
-      period === 'all' ? '' : period === 'year' ? `${now.getFullYear()}` : new Date(now.getTime() - Number(period) * 86_400_000).toISOString()
+      period === 'all' ? '' : period === 'year' ? new Date(now.getFullYear(), 0, 1).toISOString() : new Date(now.getTime() - Number(period) * 86_400_000).toISOString()
     return matches
       .filter((m) => filter === 'all' || m.kind === filter)
       .filter((m) => format === 'all' || (m.format ?? 'bo1') === format)
