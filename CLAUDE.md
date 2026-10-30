@@ -14,7 +14,9 @@
   `src/index.css` (stesso valore di `src/lib/wide.ts`) e non devono cambiare il layout mobile.
 
 ## Come lavorare in fretta e bene
-- Scrivi il minimo codice che serve (stessa idea del plugin Ponytail, vedi sotto): riusa le funzioni di `src/lib/` e i
+- In ogni attività sul codice segui la skill `ponytail` (`.claude/skills/ponytail`, livello full), anche senza che
+  venga richiamata. I resoconti di `/ponytail-review` e `/ponytail-audit` vanno scritti in italiano.
+- Scrivi il minimo codice che serve: riusa le funzioni di `src/lib/` e i
   componenti di `src/components/ui.tsx` prima di scriverne di nuovi, niente astrazioni "per il futuro", niente nuove
   dipendenze se bastano poche righe. Una modifica tocca solo i file che servono.
 - Imita il codice intorno: commenti in inglese, brevi, che spiegano il *perché* (non il cosa); nomi corti; niente
@@ -108,15 +110,15 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   lo stesso vale per qualsiasi dato in localStorage o Firestore (unisci con i default, come fa `App.tsx` per `prefs`).
 
 ## Plugin e strumenti consigliati
-I plugin non si installano dall'interno di una sessione: li installa il proprietario in Claude Code con `/plugin`
-(o da claude.ai). Una volta installati, Claude li trova da solo nelle sessioni successive.
-- **Ponytail** ([DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail), l'unica fonte ufficiale: non
-  `dietrichayala/ponytail`, che non esiste) — spinge l'agente a scrivere meno codice; `/ponytail-review` rivede le
-  modifiche (bug, sicurezza, test, codice da togliere), `/ponytail-audit` tutto il repository. Si installa con
+Nelle sessioni cloud (claude.ai/code, app) `/plugin` non esiste e i plugin dichiarati in `.claude/settings.json` non
+vengono installati; le skill in `.claude/skills/` del repository invece sì, in ogni ambiente.
+- **Ponytail** ([DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail), MIT, l'unica fonte ufficiale:
+  non `dietrichayala/ponytail`, che non esiste) — spinge l'agente a scrivere meno codice. Le sue tre skill sono copiate
+  in `.claude/skills/` e funzionano ovunque: `/ponytail [lite|full|ultra]`, `/ponytail-review` (rivede le modifiche:
+  bug, sicurezza, test, codice da togliere), `/ponytail-audit` (tutto il repository). Per aggiornarle, ricopiare i
+  `SKILL.md` da `skills/` del repository originale. Sul computer, nel terminale, si può installare anche il plugin
+  completo (aggiunge la barra con costi e token e l'attivazione automatica tramite hook Node):
   `/plugin marketplace add DietrichGebert/ponytail` e poi `/plugin install ponytail@ponytail`.
-  Usa hook Node (serve `node` nel PATH) e, se non lo si spegne, scrive costi e token di ogni attività in
-  `~/.config/ponytail/band/`; il webhook resta spento finché non gli si dà un indirizzo. Le regole "scrivi il minimo
-  codice" qui sopra valgono comunque, con o senza plugin.
 - **frontend-design** (Anthropic, directory ufficiale dei plugin) — utile per le pagine e i componenti nuovi.
 - Già disponibili senza installare niente: `/code-review` (bug nelle modifiche), `/simplify` (pulizia e riuso),
   `/security-review` (utile quando si toccano `firestore.rules`, l'area admin o il login).
