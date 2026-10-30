@@ -116,6 +116,8 @@ export default function AdminLinks({ year, sources, onAdd }: { year: number; sou
       {view.unlinked.length > 0 && (
         <>
           <div className="pref-group">{t('links.tournaments', { n: view.unlinked.length })}</div>
+          {/* no event left to link: said once, not on every tournament */}
+          {!view.freeEvents.length && <p className="muted small no-margin">{t('links.noFree')}</p>}
           <div className="follow-list">
             {view.unlinked.map(({ s, guess, broken }) => (
               <div key={s.drive} className="link-row">
@@ -148,9 +150,7 @@ export default function AdminLinks({ year, sources, onAdd }: { year: number; sou
                       </option>
                     ))}
                   </select>
-                ) : !view.freeEvents.length ? (
-                  <span className="muted small">{t('links.noFree')}</span>
-                ) : (
+                ) : !view.freeEvents.length ? null : (
                   <div className="link-actions">
                     {guess && (
                       <button className="btn small primary" disabled={busy === s.drive} onClick={() => link(s, guess)}>
