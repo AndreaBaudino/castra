@@ -37,6 +37,18 @@ service cloud.firestore {
         return request.resource.data.get(field, null) == null
           || (request.resource.data[field] is string && request.resource.data[field].size() <= max);
       }
+      // a picture every viewer's browser loads: from that site only, and without quotes or brackets, which in a CSS
+      // url("…") would add an image from anywhere
+      function optionalUrl(field, site) {
+        return request.resource.data.get(field, null) == null
+          || (request.resource.data[field] is string && request.resource.data[field].size() <= 1000
+            && request.resource.data[field].matches(site + '/[-_./A-Za-z0-9=?]*'));
+      }
+      // the account's Google picture, the art of a card
+      function pictures() {
+        return optionalUrl('photo', 'https://lh[0-9][.]googleusercontent[.]com')
+          && optionalUrl('coverArt', 'https://cards[.]scryfall[.]io');
+      }
 
       allow read: if true;
       allow create: if request.auth != null
@@ -44,7 +56,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at'])
         // every app downloads all the claims: no oversized names
         && optionalText('name', 200)
-        && optionalText('photo', 1000)
+        && pictures()
         // the account must point to this very player, so one account holds one claim
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.circuitMe == playerKey
         // an account whose claim an admin revoked can't take that player back
@@ -56,13 +68,9 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at', 'coverName', 'coverArt', 'deck'])
         && optionalText('name', 200)
-        && optionalText('photo', 1000)
+        && pictures()
         && optionalText('coverName', 150)
-        && optionalText('deck', 200)
-        && (request.resource.data.get('coverArt', null) == null
-          || (request.resource.data.coverArt is string
-            && request.resource.data.coverArt.size() <= 300
-            && request.resource.data.coverArt.matches('https://cards[.]scryfall[.]io/.*')));
+        && optionalText('deck', 200);
       // an admin can only clear that customisation, leaving the claim as it is
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverName', 'coverArt', 'deck'])

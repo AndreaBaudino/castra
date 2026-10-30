@@ -17,10 +17,10 @@ const guest = env.unauthenticatedContext().firestore()
 const asAdmin = (fn) => env.withSecurityRulesDisabled((c) => fn(c.firestore()))
 
 // "this is me" as the app writes it (src/lib/claims.ts): the claim and the account's link, dropping the previous claim
-function claim(db, uid, key, previous, name = 'Name') {
+function claim(db, uid, key, previous, name = 'Name', photo = null) {
   const b = writeBatch(db)
   if (previous) b.delete(doc(db, 'claims', previous))
-  b.set(doc(db, 'claims', key), { uid, name, photo: null, at: 'x' })
+  b.set(doc(db, 'claims', key), { uid, name, photo, at: 'x' })
   b.set(doc(db, 'users', uid), { circuitMe: key }, { merge: true })
   return b.commit()
 }
@@ -52,9 +52,16 @@ await denied('pointing to another player without releasing the claim', setDoc(do
 await allowed('moving the claim to another player', claim(alice, 'alice', 'luigi', 'mario'))
 await denied('an oversized name', claim(bob, 'bob', 'peach', null, 'x'.repeat(201)))
 await denied("a claim for someone else's account", claim(bob, 'alice', 'peach'))
-await allowed('a claim by another account', claim(bob, 'bob', 'peach'))
+await denied('a picture from another site', claim(bob, 'bob', 'peach', null, 'B', 'https://spy.example/pixel.png'))
+await allowed('a claim by another account, with its Google picture', claim(bob, 'bob', 'peach', null, 'B', 'https://lh3.googleusercontent.com/a/ACg8ocK-x_1=s96-c'))
 await denied("a player another account claimed", claim(alice, 'alice', 'peach', 'luigi'))
 await allowed('customising your own page', updateDoc(doc(bob, 'claims', 'peach'), { coverName: 'Sol Ring', coverArt: null, deck: null }))
+await allowed(
+  'the art of a card behind your picture',
+  updateDoc(doc(bob, 'claims', 'peach'), { coverArt: 'https://cards.scryfall.io/art_crop/front/a/b/ab12-cd34.jpg?1562' }),
+)
+// in the CSS url("…") the page puts it in, a quote would add an image from anywhere
+await denied('art that adds another image', updateDoc(doc(bob, 'claims', 'peach'), { coverArt: 'https://cards.scryfall.io/a"), url("https://spy.example/p.png' }))
 await denied("customising someone else's page", updateDoc(doc(alice, 'claims', 'peach'), { coverName: 'Sol Ring', coverArt: null, deck: null }))
 await allowed('releasing the claim', unclaim(alice, 'alice', 'luigi'))
 await allowed('claiming again after releasing', claim(alice, 'alice', 'mario'))
