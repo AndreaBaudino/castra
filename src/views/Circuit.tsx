@@ -569,7 +569,7 @@ function ClaimBox({ p, prefs, cover }: { p: Player; prefs: CircuitPrefs; cover?:
           {claim?.photo ? (
             <img src={claim.photo} alt="" referrerPolicy="no-referrer" />
           ) : claim ? (
-            <span>{(claim.name ?? p.name)[0].toUpperCase()}</span>
+            <span>{(claim.name || p.name).charAt(0).toUpperCase()}</span>
           ) : (
             <Icon name="user" size={30} />
           )}

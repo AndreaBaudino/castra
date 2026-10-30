@@ -99,7 +99,7 @@ function Claims({
                   {c.photo ? (
                     <img className="admin-avatar" src={c.photo} alt="" referrerPolicy="no-referrer" />
                   ) : (
-                    <span className="admin-avatar">{(c.name ?? '?')[0].toUpperCase()}</span>
+                    <span className="admin-avatar">{(c.name || '?').charAt(0).toUpperCase()}</span>
                   )}
                   <span className="admin-text">
                     <strong className="ellipsis">{nameOf(key)}</strong>
