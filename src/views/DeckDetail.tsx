@@ -4,6 +4,7 @@ import {
   type CardInfo,
   type Deck,
   type DeckCard,
+  type DeckChange,
   type DeckView,
   type Group,
   GROUP_ORDER,
@@ -14,6 +15,7 @@ import {
   groupOf,
   isValid,
   sortColors,
+  logChange,
 } from '../lib/decks'
 import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
 import { type Match, fmtRecord, record } from '../lib/matches'
@@ -156,12 +158,52 @@ function PrintsPicker({ name, current, onPick }: { name: string; current?: strin
   )
 }
 
+/** The cards that went in and out, one line per day: closed until needed, like the stats. */
+function DeckHistory({ history }: { history: DeckChange[] }) {
+  const { t, lang } = useI18n()
+  const [open, setOpen] = useState(false)
+  const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })
+  const names = (cards: [string, number][]) => cards.map(([n, d]) => (Math.abs(d) > 1 ? `${Math.abs(d)} ${n}` : n)).join(', ')
+  return (
+    <section className={`card collapsible ${open ? 'open' : ''}`}>
+      <button className="collapse-head" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="card-title">{t('deck.history')}</span>
+        {!open && <span className="muted small ellipsis collapse-sum">{t('deck.historyLast', { d: day(history[0].at) })}</span>}
+        <span className="chev">
+          <Icon name="chevron" size={16} />
+        </span>
+      </button>
+      {open &&
+        history.map((h) => {
+          const all = Object.entries(h.cards).sort((a, b) => a[0].localeCompare(b[0]))
+          const [ins, outs] = [all.filter(([, d]) => d > 0), all.filter(([, d]) => d < 0)]
+          return (
+            <div key={h.at} className="deck-change">
+              <div className="muted small">{day(h.at)}</div>
+              {ins.length > 0 && (
+                <div>
+                  <b className="good-text">{t('deck.in')}</b> {names(ins)}
+                </div>
+              )}
+              {outs.length > 0 && (
+                <div>
+                  <b className="bad-text">{t('deck.out')}</b> {names(outs)}
+                </div>
+              )}
+            </div>
+          )
+        })}
+    </section>
+  )
+}
+
 export default function DeckDetail({
   deck,
   metaDecks,
   matches,
   onChange,
   onDelete,
+  onDuplicate,
   onBack,
   openCommander,
 }: {
@@ -170,6 +212,7 @@ export default function DeckDetail({
   matches: Match[]
   onChange: (d: Deck) => void
   onDelete: () => void
+  onDuplicate: () => void
   onBack: () => void
   openCommander: (name: string) => void
 }) {
@@ -212,7 +255,13 @@ export default function DeckDetail({
   }, [deck.cards])
 
 
-  const save = (patch: Partial<Deck>) => onChange({ ...deck, ...patch, updatedAt: new Date().toISOString() })
+  const save = (patch: Partial<Deck>) =>
+    onChange({
+      ...deck,
+      ...patch,
+      ...(patch.cards && { history: logChange(deck.history, deck.cards, patch.cards) }),
+      updatedAt: new Date().toISOString(),
+    })
   const setCards = (fn: (cs: DeckCard[]) => DeckCard[]) => save({ cards: fn(deck.cards) })
   const same = (a: DeckCard, b: DeckCard) => cardKey(a) === cardKey(b)
 
@@ -328,6 +377,9 @@ export default function DeckDetail({
             <span>{t('deck.notes')}</span>
             <textarea rows={3} value={deck.notes} onChange={(e) => save({ notes: e.target.value })} />
           </label>
+          <button className="btn" onClick={onDuplicate}>
+            <Icon name="copy" size={16} /> {t('deck.duplicate')}
+          </button>
           <button
             className="btn danger"
             onClick={async () => {
@@ -412,6 +464,8 @@ export default function DeckDetail({
           </>
         )}
       </section>
+
+      {deck.history?.length ? <DeckHistory history={deck.history} /> : null}
 
       <div className="deck-toolbar">
         <div className="seg">

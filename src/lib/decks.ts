@@ -38,8 +38,40 @@ export interface Deck {
   cards: DeckCard[]
   view?: DeckView // default 'list'
   cover?: string // name of the card whose art is the deck's splash; default: commander
+  history?: DeckChange[] // newest first
   createdAt: string
   updatedAt: string
+}
+
+/** One day's change of the commander and the 99: copies in (positive) and out (negative), by card name. */
+export interface DeckChange {
+  at: string
+  cards: Record<string, number>
+}
+
+const countOf = (cs: DeckCard[]) => {
+  const m = new Map<string, number>()
+  for (const c of cs) if (c.section !== 'side') m.set(c.name, (m.get(c.name) ?? 0) + c.qty)
+  return m
+}
+
+/**
+ * The history with the cards that went in and out between `before` and `after`. A printing, a commander moved to the
+ * 99 or the sideboard aren't changes; the same day's edits are one change, so a card added and taken out cancels out.
+ */
+export function logChange(history: DeckChange[] = [], before: DeckCard[], after: DeckCard[], now = new Date()): DeckChange[] {
+  const [a, b] = [countOf(before), countOf(after)]
+  const delta: Record<string, number> = {}
+  for (const n of new Set([...a.keys(), ...b.keys()])) {
+    const d = (b.get(n) ?? 0) - (a.get(n) ?? 0)
+    if (d) delta[n] = d
+  }
+  if (!Object.keys(delta).length) return history
+  const [last, ...rest] = history
+  if (!last || new Date(last.at).toDateString() !== now.toDateString()) return [{ at: now.toISOString(), cards: delta }, ...history].slice(0, 100)
+  const cards = { ...last.cards }
+  for (const [n, d] of Object.entries(delta)) if (!(cards[n] = (cards[n] ?? 0) + d)) delete cards[n]
+  return Object.keys(cards).length ? [{ at: now.toISOString(), cards }, ...rest] : rest
 }
 
 export type Group =

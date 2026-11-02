@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildCircuit, parseEventName, playerKey, potyStatus } from './circuit'
-import { parseDecklist } from './decks'
+import { type DeckCard, logChange, parseDecklist } from './decks'
 import { parseCsv } from './meta'
 import { readStored, writeStored } from './storage'
 
@@ -138,5 +138,25 @@ describe('writeStored', () => {
     writeStored('cc.meta.data', 'x'.repeat(60))
     expect(readStored('cc.decks', null)).toEqual(['z'.repeat(50)])
     vi.unstubAllGlobals()
+  })
+})
+
+describe('logChange', () => {
+  const card = (name: string, qty = 1, section: DeckCard['section'] = 'main', set?: string): DeckCard => ({ name, qty, section, set })
+  const deck = [card('Atraxa', 1, 'commander'), card('Sol Ring'), card('Island', 3)]
+  const day = new Date('2026-11-02T10:00:00')
+
+  it('records cards in and out, not printings, the commander moving to the 99 or the sideboard', () => {
+    const after = [card('Atraxa'), card('Sol Ring', 1, 'main', 'lea'), card('Island', 2), card('Mana Vault'), card('Lutri', 1, 'side')]
+    expect(logChange([], deck, after, day)).toEqual([{ at: day.toISOString(), cards: { Island: -1, 'Mana Vault': 1 } }])
+    expect(logChange([], deck, [card('Atraxa', 1, 'commander'), card('Sol Ring', 1, 'main', 'lea'), card('Island', 3)], day)).toEqual([])
+  })
+
+  it('merges the same day, cancelling a card added and taken out; a new day is a new change', () => {
+    const added = [...deck, card('Mana Vault')]
+    const h = logChange(logChange([], deck, added, day), added, [...deck.slice(0, 2), card('Island', 3), card('Brainstorm')], day)
+    expect(h).toEqual([{ at: day.toISOString(), cards: { Brainstorm: 1 } }])
+    expect(logChange(h, added, deck, new Date('2026-11-03T10:00:00'))[0].cards).toEqual({ 'Mana Vault': -1 })
+    expect(logChange(h, [...deck, card('Brainstorm')], deck, day)).toEqual([])
   })
 })

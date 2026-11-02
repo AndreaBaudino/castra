@@ -6,7 +6,7 @@ import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
 import { pushBlock, savePush } from './lib/push'
 import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
 import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
-import type { Deck } from './lib/decks'
+import { type Deck, newId } from './lib/decks'
 import type { Match } from './lib/matches'
 import { resetPickedYear, useMeta, usePickedYear } from './lib/meta'
 import { loadCircuitSheets, useCircuitSheets } from './lib/circuits'
@@ -449,6 +449,12 @@ export default function App() {
                 onDelete={() => {
                   setDecks((ds) => ds.filter((x) => x.id !== openDeck.id))
                   go('decks')
+                }}
+                onDuplicate={() => {
+                  const now = new Date().toISOString()
+                  const copy = { ...openDeck, id: newId(), name: t('deck.copyName', { name: openDeck.name }), history: [], createdAt: now, updatedAt: now }
+                  setDecks((ds) => [copy, ...ds])
+                  go('decks', copy.id)
                 }}
                 onBack={() => go('decks')}
                 openCommander={openCommander}
