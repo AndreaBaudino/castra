@@ -174,6 +174,13 @@ colonna E, perché la colonna D dei punti è una formula. La data va scritta a m
 segna, il torneo resta nell'Area TO anche nei giorni dopo. Chiunque segue i tornei in corso da "Tornei in corso" in Home
 (anche senza accesso) o dal link della pagina del torneo.
 
+Ogni torneo nasce con un **codice di 6 caratteri** (e il link `…/#join~CODICE`), che il TO condivide o mostra in sala
+e può rigenerare. Chi ha collegato il proprio giocatore si iscrive dalla riga "Torneo" in Home: se il collegamento è
+verificato entra subito, altrimenti finisce tra le richieste "Da confermare" del TO, che con "Conferma" lo iscrive e
+verifica il collegamento (l'area admin mostra quale TO l'ha verificato). All'avvio del turno 1 il codice smette di
+funzionare e le richieste non confermate vengono rifiutate. Durante il torneo i giocatori verificati segnano i propri
+risultati, che l'avversario conferma (finché manca la conferma il TO li vede con "?"), e possono fare drop.
+
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
 dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può
 scrivere in `admins`: lo decidono solo le regole di `firestore.rules`.

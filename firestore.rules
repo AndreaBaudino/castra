@@ -67,8 +67,10 @@ service cloud.firestore {
       allow update: if request.auth != null
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at', 'coverName', 'coverArt', 'deck', 'verified'])
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at', 'coverName', 'coverArt', 'deck', 'verified', 'verifiedBy', 'verifiedIn'])
         && request.resource.data.get('verified', null) == resource.data.get('verified', null)
+        && request.resource.data.get('verifiedBy', null) == resource.data.get('verifiedBy', null)
+        && request.resource.data.get('verifiedIn', null) == resource.data.get('verifiedIn', null)
         && optionalText('name', 200)
         && pictures()
         && optionalText('coverName', 150)
@@ -79,10 +81,23 @@ service cloud.firestore {
         && request.resource.data.get('coverName', null) == null
         && request.resource.data.get('coverArt', null) == null
         && request.resource.data.get('deck', null) == null;
-      // an admin who knows the player gives (or takes back) the "verified" tick, and changes nothing else
+      // an admin who knows the player gives (or takes back) the "verified" tick, and changes nothing else; a tick
+      // given by a TO stops being theirs
       allow update: if isAdmin()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verified'])
-        && request.resource.data.get('verified', false) is bool;
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verified', 'verifiedBy', 'verifiedIn'])
+        && request.resource.data.get('verified', false) is bool
+        && request.resource.data.get('verifiedBy', null) == null
+        && request.resource.data.get('verifiedIn', null) == null;
+      // a TO gives it (never takes it back) to the account that registered this player at one of their tournaments,
+      // signing it with their uid and the tournament
+      allow update: if request.auth != null
+        && resource.data.get('verified', false) != true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verified', 'verifiedBy', 'verifiedIn'])
+        && request.resource.data.verified == true
+        && request.resource.data.verifiedBy == request.auth.uid
+        && request.resource.data.verifiedIn is string
+        && manages(get(/databases/$(database)/documents/tournaments/$(request.resource.data.verifiedIn)).data.drive)
+        && get(/databases/$(database)/documents/tournaments/$(request.resource.data.verifiedIn)/players/$(playerKey)).data.get('uid', null) == resource.data.uid;
       allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
@@ -153,7 +168,7 @@ service cloud.firestore {
     }
     match /tournaments/{tid} {
       function valid(d) {
-        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'at', 'by'])
+        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code', 'at', 'by'])
           && d.drive is string
           // its id is its sheet (and stage): one tournament for each
           && ((d.kind in ['l1', 'l2'] && tid == d.drive && d.get('stage', null) == null)
@@ -166,6 +181,8 @@ service cloud.firestore {
           && d.cut in [0, 2, 4, 8]
           && d.round is int && d.round >= 0 && d.round <= 30
           && d.get('filed', false) is bool
+          // the registration code: none once round 1 starts
+          && (d.get('code', null) == null || (d.code is string && d.code.matches('[A-Z0-9]{6}')))
           && d.at is string && d.by is string;
       }
       allow read: if true;
@@ -179,12 +196,27 @@ service cloud.firestore {
       // the round's clock starts at the server's time, the same for every phone
       allow update: if manages(resource.data.drive)
         && valid(request.resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started', 'filed'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code'])
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['started']) || request.resource.data.started == request.time);
       allow delete: if manages(resource.data.drive);
 
+      function tour() {
+        return get(/databases/$(database)/documents/tournaments/$(tid)).data;
+      }
       function managed() {
-        return manages(get(/databases/$(database)/documents/tournaments/$(tid)).data.drive);
+        return manages(tour().drive);
+      }
+      // the account holding the claim on this circuit player ("this is me"), verified or not
+      function holds(key) {
+        return request.auth != null
+          && exists(/databases/$(database)/documents/claims/$(key))
+          && get(/databases/$(database)/documents/claims/$(key)).data.uid == request.auth.uid;
+      }
+      function verified(key) {
+        return holds(key) && get(/databases/$(database)/documents/claims/$(key)).data.get('verified', false) == true;
+      }
+      function text(d, field, min, max) {
+        return d.get(field, null) is string && d[field].size() >= min && d[field].size() <= max;
       }
       function round(d, field) {
         return d.get(field, null) == null || (d[field] is int && d[field] >= 0 && d[field] <= 30);
@@ -193,13 +225,57 @@ service cloud.firestore {
         allow read: if true;
         allow create, update: if managed()
           && key.size() <= 200
-          && request.resource.data.keys().hasOnly(['name', 'commander', 'joined', 'drop', 'at', 'by'])
+          && request.resource.data.keys().hasOnly(['name', 'commander', 'joined', 'drop', 'uid', 'pending', 'deck', 'list', 'at', 'by'])
           && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
           && (request.resource.data.get('commander', null) == null
             || (request.resource.data.commander is string && request.resource.data.commander.size() <= 300))
           && round(request.resource.data, 'joined') && round(request.resource.data, 'drop')
           && request.resource.data.at is string && request.resource.data.by is string;
         allow delete: if managed();
+
+        // the player, with the code, while registration is open: in at once with a verified claim, otherwise waiting
+        // for a TO to confirm; always with a commander
+        function entry(d) {
+          return d.uid == request.auth.uid && d.by == request.auth.uid
+            && text(d, 'commander', 1, 300)
+            && (d.get('deck', null) == null || text(d, 'deck', 1, 100))
+            && d.at is string;
+        }
+        allow create: if holds(key)
+          && tour().status == 'open' && tour().get('code', null) != null
+          && request.resource.data.keys().hasOnly(['name', 'commander', 'uid', 'pending', 'deck', 'at', 'by'])
+          && text(request.resource.data, 'name', 1, 200)
+          && entry(request.resource.data)
+          && request.resource.data.get('pending', false) == !verified(key);
+        // their commander and deck until round 1 (also when the TO added them)
+        allow update: if holds(key)
+          && tour().status == 'open'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commander', 'deck', 'uid', 'at', 'by'])
+          && entry(request.resource.data);
+        // whether they gave their decklist, until it's in the sheet
+        allow update: if holds(key)
+          && !tour().get('filed', false)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['list'])
+          && request.resource.data.list is bool;
+        // leaving the Swiss after the round being played, with a verified claim
+        allow update: if verified(key)
+          && tour().status == 'swiss'
+          && resource.data.get('drop', null) == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['drop'])
+          && request.resource.data.drop == tour().round;
+        allow delete: if holds(key) && tour().status == 'open';
+
+        // the decklist (a Moxfield link): the player and the TOs see it, everyone once the tournament is over
+        match /private/{doc} {
+          allow read: if managed() || holds(key) || tour().status == 'done';
+          allow create, update: if (managed() || holds(key))
+            && doc == 'deck'
+            && !tour().get('filed', false)
+            && request.resource.data.keys().hasOnly(['link'])
+            && text(request.resource.data, 'link', 1, 300)
+            && request.resource.data.link.matches('https://(www[.])?moxfield[.]com/decks/[-_A-Za-z0-9]+/?');
+          allow delete: if managed() || (holds(key) && !tour().get('filed', false));
+        }
       }
       // a Bo3 result, games won by p1, by p2 and drawn: as src/lib/swiss.ts validScore
       function score(d) {
@@ -212,7 +288,7 @@ service cloud.firestore {
       match /matches/{mid} {
         allow read: if true;
         allow create, update: if managed()
-          && request.resource.data.keys().hasOnly(['round', 'table', 'p1', 'p2', 'score', 'extra'])
+          && request.resource.data.keys().hasOnly(['round', 'table', 'p1', 'p2', 'score', 'extra', 'reportedBy', 'confirmed'])
           && request.resource.data.round is int && request.resource.data.round >= 1 && request.resource.data.round <= 30
           && request.resource.data.table is int && request.resource.data.table >= 0 && request.resource.data.table <= 300
           && request.resource.data.p1 is string
@@ -221,6 +297,24 @@ service cloud.firestore {
           && (request.resource.data.get('extra', null) == null
             || (request.resource.data.extra is int && request.resource.data.extra >= 0 && request.resource.data.extra <= 60));
         allow delete: if managed();
+
+        // the players of a table of the round being played, with verified claims: one reports the result, the
+        // other confirms it; until then either can report it again, after it only the TO changes it
+        allow update: if tour().status in ['swiss', 'cut']
+          && resource.data.round == tour().round
+          && resource.data.p2 != null
+          && resource.data.get('confirmed', false) != true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'reportedBy', 'confirmed'])
+          && ((request.resource.data.reportedBy in [resource.data.p1, resource.data.p2]
+              && verified(request.resource.data.reportedBy)
+              && request.resource.data.score != null && score(request.resource.data)
+              && request.resource.data.confirmed == false)
+            || (resource.data.score != null
+              && request.resource.data.score == resource.data.score
+              && request.resource.data.reportedBy == resource.data.reportedBy
+              && request.resource.data.confirmed == true
+              && ((resource.data.reportedBy == resource.data.p1 && verified(resource.data.p2))
+                || (resource.data.reportedBy == resource.data.p2 && verified(resource.data.p1)))));
       }
     }
 

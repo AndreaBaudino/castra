@@ -7,18 +7,24 @@ import { type Organizer, canRun } from '../lib/organizers'
 import { isEvent, sourceYear, useSources, type Source } from '../lib/sources'
 import { type Score, suggestedRounds, validScore, winnerOf } from '../lib/swiss'
 import { cardSuggestions, closest } from '../lib/aliases'
+import type { Claim } from '../lib/claims'
 import {
   type Player,
   type TableMatch,
   type Tournament,
+  confirmPlayer,
   createTournament,
   deleteTournament,
   finishTournament,
+  joinLink,
+  loadList,
+  newCode,
   nextCutRound,
   nextStage,
   pairSwiss,
   removePlayer,
   ranking,
+  reportScore,
   savePlayer,
   setDrop,
   clockLabel,
@@ -32,6 +38,7 @@ import {
   tournamentStatus,
   tournamentTitle,
   tournamentsOf,
+  unconfirmed,
   useNow,
   useTournament,
   useTournaments,
@@ -271,12 +278,14 @@ export function TournamentAdmin({
   user,
   organizer,
   circuit,
+  claims,
   dataset,
   onBack,
   openLive,
 }: {
   id: string
   openLive: () => void
+  claims: Map<string, Claim>
   user: AppUser | null
   organizer: Organizer | null
   circuit: Circuit | null
@@ -310,8 +319,12 @@ export function TournamentAdmin({
   const nameOf = (k: string | null) => (k ? (names.get(k)?.name ?? k) : t('meta.bye'))
   const current = matches.filter((m) => m.round === tour.round)
   const missing = current.filter((m) => m.p2 && !m.score).length
-  const active = players.filter(([, p]) => p.drop == null)
-  const noCommander = players.filter(([, p]) => !p.commander).length
+  const toConfirm = current.filter(unconfirmed).length
+  const pending = players.filter(([, p]) => p.pending)
+  const entered = players.filter(([, p]) => !p.pending)
+  const active = entered.filter(([, p]) => p.drop == null)
+  const noCommander = entered.filter(([, p]) => !p.commander).length
+  const lists = entered.filter(([, p]) => p.list).length
   const playing = tour.status === 'swiss' || tour.status === 'cut'
   const lastSwiss = tour.status === 'swiss' && tour.round >= tour.rounds
   const cutDone = tour.status === 'cut' && !missing && current.every((m) => !m.p2 || (m.score && winnerOf(m.score)))
@@ -327,9 +340,16 @@ export function TournamentAdmin({
       setBusy(false)
     }
   }
+  // results the opponent hasn't confirmed: the TO decides whether they stand
+  const confirmed = async () => !toConfirm || dialog.confirm(t('run.unconfirmedConfirm', { n: toConfirm }), { ok: t('run.goOn') })
   const nextRound = async () => {
     if (missing && !(await dialog.confirm(t('run.missingConfirm', { n: missing }), { ok: t('run.pairAnyway') }))) return
-    act(() => pairSwiss(id, tour, players, matches))
+    if (await confirmed()) act(() => pairSwiss(id, tour, players, matches))
+  }
+  const shareCode = async (code: string) => {
+    const url = joinLink(code)
+    if (navigator.share) return navigator.share({ title: 'Castra', text: t('run.codeShare', { n: tournamentTitle(tour, t), c: code }), url }).catch(() => {})
+    copy(url)
   }
   const copy = async (text: string) => {
     try {
@@ -351,9 +371,33 @@ export function TournamentAdmin({
         {playing && (
           <div className="to-clock">
             <b className={(timeLeft(tour, now) ?? 1) <= 0 ? 'bad-text' : ''}>{clockLabel(timeLeft(tour, now), t)}</b>
-            <span className="muted small">{missing ? t('run.missing', { n: missing }) : t('run.allIn')}</span>
+            <span className="muted small">
+              {missing ? t('run.missing', { n: missing }) : t('run.allIn')}
+              {toConfirm > 0 && ` · ${t('run.toConfirm', { n: toConfirm })}`}
+            </span>
           </div>
         )}
+        {tour.status === 'open' && (
+          <div className="to-code">
+            <span className="muted small">{t('run.code')}</span>
+            <b>{tour.code ?? '—'}</b>
+            {tour.code && (
+              <button className="icon-btn" onClick={() => shareCode(tour.code!)} aria-label={t('share.label')}>
+                <Icon name="share" size={18} />
+              </button>
+            )}
+            <button
+              className="btn ghost small"
+              disabled={busy}
+              onClick={async () => {
+                if (!tour.code || (await dialog.confirm(t('run.newCodeConfirm'), { ok: t('run.newCode') }))) act(() => setTournament(id, { code: newCode() }))
+              }}
+            >
+              {t(tour.code ? 'run.newCode' : 'run.makeCode')}
+            </button>
+          </div>
+        )}
+        {tour.status === 'open' && <p className="muted small no-margin">{t('run.codeHint')}</p>}
         <button className="link" onClick={openLive}>
           {t('run.livePage')}
         </button>
@@ -412,6 +456,8 @@ export function TournamentAdmin({
             className="btn primary"
             disabled={busy || active.length < 2}
             onClick={async () => {
+              if (pending.length && !(await dialog.confirm(t('run.pendingConfirm', { n: pending.length }), { ok: t('run.startAnyway'), danger: true })))
+                return
               if (noCommander && !(await dialog.confirm(t('run.noCommanderConfirm', { n: noCommander }), { ok: t('run.startAnyway') }))) return
               act(async () => {
                 if (!tour.rounds) await setTournament(id, { rounds: suggestedRounds(active.length) })
@@ -431,13 +477,21 @@ export function TournamentAdmin({
           <button
             className="btn primary"
             disabled={busy || missing > 0 || active.length < tour.cut}
-            onClick={() => act(() => startCut(id, tour, players, matches))}
+            onClick={async () => {
+              if (await confirmed()) act(() => startCut(id, tour, players, matches))
+            }}
           >
             {t('run.startCut', { n: tour.cut })}
           </button>
         )}
         {cutDone && current.length > 1 && (
-          <button className="btn primary" disabled={busy} onClick={() => act(() => nextCutRound(id, tour, matches))}>
+          <button
+            className="btn primary"
+            disabled={busy}
+            onClick={async () => {
+              if (await confirmed()) act(() => nextCutRound(id, tour, matches))
+            }}
+          >
             {t('run.nextCut')}
           </button>
         )}
@@ -446,7 +500,7 @@ export function TournamentAdmin({
             className="btn primary"
             disabled={busy || missing > 0}
             onClick={async () => {
-              if (await dialog.confirm(t('run.finishConfirm'), { ok: t('run.finish') })) act(() => finishTournament(id))
+              if ((await confirmed()) && (await dialog.confirm(t('run.finishConfirm'), { ok: t('run.finish') }))) act(() => finishTournament(id))
             }}
           >
             {t('run.finish')}
@@ -494,14 +548,63 @@ export function TournamentAdmin({
         </section>
       )}
 
+      {pending.length > 0 && (
+        <section className="card">
+          <div className="card-title">
+            {t('run.requests')}
+            <span className="muted small">{pending.length}</span>
+          </div>
+          <ul className="card-list">
+            {pending.map(([k, p]) => {
+              const c = claims.get(k)
+              return (
+                <li key={k} className="event-row">
+                  {c?.photo ? (
+                    <img className="admin-avatar" src={c.photo} alt="" referrerPolicy="no-referrer" />
+                  ) : (
+                    <span className="admin-avatar">{(c?.name || '?').charAt(0).toUpperCase()}</span>
+                  )}
+                  <div className="event-main">
+                    <span className="ellipsis">{p.name}</span>
+                    <span className="ellipsis muted small">
+                      {c?.name ?? t('admin.noName')} · {p.commander}
+                    </span>
+                  </div>
+                  <button
+                    className="btn ghost small"
+                    disabled={busy}
+                    onClick={async () => {
+                      if (await dialog.confirm(t('run.rejectConfirm', { p: p.name }), { ok: t('run.reject'), danger: true })) act(() => removePlayer(id, k))
+                    }}
+                  >
+                    {t('run.reject')}
+                  </button>
+                  <button
+                    className="btn primary small"
+                    disabled={busy}
+                    // the claim, if still the one that asked and not verified yet, is verified with the same tap
+                    onClick={() => act(() => confirmPlayer(user, id, k, !!c && c.uid === p.uid && !c.verified))}
+                  >
+                    {t('run.accept')}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="muted small no-margin">{t('run.requestsHint')}</p>
+        </section>
+      )}
+
       <section className="card">
         <div className="card-title">
           {t('run.registered')}
-          <span className="muted small">{t('run.players', { n: players.length })}</span>
+          <span className="muted small">
+            {t('run.players', { n: entered.length })} · {t('run.lists', { n: lists, of: entered.length })}
+          </span>
         </div>
         {noCommander > 0 && <p className="bad-text small no-margin">{t('run.missingCommanders', { n: noCommander })}</p>}
         <ul className="card-list">
-          {[...players]
+          {[...entered]
             .sort((a, b) => a[1].name.localeCompare(b[1].name))
             .map(([k, p]) => (
               <li key={k} className="event-row" onClick={() => setPlayer(k)}>
@@ -550,7 +653,13 @@ export function TournamentAdmin({
         <Icon name="trash" size={16} /> {t('run.cancel')}
       </button>
 
-      <ResultSheet id={id} match={result} cut={!!result && result.round > tour.rounds && tour.status !== 'swiss'} nameOf={nameOf} onClose={() => setResult(null)} />
+      <ResultSheet
+        id={id}
+        match={result}
+        cut={!!result && result.round > tour.rounds && tour.status !== 'swiss'}
+        nameOf={nameOf}
+        onClose={() => setResult(null)}
+      />
       <PlayerSheet
         id={id}
         user={user}
@@ -573,27 +682,33 @@ export function TournamentAdmin({
   )
 }
 
-/** A table's result, entered by the TO: a quick pick, or games won by each and drawn; minutes added to its clock. */
-function ResultSheet({
+/**
+ * A table's result: a quick pick, or games won by each and drawn. The TO also adds minutes to its clock; a player
+ * (`me`) sees it from their side, and their result waits for the opponent's confirmation.
+ */
+export function ResultSheet({
   id,
   match,
   cut,
   nameOf,
   onClose,
+  me,
 }: {
   id: string
   match: TableMatch | null
   cut: boolean
   nameOf: (k: string | null) => string
   onClose: () => void
+  me?: string
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
   const [s, setS] = useState<Score>([0, 0, 0])
   const [busy, setBusy] = useState(false)
+  const flip = !!me && match?.p2 === me
   useEffect(() => {
-    if (match) setS(match.score ?? [2, 0, 0])
-  }, [match])
+    if (match) setS(match.score ?? (flip ? [0, 2, 0] : [2, 0, 0]))
+  }, [match]) // eslint-disable-line react-hooks/exhaustive-deps
   const ok = validScore(s) && (!cut || winnerOf(s) !== 0)
   const run = async (fn: () => Promise<void>, close = true) => {
     setBusy(true)
@@ -612,14 +727,14 @@ function ResultSheet({
       {match && (
         <div className="form">
           <div className="chips wrap">
-            {QUICK.map((q) => (
+            {(flip ? [...QUICK].reverse() : QUICK).map((q) => (
               <button key={q.join()} className={`chip ${same(q, s) ? 'on' : ''}`} onClick={() => setS(q)}>
-                {q[0]}-{q[1]}
+                {flip ? `${q[1]}-${q[0]}` : `${q[0]}-${q[1]}`}
               </button>
             ))}
           </div>
-          {([0, 1, 2] as const).map((i) => (
-            <div key={i} className="stepper">
+          {((flip ? [1, 0, 2] : [0, 1, 2]) as (0 | 1 | 2)[]).map((i) => (
+            <div key={i} className="stepper to-step">
               <span className="ellipsis">{i === 2 ? t('run.drawnGames') : nameOf(i ? match.p2 : match.p1)}</span>
               <div className="stepper-ctrl">
                 <button onClick={() => step(i, -1)}>−</button>
@@ -629,17 +744,21 @@ function ResultSheet({
             </div>
           ))}
           {!ok && <p className="bad-text small no-margin">{t(validScore(s) ? 'run.cutNeedsWinner' : 'run.notBo3')}</p>}
-          <button className="btn primary" disabled={busy || !ok} onClick={() => run(() => setScore(id, match, s))}>
+          {!me && unconfirmed(match) && <p className="muted small no-margin">{t('run.reportedBy', { p: nameOf(match.reportedBy!) })}</p>}
+          {me && <p className="muted small no-margin">{t('join.reportHint', { p: nameOf(match.p1 === me ? match.p2 : match.p1) })}</p>}
+          <button className="btn primary" disabled={busy || !ok} onClick={() => run(() => (me ? reportScore(id, match, s, me) : setScore(id, match, s)))}>
             {t('run.saveResult')}
           </button>
-          <div className="btn-pair">
-            <button className="btn ghost" disabled={busy} onClick={() => run(() => setExtra(id, match, (match.extra ?? 0) + 5))}>
-              {t('run.addMinutes', { n: match.extra ?? 0 })}
-            </button>
-            <button className="btn ghost" disabled={busy || !match.score} onClick={() => run(() => setScore(id, match, null))}>
-              {t('run.clearResult')}
-            </button>
-          </div>
+          {!me && (
+            <div className="btn-pair">
+              <button className="btn ghost" disabled={busy} onClick={() => run(() => setExtra(id, match, (match.extra ?? 0) + 5))}>
+                {t('run.addMinutes', { n: match.extra ?? 0 })}
+              </button>
+              <button className="btn ghost" disabled={busy || !match.score} onClick={() => run(() => setScore(id, match, null))}>
+                {t('run.clearResult')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </Sheet>
@@ -660,7 +779,7 @@ function useCommanders(q: string) {
   return cards
 }
 
-function CommanderInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function CommanderInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { t } = useI18n()
   const cards = useCommanders(value)
   return (
@@ -696,10 +815,15 @@ function PlayerSheet({
   const { t } = useI18n()
   const dialog = useDialog()
   const [cmd, setCmd] = useState('')
+  const [list, setList] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
     setCmd(player?.commander ?? '')
   }, [player?.commander, keyOf])
+  useEffect(() => {
+    setList(null)
+    if (keyOf && player?.list) loadList(id, keyOf).then(setList, () => {})
+  }, [keyOf, player?.list]) // eslint-disable-line react-hooks/exhaustive-deps
   const run = async (fn: () => Promise<void>) => {
     setBusy(true)
     try {
@@ -716,6 +840,11 @@ function PlayerSheet({
     <Sheet open={!!player} onClose={onClose} title={player?.name}>
       {player && (
         <div className="form">
+          {list && (
+            <a className="link" href={list} target="_blank" rel="noreferrer">
+              {t('run.openList')}
+            </a>
+          )}
           <CommanderInput value={cmd} onChange={setCmd} />
           <button
             className="btn primary"

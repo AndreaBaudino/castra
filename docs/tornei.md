@@ -41,7 +41,8 @@ scrivere codice. I mockup delle schermate sono su
   (`playerKey`).
 - **Con link o codice**: quando apre le iscrizioni il torneo riceve un codice di 6 caratteri senza caratteri ambigui
   (es. `K7P3QX`) e il link `…/castra/#join~K7P3QX`. Il TO lo condivide o lo mostra in sala e può rigenerarlo (il
-  vecchio smette di funzionare).
+  vecchio smette di funzionare). Il codice non è un segreto (sta nel torneo, che tutti leggono): serve a trovare il
+  torneo. A proteggere le iscrizioni sono il collegamento al giocatore e la conferma del TO per chi non è verificato.
 
   | Chi apre il link | Cosa succede |
   |---|---|
@@ -68,7 +69,8 @@ scrivere codice. I mockup delle schermate sono su
   lì, oppure "Nessuno" e lo si sceglie a mano con la ricerca Scryfall. Senza comandante il pulsante Iscriviti resta
   disattivato. Per gli ospiti lo inserisce il TO.
 - Associare un mazzo di Castra serve anche per le statistiche: a fine torneo i match finiscono tra le partite
-  personali di quel mazzo (`kind: 'tournament'`, con `opponentPlayer`).
+  personali di quel mazzo (`kind: 'tournament'`, con `opponentPlayer`). Il mazzo scelto è già salvato
+  nell'iscrizione; le partite personali arrivano con la fase 4.
 - **La decklist è facoltativa**: per ora è un **link Moxfield**. Moxfield blocca la lettura delle liste da altre app
   (risponde 403), quindi dal link non si ricava il comandante. Il TO vede quanti l'hanno caricata (es. "Decklist
   8/11"), senza blocchi. Si può aggiungere fino alla pubblicazione sul foglio.
@@ -121,8 +123,8 @@ scrivere codice. I mockup delle schermate sono su
   già stati segnati e andranno persi, rifà gli abbinamenti e fa ripartire il timer da 50 minuti.
 - **Torneo annullato**: finché non è pubblicato sul foglio, il TO o un admin può cancellarlo e il torneo registrato
   torna disponibile.
-- Abbinamenti e classifica si calcolano sul telefono del TO (non c'è un server). "Apri partita" porta nel life
-  counter con avversario e timer già allineati al turno.
+- Abbinamenti e classifica si calcolano sul telefono del TO (non c'è un server). "Apri partita" (fase 4, con le
+  partite personali) porterà nel life counter con avversario e timer già allineati al turno.
 - Riaprendo l'app si ritrova la situazione attuale (tutto è su Firestore); se il telefono perde la rete si
   riallinea appena torna.
 - **Notifiche push**: quelle che esistono partono da un workflow di GitHub due volte al giorno, quindi non servono
@@ -175,7 +177,7 @@ scrivere codice. I mockup delle schermate sono su
 
 ## 9. Dati su Firestore
 
-Già in uso (fasi 1 e 2b-1):
+Già in uso (fasi 1 e 2):
 
 ```
 organizers/{uid}                 player, name, leagues: [nomi delle leghe], at, by    (scrivono solo gli admin)
@@ -190,16 +192,20 @@ tournaments/{tid}                tid = drive (livelli) o drive~tappa (leghe): un
 ```
 
 Le scrivono i TO che gestiscono quel foglio (stessa regola di `canRun`) e gli admin; tutti le leggono, anche senza
-accesso. Da aggiungere nelle fasi successive:
+accesso. Aggiunti nella fase 3:
 
 ```
-joinCodes/{codice}               tid      (get con il codice, mai list)
-claims/{playerKey}               + verifiedBy, verifiedIn                               (verifica data da un TO)
-tournaments/{tid}                + iscrizioni aperte
-  /players/{playerKey}           + uid, status (iscritto | in attesa), deckId, added (TO | link)
-  /players/{playerKey}/private/deck  link Moxfield (pubblico a torneo concluso)
-  /matches/…                     + reportedBy, confirmed
+claims/{playerKey}               + verifiedBy, verifiedIn      (la verifica data da un TO, confermando l'iscrizione)
+tournaments/{tid}                + code (6 caratteri, null dal turno 1: iscrizioni chiuse)
+  /players/{playerKey}           + uid (l'account che si è iscritto), pending (in attesa del TO), deck (mazzo in
+                                   Castra), list (ha dato la decklist)
+  /players/{playerKey}/private/deck  link: la decklist Moxfield (la leggono il giocatore e i TO, tutti a torneo concluso)
+  /matches/…                     + reportedBy (chi ha segnato il risultato), confirmed (l'avversario l'ha confermato);
+                                   senza reportedBy il risultato è del TO
 ```
+
+Il giocatore scrive solo la propria iscrizione (il `playerKey` del suo collegamento), il proprio drop e i risultati del
+proprio tavolo nel turno in corso; per drop e risultati serve il collegamento verificato.
 
 Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`, e `src/lib/tournaments.emulator.test.ts` fa girare un
 torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le prova e le pubblica dopo i test.
@@ -212,12 +218,14 @@ torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le p
 2. **Torneo gestito dal TO**, in tre passi: **2a** il motore `src/lib/swiss.ts` con i test (fatto); **2b** la
    gestione del TO: dati, regole e funzioni in `src/lib/tournaments.ts` (2b-1, fatto), le schermate in
    `src/views/Organizer.tsx` con la card in Home e le pagine `#to` e `#to/<torneo>` (2b-2, fatto); **2c** le
-   pagine da spettatore in `src/views/Live.tsx`: link in Home, `#live` e `#live/<torneo>` (fatto); **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
+   pagine da spettatore in `src/views/Live.tsx`: link in Home, `#live` e `#live/<torneo>` (fatto). In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
    svizzero, risultati, drop, ritardatari, classifica con spareggi, top cut, pagine da spettatore, "Copia le righe".
-3. **Giocatori nell'app**: link e codice, richieste da confermare con verifica, card in Home, timer, risultati con
-   conferma, comandante e decklist.
-4. **Pubblicazione**: script Apps Script che scrive nel foglio, decklist pubbliche, partite personali compilate da
-   sole.
+3. **Giocatori nell'app** (fatta): link e codice, richieste da confermare con verifica, riga del codice e card del
+   torneo in Home (`src/views/MyTournament.tsx`), timer, risultati segnati e confermati dai giocatori, drop,
+   comandante dal mazzo di Castra e decklist Moxfield privata.
+4. **Pubblicazione**: script Apps Script che scrive nel foglio, decklist pubbliche nella pagina del torneo e nel meta,
+   partite personali compilate da sole, "Apri partita", "I miei match" e tavolo evidenziato nella pagina da
+   spettatore.
 
 ## 11. In sospeso
 

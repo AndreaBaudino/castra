@@ -5,7 +5,7 @@
 
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { readFileSync } from 'node:fs'
-import { addDoc, collection, deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 
 const env = await initializeTestEnvironment({
   projectId: 'demo-castra',
@@ -179,6 +179,7 @@ await denied('a tournament that starts already in the sheet', setDoc(doc(gina, '
 await allowed('marking the results as copied into the sheet', updateDoc(doc(gina, 'tournaments', STAGE), { filed: true }))
 await denied('marking it, by someone who is not a TO', updateDoc(doc(ivan, 'tournaments', STAGE), { filed: false }))
 await denied('marking it with something else than yes or no', updateDoc(doc(gina, 'tournaments', STAGE), { filed: 'yes' }))
+await allowed('taking the mark back', updateDoc(doc(gina, 'tournaments', STAGE), { filed: false }))
 
 // players
 const entry = (more = {}) => ({ name: 'Mario Rossi', commander: 'Kinnan, Bonder Prodigy', at: 'x', by: 'gina', ...more })
@@ -192,6 +193,67 @@ await denied('a player with other fields', setDoc(doc(gina, 'tournaments', STAGE
 await allowed('a late entry and a drop', updateDoc(doc(gina, 'tournaments', STAGE, 'players', 'luigi'), { joined: 2, drop: 3 }))
 await denied('a drop after round 30', updateDoc(doc(gina, 'tournaments', STAGE, 'players', 'luigi'), { drop: 31 }))
 
+// players registering from the app with the code: kim holds a verified claim (mia), lea and max claims not verified yet
+// (nina, mario rossi), pam one (pat) she never registers with
+await asAdmin(async (db) => {
+  await setDoc(doc(db, 'claims', 'mia'), { uid: 'kim', name: 'K', photo: null, at: 'x', verified: true })
+  await setDoc(doc(db, 'claims', 'nina'), { uid: 'lea', name: 'L', photo: null, at: 'x' })
+  await setDoc(doc(db, 'claims', 'mario rossi'), { uid: 'max', name: 'M', photo: null, at: 'x' })
+  await setDoc(doc(db, 'claims', 'pat'), { uid: 'pam', name: 'P', photo: null, at: 'x' })
+})
+const kim = env.authenticatedContext('kim').firestore()
+const lea = env.authenticatedContext('lea').firestore()
+const max = env.authenticatedContext('max').firestore()
+const pam = env.authenticatedContext('pam').firestore()
+const self = (uid, more = {}) => ({ name: 'Mia', commander: 'Kinnan, Bonder Prodigy', deck: null, uid, at: 'x', by: uid, ...more })
+const seat = (db, key) => doc(db, 'tournaments', STAGE, 'players', key)
+const list = (db, key) => doc(db, 'tournaments', STAGE, 'players', key, 'private', 'deck')
+const MOX = 'https://moxfield.com/decks/Ab3_x-9QzK'
+await denied('registering with the app before the TO gives a code', setDoc(seat(kim, 'mia'), self('kim')))
+await denied('a code with lower case letters', updateDoc(doc(gina, 'tournaments', STAGE), { code: 'k7p3qx' }))
+await denied('a code of five characters', updateDoc(doc(gina, 'tournaments', STAGE), { code: 'K7P3Q' }))
+await allowed('the registration code, given by the TO', updateDoc(doc(gina, 'tournaments', STAGE), { code: 'K7P3QX' }))
+await denied('a verified player registering as waiting', setDoc(seat(kim, 'mia'), self('kim', { pending: true })))
+await denied('registering without a commander', setDoc(seat(kim, 'mia'), self('kim', { commander: '' })))
+await denied('registering in the name of another account', setDoc(seat(kim, 'mia'), self('lea')))
+await denied('registering a player you did not claim', setDoc(seat(kim, 'pat'), self('kim', { name: 'Pat' })))
+await denied('registering with other fields', setDoc(seat(kim, 'mia'), self('kim', { joined: 2 })))
+await allowed('a verified player registering, in at once', setDoc(seat(kim, 'mia'), self('kim', { deck: 'd1' })))
+await denied('a linked player registering, not waiting', setDoc(seat(lea, 'nina'), self('lea', { name: 'Nina' })))
+await allowed('a linked player registering, waiting for the TO', setDoc(seat(lea, 'nina'), self('lea', { name: 'Nina', pending: true })))
+await denied('a waiting player letting themselves in', updateDoc(seat(lea, 'nina'), { pending: false }))
+await allowed('changing your commander before round 1', updateDoc(seat(lea, 'nina'), { commander: 'Spider-Man 2099', at: 'y' }))
+await denied('changing your name', updateDoc(seat(lea, 'nina'), { name: 'Queen' }))
+await denied("changing someone else's commander", updateDoc(seat(lea, 'mia'), { commander: 'Spider-Man 2099' }))
+await allowed('joining the registration the TO made', updateDoc(seat(max, 'mario rossi'), { commander: 'Atraxa, Grand Unifier', deck: null, uid: 'max', at: 'y', by: 'max' }))
+await allowed('your decklist', setDoc(list(lea, 'nina'), { link: MOX }))
+await allowed('saying you gave it', updateDoc(seat(lea, 'nina'), { list: true }))
+await denied('a decklist that is not a Moxfield deck', setDoc(list(lea, 'nina'), { link: 'https://spy.example/decks/x' }))
+await denied("a decklist for someone else", setDoc(list(kim, 'nina'), { link: MOX }))
+await allowed('the TO reads a decklist', getDoc(list(gina, 'nina')))
+await allowed('the player reads their decklist', getDoc(list(lea, 'nina')))
+await denied('another player reads it during the tournament', getDoc(list(kim, 'nina')))
+await denied('a spectator reads it during the tournament', getDoc(list(guest, 'nina')))
+// the TO confirms a waiting player and verifies their claim, in one batch (src/lib/tournaments.ts confirmPlayer)
+const confirm = (db, key, by, more = {}) => {
+  const b = writeBatch(db)
+  b.update(seat(db, key), { pending: deleteField() })
+  b.update(doc(db, 'claims', key), { verified: true, verifiedBy: by, verifiedIn: STAGE, ...more })
+  return b.commit()
+}
+await denied('verifying, by someone who is not a TO', updateDoc(doc(ivan, 'claims', 'nina'), { verified: true, verifiedBy: 'ivan', verifiedIn: STAGE }))
+await denied('verifying, by a TO of another league', updateDoc(doc(hank, 'claims', 'nina'), { verified: true, verifiedBy: 'hank', verifiedIn: STAGE }))
+await denied('verifying in the name of another TO', updateDoc(doc(gina, 'claims', 'nina'), { verified: true, verifiedBy: 'jo', verifiedIn: STAGE }))
+await denied('verifying a player who did not register with the app', updateDoc(doc(gina, 'claims', 'pat'), { verified: true, verifiedBy: 'gina', verifiedIn: STAGE }))
+await denied('verifying and changing the claim', confirm(gina, 'nina', 'gina', { name: 'X' }))
+await allowed('confirming a waiting player, verifying their claim', confirm(gina, 'nina', 'gina'))
+await denied('a TO taking the tick back', updateDoc(doc(gina, 'claims', 'nina'), { verified: false }))
+await denied("changing who verified your claim", updateDoc(doc(lea, 'claims', 'nina'), { verifiedBy: 'lea' }))
+await allowed('customising a page a TO verified', updateDoc(doc(lea, 'claims', 'nina'), { coverName: 'Sol Ring', coverArt: null, deck: null }))
+await denied('an admin keeping a TO as who verified', updateDoc(doc(carol, 'claims', 'nina'), { verified: true, verifiedBy: 'carol' }))
+await allowed('leaving before round 1', deleteDoc(seat(lea, 'nina')))
+await allowed('registering again, now verified: in at once', setDoc(seat(lea, 'nina'), self('lea', { name: 'Nina' })))
+
 // a round as src/lib/tournaments.ts writes it: the pairings and the clock in one batch
 await allowed(
   'starting a round: pairings and clock together',
@@ -199,6 +261,7 @@ await allowed(
     const b = writeBatch(gina)
     b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t1'), { round: 1, table: 1, p1: 'mario rossi', p2: 'luigi', score: null })
     b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t0'), { round: 1, table: 0, p1: 'peach', p2: null, score: null })
+    b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t2'), { round: 1, table: 2, p1: 'mia', p2: 'nina', score: null })
     b.update(doc(gina, 'tournaments', STAGE), { status: 'swiss', round: 1, started: serverTimestamp() })
     await b.commit()
   })(),
@@ -213,6 +276,44 @@ await denied('a result that is not a Bo3 (two numbers)', updateDoc(r1, { score: 
 await denied('an hour added to a table', updateDoc(r1, { extra: 61 }))
 await denied('a result, by someone who is not a TO', updateDoc(doc(ivan, 'tournaments', STAGE, 'matches', 'r1t1'), { score: [0, 2, 0] }))
 await allowed('everyone sees the matches', getDoc(doc(guest, 'tournaments', STAGE, 'matches', 'r1t1')))
+
+// results entered by the players: one reports, the other confirms
+const t2 = (db) => doc(db, 'tournaments', STAGE, 'matches', 'r1t2')
+const rep = (score, by) => ({ score, reportedBy: by, confirmed: false })
+await denied('a result for a table you do not play', updateDoc(t2(ivan), rep([2, 0, 0], 'mia')))
+await denied('a result in the name of your opponent', updateDoc(t2(kim), rep([2, 0, 0], 'nina')))
+await denied('a result that is not a Bo3, by a player', updateDoc(t2(kim), rep([3, 0, 0], 'mia')))
+await denied('a result that arrives confirmed', updateDoc(t2(kim), { score: [2, 1, 0], reportedBy: 'mia', confirmed: true }))
+await denied('a player adding minutes', updateDoc(t2(kim), { extra: 5 }))
+await allowed('a result, by one of the players', updateDoc(t2(kim), rep([2, 1, 0], 'mia')))
+await denied('confirming your own result', updateDoc(t2(kim), { confirmed: true }))
+await allowed('the opponent entering another result', updateDoc(t2(lea), rep([1, 2, 0], 'nina')))
+await denied('confirming and changing it', updateDoc(t2(kim), { score: [2, 0, 0], confirmed: true }))
+await allowed('the opponent confirming', updateDoc(t2(kim), { confirmed: true }))
+await denied('a player changing a confirmed result', updateDoc(t2(lea), rep([2, 0, 0], 'nina')))
+await allowed('the TO correcting a confirmed result', updateDoc(t2(gina), { score: [2, 0, 0], reportedBy: deleteField(), confirmed: deleteField() }))
+await denied("a result for someone else's table", updateDoc(doc(kim, 'tournaments', STAGE, 'matches', 'r1t1'), rep([2, 0, 0], 'mia')))
+await denied('a result by a player whose claim is not verified', updateDoc(doc(max, 'tournaments', STAGE, 'matches', 'r1t1'), rep([2, 0, 0], 'mario rossi')))
+await asAdmin((db) => setDoc(doc(db, 'tournaments', STAGE, 'matches', 'r2t1'), { round: 2, table: 1, p1: 'mia', p2: 'nina', score: null }))
+await denied('a result for a round not being played', updateDoc(doc(kim, 'tournaments', STAGE, 'matches', 'r2t1'), rep([2, 0, 0], 'mia')))
+await asAdmin((db) => deleteDoc(doc(db, 'tournaments', STAGE, 'matches', 'r2t1')))
+// once round 1 started
+await denied('registering after round 1 started', setDoc(seat(pam, 'pat'), self('pam', { name: 'Pat', pending: true })))
+await denied('changing your commander after round 1', updateDoc(seat(kim, 'mia'), { commander: 'Atraxa, Grand Unifier', at: 'y' }))
+await denied('leaving after round 1, other than with a drop', deleteDoc(seat(kim, 'mia')))
+await denied('a drop after another round', updateDoc(seat(kim, 'mia'), { drop: 2 }))
+await denied('a drop by a player whose claim is not verified', updateDoc(seat(max, 'mario rossi'), { drop: 1 }))
+await denied("dropping someone else", updateDoc(seat(kim, 'nina'), { drop: 1 }))
+await allowed('your drop, after the round being played', updateDoc(seat(kim, 'mia'), { drop: 1 }))
+await denied('taking your drop back', updateDoc(seat(kim, 'mia'), { drop: deleteField() }))
+await allowed('a decklist given after round 1', setDoc(list(kim, 'mia'), { link: `${MOX}/` }))
+
+// over: the decklists become public; in the sheet: they can't change anymore
+await allowed('ending the tournament', updateDoc(doc(gina, 'tournaments', STAGE), { status: 'done' }))
+await allowed('everyone reads the decklists once it is over', getDoc(list(guest, 'nina')))
+await allowed('the results in the sheet', updateDoc(doc(gina, 'tournaments', STAGE), { filed: true }))
+await denied('a decklist changed once in the sheet', setDoc(list(lea, 'nina'), { link: MOX }))
+await denied('saying you gave it once in the sheet', updateDoc(seat(lea, 'nina'), { list: false }))
 
 // a TO who is no longer one
 await asAdmin((db) => deleteDoc(doc(db, 'organizers', 'jo')))

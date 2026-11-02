@@ -7,12 +7,20 @@ import {
   type Player,
   type TableMatch,
   type Tournament,
+  confirmPlayer,
+  confirmScore,
   createTournament,
   deleteTournament,
+  findByCode,
   finishTournament,
+  joinTournament,
+  loadList,
   nextCutRound,
   pairSwiss,
+  removePlayer,
+  reportScore,
   results,
+  saveList,
   savePlayer,
   setDrop,
   setExtra,
@@ -76,6 +84,10 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
       const db = c.firestore()
       await fs.setDoc(fs.doc(db, 'sources', SAVONA), { ...source, at: 'x', by: 'admin' })
       await fs.setDoc(fs.doc(db, 'organizers', 'gina'), { player: 'gina', name: 'Gina', leagues: ['Savona'], at: 'x', by: 'admin' })
+      // players with an account: kim's claim is verified, lea's and pam's are only linked
+      await fs.setDoc(fs.doc(db, 'claims', 'mia'), { uid: 'kim', name: 'K', photo: null, at: 'x', verified: true })
+      await fs.setDoc(fs.doc(db, 'claims', 'nina'), { uid: 'lea', name: 'L', photo: null, at: 'x' })
+      await fs.setDoc(fs.doc(db, 'claims', 'pat'), { uid: 'pam', name: 'P', photo: null, at: 'x' })
     })
   })
   afterAll(() => env?.cleanup())
@@ -176,5 +188,107 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     expect(s.players).toEqual([])
     expect(s.matches).toEqual([])
     expect(await createTournament(gina, source, '2026-11-16', 5)).toBe(id)
+  })
+
+  it('lets the players register with the code, enter and confirm their results, and drop', async () => {
+    const user = (uid: string) => ({ uid }) as AppUser
+    const claim = async (key: string) => {
+      let data: Record<string, unknown> | undefined
+      await env.withSecurityRulesDisabled(async (c) => {
+        data = (await fs.getDoc(fs.doc(c.firestore(), 'claims', key))).data()
+      })
+      return data!
+    }
+    const MOX = 'https://moxfield.com/decks/Ab3_x-9QzK'
+    as('gina')
+    const id = await createTournament(gina, source, '2026-11-23', 6)
+    let s = await read(id)
+    const code = s.t.code!
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/)
+    as('kim')
+    expect(await findByCode(code.toLowerCase())).toBe(id)
+    expect(await findByCode('ZZZZZZ')).toBeNull()
+
+    // kim, verified: in at once, with her deck and decklist
+    await joinTournament(user('kim'), id, 'mia', { name: 'Mia', commander: 'Kinnan, Bonder Prodigy', deck: 'd1', verified: true }, false)
+    await saveList(id, 'mia', MOX)
+    expect(await loadList(id, 'mia')).toBe(MOX)
+    // lea, only linked: waiting; she changes her commander meanwhile
+    as('lea')
+    await joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'Atraxa, Grand Unifier', deck: null, verified: false }, false)
+    await joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'Spider-Man 2099', deck: null, verified: false }, true)
+    await expect(joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'X', deck: null, verified: true }, false)).rejects.toThrow()
+    await expect(loadList(id, 'mia')).rejects.toThrow() // someone else's decklist, during the tournament
+    // pam: waiting, leaves, asks again
+    as('pam')
+    await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, verified: false }, false)
+    await removePlayer(id, 'pat')
+    await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, verified: false }, false)
+    s = await read(id)
+    const nina = s.players.find(([k]) => k === 'nina')![1]
+    expect(nina).toMatchObject({ pending: true, uid: 'lea', commander: 'Spider-Man 2099' })
+    expect(s.players.find(([k]) => k === 'mia')![1]).toMatchObject({ uid: 'kim', deck: 'd1', list: true })
+    expect(s.players.find(([k]) => k === 'mia')![1].pending).toBeUndefined()
+
+    // the TO confirms lea, and so verifies her claim; pam is left waiting
+    as('gina')
+    expect(await loadList(id, 'mia')).toBe(MOX)
+    await confirmPlayer(gina, id, 'nina', true)
+    expect(await claim('nina')).toMatchObject({ verified: true, verifiedBy: 'gina', verifiedIn: id })
+    s = await read(id)
+    expect(s.players.find(([k]) => k === 'nina')![1].pending).toBeUndefined()
+
+    // round 1 closes registration: the code stops working, pam's request goes
+    await setTournament(id, { rounds: 2 })
+    s = await read(id)
+    await pairSwiss(id, s.t, s.players, s.matches)
+    s = await read(id)
+    expect(s.t.code).toBeNull()
+    expect(s.players.map(([k]) => k).sort()).toEqual(['mia', 'nina'])
+    expect((await claim('pat')).verified).toBeUndefined()
+    as('kim')
+    expect(await findByCode(code)).toBeNull()
+
+    // kim enters 2-1, lea says 1-2 the other way, kim confirms that; then it's settled
+    let [m] = round(s.matches, 1)
+    const kimP1 = m.p1 === 'mia'
+    await reportScore(id, m, kimP1 ? [2, 1, 0] : [1, 2, 0], 'mia')
+    await expect(confirmScore(id, m)).rejects.toThrow() // her own
+    as('lea')
+    await reportScore(id, m, kimP1 ? [1, 2, 0] : [2, 1, 0], 'nina')
+    as('kim')
+    await confirmScore(id, m)
+    s = await read(id)
+    ;[m] = round(s.matches, 1)
+    expect(m).toMatchObject({ score: kimP1 ? [1, 2, 0] : [2, 1, 0], reportedBy: 'nina', confirmed: true })
+    as('lea')
+    await expect(reportScore(id, m, [2, 0, 0], 'nina')).rejects.toThrow()
+    expect(results(s.t, s.players, s.matches).standings[0].id).toBe('nina')
+
+    // round 2: lea drops after it, kim can't drop her
+    as('gina')
+    await pairSwiss(id, s.t, s.players, s.matches)
+    as('kim')
+    await expect(setDrop(id, 'nina', 2)).rejects.toThrow()
+    as('lea')
+    await setDrop(id, 'nina', 2)
+    s = await read(id)
+    expect(s.players.find(([k]) => k === 'nina')![1].drop).toBe(2)
+    as('kim')
+    await reportScore(id, round(s.matches, 2)[0], [2, 0, 0], 'mia')
+
+    // over: the decklists are public; cancelled, they go with the tournament
+    as('gina')
+    await finishTournament(id)
+    state.ctx = { db: env.unauthenticatedContext().firestore(), fs }
+    expect(await loadList(id, 'mia')).toBe(MOX)
+    as('gina')
+    s = await read(id)
+    await deleteTournament(id, s.players, s.matches)
+    let left = true
+    await env.withSecurityRulesDisabled(async (c) => {
+      left = (await fs.getDoc(fs.doc(c.firestore(), 'tournaments', id, 'players', 'mia', 'private', 'deck'))).exists()
+    })
+    expect(left).toBe(false)
   })
 })

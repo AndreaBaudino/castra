@@ -34,6 +34,7 @@ import { useWide } from './lib/wide'
 import { useOrganizer } from './lib/organizers'
 import OrganizerArea, { OrganizerCard, TournamentAdmin } from './views/Organizer'
 import LiveList, { LiveLink, LivePage } from './views/Live'
+import { TournamentCards } from './views/MyTournament'
 
 type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards' | 'to' | 'live'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
@@ -76,6 +77,15 @@ export default function App() {
   const organizer = useOrganizer(uid)
   const { claims, loaded: claimsLoaded } = useClaims()
   const wide = useWide()
+  // a tournament's registration code, typed or from a #join~CODE link: kept while signing in and linking the player
+  const [joinCode, setJoinCode] = useStoredState<string | null>('cc.join', null)
+  const takeJoin = () => {
+    const code = location.hash.match(/^#join~([A-Za-z0-9]{6})$/)?.[1]
+    if (!code) return false
+    setJoinCode(code.toUpperCase())
+    land({ tab: 'home', deck: null })
+    return true
+  }
 
   useCollectionSync(uid, 'decks', decks, setDecks, (l, r) => l.updatedAt > r.updatedAt)
   useCollectionSync(uid, 'matches', matches, setMatches)
@@ -137,9 +147,10 @@ export default function App() {
       openRanking()
     }
     // opened straight on a page (a link, the installed app): put home and the main page underneath
-    else if (!history.state?.main && !history.state?.sub) land(fromHash())
+    else if (!takeJoin() && !history.state?.main && !history.state?.sub) land(fromHash())
     const onPop = () => {
-      if (pending.current) land(pending.current)
+      if (takeJoin()) pending.current = null
+      else if (pending.current) land(pending.current)
       else setRoute(fromHash())
       pending.current = null
     }
@@ -203,6 +214,8 @@ export default function App() {
       dialog.alert(t('circuit.claimError'))
     }
   }
+  // the circuit player this account holds, for the tournaments
+  const me = circuitMe && uid && claims.get(circuitMe)?.uid === uid ? circuitMe : null
   const circuitPrefs = { me: circuitMe, follow, setFollow, claims, uid, link: linkPlayer, login: () => go('account'), matches }
   const openPlayer = (key: string) => go('meta', `p~${encodeURIComponent(key)}`, true)
   const openEvent = (id: string) => go('meta', `e~${id}`, true)
@@ -298,6 +311,18 @@ export default function App() {
           <Home
             banner={
               <>
+                <TournamentCards
+                  code={joinCode}
+                  setCode={setJoinCode}
+                  user={user}
+                  me={me}
+                  claim={me ? claims.get(me)! : null}
+                  name={circuit.data?.players.find((p) => p.key === me)?.name ?? me ?? ''}
+                  decks={decks}
+                  openLive={openLive}
+                  login={() => go('account', 'login', true)}
+                  linkPlayer={() => go('account', 'circuit', true)}
+                />
                 {organizer && uid && <OrganizerCard uid={uid} organizer={organizer} open={(id) => (id ? openRun(id) : go('to'))} />}
                 <LiveLink open={openLive} />
                 <BanlistNoticeCard decks={decks} openDeck={(id) => go('decks', id)} openCard={openCard} />
@@ -440,6 +465,7 @@ export default function App() {
               user={user}
               organizer={organizer}
               circuit={circuit.data}
+              claims={claims}
               dataset={dataset}
               onBack={() => history.back()}
               openLive={() => openLive(decodeURIComponent(route.deck!))}

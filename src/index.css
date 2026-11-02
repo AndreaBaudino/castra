@@ -2497,6 +2497,39 @@ textarea {
   flex-direction: column;
   gap: 8px;
 }
+/* the registration code, big enough to read it out in the room */
+.to-code {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.to-code b {
+  flex: 1;
+  font-size: 1.6rem;
+  letter-spacing: 0.15em;
+  font-variant-numeric: tabular-nums;
+}
+/* the home's row to type a tournament's code */
+.join-row {
+  gap: 10px;
+  min-height: 46px;
+}
+.join-row input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.my-tour {
+  border-color: var(--gold);
+}
 .card details summary {
   padding: 8px 0;
   font-weight: 600;

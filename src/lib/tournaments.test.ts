@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import type { MetaDataset, MetaTournament } from './meta'
 import type { Source } from './sources'
-import { type Player, type TableMatch, type Tournament, entrantsOf, nextStage, ranking, results, sheetRows, tournamentId } from './tournaments'
+import {
+  type Player,
+  type TableMatch,
+  type Tournament,
+  entrantsOf,
+  isListLink,
+  newCode,
+  nextStage,
+  ranking,
+  results,
+  sheetRows,
+  tournamentId,
+  unconfirmed,
+} from './tournaments'
 
 // What the app keeps of a tournament on Firestore, and what it reads back from it.
 
@@ -27,12 +40,38 @@ describe('tournaments', () => {
     expect(nextStage(league, meta(2025, [stage(5)]), [])).toBe(1)
   })
 
-  it('reads the players for the engine: late entries and drops', () => {
+  it('reads the players for the engine: late entries and drops; the ones waiting for the TO are not in', () => {
     const players: [string, Player][] = [
       ['a', { name: 'A', commander: 'X', at: '', by: '' }],
       ['b', { name: 'B', commander: null, joined: 2, drop: 3, at: '', by: '' }],
+      ['c', { name: 'C', commander: 'Y', uid: 'u', pending: true, at: '', by: 'u' }],
     ]
     expect(entrantsOf(players)).toEqual([{ id: 'a', joined: undefined, drop: undefined }, { id: 'b', joined: 2, drop: 3 }])
+  })
+
+  it('makes registration codes of six characters, none easy to mix up', () => {
+    const codes = Array.from({ length: 2000 }, newCode)
+    for (const c of codes) expect(c).toMatch(/^[A-HJ-NP-Z2-9]{6}$/) // no 0 O 1 I, as the rules want [A-Z0-9]{6}
+    expect(new Set(codes).size).toBeGreaterThan(1990)
+    // every character turns up: the 32 are picked evenly from a byte
+    expect(new Set(codes.join('')).size).toBe(32)
+  })
+
+  it('tells a result waiting for the opponent from one that counts', () => {
+    const m: TableMatch = { round: 1, table: 1, p1: 'a', p2: 'b', score: [2, 1, 0] }
+    expect(unconfirmed(m)).toBe(false) // the TO's
+    expect(unconfirmed({ ...m, reportedBy: 'a', confirmed: false })).toBe(true)
+    expect(unconfirmed({ ...m, reportedBy: 'a', confirmed: true })).toBe(false)
+    expect(unconfirmed({ ...m, score: null, reportedBy: 'a' })).toBe(false)
+  })
+
+  it('takes Moxfield deck links only', () => {
+    expect(isListLink('https://moxfield.com/decks/Ab3_x-9QzK')).toBe(true)
+    expect(isListLink('https://www.moxfield.com/decks/Ab3_x-9QzK/')).toBe(true)
+    expect(isListLink('http://moxfield.com/decks/Ab3')).toBe(false)
+    expect(isListLink('https://moxfield.com/users/someone')).toBe(false)
+    expect(isListLink('https://moxfield.com.spy.example/decks/x')).toBe(false)
+    expect(isListLink('https://archidekt.com/decks/123')).toBe(false)
   })
 
   it('keeps the top cut out of the Swiss standings, and puts it first in the final order', () => {

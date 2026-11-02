@@ -56,7 +56,8 @@ src/
   views/            una pagina per file: Home, Meta, MetaPages, Circuit, CircuitMore, PlayerCard, LifeCounter, Decks,
                     DeckDetail, Stats, Cards, Account, Admin* (area admin), BanlistNotice, Organizer (area TO e
                     gestione di un torneo: card in Home, `#to`, `#to/<torneo>`), Live (tornei in corso per chi
-                    li segue: link in Home, `#live`, `#live/<torneo>`)
+                    li segue: link in Home, `#live`, `#live/<torneo>`), MyTournament (il torneo del giocatore: riga del
+                    codice e card in Home, iscrizione, risultato da segnare o confermare, drop; link `#join~CODICE`)
   lib/              logica senza UI (vedi sotto)
 scripts/            build del meta e delle errata (Node, eseguiti dalle GitHub Actions)
 firestore.rules     regole di sicurezza: unica protezione dei dati, pubblicate da `rules.yml` dopo i test (push su main)

@@ -15,6 +15,8 @@ export interface Claim {
   coverArt?: string | null // its art crop on Scryfall
   deck?: string | null // the commander shown as their favourite deck
   verified?: boolean // set by an admin who knows the player: until then the claim is only "linked"
+  verifiedBy?: string // the TO who gave it, confirming the player's registration at their tournament (verifiedIn)
+  verifiedIn?: string
 }
 
 export type ClaimLook = Pick<Claim, 'coverName' | 'coverArt' | 'deck'>

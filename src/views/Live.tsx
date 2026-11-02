@@ -10,6 +10,7 @@ import {
   timeLeft,
   tournamentStatus,
   tournamentTitle,
+  unconfirmed,
   useNow,
   useTournament,
   useTournaments,
@@ -21,7 +22,9 @@ import { SubPageShell, placeLabel } from './Circuit'
 // being played (#live) and one tournament (#live/<id>) with its pairings, standings and a search for a player. The TO
 // pages (Organizer.tsx) show the tables and the standings with the same lists.
 
-const scoreText = (m: TableMatch) => (!m.p2 ? '2-0' : m.score ? m.score.slice(0, m.score[2] ? 3 : 2).join('-') : '—')
+// a result one player entered and the other hasn't confirmed yet ends with a question mark
+const scoreText = (m: TableMatch) =>
+  !m.p2 ? '2-0' : m.score ? m.score.slice(0, m.score[2] ? 3 : 2).join('-') + (unconfirmed(m) ? '?' : '') : '—'
 
 /** A round's tables, the bye last; `onPick` makes them tappable (the TO enters the results). */
 export function MatchList({ matches, nameOf, onPick }: { matches: TableMatch[]; nameOf: (k: string | null) => string; onPick?: (m: TableMatch) => void }) {
@@ -104,7 +107,7 @@ function Row({ id, x, open }: { id: string; x: Tournament; open: (id: string) =>
         <span className="muted small ellipsis">
           {winner
             ? t('live.won', { p: winner.name, c: winner.commander ?? '—' })
-            : `${tournamentStatus(x, t)} · ${t('run.players', { n: players.filter(([, p]) => p.drop == null).length })}`}
+            : `${tournamentStatus(x, t)} · ${t('run.players', { n: players.filter(([, p]) => p.drop == null && !p.pending).length })}`}
         </span>
       </div>
       {playing(x) && <b className="to-score">{clockLabel(timeLeft(x, now), t)}</b>}
@@ -178,7 +181,7 @@ export function LivePage({ id, onBack }: { id: string; onBack: () => void }) {
           {tournamentStatus(tour, t)}
           <span className="muted small">
             {new Date(tour.date).toLocaleDateString(lang, { day: 'numeric', month: 'short' })} ·{' '}
-            {t('run.players', { n: players.filter(([, p]) => p.drop == null).length })}
+            {t('run.players', { n: players.filter(([, p]) => p.drop == null && !p.pending).length })}
           </span>
         </div>
         {playing(tour) && (
@@ -233,7 +236,8 @@ export function LivePage({ id, onBack }: { id: string; onBack: () => void }) {
         <section className="card">
           <div className="card-title">{t('run.registered')}</div>
           <ul className="card-list">
-            {[...players]
+            {players
+              .filter(([, p]) => !p.pending)
               .sort((a, b) => a[1].name.localeCompare(b[1].name))
               .map(([k, p]) => (
                 <li key={k} className="event-row">

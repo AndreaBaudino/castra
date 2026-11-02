@@ -80,5 +80,6 @@ export async function clearClaimLook(key: string) {
 /** The "verified" tick on a claim: given by an admin who knows the player. */
 export async function setClaimVerified(key: string, verified: boolean) {
   const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'claims', key), { verified })
+  // a tick given by a TO becomes the admin's
+  await fs.updateDoc(fs.doc(db, 'claims', key), { verified, verifiedBy: fs.deleteField(), verifiedIn: fs.deleteField() })
 }

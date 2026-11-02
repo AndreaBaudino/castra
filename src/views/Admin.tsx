@@ -86,6 +86,8 @@ function Claims({
   const claimed = [...claims]
     .filter(([key, c]) => !q || nameOf(key).toLowerCase().includes(q) || (c.name ?? '').toLowerCase().includes(q))
     .sort((a, b) => b[1].at.localeCompare(a[1].at))
+  // the TO who verified a claim, by their own claim
+  const byUid = new Map([...claims].map(([k, c]) => [c.uid, k]))
   const blocked = [...revoked].sort((a, b) => b[1].at.localeCompare(a[1].at))
 
   const run = async (key: string, fn: () => Promise<void>) => {
@@ -128,6 +130,7 @@ function Claims({
                     <span className="muted small ellipsis">
                       {since && !c.verified && c.at > since && <span className="tag new">{t('admin.new')}</span>}{' '}
                       {c.name ?? t('admin.noName')} · {day(c.at)}
+                      {c.verified && c.verifiedBy && ` · ${t('admin.verifiedByTo', { p: nameOf(byUid.get(c.verifiedBy) ?? '?') })}`}
                     </span>
                   </span>
                 </button>
