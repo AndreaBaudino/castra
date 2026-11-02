@@ -22,7 +22,7 @@ export default defineConfig({
     VitePWA({
       // the app asks before switching to a new version (a game may be in progress): see AppBanners.tsx
       registerType: 'prompt',
-      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['icon.svg', 'apple-touch-icon.png', 'badge-96.png'],
       manifest: {
         name: 'Castra · Centurion Commander',
         short_name: 'Castra',

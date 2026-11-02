@@ -9,6 +9,8 @@ self.addEventListener('push', (e) => {
     self.registration.showNotification(d.title, {
       body: d.body,
       icon: new URL('icon-192.png', self.registration.scope).href,
+      // the status bar's icon on Android: only the shape counts, white on clear (otherwise a generic bell)
+      badge: new URL('badge-96.png', self.registration.scope).href,
       tag: d.tag, // a newer one of the same kind replaces it
       data: { url: d.url || '' },
     }),
