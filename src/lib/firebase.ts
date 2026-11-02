@@ -17,11 +17,11 @@ let loading: ReturnType<typeof load> | null = null
 export const fb = () => (loading ??= load())
 
 /** A Firestore collection kept up to date, as [id, data] pairs; `loaded` once the server confirmed it. */
-export function useLiveCollection<T>(name: string) {
+export function useLiveCollection<T>(name: string | null) {
   const [docs, setDocs] = useState<[string, T][]>([])
   const [loaded, setLoaded] = useState(false) // confirmed by the server, not just the offline cache
   useEffect(() => {
-    if (!cloudEnabled) return
+    if (!cloudEnabled || !name) return // null: nothing to listen to (e.g. not an admin)
     let unsub = () => {}
     let cancelled = false
     fb().then(({ db, fs }) => {

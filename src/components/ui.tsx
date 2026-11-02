@@ -115,6 +115,8 @@ const paths: Record<string, ReactNode> = {
     </>
   ),
   chat: <path d="M4 5h16v11H9l-5 4z" />,
+  flag: <path d="M5 21V4h12l-2 4.5 2 4.5H5" />,
+  mail: <path d="M3 6h18v12H3zM3 7l9 6 9-6" />,
   palette: (
     <>
       <path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.9 0-1.3-1-1.6-1-2.6 0-.9.7-1.5 1.6-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" />

@@ -168,6 +168,35 @@ service cloud.firestore {
         && request.resource.data.by == request.auth.uid;
     }
 
+    // reports sent from the app (src/lib/feedback.ts): any account can send one in its own name, only admins read
+    // them, mark them done or delete them
+    match /feedback/{id} {
+      function text(d, field, min, max) {
+        return d.get(field, null) is string && d[field].size() >= min && d[field].size() <= max;
+      }
+      function optional(d, field, max) {
+        return d.get(field, null) == null || text(d, field, 0, max);
+      }
+      allow read, delete: if isAdmin();
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'kind', 'text', 'page', 'about', 'version', 'device', 'at', 'done'])
+        && request.resource.data.uid == request.auth.uid
+        // the address to answer to is the account's own, never one typed in
+        && (request.resource.data.get('email', null) == null || request.resource.data.email == request.auth.token.email)
+        && request.resource.data.kind in ['bug', 'data', 'idea']
+        && text(request.resource.data, 'text', 1, 2000)
+        && optional(request.resource.data, 'name', 200)
+        && optional(request.resource.data, 'page', 300)
+        && optional(request.resource.data, 'about', 200)
+        && text(request.resource.data, 'version', 1, 60)
+        && text(request.resource.data, 'device', 1, 60)
+        && text(request.resource.data, 'at', 1, 40)
+        && request.resource.data.done == false;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done'])
+        && request.resource.data.done is bool;
+    }
+
     // claims revoked by an admin: the account in `uid` can't claim that player again (anyone else can)
     match /revoked/{playerKey} {
       allow read, delete: if isAdmin();

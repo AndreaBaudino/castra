@@ -3058,6 +3058,93 @@ textarea {
 .admin-row > .admin-text {
   padding: 8px 0;
 }
+/* reports: the sheet that sends them and the admins' list */
+.fb-kinds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.fb-kinds .chip {
+  padding: 10px 4px;
+  border-radius: 12px;
+}
+.fb-about {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 0.85rem;
+}
+.fb-about > svg {
+  color: var(--gold);
+  flex: none;
+}
+.fb-about .grow {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.form textarea.fb-text {
+  font-family: inherit;
+  font-size: 16px;
+}
+.fb-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--line);
+}
+.fb-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fb-msg {
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fb-item .link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+}
+.fb-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+.fb-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 4px;
+  border-radius: 9px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.68rem;
+}
+.tag.bug {
+  background: color-mix(in srgb, var(--bad) 18%, transparent);
+  color: var(--bad);
+}
+.tag.data {
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  color: var(--gold);
+}
+.tag.idea {
+  background: color-mix(in srgb, var(--good) 18%, transparent);
+  color: var(--good);
+}
 .link-row {
   display: flex;
   flex-direction: column;
@@ -3128,33 +3215,6 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 3px;
-}
-.link-list {
-  display: flex;
-  flex-direction: column;
-}
-.link-list a {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  color: var(--text);
-  text-decoration: none;
-  border-top: 1px solid var(--line);
-  font-size: 0.92rem;
-}
-.link-list a:first-child {
-  border-top: 0;
-}
-.link-list a span {
-  flex: 1;
-}
-.link-list a svg {
-  color: var(--muted);
-  flex: none;
-}
-.link-list a svg:first-child {
-  color: var(--gold);
 }
 .menu-card {
   padding: 0 14px;

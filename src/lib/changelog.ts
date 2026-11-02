@@ -8,6 +8,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-02',
+    it: [
+      'Segnalazioni dall\'app: in Profilo "Segnala un problema o un\'idea" e, sulle pagine di giocatori, comandanti, tornei ed eventi, la bandierina accanto a Condividi per dire che un dato è sbagliato (la pagina va insieme al messaggio). Scegli il tipo, scrivi e, se vuoi, lascia che ti rispondano alla tua email; serve aver fatto l\'accesso. Non serve più un account GitHub',
+    ],
+    en: [
+      'Reports from the app: "Report a problem or an idea" in the Profile and, on player, commander, tournament and event pages, a flag next to Share to tell that something is wrong (the page goes with the message). Pick the kind, write and, if you like, let them answer you by email; you need to be signed in. A GitHub account is no longer needed',
+    ],
+  },
+  {
     date: '2026-10-30',
     it: [
       'Banlist aggiornata senza aspettare una nuova versione: quando esce un annuncio, l\'app riceve la nuova banlist presa dal sito di Centurion all\'avvio. Vale per il controllo dei mazzi e per la legalità nella ricerca carte; nel Profilo, accanto a Banlist, la data dell\'ultimo aggiornamento',

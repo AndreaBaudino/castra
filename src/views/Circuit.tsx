@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import { type Circuit, type CircuitEvent, type CircuitNotice, type Player, type RankChange, eventDateLabel, playerKey, potyStatus } from '../lib/circuit'
 import { useStoredState } from '../lib/storage'
 import { Icon, ShareButton } from '../components/ui'
+import { ReportButton } from '../components/Feedback'
 import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
 import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
@@ -390,6 +391,7 @@ export function PlayerPage({
       onBack={onBack}
       actions={
         <div className="hero-actions">
+          <ReportButton about={p.name} />
           <ShareButton text={t('share.player', { name: p.name, pos: p.rank ?? '—', pts: p.total })} />
           {/* the claimer customises their own page, like a deck's edit button */}
           {claim && claim.uid === prefs.uid && (
@@ -732,7 +734,16 @@ export function EventPage({
   )
 
   return (
-    <SubPageShell title={e.name} onBack={onBack} actions={<ShareButton text={t('share.results', { name: e.name })} />}>
+    <SubPageShell
+      title={e.name}
+      onBack={onBack}
+      actions={
+        <div className="hero-actions">
+          <ReportButton about={e.name} />
+          <ShareButton text={t('share.results', { name: e.name })} />
+        </div>
+      }
+    >
       <div className="chips static">
         {eventDateLabel(e, lang) && <span className="tag big">{eventDateLabel(e, lang)}</span>}
         <span className="tag big">{t('circuit.nPlayers', { n: e.players })}</span>

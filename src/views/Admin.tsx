@@ -10,21 +10,33 @@ import { useStoredState } from '../lib/storage'
 import AdminSources from './AdminSources'
 import AdminBanlist from './AdminBanlist'
 import AdminAliases from './AdminAliases'
+import AdminFeedback from './AdminFeedback'
+import type { Feedback } from '../lib/feedback'
 
 // The admin area, inside the profile: the claimed circuit players and the claims revoked by an admin, and the
 // tournament sheets read by the nightly meta update (AdminSources).
 
 const hasLook = (c: Claim) => !!(c.coverName || c.coverArt || c.deck)
 
-export default function Admin(props: { circuit: Circuit | null; claims: Map<string, Claim>; openPlayer: (key: string) => void }) {
+export default function Admin({
+  feedback,
+  ...props
+}: {
+  circuit: Circuit | null
+  claims: Map<string, Claim>
+  openPlayer: (key: string) => void
+  feedback: [string, Feedback][]
+}) {
   const { t } = useI18n()
-  const [tab, setTab] = useStoredState<'players' | 'sources' | 'aliases' | 'banlist'>('cc.admin.tab', 'players')
+  const [tab, setTab] = useStoredState<'players' | 'sources' | 'aliases' | 'banlist' | 'feedback'>('cc.admin.tab', 'players')
+  const open = feedback.filter(([, f]) => !f.done).length
   return (
     <>
       <div className="seg wide">
-        {(['players', 'sources', 'aliases', 'banlist'] as const).map((v) => (
+        {(['players', 'sources', 'aliases', 'banlist', 'feedback'] as const).map((v) => (
           <button key={v} className={tab === v ? 'on' : ''} onClick={() => setTab(v)}>
             {t(`admin.tab.${v}`)}
+            {v === 'feedback' && open > 0 && <span className="fb-count">{open}</span>}
           </button>
         ))}
       </div>
@@ -34,6 +46,8 @@ export default function Admin(props: { circuit: Circuit | null; claims: Map<stri
         <AdminSources circuit={props.circuit} />
       ) : tab === 'aliases' ? (
         <AdminAliases circuit={props.circuit} />
+      ) : tab === 'feedback' ? (
+        <AdminFeedback feedback={feedback} />
       ) : (
         <AdminBanlist />
       )}

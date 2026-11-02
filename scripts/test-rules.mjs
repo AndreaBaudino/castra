@@ -5,7 +5,7 @@
 
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { readFileSync } from 'node:fs'
-import { deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 
 const env = await initializeTestEnvironment({
   projectId: 'demo-castra',
@@ -110,5 +110,27 @@ await allowed(
 // what the admins keep: read by everyone, written by no one else
 await denied('the banlist, by a non-admin', setDoc(doc(alice, 'config', 'banlist'), { json: '{}', at: 'x', by: 'alice' }))
 await denied('making yourself an admin', setDoc(doc(alice, 'admins', 'alice'), {}))
+
+// reports, as src/lib/feedback.ts sends them
+const dave = env.authenticatedContext('dave', { email: 'dave@example.com' }).firestore()
+const report = (uid, more = {}) => ({
+  uid, name: 'Dave', email: null, kind: 'data', text: 'A stage is missing', page: '#meta/p~mario', about: 'Mario',
+  version: '2026-11-02 · abc1234', device: 'Android · Chrome', at: new Date().toISOString(), done: false, ...more,
+})
+await allowed('a report', setDoc(doc(dave, 'feedback', 'r1'), report('dave')))
+await allowed('a report with your own email to answer', addDoc(collection(dave, 'feedback'), report('dave', { email: 'dave@example.com' })))
+await denied('a report in someone else\'s name', addDoc(collection(dave, 'feedback'), report('alice')))
+await denied('a report with an email that is not yours', addDoc(collection(dave, 'feedback'), report('dave', { email: 'spy@example.com' })))
+await denied('a report without signing in', addDoc(collection(guest, 'feedback'), report('dave')))
+await denied('an empty report', addDoc(collection(dave, 'feedback'), report('dave', { text: '' })))
+await denied('an oversized report', addDoc(collection(dave, 'feedback'), report('dave', { text: 'x'.repeat(2001) })))
+await denied('a report that arrives done', addDoc(collection(dave, 'feedback'), report('dave', { done: true })))
+await denied('a report with other fields', addDoc(collection(dave, 'feedback'), report('dave', { admin: true })))
+await denied('reading reports, by their sender', getDoc(doc(dave, 'feedback', 'r1')))
+await denied('marking your own report done', updateDoc(doc(dave, 'feedback', 'r1'), { done: true }))
+await allowed('reading reports, by an admin', getDoc(doc(carol, 'feedback', 'r1')))
+await allowed('marking a report done, by an admin', updateDoc(doc(carol, 'feedback', 'r1'), { done: true }))
+await denied('an admin changing the text', updateDoc(doc(carol, 'feedback', 'r1'), { text: 'x' }))
+await allowed('deleting a report, by an admin', deleteDoc(doc(carol, 'feedback', 'r1')))
 
 await env.cleanup()
