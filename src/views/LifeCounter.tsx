@@ -28,10 +28,17 @@ export interface PlayerState {
   exp?: number // experience
 }
 
-/** The counters turned on for one game, besides commander damage. */
-export type Extra = 'poison' | 'energy' | 'exp' | 'monarch' | 'initiative'
-const EXTRAS: Extra[] = ['poison', 'energy', 'exp', 'monarch', 'initiative']
-const EXTRA_KEY = { poison: 'life.poison', energy: 'life.energy', exp: 'life.exp', monarch: 'life.monarch', initiative: 'life.initiative' } as const
+/** The counters shown in one game: commander damage unless turned off, the others when turned on. */
+export type Extra = 'cmd' | 'poison' | 'energy' | 'exp' | 'monarch' | 'initiative'
+const EXTRAS: Extra[] = ['cmd', 'poison', 'energy', 'exp', 'monarch', 'initiative']
+const EXTRA_KEY = {
+  cmd: 'life.cmd',
+  poison: 'life.poison',
+  energy: 'life.energy',
+  exp: 'life.exp',
+  monarch: 'life.monarch',
+  initiative: 'life.initiative',
+} as const
 
 export interface GameState {
   startLife: number
@@ -39,12 +46,12 @@ export interface GameState {
   startedAt: string
   timer?: TimerState
   log?: LogEntry[] // what changed, oldest first: emptied by a new game
-  extras?: Extra[] // missing in games saved before: poison, when someone has some
+  extras?: Extra[] // missing in games saved before: commander damage, and poison when someone has some
   monarch?: 0 | 1 // the player who holds it
   initiative?: 0 | 1
 }
 
-const extrasOf = (g: GameState): Extra[] => g.extras ?? (g.players.some((p) => p.poison) ? ['poison'] : [])
+const extrasOf = (g: GameState): Extra[] => g.extras ?? (g.players.some((p) => p.poison) ? ['cmd', 'poison'] : ['cmd'])
 
 /** One change to a player's life, commander damage, poison or energy (experience isn't logged); taps in a quick
  * burst on the same player add up into one entry. */
@@ -88,7 +95,7 @@ const fresh = (startLife: number): GameState => ({
   players: [0, 1].map(() => ({ life: startLife, cmd: 0, poison: 0 })) as [PlayerState, PlayerState],
   startedAt: new Date().toISOString(),
   timer: freshTimer(),
-  extras: [],
+  extras: ['cmd'],
 })
 
 export const GAME_KEY = 'cc.game'
@@ -221,7 +228,7 @@ function PlayerPanel({
         </div>
       )}
       <div className="counters">
-        {counter('cmd', t('life.cmd'), 1, COMMANDER_DAMAGE_LETHAL)}
+        {extras.includes('cmd') && counter('cmd', t('life.cmd'), 1, COMMANDER_DAMAGE_LETHAL)}
         {extras.includes('poison') && counter('poison', t('life.poison'), 1, POISON_LETHAL)}
         {extras.includes('energy') && counter('energy', t('life.energy'), 1)}
         {extras.includes('exp') && counter('exp', t('life.exp'), 1)}
@@ -567,7 +574,6 @@ export default function LifeCounter({
                 </button>
               ))}
             </div>
-            <div className="muted small">{t('life.extrasHint')}</div>
 
             <div className="menu-section">{t('timer.added')}</div>
             <Stepper
