@@ -153,7 +153,7 @@ service cloud.firestore {
     }
     match /tournaments/{tid} {
       function valid(d) {
-        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'at', 'by'])
+        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'at', 'by'])
           && d.drive is string
           // its id is its sheet (and stage): one tournament for each
           && ((d.kind in ['l1', 'l2'] && tid == d.drive && d.get('stage', null) == null)
@@ -165,6 +165,7 @@ service cloud.firestore {
           && d.rounds is int && d.rounds >= 0 && d.rounds <= 15
           && d.cut in [0, 2, 4, 8]
           && d.round is int && d.round >= 0 && d.round <= 30
+          && d.get('filed', false) is bool
           && d.at is string && d.by is string;
       }
       allow read: if true;
@@ -173,11 +174,12 @@ service cloud.firestore {
         && request.resource.data.status == 'open'
         && request.resource.data.round == 0
         && request.resource.data.started == null
+        && request.resource.data.get('filed', false) == false
         && request.resource.data.by == request.auth.uid;
       // the round's clock starts at the server's time, the same for every phone
       allow update: if manages(resource.data.drive)
         && valid(request.resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started', 'filed'])
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['started']) || request.resource.data.started == request.time);
       allow delete: if manages(resource.data.drive);
 

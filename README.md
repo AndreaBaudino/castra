@@ -170,7 +170,9 @@ I TO trovano in Home la card **Area TO**: da lì aprono le iscrizioni di una nuo
 proposto è il successivo a quelli nel meta e a quelli già giocati in app) o di un livello 1 o 2 da avviare, iscrivono i
 giocatori e gestiscono il torneo turno per turno. A torneo chiuso, "Copia nomi" e "Copia risultati" preparano le righe
 per la scheda della tappa (o la "Classifica" di un livello): i nomi vanno incollati nella colonna B, i risultati nella
-colonna E, perché la colonna D dei punti è una formula. La data va scritta a mano.
+colonna E, perché la colonna D dei punti è una formula. La data va scritta a mano. Poi "Fatto: è nel foglio": finché non lo si
+segna, il torneo resta nell'Area TO anche nei giorni dopo. Chiunque segue i tornei in corso da "Tornei in corso" in Home
+(anche senza accesso) o dal link della pagina del torneo.
 
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
 dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può

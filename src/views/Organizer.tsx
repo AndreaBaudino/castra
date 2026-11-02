@@ -5,73 +5,54 @@ import { type Circuit, playerKey } from '../lib/circuit'
 import type { MetaDataset } from '../lib/meta'
 import { type Organizer, canRun } from '../lib/organizers'
 import { isEvent, sourceYear, useSources, type Source } from '../lib/sources'
-import { type Score, standings, suggestedRounds, validScore, winnerOf } from '../lib/swiss'
-import { fmt } from '../lib/timer'
+import { type Score, suggestedRounds, validScore, winnerOf } from '../lib/swiss'
 import { cardSuggestions, closest } from '../lib/aliases'
 import {
-  ROUND_MINUTES,
   type Player,
   type TableMatch,
   type Tournament,
   createTournament,
   deleteTournament,
-  entrantsOf,
   finishTournament,
   nextCutRound,
   nextStage,
   pairSwiss,
   removePlayer,
-  results,
+  ranking,
   savePlayer,
   setDrop,
+  clockLabel,
   setExtra,
+  setFiled,
   setScore,
   setTournament,
   sheetRows,
   startCut,
+  timeLeft,
+  tournamentStatus,
+  tournamentTitle,
   tournamentsOf,
+  useNow,
   useTournament,
   useTournaments,
+  useUnfiled,
 } from '../lib/tournaments'
 import { Icon, Sheet } from '../components/ui'
 import { useDialog } from '../components/Dialog'
-import { SubPageShell, placeLabel } from './Circuit'
+import { SubPageShell } from './Circuit'
+import { MatchList, RankingList } from './Live'
 
 // The tournament organizers' pages (docs/tornei.md): the card on the home, the TO area (#to) with the tournaments to
 // run, and one tournament run from the phone (#to/<id>): registration, rounds, results, top cut, the rows for the sheet.
 
-type T = ReturnType<typeof useI18n>['t']
-
-/** Ticks every second, for the round's clock. */
-function useNow() {
-  const [now, setNow] = useState(Date.now)
-  useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(i)
-  }, [])
-  return now
-}
-
-/** Time left in the round (minus once it's over), or null before it starts. */
-const left = (tour: Tournament, now: number, extra = 0) =>
-  tour.started && tour.status !== 'done' ? tour.started.toMillis() + (ROUND_MINUTES + extra) * 60_000 - now : null
-const clock = (ms: number | null, t: T) => (ms == null ? '' : ms > 0 ? fmt(ms) : t('run.time'))
-
-const titleOf = (tour: Tournament, t: T) => (tour.stage ? `${tour.name} · ${t('run.stage', { n: tour.stage })}` : tour.name)
-
-function statusOf(tour: Tournament, t: T) {
-  if (tour.status === 'open') return t('run.status.open')
-  if (tour.status === 'done') return t('run.status.done')
-  if (tour.status === 'cut') return t('run.status.cut')
-  return t('run.round', { n: tour.round, of: tour.rounds || '?' })
-}
-
-/** The tournaments of the last days this TO runs, by their sheets. */
+/** The tournaments this TO runs, by their sheets: from yesterday on, and the older ones not in the sheet yet. */
 function useRun(uid: string, organizer: Organizer) {
   const { sources } = useSources()
   const { tournaments } = useTournaments()
+  const unfiled = useUnfiled()
   const bySheet = useMemo(() => new Map(sources.map((s) => [s.drive, s])), [sources])
-  const run = tournaments.filter(([, x]) => bySheet.has(x.drive) && canRun(uid, organizer, bySheet.get(x.drive)!))
+  const all = new Map([...unfiled, ...tournaments])
+  const run = [...all].filter(([, x]) => bySheet.has(x.drive) && canRun(uid, organizer, bySheet.get(x.drive)!))
   return { sources, tournaments, run: run.sort((a, b) => a[1].date.localeCompare(b[1].date)) }
 }
 
@@ -94,10 +75,10 @@ export function OrganizerCard({ uid, organizer, open }: { uid: string; organizer
           {live.slice(0, 3).map(([id, x]) => (
             <li key={id} className="event-row" onClick={() => open(id)}>
               <div className="event-main">
-                <strong className="ellipsis">{titleOf(x, t)}</strong>
+                <strong className="ellipsis">{tournamentTitle(x, t)}</strong>
                 <span className="muted small">
-                  {statusOf(x, t)}
-                  {x.status !== 'open' && ` · ${clock(left(x, now), t)}`}
+                  {tournamentStatus(x, t)}
+                  {x.status !== 'open' && ` · ${clockLabel(timeLeft(x, now), t)}`}
                 </span>
               </div>
               <Icon name="chevron" size={16} />
@@ -173,9 +154,10 @@ export default function OrganizerArea({
             {run.map(([id, x]) => (
               <li key={id} className="event-row" onClick={() => openTournament(id)}>
                 <div className="event-main">
-                  <strong className="ellipsis">{titleOf(x, t)}</strong>
+                  <strong className="ellipsis">{tournamentTitle(x, t)}</strong>
                   <span className="muted small">
-                    {day(x.date)} · {statusOf(x, t)}
+                    {day(x.date)} · {tournamentStatus(x, t)}
+                    {x.status === 'done' && !x.filed && <span className="bad-text"> · {t('run.toFile')}</span>}
                   </span>
                 </div>
                 <Icon name="chevron" size={16} />
@@ -291,8 +273,10 @@ export function TournamentAdmin({
   circuit,
   dataset,
   onBack,
+  openLive,
 }: {
   id: string
+  openLive: () => void
   user: AppUser | null
   organizer: Organizer | null
   circuit: Circuit | null
@@ -307,11 +291,7 @@ export function TournamentAdmin({
   const [player, setPlayer] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [busy, setBusy] = useState(false)
-  // the final standings show what goes into the sheet: the top cut counted too
-  const view = useMemo(
-    () => (tour ? { ...results(tour, players, matches), all: new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s])) } : null),
-    [tour, players, matches],
-  )
+  const rows = useMemo(() => (tour ? ranking(tour, players, matches) : []), [tour, players, matches])
 
   if (!organizer || !user)
     return (
@@ -319,7 +299,7 @@ export function TournamentAdmin({
         <div className="notice">{t('run.notTo')}</div>
       </SubPageShell>
     )
-  if (!tour || !view)
+  if (!tour)
     return (
       <SubPageShell title={t('run.area')} onBack={onBack}>
         <div className="empty">…</div>
@@ -359,35 +339,24 @@ export function TournamentAdmin({
       await dialog.alert(t('admin.error'))
     }
   }
-  const row = (m: TableMatch) => (
-    <li key={`${m.round}-${m.table}`} className="event-row" onClick={() => m.p2 && setResult(m)}>
-      <span className="place-badge">{m.p2 ? m.table : '—'}</span>
-      <div className="event-main">
-        <span className="ellipsis">{nameOf(m.p1)}</span>
-        <span className="ellipsis muted">{m.p2 ? nameOf(m.p2) : t('meta.bye')}</span>
-      </div>
-      <span className="to-score">
-        {!m.p2 ? '2-0' : m.score ? m.score.slice(0, m.score[2] ? 3 : 2).join('-') : '—'}
-        {m.extra ? <small> +{m.extra}′</small> : null}
-      </span>
-    </li>
-  )
-
   return (
-    <SubPageShell title={titleOf(tour, t)} onBack={onBack}>
+    <SubPageShell title={tournamentTitle(tour, t)} onBack={onBack}>
       <section className="card">
         <div className="card-title">
-          {statusOf(tour, t)}
+          {tournamentStatus(tour, t)}
           <span className="muted small">
             {new Date(tour.date).toLocaleDateString(lang, { day: 'numeric', month: 'short' })} · {t('run.players', { n: active.length })}
           </span>
         </div>
         {playing && (
           <div className="to-clock">
-            <b className={(left(tour, now) ?? 1) <= 0 ? 'bad-text' : ''}>{clock(left(tour, now), t)}</b>
+            <b className={(timeLeft(tour, now) ?? 1) <= 0 ? 'bad-text' : ''}>{clockLabel(timeLeft(tour, now), t)}</b>
             <span className="muted small">{missing ? t('run.missing', { n: missing }) : t('run.allIn')}</span>
           </div>
         )}
+        <button className="link" onClick={openLive}>
+          {t('run.livePage')}
+        </button>
         {(tour.status === 'open' || tour.status === 'swiss') && (
           <>
             <div className="stepper to-step">
@@ -432,7 +401,7 @@ export function TournamentAdmin({
       {playing && (
         <section className="card">
           <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.pairings')}</div>
-          <ul className="card-list">{current.map(row)}</ul>
+          <MatchList matches={current} nameOf={nameOf} onPick={setResult} />
           <p className="muted small no-margin">{t('run.tapTable')}</p>
         </section>
       )}
@@ -511,34 +480,17 @@ export function TournamentAdmin({
               <Icon name="copy" size={16} /> {t('run.copyResults')}
             </button>
           </div>
+          <button className={`btn ${tour.filed ? 'ghost' : 'primary'}`} disabled={busy} onClick={() => act(() => setFiled(id, !tour.filed))}>
+            {tour.filed ? t('run.unfile') : t('run.file')}
+          </button>
+          <p className="muted small no-margin">{t(tour.filed ? 'run.filed' : 'run.fileHint')}</p>
         </section>
       )}
 
       {tour.status !== 'open' && (
         <section className="card">
           <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
-          <ul className="card-list">
-            {(tour.status === 'done' ? view.order : view.standings.map((s) => s.id)).map((k, i) => {
-              const s = view.standings.find((x) => x.id === k)!
-              const r = tour.status === 'done' ? view.all.get(k)! : s
-              return (
-                <li key={k} className="event-row" onClick={() => setPlayer(k)}>
-                  <span className="place-badge">{placeLabel(i + 1, lang)}</span>
-                  <div className="event-main">
-                    <span className="ellipsis">
-                      {nameOf(k)}
-                      {s.dropped && <span className="muted small"> · {t('run.dropped')}</span>}
-                    </span>
-                    <span className="ellipsis muted small">
-                      {names.get(k)?.commander ?? t('run.noCommander')} · {r.wins}-{r.losses}
-                      {r.draws ? `-${r.draws}` : ''} · OMW {Math.round(s.omwp * 100)}%
-                    </span>
-                  </div>
-                  <b className="pts-inline">{r.points}</b>
-                </li>
-              )
-            })}
-          </ul>
+          <RankingList rows={rows} onPick={setPlayer} />
         </section>
       )}
 
@@ -578,7 +530,7 @@ export function TournamentAdmin({
           {rounds.map((r) => (
             <details key={r}>
               <summary>{r > tour.rounds && tour.status !== 'swiss' ? t('run.cutRoundN', { n: r - tour.rounds }) : t('run.roundN', { n: r })}</summary>
-              <ul className="card-list">{matches.filter((m) => m.round === r).map(row)}</ul>
+              <MatchList matches={matches.filter((m) => m.round === r)} nameOf={nameOf} onPick={setResult} />
             </details>
           ))}
         </section>
@@ -588,7 +540,7 @@ export function TournamentAdmin({
         className="btn danger"
         disabled={busy}
         onClick={async () => {
-          if (!(await dialog.confirm(t('run.cancelConfirm', { n: titleOf(tour, t) }), { ok: t('run.cancel'), danger: true }))) return
+          if (!(await dialog.confirm(t('run.cancelConfirm', { n: tournamentTitle(tour, t) }), { ok: t('run.cancel'), danger: true }))) return
           act(async () => {
             await deleteTournament(id, players, matches)
             onBack()

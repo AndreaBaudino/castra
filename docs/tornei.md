@@ -183,6 +183,7 @@ sources/{drive}                  + zone?: nome della lega, tos?: [uid]          
 tournaments/{tid}                tid = drive (livelli) o drive~tappa (leghe): un torneo per foglio e tappa
                                  drive, kind, name, stage?, date, status (open | swiss | cut | done), rounds, cut,
                                  round (turno in corso, svizzero e top cut di seguito), started (orologio del server),
+                                 filed (risultati riportati nel foglio: finché è false il torneo resta nell'Area TO),
                                  at, by
   /players/{playerKey}           name, commander (null finché non c'è), joined? (ritardatario), drop? (ultimo turno)
   /matches/r{turno}t{tavolo}     round, table (0 = bye), p1, p2 (null = bye), score [V, S, P] | null, extra (minuti)
@@ -194,7 +195,7 @@ accesso. Da aggiungere nelle fasi successive:
 ```
 joinCodes/{codice}               tid      (get con il codice, mai list)
 claims/{playerKey}               + verifiedBy, verifiedIn                               (verifica data da un TO)
-tournaments/{tid}                + iscrizioni aperte, pubblicato sul foglio
+tournaments/{tid}                + iscrizioni aperte
   /players/{playerKey}           + uid, status (iscritto | in attesa), deckId, added (TO | link)
   /players/{playerKey}/private/deck  link Moxfield (pubblico a torneo concluso)
   /matches/…                     + reportedBy, confirmed
@@ -210,7 +211,8 @@ torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le p
    un TO), regole Firestore con i test.
 2. **Torneo gestito dal TO**, in tre passi: **2a** il motore `src/lib/swiss.ts` con i test (fatto); **2b** la
    gestione del TO: dati, regole e funzioni in `src/lib/tournaments.ts` (2b-1, fatto), le schermate in
-   `src/views/Organizer.tsx` con la card in Home e le pagine `#to` e `#to/<torneo>` (2b-2, fatto); **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
+   `src/views/Organizer.tsx` con la card in Home e le pagine `#to` e `#to/<torneo>` (2b-2, fatto); **2c** le
+   pagine da spettatore in `src/views/Live.tsx`: link in Home, `#live` e `#live/<torneo>` (fatto); **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
    svizzero, risultati, drop, ritardatari, classifica con spareggi, top cut, pagine da spettatore, "Copia le righe".
 3. **Giocatori nell'app**: link e codice, richieste da confermare con verifica, card in Home, timer, risultati con
    conferma, comandante e decklist.

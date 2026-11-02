@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { AppUser } from './auth'
 import { cloudEnabled, fb, useLiveCollection } from './firebase'
+import { fmt } from './timer'
+import type { T } from '../i18n'
 import type { MetaDataset } from './meta'
 import { type Source, type SourceKind, isEvent } from './sources'
 import {
@@ -35,6 +37,7 @@ export interface Tournament {
   cut: 0 | 2 | 4 | 8
   round: number // the one being played, Swiss and top cut in a row (0: not started)
   started: { toMillis: () => number } | null // the round's clock, at the server's time
+  filed: boolean // its results are in the sheet: until then the TO keeps finding it
   at: string
   by: string
 }
@@ -78,6 +81,36 @@ export function results(t: Tournament, players: [string, Player][], matches: Tab
   return { standings: st, order: finalOrder(st, cut) }
 }
 
+export interface RankRow {
+  id: string
+  name: string
+  commander: string | null
+  points: number
+  wins: number
+  losses: number
+  draws: number
+  omwp: number
+  dropped: boolean
+}
+
+/**
+ * The standings as shown: during the Swiss rounds and the top cut the Swiss ones; once over the final order, with the
+ * records and points the sheet will have (the top cut counted).
+ */
+export function ranking(t: Tournament, players: [string, Player][], matches: TableMatch[]): RankRow[] {
+  const { standings: st, order } = results(t, players, matches)
+  const swiss = new Map(st.map((s) => [s.id, s]))
+  const all = t.status === 'done' ? new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s])) : swiss
+  const names = new Map(players)
+  return (t.status === 'done' ? order : st.map((s) => s.id)).map((id) => {
+    const s = swiss.get(id)!
+    const r = all.get(id)!
+    const p = names.get(id)
+    const { points, wins, losses, draws } = r
+    return { id, name: p?.name ?? id, commander: p?.commander ?? null, points, wins, losses, draws, omwp: s.omwp, dropped: s.dropped }
+  })
+}
+
 /**
  * The rows for the sheet's stage tab (or a level's "Classifica"), in the final order, in the two blocks around the
  * points column, which is a formula: name and commander (columns B-C), then wins, losses, draws and bye (E-H). Wins
@@ -97,6 +130,32 @@ export function sheetRows(t: Tournament, players: [string, Player][], matches: T
   }
 }
 
+// ---------- showing ----------
+
+/** Ticks every second, for the round's clock. */
+export function useNow() {
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(i)
+  }, [])
+  return now
+}
+
+/** Time left in the round (negative once it's over), or null when no round is being played. */
+export const timeLeft = (tour: Tournament, now: number, extra = 0) =>
+  tour.started && tour.status !== 'done' && tour.status !== 'open' ? tour.started.toMillis() + (ROUND_MINUTES + extra) * 60_000 - now : null
+export const clockLabel = (ms: number | null, t: T) => (ms == null ? '' : ms > 0 ? fmt(ms) : t('run.time'))
+
+export const tournamentTitle = (tour: Tournament, t: T) => (tour.stage ? `${tour.name} · ${t('run.stage', { n: tour.stage })}` : tour.name)
+
+export function tournamentStatus(tour: Tournament, t: T) {
+  if (tour.status === 'open') return t('run.status.open')
+  if (tour.status === 'done') return t('run.status.done')
+  if (tour.status === 'cut') return t('run.status.cut')
+  return t('run.round', { n: tour.round, of: tour.rounds || '?' })
+}
+
 // ---------- reading ----------
 
 /** The tournaments from yesterday on: the ones being played, about to be, and just over. */
@@ -104,6 +163,11 @@ export function useTournaments() {
   const [since] = useState(() => new Date(Date.now() - 864e5).toISOString().slice(0, 10))
   const { docs, loaded } = useLiveCollection<Tournament>('tournaments', ['date', '>=', since])
   return { tournaments: docs, loaded }
+}
+
+/** The tournaments whose results aren't in the sheet yet, however old. */
+export function useUnfiled() {
+  return useLiveCollection<Tournament>('tournaments', ['filed', '==', false]).docs
 }
 
 /** Every tournament on a sheet, also the old ones: the stages played in the app may not be in the meta yet. */
@@ -158,6 +222,7 @@ export async function createTournament(user: AppUser, s: Source, date: string, s
       cut: 0,
       round: 0,
       started: null,
+      filed: false,
       at: now(),
       by: user.uid,
     }
@@ -247,6 +312,12 @@ export async function nextCutRound(id: string, t: Tournament, matches: TableMatc
 export async function finishTournament(id: string) {
   const { db, fs } = await fb()
   await fs.updateDoc(fs.doc(db, 'tournaments', id), { status: 'done' })
+}
+
+/** Marks the results as copied into the sheet (or not). */
+export async function setFiled(id: string, filed: boolean) {
+  const { db, fs } = await fb()
+  await fs.updateDoc(fs.doc(db, 'tournaments', id), { filed })
 }
 
 /** Cancels a tournament, with its players and matches: the sheet can be started again. */

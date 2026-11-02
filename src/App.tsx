@@ -33,10 +33,11 @@ import { SideNav } from './components/SideNav'
 import { useWide } from './lib/wide'
 import { useOrganizer } from './lib/organizers'
 import OrganizerArea, { OrganizerCard, TournamentAdmin } from './views/Organizer'
+import LiveList, { LiveLink, LivePage } from './views/Live'
 
-type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards' | 'to'
+type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards' | 'to' | 'live'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
-const ROUTES: Tab[] = [...TABS, 'account', 'cards', 'to']
+const ROUTES: Tab[] = [...TABS, 'account', 'cards', 'to', 'live']
 
 const fromHash = (): { tab: Tab; deck: string | null } => {
   const [tab, deck] = location.hash.slice(1).split('/')
@@ -211,6 +212,8 @@ export default function App() {
   const openTournament = (id: string) => go('meta', `t~${encodeURIComponent(id)}`, true)
   // to: the TO area; to/<id>: a tournament run in the app
   const openRun = (id: string) => go('to', encodeURIComponent(id), true)
+  // live: the tournaments being played; live/<id>: one, for whoever follows it
+  const openLive = (id?: string) => (id ? go('live', encodeURIComponent(id), true) : go('live'))
   // from the home, the profile and the notices: the player in this year's circuit, whatever year the tab shows
   const openCurrentPlayer = (key: string) => {
     resetPickedYear()
@@ -296,6 +299,7 @@ export default function App() {
             banner={
               <>
                 {organizer && uid && <OrganizerCard uid={uid} organizer={organizer} open={(id) => (id ? openRun(id) : go('to'))} />}
+                <LiveLink open={openLive} />
                 <BanlistNoticeCard decks={decks} openDeck={(id) => go('decks', id)} openCard={openCard} />
                 {noticeCard}
               </>
@@ -438,9 +442,16 @@ export default function App() {
               circuit={circuit.data}
               dataset={dataset}
               onBack={() => history.back()}
+              openLive={() => openLive(decodeURIComponent(route.deck!))}
             />
           ) : (
             <OrganizerArea user={user} organizer={organizer} dataset={dataset} onBack={() => go('home')} openTournament={openRun} />
+          ))}
+        {route.tab === 'live' &&
+          (route.deck ? (
+            <LivePage id={decodeURIComponent(route.deck)} onBack={() => history.back()} />
+          ) : (
+            <LiveList onBack={() => go('home')} open={openLive} />
           ))}
         {route.tab === 'cards' &&
           split(
@@ -488,7 +499,7 @@ export default function App() {
           {TABS.map((tab) => (
             <button
               key={tab}
-              className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && (route.tab === 'account' || route.tab === 'cards' || route.tab === 'to')) ? 'on' : ''}`}
+              className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && (route.tab === 'account' || route.tab === 'cards' || route.tab === 'to' || route.tab === 'live')) ? 'on' : ''}`}
               onClick={() => go(tab)}
             >
               {tab === 'game' ? (

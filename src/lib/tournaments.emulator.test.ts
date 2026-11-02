@@ -16,6 +16,7 @@ import {
   savePlayer,
   setDrop,
   setExtra,
+  setFiled,
   setScore,
   setTournament,
   startCut,
@@ -148,7 +149,16 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     expect(await nextCutRound(id, s.t, s.matches)).toBeNull() // that was the final
     await finishTournament(id)
     s = await read(id)
-    expect(s.t.status).toBe('done')
+    // not in the sheet yet: the TO area keeps finding it, however old, until it is
+    const unfiled = async () => {
+      const db = env.unauthenticatedContext().firestore()
+      return (await fs.getDocs(fs.query(fs.collection(db, 'tournaments'), fs.where('filed', '==', false)))).docs.map((d) => d.id)
+    }
+    expect(s.t).toMatchObject({ status: 'done', filed: false })
+    expect(await unfiled()).toContain(id)
+    await setFiled(id, true)
+    expect((await read(id)).t.filed).toBe(true)
+    expect(await unfiled()).not.toContain(id)
     const { order } = results(s.t, s.players, s.matches)
     expect(order.slice(0, 2)).toEqual([second, first]) // the winner of the final first
     expect(order).toHaveLength(8)

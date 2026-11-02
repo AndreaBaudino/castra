@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MetaDataset, MetaTournament } from './meta'
 import type { Source } from './sources'
-import { type Player, type TableMatch, type Tournament, entrantsOf, nextStage, results, sheetRows, tournamentId } from './tournaments'
+import { type Player, type TableMatch, type Tournament, entrantsOf, nextStage, ranking, results, sheetRows, tournamentId } from './tournaments'
 
 // What the app keeps of a tournament on Firestore, and what it reads back from it.
 
@@ -74,5 +74,19 @@ describe('tournaments', () => {
     ])
     // wins, losses, draws, bye: the top cut counts, the bye is a win, the missed round a loss
     expect(rows.results.split('\n')).toEqual(['2\t1\t0\tFALSE', '1\t1\t1\tFALSE', '1\t0\t1\tTRUE', '0\t2\t0\tFALSE'])
+  })
+
+  it('shows the Swiss standings while playing, the final order with the sheet\'s records once over', () => {
+    const players: [string, Player][] = ['a', 'b', 'c', 'd'].map((id) => [id, { name: id.toUpperCase(), commander: id === 'd' ? null : 'X', at: '', by: '' }])
+    const m = (round: number, table: number, p1: string, p2: string, score: [number, number, number]): TableMatch => ({ round, table, p1, p2, score })
+    const swiss = [m(1, 1, 'a', 'b', [2, 0, 0]), m(1, 2, 'c', 'd', [2, 0, 0]), m(2, 1, 'a', 'c', [2, 0, 0]), m(2, 2, 'b', 'd', [2, 0, 0])]
+    const final = m(3, 1, 'a', 'c', [0, 2, 0])
+    const cut = ranking({ status: 'cut', rounds: 2, cut: 2 } as Tournament, players, [...swiss, final])
+    expect(cut.map((r) => [r.id, r.points, `${r.wins}-${r.losses}`])).toEqual([['a', 6, '2-0'], ['b', 3, '1-1'], ['c', 3, '1-1'], ['d', 0, '0-2']])
+    const done = ranking({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, [...swiss, final])
+    // c won the final: first, with the final in its record and points (6, as in the sheet), and its Swiss OMW
+    expect(done.map((r) => [r.id, r.points, `${r.wins}-${r.losses}`])).toEqual([['c', 6, '2-1'], ['a', 6, '2-1'], ['b', 3, '1-1'], ['d', 0, '0-2']])
+    expect(done[0]).toMatchObject({ name: 'C', commander: 'X', dropped: false, omwp: cut.find((r) => r.id === 'c')!.omwp })
+    expect(done[3].commander).toBeNull()
   })
 })

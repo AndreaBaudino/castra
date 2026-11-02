@@ -149,7 +149,7 @@ const jo = env.authenticatedContext('jo').firestore()
 const hank = env.authenticatedContext('hank').firestore()
 const ivan = env.authenticatedContext('ivan').firestore()
 const tour = (drive, kind, more = {}) => ({
-  drive, kind, name: 'Savona', date: '2026-11-16', status: 'open', rounds: 0, cut: 0, round: 0, started: null, at: 'x', ...more,
+  drive, kind, name: 'Savona', date: '2026-11-16', status: 'open', rounds: 0, cut: 0, round: 0, started: null, filed: false, at: 'x', ...more,
 })
 const STAGE = `${SAVONA}~5`
 const stage5 = (by, more) => tour(SAVONA, 'league', { stage: 5, by, ...more })
@@ -175,6 +175,10 @@ await denied('moving it to another sheet', updateDoc(doc(gina, 'tournaments', ST
 await denied('a top cut of 6', updateDoc(doc(gina, 'tournaments', STAGE), { cut: 6 }))
 await denied("starting the clock at the phone's time", updateDoc(doc(gina, 'tournaments', STAGE), { started: new Date() }))
 await allowed('an admin runs any tournament', updateDoc(doc(carol, 'tournaments', STAGE), { date: '2026-11-17' }))
+await denied('a tournament that starts already in the sheet', setDoc(doc(gina, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 6, by: 'gina', filed: true })))
+await allowed('marking the results as copied into the sheet', updateDoc(doc(gina, 'tournaments', STAGE), { filed: true }))
+await denied('marking it, by someone who is not a TO', updateDoc(doc(ivan, 'tournaments', STAGE), { filed: false }))
+await denied('marking it with something else than yes or no', updateDoc(doc(gina, 'tournaments', STAGE), { filed: 'yes' }))
 
 // players
 const entry = (more = {}) => ({ name: 'Mario Rossi', commander: 'Kinnan, Bonder Prodigy', at: 'x', by: 'gina', ...more })

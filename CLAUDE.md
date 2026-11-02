@@ -55,7 +55,8 @@ src/
                     SideNav (menu da computer), AppBanners (nuova versione), MetaPie, DeckAnalysis, RecordMatch…
   views/            una pagina per file: Home, Meta, MetaPages, Circuit, CircuitMore, PlayerCard, LifeCounter, Decks,
                     DeckDetail, Stats, Cards, Account, Admin* (area admin), BanlistNotice, Organizer (area TO e
-                    gestione di un torneo: card in Home, `#to`, `#to/<torneo>`)
+                    gestione di un torneo: card in Home, `#to`, `#to/<torneo>`), Live (tornei in corso per chi
+                    li segue: link in Home, `#live`, `#live/<torneo>`)
   lib/              logica senza UI (vedi sotto)
 scripts/            build del meta e delle errata (Node, eseguiti dalle GitHub Actions)
 firestore.rules     regole di sicurezza: unica protezione dei dati, pubblicate da `rules.yml` dopo i test (push su main)
@@ -92,7 +93,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 
 ### Navigazione (App.tsx)
 - Route nell'hash: `#tab` o `#tab/sottopagina`. Tab: `home`, `meta` (si chiama "Circuito" in UI), `game`, `stats`,
-  `decks`, `account`, `cards`, `to` (area TO; `to/<id>` un torneo gestito in app).
+  `decks`, `account`, `cards`, `to` (area TO; `to/<id>` un torneo gestito in app), `live` (tornei in corso; `live/<id>` uno, da spettatore).
 - Sottopagine del Circuito con prefisso: `p~giocatore`, `e~evento`, `l~stagione~lega`, `c~a~b` (confronto),
   `k~comandante`, `t~torneo`; si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
 - La cronologia è costruita apposta perché il tasto "indietro" del telefono funzioni: home → pagina principale →

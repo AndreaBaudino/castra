@@ -20,7 +20,7 @@ export const fb = () => (loading ??= load())
  * A Firestore collection kept up to date, as [id, data] pairs; `loaded` once the server confirmed it. `where` keeps
  * only the documents whose field compares so with the value.
  */
-export function useLiveCollection<T>(name: string | null, where?: [string, '==' | '>=', string]) {
+export function useLiveCollection<T>(name: string | null, where?: [string, '==' | '>=', string | boolean]) {
   const [docs, setDocs] = useState<[string, T][]>([])
   const [loaded, setLoaded] = useState(false) // confirmed by the server, not just the offline cache
   useEffect(() => {
