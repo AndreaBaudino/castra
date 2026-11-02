@@ -27,8 +27,9 @@
 - Prima del commit: `npx tsc -b` (deve passare pulito), `npm test` e `npm run lint`. Lo stato noto del lint prima di
   una modifica è 0 errori e 22 warning `react-refresh/only-export-components`: non aggiungerne altri.
   `npm run build` per i cambi a Vite/PWA.
-- Test: Vitest, in `src/lib/parsers.test.ts` (liste dei mazzi, foglio del circuito, salvataggio con memoria piena);
-  girano anche nel deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
+- Test: Vitest, in `src/lib/parsers.test.ts` (liste dei mazzi, foglio del circuito, salvataggio con memoria piena) e
+  `src/lib/swiss.test.ts` (abbinamenti, classifica e top cut dei tornei, anche su tornei simulati); girano anche nel
+  deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
   il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.
 - A inizio sessione `node_modules` non c'è: `npm ci`.
@@ -78,6 +79,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - `banlist.ts` (copia inclusa + `loadBanlist`, `legalityOf`, `banCheck`) e `banlistSync.ts` (lettura dal sito via API
   WordPress e pubblicazione su `config/banlist`).
 - `sources.ts` / `aliases.ts`: elenco dei fogli dei tornei e correzioni dei nomi, gestiti dall'area admin.
+- `organizers.ts` (TO e zone, `canRun`), `swiss.ts` (motore dei tornei: abbinamenti svizzeri, classifica con gli
+  spareggi MTR, top cut; funzioni pure, progetto in `docs/tornei.md`).
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
   `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate

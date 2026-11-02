@@ -189,7 +189,8 @@ Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`; `rules.yml` le pub
 1. **Ruoli e assegnazioni** (fatta): scheda TO nell'area admin (solo giocatori collegati e verificati, con le loro
    leghe), zona e TO assegnati nel modulo dei livelli 1 e 2, `src/lib/organizers.ts` (`canRun`: quali fogli gestisce
    un TO), regole Firestore con i test.
-2. **Torneo gestito dal TO**: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
+2. **Torneo gestito dal TO**, in tre passi: **2a** il motore `src/lib/swiss.ts` con i test (fatto); **2b** la
+   gestione del TO; **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
    svizzero, risultati, drop, ritardatari, classifica con spareggi, top cut, pagine da spettatore, "Copia le righe".
 3. **Giocatori nell'app**: link e codice, richieste da confermare con verifica, card in Home, timer, risultati con
    conferma, comandante e decklist.
