@@ -54,7 +54,7 @@ src/
                     DeckDetail, Stats, Cards, Account, Admin* (area admin), BanlistNotice
   lib/              logica senza UI (vedi sotto)
 scripts/            build del meta e delle errata (Node, eseguiti dalle GitHub Actions)
-firestore.rules     regole di sicurezza: unica protezione dei dati, da ripubblicare a mano in console quando cambiano
+firestore.rules     regole di sicurezza: unica protezione dei dati, pubblicate da `rules.yml` dopo i test (push su main)
 public/meta.json    copia del meta inclusa nell'app (fallback)
 ```
 
@@ -101,7 +101,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - **Banlist**: pubblicata dall'area admin su `config/banlist`, letta da ogni app all'avvio.
 - **Firestore**: `users/{uid}` (+ sottoraccolte `decks`, `matches`), `claims`, `revoked`, `admins` (solo da console),
   `sources`, `circuits`, `aliases`, `config`. Un campo o una raccolta nuova di solito richiede di aggiornare
-  `firestore.rules` (che elenca i campi ammessi con `hasOnly`) e di ricordare al proprietario di ripubblicarle.
+  `firestore.rules` (che elenca i campi ammessi con `hasOnly`): le pubblica `rules.yml` se i test passano.
 - Il README (in italiano) descrive per esteso setup di Firebase, Apps Script e procedure dell'area admin.
 
 ### Trappole note

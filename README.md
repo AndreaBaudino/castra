@@ -103,10 +103,29 @@ Setup (una tantum, piano gratuito "Spark"):
 2. **Build → Authentication → Get started**, poi in *Sign-in method* abilita **Google** e **Email/Password**.
 3. *Authentication → Settings → Authorized domains*: aggiungi `andreabaudino.github.io`.
 4. **Build → Firestore Database → Create database** (location `eur3` o `europe-west`), poi nella scheda
-   *Rules* incolla il contenuto di `firestore.rules` e pubblica.
+   *Rules* incolla il contenuto di `firestore.rules` e pubblica (solo la prima volta: dopo ci pensa GitHub, vedi
+   sotto).
 5. **Project settings → Your apps → Web (</>)**: registra l'app e copia l'oggetto `firebaseConfig`
    in `FIREBASE_CONFIG` dentro `src/config.ts`. Questi valori sono pubblici per design: la sicurezza
    è garantita dalle regole del punto 4.
+
+### Regole di Firestore
+
+A ogni push su `main` che cambia `firestore.rules`, il workflow **Firestore rules** (`.github/workflows/rules.yml`)
+prova le regole sull'emulatore e, se i test passano, le pubblica su Firebase: non serve più incollarle in console.
+Per pubblicare usa un account di servizio, da creare una volta sola:
+
+1. https://console.cloud.google.com/iam-admin/serviceaccounts?project=castra-a69ab → **Crea account di servizio**,
+   nome per esempio `github-rules`.
+2. Ruoli: **Amministratore regole Firebase** (Firebase Rules Admin), **Amministratore indici Cloud Datastore**
+   (Cloud Datastore Index Admin) e **Visualizzatore Firebase** (Firebase Viewer). Se il job dice che manca un
+   permesso, aggiungi il ruolo che lo contiene.
+3. Sull'account creato: **Chiavi → Aggiungi chiave → Crea nuova chiave → JSON**: si scarica un file.
+4. Su GitHub, **Settings → Secrets and variables → Actions → New repository secret**: nome
+   `FIREBASE_SERVICE_ACCOUNT`, valore tutto il contenuto del file JSON. Poi cancella il file dal computer.
+5. Da **Actions → Firestore rules → Run workflow** (su `main`) puoi pubblicare subito le regole attuali.
+
+Senza il secret il job di pubblicazione fallisce con un messaggio che lo dice, e le regole restano quelle di prima.
 
 ### Admin
 
@@ -116,4 +135,4 @@ altro sì; la revoca si può annullare) e di azzerare la carta di sfondo e il ma
 
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
 dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può
-scrivere in `admins`: lo decidono solo le regole di `firestore.rules`, che vanno ripubblicate quando cambiano.
+scrivere in `admins`: lo decidono solo le regole di `firestore.rules`.
