@@ -1579,6 +1579,45 @@ button.kv.clickable b {
 .timer-banner > .p0 {
   transform: rotate(180deg);
 }
+/* the counters turned on for one game: in the game menu, and monarch and initiative on each side */
+.extra-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.extra-chips .chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 9px 4px;
+  border-radius: 12px;
+}
+.tokens {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 8px 8px;
+}
+.token {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.45);
+}
+.token.on {
+  background: var(--gold);
+  color: #1b150f;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
 .menu-section {
   text-align: left;
   font-size: 0.72rem;

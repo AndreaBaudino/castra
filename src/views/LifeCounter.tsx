@@ -24,7 +24,14 @@ export interface PlayerState {
   life: number
   cmd: number // commander damage received
   poison: number
+  energy?: number
+  exp?: number // experience
 }
+
+/** The counters turned on for one game, besides commander damage. */
+export type Extra = 'poison' | 'energy' | 'exp' | 'monarch' | 'initiative'
+const EXTRAS: Extra[] = ['poison', 'energy', 'exp', 'monarch', 'initiative']
+const EXTRA_KEY = { poison: 'life.poison', energy: 'life.energy', exp: 'life.exp', monarch: 'life.monarch', initiative: 'life.initiative' } as const
 
 export interface GameState {
   startLife: number
@@ -32,9 +39,15 @@ export interface GameState {
   startedAt: string
   timer?: TimerState
   log?: LogEntry[] // what changed, oldest first: emptied by a new game
+  extras?: Extra[] // missing in games saved before: poison, when someone has some
+  monarch?: 0 | 1 // the player who holds it
+  initiative?: 0 | 1
 }
 
-/** One change to a player's counters; taps in a quick burst on the same player add up into one entry. */
+const extrasOf = (g: GameState): Extra[] => g.extras ?? (g.players.some((p) => p.poison) ? ['poison'] : [])
+
+/** One change to a player's life, commander damage, poison or energy (experience isn't logged); taps in a quick
+ * burst on the same player add up into one entry. */
 export interface LogEntry {
   p: 0 | 1
   d: PlayerState // the change
@@ -43,9 +56,19 @@ export interface LogEntry {
 }
 
 const BURST_MS = 2000
-const diff = (a: PlayerState, b: PlayerState): PlayerState => ({ life: b.life - a.life, cmd: b.cmd - a.cmd, poison: b.poison - a.poison })
-const isZero = (d: PlayerState) => !d.life && !d.cmd && !d.poison
-const sum = (a: PlayerState, b: PlayerState): PlayerState => ({ life: a.life + b.life, cmd: a.cmd + b.cmd, poison: a.poison + b.poison })
+const diff = (a: PlayerState, b: PlayerState): PlayerState => ({
+  life: b.life - a.life,
+  cmd: b.cmd - a.cmd,
+  poison: b.poison - a.poison,
+  energy: (b.energy ?? 0) - (a.energy ?? 0),
+})
+const isZero = (d: PlayerState) => !d.life && !d.cmd && !d.poison && !d.energy
+const sum = (a: PlayerState, b: PlayerState): PlayerState => ({
+  life: a.life + b.life,
+  cmd: a.cmd + b.cmd,
+  poison: a.poison + b.poison,
+  energy: (a.energy ?? 0) + (b.energy ?? 0),
+})
 
 function logChange(log: LogEntry[], p: 0 | 1, before: PlayerState, after: PlayerState): LogEntry[] {
   const d = diff(before, after)
@@ -65,6 +88,7 @@ const fresh = (startLife: number): GameState => ({
   players: [0, 1].map(() => ({ life: startLife, cmd: 0, poison: 0 })) as [PlayerState, PlayerState],
   startedAt: new Date().toISOString(),
   timer: freshTimer(),
+  extras: [],
 })
 
 export const GAME_KEY = 'cc.game'
@@ -72,7 +96,10 @@ export const defaultGame = () => fresh(STARTING_LIFE)
 
 export function isGameInProgress(g: GameState) {
   return (
-    g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison) || !!(g.timer && elapsed(g.timer) > 0)
+    g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison || p.energy || p.exp) ||
+    g.monarch !== undefined ||
+    g.initiative !== undefined ||
+    !!(g.timer && elapsed(g.timer) > 0)
   )
 }
 
@@ -108,11 +135,17 @@ function PlayerPanel({
   p,
   update,
   end,
+  extras,
+  holds,
+  take,
 }: {
   idx: 0 | 1
   p: PlayerState
   update: (fn: (p: PlayerState) => PlayerState) => void
   end?: React.ReactNode // the game is over: shown under the life total in place of "defeated"
+  extras: Extra[]
+  holds: (k: 'monarch' | 'initiative') => boolean
+  take: (k: 'monarch' | 'initiative') => void
 }) {
   const { t } = useI18n()
   const [delta, setDelta] = useState(0)
@@ -131,20 +164,20 @@ function PlayerPanel({
   const minus = useRepeat(() => changeLife(-1))
   const plus = useRepeat(() => changeLife(1))
 
-  const counter = (key: 'cmd' | 'poison', label: string, step: number, lethal?: number) => (
-    <div className={`counter ${lethal && p[key] >= lethal ? 'lethal' : ''}`}>
+  const counter = (key: 'cmd' | 'poison' | 'energy' | 'exp', label: string, step: number, lethal?: number) => (
+    <div className={`counter ${lethal && (p[key] ?? 0) >= lethal ? 'lethal' : ''}`}>
       <button
         aria-label={`${label} -`}
         onClick={() => {
           haptic()
           // undoing commander damage gives the life back
-          update((p) => ({ ...p, [key]: Math.max(0, p[key] - step), ...(key === 'cmd' && p.cmd > 0 ? { life: p.life + step } : {}) }))
+          update((p) => ({ ...p, [key]: Math.max(0, (p[key] ?? 0) - step), ...(key === 'cmd' && p.cmd > 0 ? { life: p.life + step } : {}) }))
         }}
       >
         −
       </button>
       <div className="counter-val">
-        <span className="counter-num">{p[key]}</span>
+        <span className="counter-num">{p[key] ?? 0}</span>
         <span className="counter-label">{label}</span>
       </div>
       <button
@@ -152,7 +185,7 @@ function PlayerPanel({
         onClick={() => {
           haptic()
           // commander damage is also life loss
-          update((p) => ({ ...p, [key]: p[key] + step, ...(key === 'cmd' ? { life: p.life - step } : {}) }))
+          update((p) => ({ ...p, [key]: (p[key] ?? 0) + step, ...(key === 'cmd' ? { life: p.life - step } : {}) }))
           if (key === 'cmd') showDelta(-step)
         }}
       >
@@ -176,9 +209,22 @@ function PlayerPanel({
           <span>+</span>
         </button>
       </div>
+      {(['monarch', 'initiative'] as const).some((k) => extras.includes(k)) && (
+        <div className="tokens">
+          {(['monarch', 'initiative'] as const)
+            .filter((k) => extras.includes(k))
+            .map((k) => (
+              <button key={k} className={`token ${holds(k) ? 'on' : ''}`} aria-pressed={holds(k)} onClick={() => take(k)}>
+                <Icon name={k === 'monarch' ? 'crown' : 'door'} size={14} /> {t(EXTRA_KEY[k])}
+              </button>
+            ))}
+        </div>
+      )}
       <div className="counters">
         {counter('cmd', t('life.cmd'), 1, COMMANDER_DAMAGE_LETHAL)}
-        {counter('poison', t('life.poison'), 1, POISON_LETHAL)}
+        {extras.includes('poison') && counter('poison', t('life.poison'), 1, POISON_LETHAL)}
+        {extras.includes('energy') && counter('energy', t('life.energy'), 1)}
+        {extras.includes('exp') && counter('exp', t('life.exp'), 1)}
       </div>
     </section>
   )
@@ -355,10 +401,25 @@ export default function LifeCounter({
       const last = g.log?.[g.log.length - 1]
       if (!last) return g
       const players = [...g.players] as GameState['players']
-      players[last.p] = diff(last.d, players[last.p]) // subtracts the change
+      players[last.p] = { ...players[last.p], ...diff(last.d, players[last.p]) } // subtracts the change, experience stays
       return { ...g, players, log: g.log!.slice(0, -1) }
     })
   }
+
+  // the counters on for this game; monarch and initiative belong to one player at a time: tapping the holder's frees it
+  const extras = extrasOf(game)
+  const tokens = (i: 0 | 1) => ({
+    extras,
+    holds: (k: 'monarch' | 'initiative') => game[k] === i,
+    take: (k: 'monarch' | 'initiative') => {
+      haptic()
+      setGame((g) => ({ ...g, [k]: g[k] === i ? undefined : i }))
+    },
+  })
+  const toggleExtra = (x: Extra) => setGame((g) => {
+    const on = extrasOf(g)
+    return { ...g, extras: on.includes(x) ? on.filter((y) => y !== x) : EXTRAS.filter((y) => y === x || on.includes(y)) }
+  })
 
   const reset = (startLife = game.startLife) => {
     setGame(fresh(startLife))
@@ -372,7 +433,7 @@ export default function LifeCounter({
 
   return (
     <div className="life-root">
-      <PlayerPanel idx={0} p={game.players[0]} update={update(0)} />
+      <PlayerPanel idx={0} p={game.players[0]} update={update(0)} {...tokens(0)} />
 
       <div className="life-bar">
         <button className="bar-btn" onClick={() => setRoll({ kind: 'dice', values: [d20(), d20()] })} aria-label={t('life.dice')}>
@@ -402,6 +463,7 @@ export default function LifeCounter({
         idx={1}
         p={game.players[1]}
         update={update(1)}
+        {...tokens(1)}
         end={
           someoneDead && (
             <div className="game-end">
@@ -451,15 +513,20 @@ export default function LifeCounter({
                   <li key={log.length - i}>
                     <span className={`log-dot p${e.p}`} />
                     <span className="log-what">
-                      {(['life', 'cmd', 'poison'] as const)
+                      {(['life', 'cmd', 'poison', 'energy'] as const)
                         .filter((k) => e.d[k])
-                        .map((k) => `${e.d[k] > 0 ? '+' : '−'}${Math.abs(e.d[k])} ${t(k === 'life' ? 'life.lifeShort' : k === 'cmd' ? 'life.cmd' : 'life.poison').toLowerCase()}`)
+                        .map((k) => {
+                          const n = e.d[k]!
+                          const label = t(k === 'life' ? 'life.lifeShort' : k === 'cmd' ? 'life.cmd' : EXTRA_KEY[k])
+                          return `${n > 0 ? '+' : '−'}${Math.abs(n)} ${label.toLowerCase()}`
+                        })
                         .join(' · ')}
                     </span>
                     <span className="log-after">
                       {e.after.life}
                       {e.after.cmd > 0 && <small> · C{e.after.cmd}</small>}
                       {e.after.poison > 0 && <small> · V{e.after.poison}</small>}
+                      {(e.after.energy ?? 0) > 0 && <small> · E{e.after.energy}</small>}
                     </span>
                     <span className="muted small log-time">{new Date(e.at).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}</span>
                   </li>
@@ -491,6 +558,16 @@ export default function LifeCounter({
             >
               <Icon name="meta" size={16} /> {t('game.record')}
             </button>
+
+            <div className="menu-section">{t('life.extras')}</div>
+            <div className="extra-chips">
+              {EXTRAS.map((x) => (
+                <button key={x} className={`chip ${extras.includes(x) ? 'on' : ''}`} aria-pressed={extras.includes(x)} onClick={() => toggleExtra(x)}>
+                  {t(EXTRA_KEY[x])}
+                </button>
+              ))}
+            </div>
+            <div className="muted small">{t('life.extrasHint')}</div>
 
             <div className="menu-section">{t('timer.added')}</div>
             <Stepper

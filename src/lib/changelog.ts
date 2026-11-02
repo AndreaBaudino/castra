@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-02',
     it: [
+      'Contapunti: di base c\'è solo il danno da comandante. Dal menu della partita, in "Contatori della partita", accendi veleno, energia, esperienza, monarca e iniziativa solo per quella partita. Monarca e iniziativa li ha un giocatore alla volta: tocca la pillola sul tuo lato per prenderli. Veleno ed energia finiscono nella cronologia e si annullano come le vite',
       'Mazzi: "Duplica mazzo" (dalla matita) crea una copia con le stesse carte, edizioni e copertina, per provare una versione senza toccare l\'originale',
       'Mazzi: il riquadro "Modifiche" elenca, giorno per giorno, le carte entrate e uscite fra comandante e 99. Cambiare edizione o toccare il sideboard non conta; una carta messa e tolta nello stesso giorno non compare',
       'Notifiche sul telefono, anche ad app chiusa: in Preferenze si accendono per la classifica del circuito (la sera, solo se è cambiata la tua posizione o quella di chi segui) e per la banlist (la mattina dopo un aggiornamento). Toccandole si apre la classifica centrata su di te o la Home. Valgono per l\'account; serve aver fatto l\'accesso e, su iPhone, avere Castra installata nella schermata Home',
@@ -17,6 +18,7 @@ export const CHANGELOG: Release[] = [
       'Segnalazioni dall\'app: in Profilo "Segnala un problema o un\'idea" e, sulle pagine di giocatori, comandanti, tornei ed eventi, la bandierina accanto a Condividi per dire che un dato è sbagliato (la pagina va insieme al messaggio). Scegli il tipo, scrivi e, se vuoi, lascia che ti rispondano alla tua email; serve aver fatto l\'accesso. Non serve più un account GitHub',
     ],
     en: [
+      'Life counter: by default only commander damage. From the game menu, in "Game counters", turn on poison, energy, experience, monarch and initiative for that game only. Monarch and initiative belong to one player at a time: tap the pill on your side to take them. Poison and energy go into the history and can be undone like life',
       'Decks: "Duplicate deck" (from the pencil) makes a copy with the same cards, printings and cover, to try a version without touching the original',
       'Decks: the "Changes" card lists, day by day, the cards that went in and out of the commander and the 99. A new printing or the sideboard don\'t count; a card added and taken out the same day doesn\'t show',
       'Phone notifications, even with the app closed: turn them on in Preferences for the circuit ranking (in the evening, only when your position or a followed player\'s changed) and for the banlist (the morning after an update). Tapping them opens the ranking centred on you or the home. They apply to the account; you need to be signed in and, on iPhone, to have Castra on the Home Screen',
