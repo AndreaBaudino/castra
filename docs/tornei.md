@@ -80,9 +80,15 @@ scrivere codice. I mockup delle schermate sono su
 ## 5. Regole di gioco
 
 - Bo3, turni da 50 minuti, punti 3/1/0.
-- Primo turno casuale, poi svizzero per punti senza rivincite.
-- Spareggi MTR: **OMW%** (ogni avversario conta almeno 33%), poi **GW%**, poi **OGW%**.
-- **Turni svizzeri**: l'app propone il numero in base agli iscritti (tabella MTR); il TO può cambiarlo e anche
+- Primo turno casuale, poi svizzero per punti senza rivincite. Dentro lo stesso gruppo di punti l'abbinamento è
+  casuale (come il programma ufficiale Wizards, non "1° contro 2°"); tra tutti gli abbinamenti senza rivincite si
+  sceglie quello più vicino in punti (somma dei quadrati delle differenze: meglio due giocatori che scendono di un
+  gruppo che uno che scende di due). Una rivincita solo se nessun abbinamento la evita, e allora il minor numero.
+- Spareggi MTR: **OMW%**, poi **GW%**, poi **OGW%**; ogni percentuale vale almeno **0,33** (come scritto nell'MTR,
+  non 1/3), anche quella dei game. A parità perfetta decide il nome del giocatore (`playerKey`), così ogni telefono
+  mostra la stessa classifica.
+- **Turni svizzeri**: l'app propone il numero in base agli iscritti, come nei fogli 2026 (quanti ne servono perché
+  resti un solo imbattuto: 9-16 giocatori → 4, 17-32 → 5, 33-64 → 6); il TO può cambiarlo e anche
   chiudere lo svizzero prima.
 - **Bye**: al giocatore più in basso in classifica che non l'ha ancora avuto. Vale 3 punti, conta come 2-0, è escluso
   dagli spareggi degli avversari e va nella colonna BYE del foglio.
