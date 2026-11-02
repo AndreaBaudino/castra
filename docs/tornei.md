@@ -209,7 +209,8 @@ torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le p
    leghe), zona e TO assegnati nel modulo dei livelli 1 e 2, `src/lib/organizers.ts` (`canRun`: quali fogli gestisce
    un TO), regole Firestore con i test.
 2. **Torneo gestito dal TO**, in tre passi: **2a** il motore `src/lib/swiss.ts` con i test (fatto); **2b** la
-   gestione del TO: dati, regole e funzioni in `src/lib/tournaments.ts` (2b-1, fatto), poi le schermate (2b-2); **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
+   gestione del TO: dati, regole e funzioni in `src/lib/tournaments.ts` (2b-1, fatto), le schermate in
+   `src/views/Organizer.tsx` con la card in Home e le pagine `#to` e `#to/<torneo>` (2b-2, fatto); **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
    svizzero, risultati, drop, ritardatari, classifica con spareggi, top cut, pagine da spettatore, "Copia le righe".
 3. **Giocatori nell'app**: link e codice, richieste da confermare con verifica, card in Home, timer, risultati con
    conferma, comandante e decklist.

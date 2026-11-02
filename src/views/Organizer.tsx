@@ -1,0 +1,909 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useI18n } from '../i18n'
+import type { AppUser } from '../lib/auth'
+import { type Circuit, playerKey } from '../lib/circuit'
+import type { MetaDataset } from '../lib/meta'
+import { type Organizer, canRun } from '../lib/organizers'
+import { isEvent, sourceYear, useSources, type Source } from '../lib/sources'
+import { type Score, standings, suggestedRounds, validScore, winnerOf } from '../lib/swiss'
+import { fmt } from '../lib/timer'
+import { cardSuggestions, closest } from '../lib/aliases'
+import {
+  ROUND_MINUTES,
+  type Player,
+  type TableMatch,
+  type Tournament,
+  createTournament,
+  deleteTournament,
+  entrantsOf,
+  finishTournament,
+  nextCutRound,
+  nextStage,
+  pairSwiss,
+  removePlayer,
+  results,
+  savePlayer,
+  setDrop,
+  setExtra,
+  setScore,
+  setTournament,
+  sheetRows,
+  startCut,
+  tournamentsOf,
+  useTournament,
+  useTournaments,
+} from '../lib/tournaments'
+import { Icon, Sheet } from '../components/ui'
+import { useDialog } from '../components/Dialog'
+import { SubPageShell, placeLabel } from './Circuit'
+
+// The tournament organizers' pages (docs/tornei.md): the card on the home, the TO area (#to) with the tournaments to
+// run, and one tournament run from the phone (#to/<id>): registration, rounds, results, top cut, the rows for the sheet.
+
+type T = ReturnType<typeof useI18n>['t']
+
+/** Ticks every second, for the round's clock. */
+function useNow() {
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(i)
+  }, [])
+  return now
+}
+
+/** Time left in the round (minus once it's over), or null before it starts. */
+const left = (tour: Tournament, now: number, extra = 0) =>
+  tour.started && tour.status !== 'done' ? tour.started.toMillis() + (ROUND_MINUTES + extra) * 60_000 - now : null
+const clock = (ms: number | null, t: T) => (ms == null ? '' : ms > 0 ? fmt(ms) : t('run.time'))
+
+const titleOf = (tour: Tournament, t: T) => (tour.stage ? `${tour.name} · ${t('run.stage', { n: tour.stage })}` : tour.name)
+
+function statusOf(tour: Tournament, t: T) {
+  if (tour.status === 'open') return t('run.status.open')
+  if (tour.status === 'done') return t('run.status.done')
+  if (tour.status === 'cut') return t('run.status.cut')
+  return t('run.round', { n: tour.round, of: tour.rounds || '?' })
+}
+
+/** The tournaments of the last days this TO runs, by their sheets. */
+function useRun(uid: string, organizer: Organizer) {
+  const { sources } = useSources()
+  const { tournaments } = useTournaments()
+  const bySheet = useMemo(() => new Map(sources.map((s) => [s.drive, s])), [sources])
+  const run = tournaments.filter(([, x]) => bySheet.has(x.drive) && canRun(uid, organizer, bySheet.get(x.drive)!))
+  return { sources, tournaments, run: run.sort((a, b) => a[1].date.localeCompare(b[1].date)) }
+}
+
+// ---------- the home card ----------
+
+export function OrganizerCard({ uid, organizer, open }: { uid: string; organizer: Organizer; open: (id?: string) => void }) {
+  const { t } = useI18n()
+  const now = useNow()
+  const live = useRun(uid, organizer).run.filter(([, x]) => x.status !== 'done')
+  return (
+    <section className="card">
+      <div className="card-title">
+        {t('run.area')}
+        <span className="muted small">{organizer.leagues.join(' · ')}</span>
+      </div>
+      {!live.length ? (
+        <p className="muted small no-margin">{t('run.nothingLive')}</p>
+      ) : (
+        <ul className="card-list">
+          {live.slice(0, 3).map(([id, x]) => (
+            <li key={id} className="event-row" onClick={() => open(id)}>
+              <div className="event-main">
+                <strong className="ellipsis">{titleOf(x, t)}</strong>
+                <span className="muted small">
+                  {statusOf(x, t)}
+                  {x.status !== 'open' && ` · ${clock(left(x, now), t)}`}
+                </span>
+              </div>
+              <Icon name="chevron" size={16} />
+            </li>
+          ))}
+        </ul>
+      )}
+      <button className="btn ghost" onClick={() => open()}>
+        {t('run.allTournaments')}
+      </button>
+    </section>
+  )
+}
+
+// ---------- the TO area ----------
+
+export default function OrganizerArea({
+  user,
+  organizer,
+  dataset,
+  onBack,
+  openTournament,
+}: {
+  user: AppUser | null
+  organizer: Organizer | null
+  dataset: MetaDataset | null
+  onBack: () => void
+  openTournament: (id: string) => void
+}) {
+  const { t, lang } = useI18n()
+  const dialog = useDialog()
+  const uid = user?.uid ?? ''
+  const { sources, tournaments, run } = useRun(uid, organizer ?? { player: '', name: '', leagues: [], at: '', by: '' })
+  const [adding, setAdding] = useState<{ s: Source; stage: number; date: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const today = new Date().toISOString().slice(0, 10)
+  const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { weekday: 'short', day: 'numeric', month: 'short' })
+  if (!organizer || !user)
+    return (
+      <SubPageShell title={t('run.area')} onBack={onBack}>
+        <div className="notice">{t('run.notTo')}</div>
+      </SubPageShell>
+    )
+
+  const year = new Date().getFullYear()
+  const leagues = sources.filter((s) => s.kind === 'league' && sourceYear(s) === year && canRun(uid, organizer, s))
+  const started = new Set(tournaments.map(([id]) => id))
+  const levels = sources
+    .filter((s) => isEvent(s.kind) && (s.date ?? '') >= today && canRun(uid, organizer, s) && !started.has(s.drive))
+    .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
+
+  const create = async (s: Source, date: string, stage?: number) => {
+    setBusy(true)
+    try {
+      const id = await createTournament(user, s, date, stage)
+      setAdding(null)
+      openTournament(id)
+    } catch (e) {
+      await dialog.alert(t((e as Error).message === 'taken' ? 'run.taken' : 'admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <SubPageShell title={t('run.area')} onBack={onBack}>
+      <section className="card">
+        <div className="card-title">{t('run.yours')}</div>
+        {!run.length ? (
+          <p className="muted small no-margin">{t('run.none')}</p>
+        ) : (
+          <ul className="card-list">
+            {run.map(([id, x]) => (
+              <li key={id} className="event-row" onClick={() => openTournament(id)}>
+                <div className="event-main">
+                  <strong className="ellipsis">{titleOf(x, t)}</strong>
+                  <span className="muted small">
+                    {day(x.date)} · {statusOf(x, t)}
+                  </span>
+                </div>
+                <Icon name="chevron" size={16} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="card">
+        <div className="card-title">{t('run.newStage')}</div>
+        {!leagues.length ? (
+          <p className="muted small no-margin">{t('run.noLeagues')}</p>
+        ) : (
+          <ul className="card-list">
+            {leagues.map((s) => (
+              <li key={s.drive} className="event-row">
+                <div className="event-main">
+                  <strong className="ellipsis">{s.league}</strong>
+                  <span className="muted small">
+                    {(s.season ?? '').toUpperCase()} {s.year}
+                  </span>
+                </div>
+                <button
+                  className="btn ghost small"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true)
+                    try {
+                      setAdding({ s, stage: nextStage(s, dataset, await tournamentsOf(s.drive)), date: today })
+                    } catch {
+                      await dialog.alert(t('admin.error'))
+                    } finally {
+                      setBusy(false)
+                    }
+                  }}
+                >
+                  <Icon name="plus" size={16} /> {t('run.stageShort')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="card">
+        <div className="card-title">{t('run.levels')}</div>
+        {!levels.length ? (
+          <p className="muted small no-margin">{t('run.noLevels')}</p>
+        ) : (
+          <ul className="card-list">
+            {levels.map((s) => (
+              <li key={s.drive} className="event-row">
+                <div className="event-main">
+                  <strong className="ellipsis">{s.name}</strong>
+                  <span className="muted small">
+                    {t(`sources.kind.${s.kind}`)} · {day(s.date!)}
+                  </span>
+                </div>
+                <button
+                  className="btn ghost small"
+                  disabled={busy}
+                  onClick={async () => {
+                    if (await dialog.confirm(t('run.startLevel', { n: s.name ?? '' }), { ok: t('run.start') })) create(s, s.date!)
+                  }}
+                >
+                  {t('run.start')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="muted small no-margin">{t('run.levelsHint')}</p>
+      </section>
+
+      <Sheet open={!!adding} onClose={() => setAdding(null)} title={adding ? `${adding.s.league} · ${t('run.newStage')}` : ''}>
+        {adding && (
+          <div className="form">
+            <label>
+              <span>{t('run.stageNumber')}</span>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={adding.stage}
+                onChange={(e) => setAdding({ ...adding, stage: Math.max(1, Math.min(60, Math.round(+e.target.value) || 1)) })}
+              />
+              <span className="field-hint">{t('run.stageHint')}</span>
+            </label>
+            <label>
+              <span>{t('sources.date')}</span>
+              <input type="date" value={adding.date} onChange={(e) => setAdding({ ...adding, date: e.target.value })} />
+            </label>
+            <button className="btn primary" disabled={busy || !adding.date} onClick={() => create(adding.s, adding.date, adding.stage)}>
+              {t('run.create')}
+            </button>
+          </div>
+        )}
+      </Sheet>
+    </SubPageShell>
+  )
+}
+
+// ---------- one tournament ----------
+
+const QUICK: Score[] = [[2, 0, 0], [2, 1, 0], [1, 0, 0], [1, 1, 0], [0, 0, 0], [0, 1, 0], [1, 2, 0], [0, 2, 0]]
+const same = (a: Score, b: Score) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2]
+
+export function TournamentAdmin({
+  id,
+  user,
+  organizer,
+  circuit,
+  dataset,
+  onBack,
+}: {
+  id: string
+  user: AppUser | null
+  organizer: Organizer | null
+  circuit: Circuit | null
+  dataset: MetaDataset | null
+  onBack: () => void
+}) {
+  const { t, lang } = useI18n()
+  const dialog = useDialog()
+  const now = useNow()
+  const { t: tour, players, matches } = useTournament(id)
+  const [result, setResult] = useState<TableMatch | null>(null)
+  const [player, setPlayer] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [busy, setBusy] = useState(false)
+  // the final standings show what goes into the sheet: the top cut counted too
+  const view = useMemo(
+    () => (tour ? { ...results(tour, players, matches), all: new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s])) } : null),
+    [tour, players, matches],
+  )
+
+  if (!organizer || !user)
+    return (
+      <SubPageShell title={t('run.area')} onBack={onBack}>
+        <div className="notice">{t('run.notTo')}</div>
+      </SubPageShell>
+    )
+  if (!tour || !view)
+    return (
+      <SubPageShell title={t('run.area')} onBack={onBack}>
+        <div className="empty">…</div>
+      </SubPageShell>
+    )
+
+  const names = new Map(players)
+  const nameOf = (k: string | null) => (k ? (names.get(k)?.name ?? k) : t('meta.bye'))
+  const current = matches.filter((m) => m.round === tour.round)
+  const missing = current.filter((m) => m.p2 && !m.score).length
+  const active = players.filter(([, p]) => p.drop == null)
+  const noCommander = players.filter(([, p]) => !p.commander).length
+  const playing = tour.status === 'swiss' || tour.status === 'cut'
+  const lastSwiss = tour.status === 'swiss' && tour.round >= tour.rounds
+  const cutDone = tour.status === 'cut' && !missing && current.every((m) => !m.p2 || (m.score && winnerOf(m.score)))
+  const rounds = [...new Set(matches.map((m) => m.round))].filter((r) => r !== tour.round || tour.status === 'done')
+
+  const act = async (fn: () => Promise<unknown>) => {
+    setBusy(true)
+    try {
+      await fn()
+    } catch {
+      await dialog.alert(t('admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const nextRound = async () => {
+    if (missing && !(await dialog.confirm(t('run.missingConfirm', { n: missing }), { ok: t('run.pairAnyway') }))) return
+    act(() => pairSwiss(id, tour, players, matches))
+  }
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      await dialog.alert(t('run.copied'))
+    } catch {
+      await dialog.alert(t('admin.error'))
+    }
+  }
+  const row = (m: TableMatch) => (
+    <li key={`${m.round}-${m.table}`} className="event-row" onClick={() => m.p2 && setResult(m)}>
+      <span className="place-badge">{m.p2 ? m.table : '—'}</span>
+      <div className="event-main">
+        <span className="ellipsis">{nameOf(m.p1)}</span>
+        <span className="ellipsis muted">{m.p2 ? nameOf(m.p2) : t('meta.bye')}</span>
+      </div>
+      <span className="to-score">
+        {!m.p2 ? '2-0' : m.score ? m.score.slice(0, m.score[2] ? 3 : 2).join('-') : '—'}
+        {m.extra ? <small> +{m.extra}′</small> : null}
+      </span>
+    </li>
+  )
+
+  return (
+    <SubPageShell title={titleOf(tour, t)} onBack={onBack}>
+      <section className="card">
+        <div className="card-title">
+          {statusOf(tour, t)}
+          <span className="muted small">
+            {new Date(tour.date).toLocaleDateString(lang, { day: 'numeric', month: 'short' })} · {t('run.players', { n: active.length })}
+          </span>
+        </div>
+        {playing && (
+          <div className="to-clock">
+            <b className={(left(tour, now) ?? 1) <= 0 ? 'bad-text' : ''}>{clock(left(tour, now), t)}</b>
+            <span className="muted small">{missing ? t('run.missing', { n: missing }) : t('run.allIn')}</span>
+          </div>
+        )}
+        {(tour.status === 'open' || tour.status === 'swiss') && (
+          <>
+            <div className="stepper to-step">
+              <span>
+                {t('run.rounds')} <span className="muted small">{t('run.suggested', { n: suggestedRounds(active.length) })}</span>
+              </span>
+              <div className="stepper-ctrl">
+                <button
+                  disabled={busy || (tour.rounds || suggestedRounds(active.length)) <= Math.max(1, tour.round)}
+                  onClick={() => act(() => setTournament(id, { rounds: (tour.rounds || suggestedRounds(active.length)) - 1 }))}
+                >
+                  −
+                </button>
+                <b>{tour.rounds || suggestedRounds(active.length)}</b>
+                <button
+                  disabled={busy || (tour.rounds || suggestedRounds(active.length)) >= 15}
+                  onClick={() => act(() => setTournament(id, { rounds: (tour.rounds || suggestedRounds(active.length)) + 1 }))}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <div className="stepper to-step">
+              <span>{t('run.cut')}</span>
+              <div className="seg">
+                {([0, 2, 4, 8] as const).map((n) => (
+                  <button
+                    key={n}
+                    className={tour.cut === n ? 'on' : ''}
+                    disabled={busy || n > active.length}
+                    onClick={() => act(() => setTournament(id, { cut: n }))}
+                  >
+                    {n ? `Top ${n}` : t('run.noCut')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </section>
+
+      {playing && (
+        <section className="card">
+          <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.pairings')}</div>
+          <ul className="card-list">{current.map(row)}</ul>
+          <p className="muted small no-margin">{t('run.tapTable')}</p>
+        </section>
+      )}
+
+      <div className="btn-col">
+        {tour.status === 'open' && (
+          <button
+            className="btn primary"
+            disabled={busy || active.length < 2}
+            onClick={async () => {
+              if (noCommander && !(await dialog.confirm(t('run.noCommanderConfirm', { n: noCommander }), { ok: t('run.startAnyway') }))) return
+              act(async () => {
+                if (!tour.rounds) await setTournament(id, { rounds: suggestedRounds(active.length) })
+                await pairSwiss(id, { ...tour, rounds: tour.rounds || suggestedRounds(active.length) }, players, matches)
+              })
+            }}
+          >
+            {t('run.startRound', { n: 1 })}
+          </button>
+        )}
+        {tour.status === 'swiss' && !lastSwiss && (
+          <button className="btn primary" disabled={busy} onClick={nextRound}>
+            {t('run.startRound', { n: tour.round + 1 })}
+          </button>
+        )}
+        {lastSwiss && tour.cut > 0 && (
+          <button
+            className="btn primary"
+            disabled={busy || missing > 0 || active.length < tour.cut}
+            onClick={() => act(() => startCut(id, tour, players, matches))}
+          >
+            {t('run.startCut', { n: tour.cut })}
+          </button>
+        )}
+        {cutDone && current.length > 1 && (
+          <button className="btn primary" disabled={busy} onClick={() => act(() => nextCutRound(id, tour, matches))}>
+            {t('run.nextCut')}
+          </button>
+        )}
+        {((lastSwiss && !tour.cut) || (cutDone && current.length === 1)) && (
+          <button
+            className="btn primary"
+            disabled={busy || missing > 0}
+            onClick={async () => {
+              if (await dialog.confirm(t('run.finishConfirm'), { ok: t('run.finish') })) act(() => finishTournament(id))
+            }}
+          >
+            {t('run.finish')}
+          </button>
+        )}
+        {lastSwiss && tour.cut > 0 && active.length < tour.cut && <p className="muted small no-margin">{t('run.cutTooBig')}</p>}
+        {tour.status === 'swiss' && (
+          <button
+            className="btn ghost"
+            disabled={busy}
+            onClick={async () => {
+              const done = current.filter((m) => m.p2 && m.score).length
+              const msg = done ? t('run.redoConfirmLost', { n: done }) : t('run.redoConfirm')
+              if (await dialog.confirm(msg, { ok: t('run.redo'), danger: done > 0 })) act(() => pairSwiss(id, tour, players, matches, true))
+            }}
+          >
+            <Icon name="refresh" size={16} /> {t('run.redo')}
+          </button>
+        )}
+      </div>
+
+      {tour.status === 'done' && (
+        <section className="card">
+          <div className="card-title">{t('run.sheet')}</div>
+          <p className="muted small no-margin">{t('run.sheetHint')}</p>
+          <div className="btn-pair">
+            <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches).names)}>
+              <Icon name="copy" size={16} /> {t('run.copyNames')}
+            </button>
+            <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches).results)}>
+              <Icon name="copy" size={16} /> {t('run.copyResults')}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {tour.status !== 'open' && (
+        <section className="card">
+          <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
+          <ul className="card-list">
+            {(tour.status === 'done' ? view.order : view.standings.map((s) => s.id)).map((k, i) => {
+              const s = view.standings.find((x) => x.id === k)!
+              const r = tour.status === 'done' ? view.all.get(k)! : s
+              return (
+                <li key={k} className="event-row" onClick={() => setPlayer(k)}>
+                  <span className="place-badge">{placeLabel(i + 1, lang)}</span>
+                  <div className="event-main">
+                    <span className="ellipsis">
+                      {nameOf(k)}
+                      {s.dropped && <span className="muted small"> · {t('run.dropped')}</span>}
+                    </span>
+                    <span className="ellipsis muted small">
+                      {names.get(k)?.commander ?? t('run.noCommander')} · {r.wins}-{r.losses}
+                      {r.draws ? `-${r.draws}` : ''} · OMW {Math.round(s.omwp * 100)}%
+                    </span>
+                  </div>
+                  <b className="pts-inline">{r.points}</b>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
+      <section className="card">
+        <div className="card-title">
+          {t('run.registered')}
+          <span className="muted small">{t('run.players', { n: players.length })}</span>
+        </div>
+        {noCommander > 0 && <p className="bad-text small no-margin">{t('run.missingCommanders', { n: noCommander })}</p>}
+        <ul className="card-list">
+          {[...players]
+            .sort((a, b) => a[1].name.localeCompare(b[1].name))
+            .map(([k, p]) => (
+              <li key={k} className="event-row" onClick={() => setPlayer(k)}>
+                <div className="event-main">
+                  <span className="ellipsis">
+                    {p.name}
+                    {p.drop != null && <span className="muted small"> · {t('run.dropped')}</span>}
+                    {p.joined && <span className="muted small"> · {t('run.lateFrom', { n: p.joined })}</span>}
+                  </span>
+                  <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>{p.commander ?? t('run.noCommander')}</span>
+                </div>
+                <Icon name="chevron" size={16} />
+              </li>
+            ))}
+        </ul>
+        {tour.status !== 'done' && tour.status !== 'cut' && (
+          <button className="btn ghost" onClick={() => setAdding(true)}>
+            <Icon name="plus" size={16} /> {tour.status === 'open' ? t('run.addPlayer') : t('run.addLate', { n: tour.round + 1 })}
+          </button>
+        )}
+      </section>
+
+      {rounds.length > 0 && (
+        <section className="card">
+          <div className="card-title">{t('run.pastRounds')}</div>
+          {rounds.map((r) => (
+            <details key={r}>
+              <summary>{r > tour.rounds && tour.status !== 'swiss' ? t('run.cutRoundN', { n: r - tour.rounds }) : t('run.roundN', { n: r })}</summary>
+              <ul className="card-list">{matches.filter((m) => m.round === r).map(row)}</ul>
+            </details>
+          ))}
+        </section>
+      )}
+
+      <button
+        className="btn danger"
+        disabled={busy}
+        onClick={async () => {
+          if (!(await dialog.confirm(t('run.cancelConfirm', { n: titleOf(tour, t) }), { ok: t('run.cancel'), danger: true }))) return
+          act(async () => {
+            await deleteTournament(id, players, matches)
+            onBack()
+          })
+        }}
+      >
+        <Icon name="trash" size={16} /> {t('run.cancel')}
+      </button>
+
+      <ResultSheet id={id} match={result} cut={!!result && result.round > tour.rounds && tour.status !== 'swiss'} nameOf={nameOf} onClose={() => setResult(null)} />
+      <PlayerSheet
+        id={id}
+        user={user}
+        tour={tour}
+        keyOf={player}
+        player={player ? (names.get(player) ?? null) : null}
+        onClose={() => setPlayer(null)}
+      />
+      <AddPlayerSheet
+        open={adding}
+        id={id}
+        user={user}
+        tour={tour}
+        registered={players}
+        circuit={circuit}
+        dataset={dataset}
+        onClose={() => setAdding(false)}
+      />
+    </SubPageShell>
+  )
+}
+
+/** A table's result, entered by the TO: a quick pick, or games won by each and drawn; minutes added to its clock. */
+function ResultSheet({
+  id,
+  match,
+  cut,
+  nameOf,
+  onClose,
+}: {
+  id: string
+  match: TableMatch | null
+  cut: boolean
+  nameOf: (k: string | null) => string
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const dialog = useDialog()
+  const [s, setS] = useState<Score>([0, 0, 0])
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    if (match) setS(match.score ?? [2, 0, 0])
+  }, [match])
+  const ok = validScore(s) && (!cut || winnerOf(s) !== 0)
+  const run = async (fn: () => Promise<void>, close = true) => {
+    setBusy(true)
+    try {
+      await fn()
+      if (close) onClose()
+    } catch {
+      await dialog.alert(t('admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const step = (i: 0 | 1 | 2, d: number) => setS((x) => x.map((v, j) => (j === i ? Math.max(0, v + d) : v)) as Score)
+  return (
+    <Sheet open={!!match} onClose={onClose} title={match ? t('run.table', { n: match.table }) : ''}>
+      {match && (
+        <div className="form">
+          <div className="chips wrap">
+            {QUICK.map((q) => (
+              <button key={q.join()} className={`chip ${same(q, s) ? 'on' : ''}`} onClick={() => setS(q)}>
+                {q[0]}-{q[1]}
+              </button>
+            ))}
+          </div>
+          {([0, 1, 2] as const).map((i) => (
+            <div key={i} className="stepper">
+              <span className="ellipsis">{i === 2 ? t('run.drawnGames') : nameOf(i ? match.p2 : match.p1)}</span>
+              <div className="stepper-ctrl">
+                <button onClick={() => step(i, -1)}>−</button>
+                <b>{s[i]}</b>
+                <button onClick={() => step(i, 1)}>+</button>
+              </div>
+            </div>
+          ))}
+          {!ok && <p className="bad-text small no-margin">{t(validScore(s) ? 'run.cutNeedsWinner' : 'run.notBo3')}</p>}
+          <button className="btn primary" disabled={busy || !ok} onClick={() => run(() => setScore(id, match, s))}>
+            {t('run.saveResult')}
+          </button>
+          <div className="btn-pair">
+            <button className="btn ghost" disabled={busy} onClick={() => run(() => setExtra(id, match, (match.extra ?? 0) + 5))}>
+              {t('run.addMinutes', { n: match.extra ?? 0 })}
+            </button>
+            <button className="btn ghost" disabled={busy || !match.score} onClick={() => run(() => setScore(id, match, null))}>
+              {t('run.clearResult')}
+            </button>
+          </div>
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+/** Commander suggestions from Scryfall while typing. */
+function useCommanders(q: string) {
+  const [cards, setCards] = useState<string[]>([])
+  useEffect(() => {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => cardSuggestions(q, ctl.signal).then(setCards, () => {}), 250)
+    return () => {
+      clearTimeout(timer)
+      ctl.abort()
+    }
+  }, [q])
+  return cards
+}
+
+function CommanderInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useI18n()
+  const cards = useCommanders(value)
+  return (
+    <label>
+      <span>{t('run.commander')}</span>
+      <input value={value} onChange={(e) => onChange(e.target.value)} list="to-commanders" autoComplete="off" />
+      <datalist id="to-commanders">
+        {cards.map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
+      <span className="field-hint">{t('run.commanderHint')}</span>
+    </label>
+  )
+}
+
+/** A registered player: their commander, the drop, and before the start taking them off. */
+function PlayerSheet({
+  id,
+  user,
+  tour,
+  keyOf,
+  player,
+  onClose,
+}: {
+  id: string
+  user: AppUser
+  tour: Tournament
+  keyOf: string | null
+  player: Player | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const dialog = useDialog()
+  const [cmd, setCmd] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    setCmd(player?.commander ?? '')
+  }, [player?.commander, keyOf])
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true)
+    try {
+      await fn()
+      onClose()
+    } catch {
+      await dialog.alert(t('admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const k = keyOf!
+  return (
+    <Sheet open={!!player} onClose={onClose} title={player?.name}>
+      {player && (
+        <div className="form">
+          <CommanderInput value={cmd} onChange={setCmd} />
+          <button
+            className="btn primary"
+            disabled={busy || !cmd.trim() || cmd.trim() === player.commander}
+            onClick={() => run(() => savePlayer(user, id, k, { name: player.name, commander: cmd.trim(), joined: player.joined }))}
+          >
+            {t('run.saveCommander')}
+          </button>
+          {tour.status === 'swiss' &&
+            (player.drop == null ? (
+              <button
+                className="btn ghost"
+                disabled={busy}
+                onClick={async () => {
+                  if (await dialog.confirm(t('run.dropConfirm', { p: player.name, n: tour.round }), { ok: t('run.drop') })) run(() => setDrop(id, k, tour.round))
+                }}
+              >
+                {t('run.drop')}
+              </button>
+            ) : (
+              <button className="btn ghost" disabled={busy} onClick={() => run(() => setDrop(id, k, null))}>
+                {t('run.undrop')}
+              </button>
+            ))}
+          {tour.status === 'open' && (
+            <button
+              className="btn danger"
+              disabled={busy}
+              onClick={async () => {
+                if (await dialog.confirm(t('run.removeConfirm', { p: player.name }), { ok: t('run.remove'), danger: true })) run(() => removePlayer(id, k))
+              }}
+            >
+              {t('run.remove')}
+            </button>
+          )}
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+/** Registering a player: someone the app knows (the circuit's ranking, the meta's tournaments) or a new name. */
+function AddPlayerSheet({
+  open,
+  id,
+  user,
+  tour,
+  registered,
+  circuit,
+  dataset,
+  onClose,
+}: {
+  open: boolean
+  id: string
+  user: AppUser
+  tour: Tournament
+  registered: [string, Player][]
+  circuit: Circuit | null
+  dataset: MetaDataset | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const dialog = useDialog()
+  const [q, setQ] = useState('')
+  const [picked, setPicked] = useState<string | null>(null)
+  const [cmd, setCmd] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    if (!open) {
+      setQ('')
+      setPicked(null)
+      setCmd('')
+    }
+  }, [open])
+  // everyone the app knows, by player key
+  const known = useMemo(() => {
+    const m = new Map<string, string>()
+    circuit?.players.forEach((p) => m.set(p.key, p.name))
+    dataset?.entries.forEach((e) => e.player && e.key && !m.has(e.key) && m.set(e.key, e.player))
+    return m
+  }, [circuit, dataset])
+  const taken = new Set(registered.map(([k]) => k))
+  const key = playerKey(q)
+  const found = key.length < 2 ? [] : [...known].filter(([k]) => k.includes(key) && !taken.has(k)).slice(0, 8)
+  const isNew = key.length >= 2 && !known.has(key) && !taken.has(key)
+  const near = isNew ? closest(q, [...known.values()], 3) : []
+
+  const save = async () => {
+    const name = picked ? known.get(picked)! : q.trim()
+    setBusy(true)
+    try {
+      // after the start, a late entry: from the next round, the ones before lost 0-2
+      await savePlayer(user, id, picked ?? key, { name, commander: cmd.trim() || null, joined: tour.status === 'open' ? undefined : tour.round + 1 })
+      onClose()
+    } catch {
+      await dialog.alert(t('admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title={tour.status === 'open' ? t('run.addPlayer') : t('run.addLate', { n: tour.round + 1 })}>
+      <div className="form">
+        {picked ? (
+          <div className="stepper to-step">
+            <strong>{known.get(picked)}</strong>
+            <button className="btn ghost small" onClick={() => setPicked(null)}>
+              {t('run.change')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <label>
+              <span>{t('run.player')}</span>
+              <input type="search" placeholder={t('run.searchPlayer')} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+            </label>
+            {taken.has(key) && <p className="muted small no-margin">{t('run.already')}</p>}
+            {found.length > 0 && (
+              <div className="chips wrap">
+                {found.map(([k, n]) => (
+                  <button key={k} className="chip" onClick={() => setPicked(k)}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            )}
+            {isNew && (
+              <p className="muted small no-margin">
+                {t('run.newPlayer', { p: q.trim() })}
+                {near.length > 0 && ` ${t('run.similar', { p: near.join(', ') })}`}
+              </p>
+            )}
+          </>
+        )}
+        <CommanderInput value={cmd} onChange={setCmd} />
+        <button className="btn primary" disabled={busy || (!picked && !isNew)} onClick={save}>
+          {t('run.register')}
+        </button>
+      </div>
+    </Sheet>
+  )
+}

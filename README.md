@@ -166,6 +166,12 @@ altre zone. Sotto le leghe il modulo del TO elenca cosa gestisce da quest'anno. 
 revocato o perde la verifica, nella scheda compare "collegamento non più verificato". Il progetto completo dei tornei è
 in [`docs/tornei.md`](docs/tornei.md).
 
+I TO trovano in Home la card **Area TO**: da lì aprono le iscrizioni di una nuova tappa delle loro leghe (il numero
+proposto è il successivo a quelli nel meta e a quelli già giocati in app) o di un livello 1 o 2 da avviare, iscrivono i
+giocatori e gestiscono il torneo turno per turno. A torneo chiuso, "Copia nomi" e "Copia risultati" preparano le righe
+per la scheda della tappa (o la "Classifica" di un livello): i nomi vanno incollati nella colonna B, i risultati nella
+colonna E, perché la colonna D dei punti è una formula. La data va scritta a mano.
+
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
 dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può
 scrivere in `admins`: lo decidono solo le regole di `firestore.rules`.

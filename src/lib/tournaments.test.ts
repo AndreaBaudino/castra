@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MetaDataset, MetaTournament } from './meta'
 import type { Source } from './sources'
-import { type Player, type TableMatch, type Tournament, entrantsOf, nextStage, results, tournamentId } from './tournaments'
+import { type Player, type TableMatch, type Tournament, entrantsOf, nextStage, results, sheetRows, tournamentId } from './tournaments'
 
 // What the app keeps of a tournament on Firestore, and what it reads back from it.
 
@@ -46,5 +46,33 @@ describe('tournaments', () => {
     expect(r.order).toEqual(['c', 'a', 'b', 'd'])
     // during the Swiss rounds every match counts
     expect(results({ status: 'swiss', rounds: 3, cut: 2 } as Tournament, players, swiss).order).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('writes the rows for the sheet in two blocks around the points column, in the final order', () => {
+    const p = (name: string, commander: string | null, more: Partial<Player> = {}): Player => ({ name, commander, at: '', by: '', ...more })
+    const players: [string, Player][] = [
+      ['a', p('Anna', 'Kinnan, Bonder Prodigy')],
+      ['b', p('Bruno', 'Spider-Man 2099')],
+      ['c', p('Carla', 'Jeska, Thrice Reborn / Yoshimaru, Ever Faithful')],
+      ['l', p('Luca', null, { joined: 2 })],
+    ]
+    const m = (round: number, table: number, p1: string, p2: string | null, score?: [number, number, number]): TableMatch => ({ round, table, p1, p2, score })
+    const matches = [
+      m(1, 1, 'a', 'b', [2, 1, 0]),
+      m(1, 0, 'c', null), // c's bye
+      m(2, 1, 'a', 'c', [1, 1, 0]),
+      m(2, 2, 'b', 'l', [2, 0, 0]),
+      m(3, 1, 'a', 'b', [0, 2, 0]), // the final, a top 2
+    ]
+    const rows = sheetRows({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches)
+    // the final: b beat a, so b first and a second; then the others as in the Swiss, c (4 points) and l (0)
+    expect(rows.names.split('\n')).toEqual([
+      'Bruno\tSpider-Man 2099',
+      'Anna\tKinnan, Bonder Prodigy',
+      'Carla\tJeska, Thrice Reborn / Yoshimaru, Ever Faithful',
+      'Luca\t',
+    ])
+    // wins, losses, draws, bye: the top cut counts, the bye is a win, the missed round a loss
+    expect(rows.results.split('\n')).toEqual(['2\t1\t0\tFALSE', '1\t1\t1\tFALSE', '1\t0\t1\tTRUE', '0\t2\t0\tFALSE'])
   })
 })

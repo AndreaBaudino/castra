@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { AppUser } from './auth'
-import { fb, useLiveCollection } from './firebase'
+import { cloudEnabled, fb, useLiveCollection } from './firebase'
 import { type Source, isEvent } from './sources'
 
 // Tournament organizers (TO): verified circuit players an admin promoted, at organizers/{uid}. A TO runs the stages of
@@ -19,6 +19,26 @@ export interface Organizer {
 export function useOrganizers() {
   const { docs, loaded } = useLiveCollection<Organizer>('organizers')
   return { organizers: useMemo(() => new Map(docs), [docs]), loaded }
+}
+
+/** The account's own TO role: null when it isn't a TO (or not signed in). */
+export function useOrganizer(uid: string | null) {
+  const [o, setO] = useState<Organizer | null>(null)
+  useEffect(() => {
+    setO(null)
+    if (!cloudEnabled || !uid) return
+    let unsub = () => {}
+    let cancelled = false
+    fb().then(({ db, fs }) => {
+      if (cancelled) return
+      unsub = fs.onSnapshot(fs.doc(db, 'organizers', uid), (snap) => setO((snap.data() as Organizer) ?? null), () => setO(null))
+    })
+    return () => {
+      cancelled = true
+      unsub()
+    }
+  }, [uid])
+  return o
 }
 
 /** Whether the TO runs the tournaments of this sheet. */

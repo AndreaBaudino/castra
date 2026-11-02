@@ -31,10 +31,12 @@ import { useDialog } from './components/Dialog'
 import { UpdateBanner } from './components/AppBanners'
 import { SideNav } from './components/SideNav'
 import { useWide } from './lib/wide'
+import { useOrganizer } from './lib/organizers'
+import OrganizerArea, { OrganizerCard, TournamentAdmin } from './views/Organizer'
 
-type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards'
+type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards' | 'to'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
-const ROUTES: Tab[] = [...TABS, 'account', 'cards']
+const ROUTES: Tab[] = [...TABS, 'account', 'cards', 'to']
 
 const fromHash = (): { tab: Tab; deck: string | null } => {
   const [tab, deck] = location.hash.slice(1).split('/')
@@ -70,6 +72,7 @@ export default function App() {
   const [notice, setNotice] = useStoredState<CircuitNotice | null>('cc.circuit.notice', null)
   const { user } = useAuth()
   const uid = user?.uid ?? null
+  const organizer = useOrganizer(uid)
   const { claims, loaded: claimsLoaded } = useClaims()
   const wide = useWide()
 
@@ -206,6 +209,8 @@ export default function App() {
   const openCompare = (a: string, b: string) => go('meta', `c~${encodeURIComponent(a)}~${encodeURIComponent(b)}`, true)
   const openCommander = (name: string) => go('meta', `k~${encodeURIComponent(name)}`, true)
   const openTournament = (id: string) => go('meta', `t~${encodeURIComponent(id)}`, true)
+  // to: the TO area; to/<id>: a tournament run in the app
+  const openRun = (id: string) => go('to', encodeURIComponent(id), true)
   // from the home, the profile and the notices: the player in this year's circuit, whatever year the tab shows
   const openCurrentPlayer = (key: string) => {
     resetPickedYear()
@@ -290,6 +295,7 @@ export default function App() {
           <Home
             banner={
               <>
+                {organizer && uid && <OrganizerCard uid={uid} organizer={organizer} open={(id) => (id ? openRun(id) : go('to'))} />}
                 <BanlistNoticeCard decks={decks} openDeck={(id) => go('decks', id)} openCard={openCard} />
                 {noticeCard}
               </>
@@ -423,6 +429,19 @@ export default function App() {
             ) : null,
             t('meta.pick'),
           )}
+        {route.tab === 'to' &&
+          (route.deck ? (
+            <TournamentAdmin
+              id={decodeURIComponent(route.deck)}
+              user={user}
+              organizer={organizer}
+              circuit={circuit.data}
+              dataset={dataset}
+              onBack={() => history.back()}
+            />
+          ) : (
+            <OrganizerArea user={user} organizer={organizer} dataset={dataset} onBack={() => go('home')} openTournament={openRun} />
+          ))}
         {route.tab === 'cards' &&
           split(
             <CardsSearchPage current={cardName} onOpen={openCard} onBack={() => go('home')} />,
@@ -469,7 +488,7 @@ export default function App() {
           {TABS.map((tab) => (
             <button
               key={tab}
-              className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && (route.tab === 'account' || route.tab === 'cards')) ? 'on' : ''}`}
+              className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && (route.tab === 'account' || route.tab === 'cards' || route.tab === 'to')) ? 'on' : ''}`}
               onClick={() => go(tab)}
             >
               {tab === 'game' ? (

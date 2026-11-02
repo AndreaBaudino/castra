@@ -78,6 +78,25 @@ export function results(t: Tournament, players: [string, Player][], matches: Tab
   return { standings: st, order: finalOrder(st, cut) }
 }
 
+/**
+ * The rows for the sheet's stage tab (or a level's "Classifica"), in the final order, in the two blocks around the
+ * points column, which is a formula: name and commander (columns B-C), then wins, losses, draws and bye (E-H). Wins
+ * count the bye, as in the sheets; losses the rounds a late entry missed; both the top cut.
+ */
+export function sheetRows(t: Tournament, players: [string, Player][], matches: TableMatch[]) {
+  const rec = new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s]))
+  const names = new Map(players)
+  const order = results(t, players, matches).order
+  const row = (id: string) => {
+    const r = rec.get(id)!
+    return `${r.wins}\t${r.losses}\t${r.draws}\t${r.byes ? 'TRUE' : 'FALSE'}`
+  }
+  return {
+    names: order.map((id) => `${names.get(id)!.name}\t${names.get(id)!.commander ?? ''}`).join('\n'),
+    results: order.map(row).join('\n'),
+  }
+}
+
 // ---------- reading ----------
 
 /** The tournaments from yesterday on: the ones being played, about to be, and just over. */

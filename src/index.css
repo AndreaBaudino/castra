@@ -2472,6 +2472,36 @@ textarea {
   font-variant-numeric: tabular-nums;
   flex: none;
 }
+.to-clock {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.to-clock b {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+.to-score {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* the steppers on the surface of a card or a sheet, not on the game's dark board */
+.to-step .stepper-ctrl button {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.btn-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card details summary {
+  padding: 8px 0;
+  font-weight: 600;
+  cursor: pointer;
+}
 .kv.total {
   border-top: 1px solid var(--line);
   padding-top: 6px;
