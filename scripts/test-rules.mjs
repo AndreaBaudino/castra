@@ -5,7 +5,7 @@
 
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { readFileSync } from 'node:fs'
-import { addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 
 const env = await initializeTestEnvironment({
   projectId: 'demo-castra',
@@ -130,6 +130,100 @@ const event = { drive: '1yo9wJfM_ddBka91ixqpDp3K6yqAGeeMWtM2w_FCTn9Q', kind: 'l1
 await allowed('an event with its zone and organizers', setDoc(doc(carol, 'sources', event.drive), { ...event, zone: 'Savona', tos: ['erin'], by: 'carol' }))
 await denied('an organizer assigning themselves an event', updateDoc(doc(erin, 'sources', event.drive), { tos: ['erin', 'frank'] }))
 await allowed('removing an organizer', deleteDoc(doc(carol, 'organizers', 'erin')))
+
+// tournaments run in the app (src/lib/tournaments.ts): gina and jo run Savona, hank Genova, ivan nothing
+const SAVONA = '1Qck40xjQ_zODQtI3YY6qFGFq1adeHsMiUCwPIhZ7mvw'
+const ONLINE = '1j3CFGkfMdR89PCKMghsE_gkLn5A-SjIieo1LnWnyyBo'
+const LV1 = '1yo9wJfM_ddBka91ixqpDp3K6yqAGeeMWtM2w_FCTn9Q' // zone Savona
+const LV2 = '1IHHr3oL_QCR3UBsDgZxYeVEe0Y2A8p58wgRcXFdV7eM' // no zone, assigned to hank
+await asAdmin(async (db) => {
+  await setDoc(doc(db, 'sources', SAVONA), { drive: SAVONA, kind: 'league', year: 2026, season: 's2', league: 'Savona', at: 'x', by: 'carol' })
+  await setDoc(doc(db, 'sources', ONLINE), { drive: ONLINE, kind: 'online', year: 2026, season: 's2', league: 'Savona', at: 'x', by: 'carol' })
+  await setDoc(doc(db, 'sources', LV1), { drive: LV1, kind: 'l1', name: 'MR Magic', date: '2026-11-30', zone: 'Savona', at: 'x', by: 'carol' })
+  await setDoc(doc(db, 'sources', LV2), { drive: LV2, kind: 'l2', name: 'Albisola', date: '2026-11-23', tos: ['hank'], at: 'x', by: 'carol' })
+  for (const [uid, leagues] of [['gina', ['Savona']], ['jo', ['Savona', 'Roma']], ['hank', ['Genova']]])
+    await setDoc(doc(db, 'organizers', uid), { player: uid, name: uid, leagues, at: 'x', by: 'carol' })
+})
+const gina = env.authenticatedContext('gina').firestore()
+const jo = env.authenticatedContext('jo').firestore()
+const hank = env.authenticatedContext('hank').firestore()
+const ivan = env.authenticatedContext('ivan').firestore()
+const tour = (drive, kind, more = {}) => ({
+  drive, kind, name: 'Savona', date: '2026-11-16', status: 'open', rounds: 0, cut: 0, round: 0, started: null, at: 'x', ...more,
+})
+const STAGE = `${SAVONA}~5`
+const stage5 = (by, more) => tour(SAVONA, 'league', { stage: 5, by, ...more })
+
+await allowed('a stage, by a TO of the league', setDoc(doc(gina, 'tournaments', STAGE), stage5('gina')))
+await allowed('everyone follows a tournament, signed in or not', getDoc(doc(guest, 'tournaments', STAGE)))
+await denied('a stage, by a TO of another league', setDoc(doc(hank, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 6, by: 'hank' })))
+await denied('a stage, by someone who is not a TO', setDoc(doc(ivan, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 6, by: 'ivan' })))
+await denied('a stage under the id of another stage', setDoc(doc(gina, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 7, by: 'gina' })))
+await denied('a level 1 on a league sheet', setDoc(doc(gina, 'tournaments', SAVONA), tour(SAVONA, 'l1', { by: 'gina' })))
+await denied('a tournament on the online league', setDoc(doc(gina, 'tournaments', `${ONLINE}~1`), tour(ONLINE, 'league', { stage: 1, by: 'gina' })))
+await denied('a tournament that starts already played', setDoc(doc(gina, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 6, by: 'gina', status: 'done' })))
+await denied('a tournament in the name of another TO', setDoc(doc(gina, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 6, by: 'jo' })))
+await denied('a tournament with other fields', setDoc(doc(gina, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 6, by: 'gina', prize: 1 })))
+await allowed('a level 1, by a TO of its zone', setDoc(doc(gina, 'tournaments', LV1), tour(LV1, 'l1', { by: 'gina', name: 'MR Magic' })))
+await allowed('a level 2, by the TO assigned to it', setDoc(doc(hank, 'tournaments', LV2), tour(LV2, 'l2', { by: 'hank', name: 'Albisola' })))
+await denied('a level 2, by a TO neither of its zone nor assigned', updateDoc(doc(gina, 'tournaments', LV2), { cut: 8 }))
+
+await allowed('another TO of the league runs it too', updateDoc(doc(jo, 'tournaments', STAGE), { rounds: 4, cut: 4 }))
+await denied('starting again a stage another TO started', setDoc(doc(jo, 'tournaments', STAGE), stage5('jo')))
+await denied('a TO of another league changing it', updateDoc(doc(hank, 'tournaments', STAGE), { rounds: 5 }))
+await denied('moving it to another sheet', updateDoc(doc(gina, 'tournaments', STAGE), { drive: LV1 }))
+await denied('a top cut of 6', updateDoc(doc(gina, 'tournaments', STAGE), { cut: 6 }))
+await denied("starting the clock at the phone's time", updateDoc(doc(gina, 'tournaments', STAGE), { started: new Date() }))
+await allowed('an admin runs any tournament', updateDoc(doc(carol, 'tournaments', STAGE), { date: '2026-11-17' }))
+
+// players
+const entry = (more = {}) => ({ name: 'Mario Rossi', commander: 'Kinnan, Bonder Prodigy', at: 'x', by: 'gina', ...more })
+await allowed('a player, added by the TO', setDoc(doc(gina, 'tournaments', STAGE, 'players', 'mario rossi'), entry()))
+await allowed('a guest without a commander yet', setDoc(doc(gina, 'tournaments', STAGE, 'players', 'luigi'), entry({ name: 'Luigi', commander: null })))
+await allowed('everyone sees the players', getDoc(doc(guest, 'tournaments', STAGE, 'players', 'mario rossi')))
+await denied('a player, added by someone who is not a TO', setDoc(doc(ivan, 'tournaments', STAGE, 'players', 'ivan'), entry({ name: 'Ivan' })))
+await denied('a player, added by a TO of another league', setDoc(doc(hank, 'tournaments', STAGE, 'players', 'hank'), entry({ name: 'Hank' })))
+await denied('a player without a name', setDoc(doc(gina, 'tournaments', STAGE, 'players', 'x'), entry({ name: '' })))
+await denied('a player with other fields', setDoc(doc(gina, 'tournaments', STAGE, 'players', 'x'), entry({ points: 99 })))
+await allowed('a late entry and a drop', updateDoc(doc(gina, 'tournaments', STAGE, 'players', 'luigi'), { joined: 2, drop: 3 }))
+await denied('a drop after round 30', updateDoc(doc(gina, 'tournaments', STAGE, 'players', 'luigi'), { drop: 31 }))
+
+// a round as src/lib/tournaments.ts writes it: the pairings and the clock in one batch
+await allowed(
+  'starting a round: pairings and clock together',
+  (async () => {
+    const b = writeBatch(gina)
+    b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t1'), { round: 1, table: 1, p1: 'mario rossi', p2: 'luigi', score: null })
+    b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t0'), { round: 1, table: 0, p1: 'peach', p2: null, score: null })
+    b.update(doc(gina, 'tournaments', STAGE), { status: 'swiss', round: 1, started: serverTimestamp() })
+    await b.commit()
+  })(),
+)
+const r1 = doc(gina, 'tournaments', STAGE, 'matches', 'r1t1')
+await allowed('a result, by the TO', updateDoc(r1, { score: [2, 1, 0] }))
+await allowed('an intentional draw', updateDoc(r1, { score: [0, 0, 0] }))
+await allowed('minutes added to a table', updateDoc(r1, { extra: 5 }))
+await denied('a result that is not a Bo3 (3-0)', updateDoc(r1, { score: [3, 0, 0] }))
+await denied('a result that is not a Bo3 (2-1 and a draw)', updateDoc(r1, { score: [2, 1, 1] }))
+await denied('a result that is not a Bo3 (two numbers)', updateDoc(r1, { score: [2, 1] }))
+await denied('an hour added to a table', updateDoc(r1, { extra: 61 }))
+await denied('a result, by someone who is not a TO', updateDoc(doc(ivan, 'tournaments', STAGE, 'matches', 'r1t1'), { score: [0, 2, 0] }))
+await allowed('everyone sees the matches', getDoc(doc(guest, 'tournaments', STAGE, 'matches', 'r1t1')))
+
+// a TO who is no longer one
+await asAdmin((db) => deleteDoc(doc(db, 'organizers', 'jo')))
+await denied('a TO whose role was removed', updateDoc(doc(jo, 'tournaments', STAGE, 'matches', 'r1t1'), { score: [0, 2, 0] }))
+
+// cancelling: the matches, the players and the tournament in one batch
+const cancel = (db) => {
+  const b = writeBatch(db)
+  for (const id of ['r1t1', 'r1t0']) b.delete(doc(db, 'tournaments', STAGE, 'matches', id))
+  for (const id of ['mario rossi', 'luigi']) b.delete(doc(db, 'tournaments', STAGE, 'players', id))
+  b.delete(doc(db, 'tournaments', STAGE))
+  return b.commit()
+}
+await denied('cancelling, by someone who is not a TO', cancel(ivan))
+await allowed('cancelling, by the TO', cancel(gina))
 
 // reports, as src/lib/feedback.ts sends them
 const dave = env.authenticatedContext('dave', { email: 'dave@example.com' }).firestore()

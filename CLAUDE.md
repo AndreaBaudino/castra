@@ -32,6 +32,8 @@
   deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
   il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.
+  `src/lib/tournaments.emulator.test.ts` fa girare un torneo intero sull'emulatore (saltato da `npm test`, lo lancia
+  `rules.yml`): non importare i tipi di `@firebase/rules-unit-testing`, che nel deploy non c'è.
 - A inizio sessione `node_modules` non c'è: `npm ci`.
 - Per vedere una modifica: `npm run dev` (http://localhost:5173) e Playwright/Chromium già installati nel container
   (`require('playwright')`), con viewport da telefono (es. 390×844) e, per il layout da computer, ≥1024 px.
@@ -80,7 +82,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   WordPress e pubblicazione su `config/banlist`).
 - `sources.ts` / `aliases.ts`: elenco dei fogli dei tornei e correzioni dei nomi, gestiti dall'area admin.
 - `organizers.ts` (TO e zone, `canRun`), `swiss.ts` (motore dei tornei: abbinamenti svizzeri, classifica con gli
-  spareggi MTR, top cut; funzioni pure, progetto in `docs/tornei.md`).
+  spareggi MTR, top cut; funzioni pure), `tournaments.ts` (tornei su Firestore: `useTournaments`, `useTournament`,
+  creazione, iscritti, turni, risultati, top cut). Progetto in `docs/tornei.md`.
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
   `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate

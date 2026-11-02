@@ -1,13 +1,14 @@
 name: Firestore rules
 
-# The rules are the only protection of the data: when they (or their test) change, scripts/test-rules.mjs checks
-# them on the Firestore emulator and, on main, the rules that passed are published to Firebase. The emulator's tools
-# are installed here only, so the app's dependencies and its deploy stay as they are. Publishing needs the
+# The rules are the only protection of the data: when they (or their tests) change, scripts/test-rules.mjs checks
+# them on the Firestore emulator, src/lib/tournaments.emulator.test.ts runs a whole tournament against them and, on
+# main, the rules that passed are published to Firebase. The emulator's tools are installed here only, so the app's
+# dependencies and its deploy stay as they are. Publishing needs the
 # FIREBASE_SERVICE_ACCOUNT secret: how to create it is in the README ("Regole di Firestore").
 
 on:
   push:
-    paths: [firestore.rules, scripts/test-rules.mjs, .github/workflows/rules.yml]
+    paths: [firestore.rules, scripts/test-rules.mjs, src/lib/tournaments*.ts, .github/workflows/rules.yml]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +30,8 @@ jobs:
       - run: npm ci
       - run: npm i --no-save firebase-tools@13 @firebase/rules-unit-testing@4
       - run: npx firebase emulators:exec --only firestore --project demo-castra 'node scripts/test-rules.mjs'
+      # a whole tournament run with the app's own functions, against the same rules
+      - run: npx firebase emulators:exec --only firestore --project demo-castra 'npx vitest run src/lib/tournaments.emulator.test.ts'
 
   deploy:
     needs: test

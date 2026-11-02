@@ -175,20 +175,33 @@ scrivere codice. I mockup delle schermate sono su
 
 ## 9. Dati su Firestore
 
+Già in uso (fasi 1 e 2b-1):
+
 ```
-organizers/{uid}                    player, name, leagues: [nomi delle leghe], at, by  (scrivono solo gli admin)
-sources/{drive}                     + zone?: nome della lega, tos?: [uid]          (tornei di livello)
-joinCodes/{codice}                  tid      (get con il codice, mai list)
-claims/{playerKey}                  + verifiedBy, verifiedIn                       (verifica data da un TO)
-tournaments/{tid}                   drive, kind, stage (leghe), date, status, top cut, turni, iscrizioni aperte,
-                                    turno corrente, fine del turno, pubblicato sul foglio
-  /players/{playerKey}              name, uid?, status (iscritto | in attesa), commander, deckId?, drop (turno),
-                                    added (TO | link)
-  /players/{playerKey}/private/deck link Moxfield (pubblico a torneo concluso)
-  /matches/{mid}                    round, table, p1, p2 (null = bye), [V, S, P], reportedBy, confirmed, extraMin
+organizers/{uid}                 player, name, leagues: [nomi delle leghe], at, by    (scrivono solo gli admin)
+sources/{drive}                  + zone?: nome della lega, tos?: [uid]                (tornei di livello)
+tournaments/{tid}                tid = drive (livelli) o drive~tappa (leghe): un torneo per foglio e tappa
+                                 drive, kind, name, stage?, date, status (open | swiss | cut | done), rounds, cut,
+                                 round (turno in corso, svizzero e top cut di seguito), started (orologio del server),
+                                 at, by
+  /players/{playerKey}           name, commander (null finché non c'è), joined? (ritardatario), drop? (ultimo turno)
+  /matches/r{turno}t{tavolo}     round, table (0 = bye), p1, p2 (null = bye), score [V, S, P] | null, extra (minuti)
 ```
 
-Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`; `rules.yml` le pubblica dopo i test.
+Le scrivono i TO che gestiscono quel foglio (stessa regola di `canRun`) e gli admin; tutti le leggono, anche senza
+accesso. Da aggiungere nelle fasi successive:
+
+```
+joinCodes/{codice}               tid      (get con il codice, mai list)
+claims/{playerKey}               + verifiedBy, verifiedIn                               (verifica data da un TO)
+tournaments/{tid}                + iscrizioni aperte, pubblicato sul foglio
+  /players/{playerKey}           + uid, status (iscritto | in attesa), deckId, added (TO | link)
+  /players/{playerKey}/private/deck  link Moxfield (pubblico a torneo concluso)
+  /matches/…                     + reportedBy, confirmed
+```
+
+Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`, e `src/lib/tournaments.emulator.test.ts` fa girare un
+torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le prova e le pubblica dopo i test.
 
 ## 10. Fasi
 
@@ -196,7 +209,7 @@ Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`; `rules.yml` le pub
    leghe), zona e TO assegnati nel modulo dei livelli 1 e 2, `src/lib/organizers.ts` (`canRun`: quali fogli gestisce
    un TO), regole Firestore con i test.
 2. **Torneo gestito dal TO**, in tre passi: **2a** il motore `src/lib/swiss.ts` con i test (fatto); **2b** la
-   gestione del TO; **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
+   gestione del TO: dati, regole e funzioni in `src/lib/tournaments.ts` (2b-1, fatto), poi le schermate (2b-2); **2c** le pagine da spettatore. In tutto: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
    svizzero, risultati, drop, ritardatari, classifica con spareggi, top cut, pagine da spettatore, "Copia le righe".
 3. **Giocatori nell'app**: link e codice, richieste da confermare con verifica, card in Home, timer, risultati con
    conferma, comandante e decklist.

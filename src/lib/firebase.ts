@@ -16,8 +16,11 @@ async function load() {
 let loading: ReturnType<typeof load> | null = null
 export const fb = () => (loading ??= load())
 
-/** A Firestore collection kept up to date, as [id, data] pairs; `loaded` once the server confirmed it. */
-export function useLiveCollection<T>(name: string | null) {
+/**
+ * A Firestore collection kept up to date, as [id, data] pairs; `loaded` once the server confirmed it. `where` keeps
+ * only the documents whose field compares so with the value.
+ */
+export function useLiveCollection<T>(name: string | null, where?: [string, '==' | '>=', string]) {
   const [docs, setDocs] = useState<[string, T][]>([])
   const [loaded, setLoaded] = useState(false) // confirmed by the server, not just the offline cache
   useEffect(() => {
@@ -26,8 +29,9 @@ export function useLiveCollection<T>(name: string | null) {
     let cancelled = false
     fb().then(({ db, fs }) => {
       if (cancelled) return
+      const col = fs.collection(db, name)
       unsub = fs.onSnapshot(
-        fs.collection(db, name),
+        where ? fs.query(col, fs.where(...where)) : col,
         { includeMetadataChanges: true },
         (snap) => {
           setDocs(snap.docs.map((d) => [d.id, d.data() as T]))
@@ -40,6 +44,6 @@ export function useLiveCollection<T>(name: string | null) {
       cancelled = true
       unsub()
     }
-  }, [name])
+  }, [name, where?.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
   return { docs, loaded }
 }
