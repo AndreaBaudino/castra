@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { AppUser } from './auth'
 import type { Claim } from './claims'
 import { cloudEnabled, fb, useLiveCollection } from './firebase'
+import { readStored } from './storage'
 
 // The admin area: the accounts listed in admins/{uid} (added from the Firebase console) can revoke the claims of
 // circuit players and clear what a claimer put on their page. The Firestore rules enforce all of it.
@@ -35,6 +36,15 @@ export function useIsAdmin(uid: string | null) {
     }
   }, [uid])
   return admin
+}
+
+/** When this device last showed the claims to an admin: later ones are "new" until the players tab is opened. */
+export const SEEN_CLAIMS = 'cc.admin.seenClaims'
+
+/** Players linked since the admin last looked and not verified yet (by another admin). */
+export function newClaims(claims: Map<string, Claim>) {
+  const seen = readStored<string | null>(SEEN_CLAIMS, null)
+  return seen ? [...claims.values()].filter((c) => !c.verified && c.at > seen).length : 0
 }
 
 /** The revoked claims, by player key: only admins can read them. */

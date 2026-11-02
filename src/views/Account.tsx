@@ -16,7 +16,7 @@ import { BANLIST_URL, FORMAT_SITE_URL, PRIVACY_URL } from '../config'
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { ClaimBadge, type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
-import { useIsAdmin } from '../lib/admin'
+import { newClaims, useIsAdmin } from '../lib/admin'
 import { useBanlist } from '../lib/banlist'
 import Admin from './Admin'
 import { LoginForm } from '../components/LoginForm'
@@ -499,7 +499,8 @@ export default function Account({
   const isAdmin = useIsAdmin(user?.uid ?? null)
   // only admins can read the reports: one listener for the badge here and the list in the admin area
   const feedback = useLiveCollection<Feedback>(isAdmin ? 'feedback' : null).docs
-  const openFeedback = feedback.filter(([, f]) => !f.done).length
+  // what the admin area has to show: new linked players and reports to check
+  const toSee = isAdmin ? newClaims(circuitPrefs.claims) + feedback.filter(([, f]) => !f.done).length : 0
   const [reporting, setReporting] = useState(false)
   // the latest banlist update, read from the format's site every night
   const { announcement } = useBanlist()
@@ -600,7 +601,7 @@ export default function Account({
               <MenuRow
                 icon="shield"
                 label={titles.admin}
-                note={openFeedback ? t('feedback.open', { n: openFeedback }) : undefined}
+                note={toSee ? t('feedback.open', { n: toSee }) : undefined}
                 onClick={() => openSection('admin')}
               />
             )}

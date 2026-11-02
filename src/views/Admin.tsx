@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { useAuth } from '../lib/auth'
 import type { Circuit } from '../lib/circuit'
 import type { Claim } from '../lib/claims'
-import { clearClaimLook, revokeClaim, setClaimVerified, unrevokeClaim, useRevoked } from '../lib/admin'
+import { SEEN_CLAIMS, clearClaimLook, newClaims, revokeClaim, setClaimVerified, unrevokeClaim, useRevoked } from '../lib/admin'
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
-import { useStoredState } from '../lib/storage'
+import { readStored, useStoredState, writeStored } from '../lib/storage'
 import AdminSources from './AdminSources'
 import AdminBanlist from './AdminBanlist'
 import AdminAliases from './AdminAliases'
@@ -29,14 +29,14 @@ export default function Admin({
 }) {
   const { t } = useI18n()
   const [tab, setTab] = useStoredState<'players' | 'sources' | 'aliases' | 'banlist' | 'feedback'>('cc.admin.tab', 'players')
-  const open = feedback.filter(([, f]) => !f.done).length
+  const counts = { players: newClaims(props.claims), feedback: feedback.filter(([, f]) => !f.done).length }
   return (
     <>
       <div className="seg wide">
         {(['players', 'sources', 'aliases', 'banlist', 'feedback'] as const).map((v) => (
           <button key={v} className={tab === v ? 'on' : ''} onClick={() => setTab(v)}>
             {t(`admin.tab.${v}`)}
-            {v === 'feedback' && open > 0 && <span className="fb-count">{open}</span>}
+            {(v === 'players' || v === 'feedback') && counts[v] > 0 && <span className="fb-count">{counts[v]}</span>}
           </button>
         ))}
       </div>
@@ -70,6 +70,11 @@ function Claims({
   const revoked = useRevoked()
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState<string | null>(null) // the player key being changed
+  // the claims made since the last visit stay tagged "new" while the tab is open; from now on they are seen
+  const [since] = useState(() => readStored<string | null>(SEEN_CLAIMS, null))
+  useEffect(() => {
+    writeStored(SEEN_CLAIMS, new Date().toISOString())
+  }, [])
   const names = useMemo(() => new Map(circuit?.players.map((p) => [p.key, p.name])), [circuit])
   const nameOf = (key: string) => names.get(key) ?? key
   const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })
@@ -118,6 +123,7 @@ function Claims({
                   <span className="admin-text">
                     <strong className="ellipsis">{nameOf(key)}</strong>
                     <span className="muted small ellipsis">
+                      {since && !c.verified && c.at > since && <span className="tag new">{t('admin.new')}</span>}{' '}
                       {c.name ?? t('admin.noName')} · {day(c.at)}
                     </span>
                   </span>

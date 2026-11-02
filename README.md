@@ -134,6 +134,9 @@ la possibilità di revocare un collegamento (il giocatore torna libero e quell'a
 altro sì; la revoca si può annullare) e di azzerare la carta di sfondo e il mazzo preferito scelti per la sua pagina.
 Nella scheda **Segnalazioni** arrivano i messaggi mandati dagli utenti (Profilo → "Segnala un problema o un'idea" e la
 bandierina sulle pagine del circuito): si rispondono via email, se l'utente l'ha permesso, e si segnano come fatte.
+Accanto ad **Area admin** nel Profilo compare quante cose ci sono da vedere: le segnalazioni aperte e i giocatori
+collegati (non ancora verificati) dall'ultima volta che hai aperto la scheda Giocatori su quel dispositivo, dove
+restano con l'etichetta "Nuovo" finché sei lì.
 
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
 dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può
