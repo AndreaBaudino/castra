@@ -23,7 +23,7 @@ import { LoginForm } from '../components/LoginForm'
 import { FeedbackSheet } from '../components/Feedback'
 import type { Feedback } from '../lib/feedback'
 import { cloudEnabled, useLiveCollection } from '../lib/firebase'
-import { dropPush, enablePush, pushBlock } from '../lib/push'
+import { dropPush, pushBlock, savePush } from '../lib/push'
 
 function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -242,21 +242,19 @@ function Notifications({ uid, isAdmin, prefs, set }: { uid: string | null; isAdm
   const dialog = useDialog()
   const [asking, setAsking] = useState<Notify | null>(null)
   const [block, setBlock] = useState(pushBlock)
-  const [busy, setBusy] = useState(false)
 
   const activate = async (k: Notify) => {
-    setBusy(true)
+    if ((await Notification.requestPermission()) !== 'granted') return setBlock(pushBlock())
+    // the switch follows the answer at once: saving the device can take a few seconds the first time
+    set(k, true)
     try {
-      if (await enablePush(uid!)) set(k, true)
+      await savePush(uid!)
     } catch {
+      set(k, false)
       await dialog.alert(t('push.error'))
-    } finally {
-      setBusy(false)
-      setBlock(pushBlock())
     }
   }
   const turn = (k: Notify) => (on: boolean) => {
-    if (busy) return
     if (!on) return set(k, false)
     if (Notification.permission === 'granted') activate(k)
     else setAsking(k)

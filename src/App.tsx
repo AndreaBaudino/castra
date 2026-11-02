@@ -3,7 +3,7 @@ import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
 import { syncPaused, useCollectionSync, useDocFieldSync } from './lib/sync'
 import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
-import { enablePush, pushBlock } from './lib/push'
+import { pushBlock, savePush } from './lib/push'
 import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
 import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
 import type { Deck } from './lib/decks'
@@ -84,7 +84,7 @@ export default function App() {
   // a device's token can change: saved again at start while notifications are on and allowed
   const notify = prefs.notifyCircuit || prefs.notifyBanlist || prefs.notifyAdmin
   useEffect(() => {
-    if (uid && notify && !pushBlock() && Notification.permission === 'granted') enablePush(uid).catch(() => {})
+    if (uid && notify && !pushBlock() && Notification.permission === 'granted') savePush(uid).catch(() => {})
   }, [uid, notify])
   useEffect(() => {
     applyTheme(theme)

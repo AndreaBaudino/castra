@@ -13,18 +13,16 @@ export function pushBlock(): 'ios' | 'unsupported' | 'denied' | null {
   return Notification.permission === 'denied' ? 'denied' : null
 }
 
-/** Asks for the permission when needed and saves this device's token for the account: false if refused. */
-export async function enablePush(uid: string) {
-  if ((await Notification.requestPermission()) !== 'granted') return false
+/** Saves this device's token for the account, once the permission is granted. */
+export async function savePush(uid: string) {
   const [{ getMessaging, getToken }, { getApp }, { db, fs }] = await Promise.all([import('firebase/messaging'), import('firebase/app'), fb()])
   // the app's own service worker shows them (public/push-sw.js), not Firebase's default one
   const token = await getToken(getMessaging(getApp()), { serviceWorkerRegistration: await navigator.serviceWorker.ready })
   const saved = readStored<{ uid: string; token: string } | null>(SAVED, null)
-  if (saved?.uid === uid && saved.token === token) return true
+  if (saved?.uid === uid && saved.token === token) return
   await fs.setDoc(fs.doc(db, 'users', uid, 'devices', token), { at: new Date().toISOString() })
   if (saved?.uid === uid) await fs.deleteDoc(fs.doc(db, 'users', uid, 'devices', saved.token)) // replaced by the new one
   writeStored(SAVED, { uid, token })
-  return true
 }
 
 /** Signing out: this device stops getting the account's notifications. */
