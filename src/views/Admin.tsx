@@ -11,10 +11,11 @@ import AdminSources from './AdminSources'
 import AdminBanlist from './AdminBanlist'
 import AdminAliases from './AdminAliases'
 import AdminFeedback from './AdminFeedback'
+import AdminOrganizers from './AdminOrganizers'
 import type { Feedback } from '../lib/feedback'
 
 // The admin area, inside the profile: the claimed circuit players and the claims revoked by an admin, and the
-// tournament sheets read by the nightly meta update (AdminSources).
+// tournament sheets read by the nightly meta update (AdminSources), the tournament organizers (AdminOrganizers).
 
 const hasLook = (c: Claim) => !!(c.coverName || c.coverArt || c.deck)
 
@@ -28,12 +29,12 @@ export default function Admin({
   feedback: [string, Feedback][]
 }) {
   const { t } = useI18n()
-  const [tab, setTab] = useStoredState<'players' | 'sources' | 'aliases' | 'banlist' | 'feedback'>('cc.admin.tab', 'players')
+  const [tab, setTab] = useStoredState<'players' | 'sources' | 'to' | 'aliases' | 'banlist' | 'feedback'>('cc.admin.tab', 'players')
   const counts = { players: newClaims(props.claims), feedback: feedback.filter(([, f]) => !f.done).length }
   return (
     <>
       <div className="seg wide">
-        {(['players', 'sources', 'aliases', 'banlist', 'feedback'] as const).map((v) => (
+        {(['players', 'sources', 'to', 'aliases', 'banlist', 'feedback'] as const).map((v) => (
           <button key={v} className={tab === v ? 'on' : ''} onClick={() => setTab(v)}>
             {t(`admin.tab.${v}`)}
             {(v === 'players' || v === 'feedback') && counts[v] > 0 && <span className="fb-count">{counts[v]}</span>}
@@ -44,6 +45,8 @@ export default function Admin({
         <Claims {...props} />
       ) : tab === 'sources' ? (
         <AdminSources circuit={props.circuit} />
+      ) : tab === 'to' ? (
+        <AdminOrganizers circuit={props.circuit} claims={props.claims} />
       ) : tab === 'aliases' ? (
         <AdminAliases circuit={props.circuit} />
       ) : tab === 'feedback' ? (

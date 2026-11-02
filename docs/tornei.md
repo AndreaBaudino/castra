@@ -170,7 +170,7 @@ scrivere codice. I mockup delle schermate sono su
 ## 9. Dati su Firestore
 
 ```
-organizers/{uid}                    leagues: [nomi delle leghe], name, at, by      (scrivono solo gli admin)
+organizers/{uid}                    player, name, leagues: [nomi delle leghe], at, by  (scrivono solo gli admin)
 sources/{drive}                     + zone?: nome della lega, tos?: [uid]          (tornei di livello)
 joinCodes/{codice}                  tid      (get con il codice, mai list)
 claims/{playerKey}                  + verifiedBy, verifiedIn                       (verifica data da un TO)
@@ -186,10 +186,11 @@ Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`; `rules.yml` le pub
 
 ## 10. Fasi
 
-1. **Ruoli e assegnazioni**: ruolo TO e zone nell'area admin, zona e TO sui tornei di livello, regole Firestore con
-   i test, Area TO in sola lettura per vedere che le assegnazioni funzionano.
-2. **Torneo gestito dal TO**: creazione della tappa o avvio del livello, iscrizioni a mano, svizzero, risultati,
-   drop, ritardatari, classifica con spareggi, top cut, pagine da spettatore, "Copia le righe".
+1. **Ruoli e assegnazioni** (fatta): scheda TO nell'area admin (solo giocatori collegati e verificati, con le loro
+   leghe), zona e TO assegnati nel modulo dei livelli 1 e 2, `src/lib/organizers.ts` (`canRun`: quali fogli gestisce
+   un TO), regole Firestore con i test.
+2. **Torneo gestito dal TO**: card "Area TO" in Home, creazione della tappa o avvio del livello, iscrizioni a mano,
+   svizzero, risultati, drop, ritardatari, classifica con spareggi, top cut, pagine da spettatore, "Copia le righe".
 3. **Giocatori nell'app**: link e codice, richieste da confermare con verifica, card in Home, timer, risultati con
    conferma, comandante e decklist.
 4. **Pubblicazione**: script Apps Script che scrive nel foglio, decklist pubbliche, partite personali compilate da

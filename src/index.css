@@ -1740,6 +1740,9 @@ button.kv.clickable b {
 }
 .seg.wide {
   display: flex;
+  /* many tabs (the admin area's) scroll instead of widening the page */
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 /* Circuit tab: picks between deck meta and rankings, above the pill segments of each */
 .mode-tabs {

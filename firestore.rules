@@ -96,12 +96,15 @@ service cloud.firestore {
         return d.get(field, null) is string && d[field].size() > 0 && d[field].size() <= max;
       }
       function validSource(d) {
-        return d.keys().hasOnly(['drive', 'kind', 'name', 'date', 'circuit', 'year', 'season', 'league', 'venue', 'at', 'by'])
+        return d.keys().hasOnly(['drive', 'kind', 'name', 'date', 'circuit', 'year', 'season', 'league', 'venue', 'zone', 'tos', 'at', 'by'])
           && d.drive == drive
           && drive.matches('[-_A-Za-z0-9]{20,100}')
           && d.by == request.auth.uid
           && optionalString(d, 'circuit', 150)
           && optionalString(d, 'venue', 80)
+          // events: the league whose organizers run it, and organizers assigned by hand (uids)
+          && optionalString(d, 'zone', 80)
+          && (d.get('tos', null) == null || (d.tos is list && d.tos.size() <= 20))
           && ((d.kind in ['l1', 'l2']
               && requiredString(d, 'name', 80)
               && d.get('date', null) is string
@@ -115,6 +118,25 @@ service cloud.firestore {
 
       allow read: if true;
       allow create, update: if isAdmin() && validSource(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // tournament organizers (TO): verified circuit players promoted by an admin, with the leagues they run (also the
+    // zones of the level 1 and 2 tournaments). Only admins write them; each TO reads their own
+    match /organizers/{uid} {
+      function claimOf(d) {
+        return get(/databases/$(database)/documents/claims/$(d.player)).data;
+      }
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['player', 'name', 'leagues', 'at', 'by'])
+        && request.resource.data.player is string
+        && request.resource.data.name is string && request.resource.data.name.size() <= 200
+        && request.resource.data.leagues is list && request.resource.data.leagues.size() <= 30
+        && request.resource.data.by == request.auth.uid
+        // the account holding a verified claim on that player, and no other
+        && claimOf(request.resource.data).uid == uid
+        && claimOf(request.resource.data).get('verified', false) == true;
       allow delete: if isAdmin();
     }
 

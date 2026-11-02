@@ -111,6 +111,26 @@ await allowed(
 await denied('the banlist, by a non-admin', setDoc(doc(alice, 'config', 'banlist'), { json: '{}', at: 'x', by: 'alice' }))
 await denied('making yourself an admin', setDoc(doc(alice, 'admins', 'alice'), {}))
 
+// tournament organizers (src/lib/organizers.ts): an admin promotes the account holding a verified claim
+await asAdmin(async (db) => {
+  await setDoc(doc(db, 'claims', 'zelda'), { uid: 'erin', name: 'E', photo: null, at: 'x', verified: true })
+  await setDoc(doc(db, 'claims', 'link'), { uid: 'frank', name: 'F', photo: null, at: 'x' })
+})
+const erin = env.authenticatedContext('erin').firestore()
+const to = (player, by = 'carol') => ({ player, name: 'Zelda', leagues: ['Savona'], at: 'x', by })
+await denied('making yourself an organizer', setDoc(doc(erin, 'organizers', 'erin'), to('zelda', 'erin')))
+await denied('an organizer on a player the account does not hold', setDoc(doc(carol, 'organizers', 'bob'), to('zelda')))
+await denied('an organizer whose claim is not verified', setDoc(doc(carol, 'organizers', 'frank'), to('link')))
+await denied('an organizer with other fields', setDoc(doc(carol, 'organizers', 'erin'), { ...to('zelda'), admin: true }))
+await allowed('an organizer, promoted by an admin', setDoc(doc(carol, 'organizers', 'erin'), to('zelda')))
+await allowed('an organizer reading their own leagues', getDoc(doc(erin, 'organizers', 'erin')))
+await denied("reading someone else's organizer", getDoc(doc(bob, 'organizers', 'erin')))
+await denied('an organizer changing their own leagues', updateDoc(doc(erin, 'organizers', 'erin'), { leagues: ['Roma'] }))
+const event = { drive: '1yo9wJfM_ddBka91ixqpDp3K6yqAGeeMWtM2w_FCTn9Q', kind: 'l1', name: 'MR Magic', date: '2026-11-30', at: 'x' }
+await allowed('an event with its zone and organizers', setDoc(doc(carol, 'sources', event.drive), { ...event, zone: 'Savona', tos: ['erin'], by: 'carol' }))
+await denied('an organizer assigning themselves an event', updateDoc(doc(erin, 'sources', event.drive), { tos: ['erin', 'frank'] }))
+await allowed('removing an organizer', deleteDoc(doc(carol, 'organizers', 'erin')))
+
 // reports, as src/lib/feedback.ts sends them
 const dave = env.authenticatedContext('dave', { email: 'dave@example.com' }).firestore()
 const report = (uid, more = {}) => ({

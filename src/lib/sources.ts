@@ -18,6 +18,8 @@ export interface Source {
   name?: string
   date?: string // ISO day: the tournament's year and season
   circuit?: string // the event's title in the circuit sheet, to link the two
+  zone?: string // the league whose organizers run it
+  tos?: string[] // organizers assigned by hand (uids)
   // leagues (league, online): one tournament per numbered tab, the stages
   year?: number
   season?: 's1' | 's2'
@@ -44,11 +46,13 @@ export function useSources() {
 
 // only the fields of its kind, with nothing empty: the rules accept no others
 function clean(s: Source): Source {
-  const keep: (keyof Source)[] = isEvent(s.kind) ? ['drive', 'kind', 'name', 'date', 'circuit'] : ['drive', 'kind', 'year', 'season', 'league', 'venue']
+  const keep: (keyof Source)[] = isEvent(s.kind)
+    ? ['drive', 'kind', 'name', 'date', 'circuit', 'zone', 'tos']
+    : ['drive', 'kind', 'year', 'season', 'league', 'venue']
   const out: Record<string, unknown> = {}
   for (const k of keep) {
     const v = typeof s[k] === 'string' ? (s[k] as string).trim() : s[k]
-    if (v !== undefined && v !== '') out[k] = v
+    if (v !== undefined && v !== '' && !(Array.isArray(v) && !v.length)) out[k] = v
   }
   return out as unknown as Source
 }

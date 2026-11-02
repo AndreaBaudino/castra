@@ -158,6 +158,14 @@ Accanto ad **Area admin** nel Profilo compare quante cose ci sono da vedere: le 
 collegati (non ancora verificati) dall'ultima volta che hai aperto la scheda Giocatori su quel dispositivo, dove
 restano con l'etichetta "Nuovo" finché sei lì.
 
+Nella scheda **TO** gli admin scelgono gli organizzatori dei tornei: "Aggiungi TO" elenca i giocatori collegati e
+verificati, e il ruolo va all'account collegato a quel giocatore. Per ogni TO si spuntano le sue leghe (le "zone"):
+creerà le tappe di quelle leghe, in ogni stagione, e gestirà i livelli 1 e 2 che hanno una di quelle leghe come
+zona. Nel modulo di un livello 1 o 2 (scheda Tornei) si sceglie la zona e si possono assegnare TO a mano, anche di
+altre zone. Sotto le leghe il modulo del TO elenca cosa gestisce da quest'anno. Se il collegamento del TO viene
+revocato o perde la verifica, nella scheda compare "collegamento non più verificato". Il progetto completo dei tornei è
+in [`docs/tornei.md`](docs/tornei.md).
+
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
 dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può
 scrivere in `admins`: lo decidono solo le regole di `firestore.rules`.

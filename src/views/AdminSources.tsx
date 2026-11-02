@@ -24,6 +24,7 @@ import { leagues } from './Circuit'
 import AdminCircuit from './AdminCircuit'
 import AdminLinks from './AdminLinks'
 import { useCircuitSheets } from '../lib/circuits'
+import { useOrganizers } from '../lib/organizers'
 
 // The admin area's tournaments: the sheets read by the nightly meta update, one year at a time, and how the last
 // update went.
@@ -126,6 +127,9 @@ function SourceForm({
   const year = sourceYear(s)
   const eventNames = useMemo(() => [...new Set(circuit?.events.map((e) => e.name))], [circuit])
   const leagueNames = useMemo(() => (circuit ? leagues(circuit) : []), [circuit])
+  const { organizers } = useOrganizers()
+  const tos = [...organizers].sort((a, b) => a[1].name.localeCompare(b[1].name))
+  const toggleTo = (uid: string) => set('tos', s.tos?.includes(uid) ? s.tos.filter((x) => x !== uid) : [...(s.tos ?? []), uid])
   const years = [...new Set([thisYear - 1, thisYear, thisYear + 1, ...(s.year ? [s.year] : [])])].sort()
 
   const save = async () => {
@@ -192,6 +196,36 @@ function SourceForm({
             </datalist>
             <span className="field-hint">{t('sources.circuitHint')}</span>
           </label>
+          <label>
+            <span>{t('sources.zone')}</span>
+            <select value={s.zone ?? ''} onChange={(e) => set('zone', e.target.value)}>
+              <option value="">{t('sources.noZone')}</option>
+              {[...new Set([...leagueNames, ...(s.zone ? [s.zone] : [])])].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <span className="field-hint">{t('sources.zoneHint')}</span>
+          </label>
+          {tos.length > 0 && (
+            <div className="field">
+              <span>{t('sources.tos')}</span>
+              <div className="chips wrap">
+                {tos.map(([uid, o]) => (
+                  <button
+                    key={uid}
+                    className={`chip ${s.tos?.includes(uid) ? 'on' : ''}`}
+                    aria-pressed={!!s.tos?.includes(uid)}
+                    onClick={() => toggleTo(uid)}
+                  >
+                    {o.name}
+                  </button>
+                ))}
+              </div>
+              <span className="field-hint">{t('sources.tosHint')}</span>
+            </div>
+          )}
         </>
       ) : (
         <>
