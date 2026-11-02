@@ -19,6 +19,8 @@ import { Icon, useBackCloses } from '../components/ui'
 import { RecordMatch } from '../components/RecordMatch'
 import { useDialog } from '../components/Dialog'
 import { CardLookupSheet } from './Cards'
+import { DungeonSheet } from '../components/DungeonSheet'
+import { DUNGEONS, type DungeonRun, lastRoom } from '../lib/dungeons'
 
 export interface PlayerState {
   life: number
@@ -29,8 +31,8 @@ export interface PlayerState {
 }
 
 /** The counters shown in one game: commander damage unless turned off, the others when turned on. */
-export type Extra = 'cmd' | 'poison' | 'energy' | 'exp' | 'monarch' | 'initiative'
-const EXTRAS: Extra[] = ['cmd', 'poison', 'energy', 'exp', 'monarch', 'initiative']
+export type Extra = 'cmd' | 'poison' | 'energy' | 'exp' | 'monarch' | 'initiative' | 'dungeon'
+const EXTRAS: Extra[] = ['cmd', 'poison', 'energy', 'exp', 'monarch', 'initiative', 'dungeon']
 const EXTRA_KEY = {
   cmd: 'life.cmd',
   poison: 'life.poison',
@@ -38,6 +40,7 @@ const EXTRA_KEY = {
   exp: 'life.exp',
   monarch: 'life.monarch',
   initiative: 'life.initiative',
+  dungeon: 'life.dungeon',
 } as const
 
 export interface GameState {
@@ -49,7 +52,11 @@ export interface GameState {
   extras?: Extra[] // missing in games saved before: commander damage, and poison when someone has some
   monarch?: 0 | 1 // the player who holds it
   initiative?: 0 | 1
+  dungeons?: [DungeonRun, DungeonRun]
 }
+
+const outside: DungeonRun = { d: 'undercity', path: [], done: 0 }
+const runsOf = (g: GameState): [DungeonRun, DungeonRun] => g.dungeons ?? [outside, outside]
 
 const extrasOf = (g: GameState): Extra[] => g.extras ?? (g.players.some((p) => p.poison) ? ['cmd', 'poison'] : ['cmd'])
 
@@ -106,6 +113,7 @@ export function isGameInProgress(g: GameState) {
     g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison || p.energy || p.exp) ||
     g.monarch !== undefined ||
     g.initiative !== undefined ||
+    runsOf(g).some((r) => r.path.length || r.done) ||
     !!(g.timer && elapsed(g.timer) > 0)
   )
 }
@@ -145,6 +153,8 @@ function PlayerPanel({
   extras,
   holds,
   take,
+  dungeon,
+  openDungeon,
 }: {
   idx: 0 | 1
   p: PlayerState
@@ -153,6 +163,8 @@ function PlayerPanel({
   extras: Extra[]
   holds: (k: 'monarch' | 'initiative') => boolean
   take: (k: 'monarch' | 'initiative') => void
+  dungeon?: string // where the player is, when dungeons are on
+  openDungeon: () => void
 }) {
   const { t } = useI18n()
   const [delta, setDelta] = useState(0)
@@ -216,7 +228,7 @@ function PlayerPanel({
           <span>+</span>
         </button>
       </div>
-      {(['monarch', 'initiative'] as const).some((k) => extras.includes(k)) && (
+      {(['monarch', 'initiative'] as const).some((k) => extras.includes(k) || dungeon) && (
         <div className="tokens">
           {(['monarch', 'initiative'] as const)
             .filter((k) => extras.includes(k))
@@ -225,6 +237,11 @@ function PlayerPanel({
                 <Icon name={k === 'monarch' ? 'crown' : 'door'} size={14} /> {t(EXTRA_KEY[k])}
               </button>
             ))}
+          {dungeon && (
+            <button className="token dg" onClick={openDungeon}>
+              <Icon name="map" size={14} /> {dungeon}
+            </button>
+          )}
         </div>
       )}
       <div className="counters">
@@ -333,6 +350,8 @@ export default function LifeCounter({
   const [history, setHistory] = useState(false)
   const [lookup, setLookup] = useState(false) // a card's text and rulings, without leaving the game
   useBackCloses(history, () => setHistory(false))
+  const [dungeonFor, setDungeonFor] = useState<0 | 1 | null>(null)
+  useBackCloses(dungeonFor !== null, () => setDungeonFor(null))
   const [recording, setRecording] = useState(false)
   const [roll, setRoll] = useState<Roll | null>(null)
   const [banner, setBanner] = useState('')
@@ -415,13 +434,30 @@ export default function LifeCounter({
 
   // the counters on for this game; monarch and initiative belong to one player at a time: tapping the holder's frees it
   const extras = extrasOf(game)
+  // each player's dungeon: on its own, or with the initiative, which ventures into the Undercity
+  const runs = runsOf(game)
+  const dungeonsOn = extras.includes('dungeon') || extras.includes('initiative')
+  const where = (run: DungeonRun) => {
+    const here = run.path[run.path.length - 1]
+    if (here === undefined) return t('life.dungeon')
+    return `${DUNGEONS[run.d].short} · ${here === lastRoom(run.d) ? t('dg.doneShort') : DUNGEONS[run.d].rooms[here].name}`
+  }
   const tokens = (i: 0 | 1) => ({
     extras,
     holds: (k: 'monarch' | 'initiative') => game[k] === i,
     take: (k: 'monarch' | 'initiative') => {
       haptic()
-      setGame((g) => ({ ...g, [k]: g[k] === i ? undefined : i }))
+      const taking = k === 'initiative' && game.initiative !== i
+      setGame((g) => {
+        const rs: [DungeonRun, DungeonRun] = [...runsOf(g)]
+        // taking the initiative ventures into the Undercity, unless already in a dungeon
+        if (taking && !rs[i].path.length) rs[i] = { ...rs[i], d: 'undercity' }
+        return { ...g, [k]: g[k] === i ? undefined : i, dungeons: rs }
+      })
+      if (taking) setDungeonFor(i)
     },
+    dungeon: dungeonsOn ? where(runs[i]) : undefined,
+    openDungeon: () => setDungeonFor(i),
   })
   const toggleExtra = (x: Extra) => setGame((g) => {
     const on = extrasOf(g)
@@ -507,6 +543,14 @@ export default function LifeCounter({
       )}
 
       <CardLookupSheet open={lookup} onClose={() => setLookup(false)} />
+      {dungeonFor !== null && (
+        <DungeonSheet
+          who={dungeonFor}
+          runs={runs}
+          set={(p, run) => setGame((g) => ({ ...g, dungeons: runsOf(g).map((r, i) => (i === p ? run : r)) as GameState['dungeons'] }))}
+          onClose={() => setDungeonFor(null)}
+        />
+      )}
 
       {history && (
         <div className="roll-overlay dim" onClick={() => setHistory(false)}>

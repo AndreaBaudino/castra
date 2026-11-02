@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { buildCircuit, parseEventName, playerKey, potyStatus } from './circuit'
 import { type DeckCard, logChange, parseDecklist } from './decks'
 import { parseCsv } from './meta'
+import { DUNGEONS } from './dungeons'
 import { readStored, writeStored } from './storage'
 
 // The text the app reads from outside (pasted lists, the circuit sheet): a change of format must fail here,
@@ -158,5 +159,19 @@ describe('logChange', () => {
     expect(h).toEqual([{ at: day.toISOString(), cards: { Brainstorm: 1 } }])
     expect(logChange(h, added, deck, new Date('2026-11-03T10:00:00'))[0].cards).toEqual({ 'Mana Vault': -1 })
     expect(logChange(h, [...deck, card('Brainstorm')], deck, day)).toEqual([])
+  })
+})
+
+describe('dungeons', () => {
+  it('lead from the entrance to the last room through rooms that exist, inside the card', () => {
+    for (const { rooms } of Object.values(DUNGEONS)) {
+      const seen = new Set([0])
+      rooms.forEach((r, i) => {
+        r.next.forEach((n) => (expect(n).toBeGreaterThan(i), expect(n).toBeLessThan(rooms.length), seen.add(n)))
+        expect(r.at.every((v) => v >= 0 && v <= 100)).toBe(true)
+      })
+      expect(seen.size).toBe(rooms.length) // every room can be reached
+      expect(rooms[rooms.length - 1].next).toEqual([])
+    }
   })
 })
