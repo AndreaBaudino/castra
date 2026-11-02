@@ -41,6 +41,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['push-sw.js'], // push notifications
         runtimeCaching: [
           {
             // card images: cache-first, they never change

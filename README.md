@@ -127,6 +127,26 @@ Per pubblicare usa un account di servizio, da creare una volta sola:
 
 Senza il secret il job di pubblicazione fallisce con un messaggio che lo dice, e le regole restano quelle di prima.
 
+### Notifiche
+
+Chi ha un account può accendere nelle Preferenze le notifiche sul telefono: classifica del circuito (la sera, se è
+cambiata la sua posizione o quella di chi segue), banlist (la mattina dopo un aggiornamento) e, per gli admin, area
+admin (segnalazioni e nuovi collegamenti, mattina e sera). Gli interruttori valgono per l'account; il permesso del
+telefono va dato su ogni dispositivo, che salva il suo token in `users/{uid}/devices`.
+
+Le manda il workflow **Push notifications** (`.github/workflows/notify.yml`, script `scripts/notify.mjs`) alle 9:07 e
+alle 19:37 (ora italiana d'inverno, un'ora dopo con l'ora legale). Ogni giro confronta con quello che ha visto il
+giro prima (`notify/state` su Firestore): il primo giro registra solo lo stato e non manda niente. Setup una tantum:
+
+1. All'account di servizio delle regole (`github-rules`, vedi sopra) aggiungi i ruoli **Utente Cloud Datastore**
+   (Cloud Datastore User) e **Amministratore API Firebase Cloud Messaging** (Firebase Cloud Messaging API Admin).
+2. In Firebase, **Project settings → Cloud Messaging**: "Firebase Cloud Messaging API (V1)" deve risultare abilitata.
+3. Prova da **Actions → Push notifications → Run workflow** con "Solo prova" spuntato: il log elenca le notifiche
+   che manderebbe, senza mandarle.
+
+GitHub sospende i workflow programmati dopo 60 giorni senza commit nel repository: in quel caso si riattivano da
+Actions con un clic.
+
 ### Admin
 
 Gli account admin vedono **Area admin** nel Profilo: l'elenco dei giocatori del circuito collegati a un account, con

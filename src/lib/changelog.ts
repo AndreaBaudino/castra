@@ -10,9 +10,13 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-02',
     it: [
+      'Notifiche sul telefono, anche ad app chiusa: in Preferenze si accendono per la classifica del circuito (la sera, solo se è cambiata la tua posizione o quella di chi segui) e per la banlist (la mattina dopo un aggiornamento). Toccandole si apre la classifica centrata su di te o la Home. Valgono per l\'account; serve aver fatto l\'accesso e, su iPhone, avere Castra installata nella schermata Home',
+      'Preferenze: "Avvisi di classifica" ora si chiama "Riquadro in Home", per distinguerlo dalle notifiche',
       'Segnalazioni dall\'app: in Profilo "Segnala un problema o un\'idea" e, sulle pagine di giocatori, comandanti, tornei ed eventi, la bandierina accanto a Condividi per dire che un dato è sbagliato (la pagina va insieme al messaggio). Scegli il tipo, scrivi e, se vuoi, lascia che ti rispondano alla tua email; serve aver fatto l\'accesso. Non serve più un account GitHub',
     ],
     en: [
+      'Phone notifications, even with the app closed: turn them on in Preferences for the circuit ranking (in the evening, only when your position or a followed player\'s changed) and for the banlist (the morning after an update). Tapping them opens the ranking centred on you or the home. They apply to the account; you need to be signed in and, on iPhone, to have Castra on the Home Screen',
+      'Preferences: "Ranking alerts" is now called "Card on the home", to tell it from the notifications',
       'Reports from the app: "Report a problem or an idea" in the Profile and, on player, commander, tournament and event pages, a flag next to Share to tell that something is wrong (the page goes with the message). Pick the kind, write and, if you like, let them answer you by email; you need to be signed in. A GitHub account is no longer needed',
     ],
   },

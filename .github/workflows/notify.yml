@@ -1,0 +1,44 @@
+name: Push notifications
+
+# scripts/notify.mjs: in the morning the banlist and the admin area, in the evening the circuit and the admin area.
+# Times are UTC: 9:07 and 19:37 in Italy in winter, an hour later with summer time. It uses the same service account
+# as the rules (FIREBASE_SERVICE_ACCOUNT), with two more roles: see the README ("Notifiche").
+
+on:
+  schedule:
+    - cron: '7 8 * * *'
+    - cron: '37 18 * * *'
+  workflow_dispatch:
+    inputs:
+      run:
+        description: Quale giro
+        type: choice
+        options: [evening, morning]
+      dry:
+        description: Solo prova (scrive le notifiche nel log, non le manda e non salva niente)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency: notify
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm i --no-save firebase-admin@13
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - run: npx vite-node scripts/notify.mjs "$RUN" $DRY
+        env:
+          RUN: ${{ inputs.run || (github.event.schedule == '7 8 * * *' && 'morning' || 'evening') }}
+          DRY: ${{ inputs.dry && '--dry' || '' }}

@@ -133,4 +133,10 @@ await allowed('marking a report done, by an admin', updateDoc(doc(carol, 'feedba
 await denied('an admin changing the text', updateDoc(doc(carol, 'feedback', 'r1'), { text: 'x' }))
 await allowed('deleting a report, by an admin', deleteDoc(doc(carol, 'feedback', 'r1')))
 
+// notifications: each device saves its token under its own account (src/lib/push.ts); what scripts/notify.mjs saw
+// is for that script only
+await allowed('saving your device for notifications', setDoc(doc(dave, 'users', 'dave', 'devices', 'tok'), { at: 'x' }))
+await denied("saving a device in someone else's account", setDoc(doc(dave, 'users', 'alice', 'devices', 'tok'), { at: 'x' }))
+await denied('reading what the notifications saw', getDoc(doc(carol, 'notify', 'state')))
+
 await env.cleanup()

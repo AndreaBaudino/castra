@@ -37,7 +37,7 @@ async function wipe(user: AppUser, claimedPlayer: string | null): Promise<Delete
   const { auth, authMod, db, fs } = await fb()
   const current = auth.currentUser!
   const refs = []
-  for (const name of ['decks', 'matches']) {
+  for (const name of ['decks', 'matches', 'devices']) {
     const snap = await fs.getDocs(fs.collection(db, 'users', user.uid, name))
     refs.push(...snap.docs.map((d) => d.ref))
   }

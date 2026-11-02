@@ -80,7 +80,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - `sources.ts` / `aliases.ts`: elenco dei fogli dei tornei e correzioni dei nomi, gestiti dall'area admin.
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
-  `longPress.ts`, `sound.ts`, `changelog.ts`.
+  `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate
+  da `scripts/notify.mjs` con `notify.yml`, che usa il codice di `src/lib` tramite `vite-node`).
 
 ### Navigazione (App.tsx)
 - Route nell'hash: `#tab` o `#tab/sottopagina`. Tab: `home`, `meta` (si chiama "Circuito" in UI), `game`, `stats`,

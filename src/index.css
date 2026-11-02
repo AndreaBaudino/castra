@@ -3059,6 +3059,15 @@ textarea {
   padding: 8px 0;
 }
 /* reports: the sheet that sends them and the admins' list */
+/* what the notifications send, before the phone asks for the permission */
+.perm-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
 .fb-kinds {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

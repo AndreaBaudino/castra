@@ -3,6 +3,7 @@ import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
 import { syncPaused, useCollectionSync, useDocFieldSync } from './lib/sync'
 import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
+import { enablePush, pushBlock } from './lib/push'
 import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
 import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
 import type { Deck } from './lib/decks'
@@ -80,6 +81,11 @@ export default function App() {
   useDocFieldSync(uid, 'lang', lang, setLang)
   useDocFieldSync(uid, 'circuitMe', circuitMe, setCircuitMe)
   useDocFieldSync(uid, 'circuitFollow', follow, setFollow)
+  // a device's token can change: saved again at start while notifications are on and allowed
+  const notify = prefs.notifyCircuit || prefs.notifyBanlist || prefs.notifyAdmin
+  useEffect(() => {
+    if (uid && notify && !pushBlock() && Notification.permission === 'granted') enablePush(uid).catch(() => {})
+  }, [uid, notify])
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
@@ -121,8 +127,13 @@ export default function App() {
   // where we're going once history.go() has rewound to the home entry
   const pending = useRef<Route | null>(null)
   useEffect(() => {
+    // opened from a ranking notification (public/push-sw.js): the overall ranking, centred on the user
+    if (location.search === '?ranking') {
+      history.replaceState(null, '', location.pathname)
+      openRanking()
+    }
     // opened straight on a page (a link, the installed app): put home and the main page underneath
-    if (!history.state?.main && !history.state?.sub) land(fromHash())
+    else if (!history.state?.main && !history.state?.sub) land(fromHash())
     const onPop = () => {
       if (pending.current) land(pending.current)
       else setRoute(fromHash())
@@ -130,7 +141,7 @@ export default function App() {
     }
     addEventListener('popstate', onPop)
     return () => removeEventListener('popstate', onPop)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // on a desktop the circuit and the decks show the list and the open page side by side: moving between pages
   // of the same list scrolls only the open page, so the list stays where it was
   const detail = useRef<HTMLDivElement>(null)

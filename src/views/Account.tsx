@@ -13,7 +13,7 @@ import { deleteAccount } from '../lib/account'
 import { backupName, csvName, download, makeBackup, matchesCsv, mergeById, parseBackup } from '../lib/backup'
 import { CHANGELOG } from '../lib/changelog'
 import { BANLIST_URL, FORMAT_SITE_URL, PRIVACY_URL } from '../config'
-import { Icon } from '../components/ui'
+import { Icon, Sheet } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { ClaimBadge, type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
 import { newClaims, useIsAdmin } from '../lib/admin'
@@ -23,6 +23,7 @@ import { LoginForm } from '../components/LoginForm'
 import { FeedbackSheet } from '../components/Feedback'
 import type { Feedback } from '../lib/feedback'
 import { cloudEnabled, useLiveCollection } from '../lib/firebase'
+import { dropPush, enablePush, pushBlock } from '../lib/push'
 
 function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -233,7 +234,91 @@ function CircuitIdentity({
   )
 }
 
-function Preferences({ prefs, setPrefs }: { prefs: Prefs; setPrefs: (fn: (p: Prefs) => Prefs) => void }) {
+type Notify = 'notifyCircuit' | 'notifyBanlist' | 'notifyAdmin'
+
+/** The push notifications of the account: the first one turned on explains them before the phone asks. */
+function Notifications({ uid, isAdmin, prefs, set }: { uid: string | null; isAdmin: boolean; prefs: Prefs; set: (k: Notify, v: boolean) => void }) {
+  const { t } = useI18n()
+  const dialog = useDialog()
+  const [asking, setAsking] = useState<Notify | null>(null)
+  const [block, setBlock] = useState(pushBlock)
+  const [busy, setBusy] = useState(false)
+
+  const activate = async (k: Notify) => {
+    setBusy(true)
+    try {
+      if (await enablePush(uid!)) set(k, true)
+    } catch {
+      await dialog.alert(t('push.error'))
+    } finally {
+      setBusy(false)
+      setBlock(pushBlock())
+    }
+  }
+  const turn = (k: Notify) => (on: boolean) => {
+    if (busy) return
+    if (!on) return set(k, false)
+    if (Notification.permission === 'granted') activate(k)
+    else setAsking(k)
+  }
+  const kinds: Notify[] = isAdmin ? ['notifyCircuit', 'notifyBanlist', 'notifyAdmin'] : ['notifyCircuit', 'notifyBanlist']
+
+  return (
+    <>
+      <div className="pref-group">{t('push.title')}</div>
+      {!uid ? (
+        <div className="notice">{t('push.signIn')}</div>
+      ) : block ? (
+        <div className={`notice ${block === 'denied' ? 'warn' : ''}`}>{t(`push.${block}`)}</div>
+      ) : (
+        <>
+          {kinds.map((k) => (
+            <Toggle key={k} label={t(`push.${k}`)} hint={t(`push.${k}.hint`)} on={prefs[k]} set={turn(k)} />
+          ))}
+          <p className="muted small no-margin">{t('push.hint')}</p>
+        </>
+      )}
+      <Sheet open={!!asking} onClose={() => setAsking(null)} title={t('push.ask')}>
+        <div className="form">
+          <p className="no-margin">{t('push.askText')}</p>
+          <ul className="perm-list">
+            {kinds.map((k) => (
+              <li key={k}>
+                <strong>{t(`push.${k}`)}</strong>: {t(`push.${k}.ask`)}
+              </li>
+            ))}
+          </ul>
+          <p className="muted small no-margin">{t('push.askNote')}</p>
+          <button
+            className="btn primary"
+            onClick={() => {
+              const k = asking!
+              setAsking(null)
+              activate(k)
+            }}
+          >
+            {t('push.enable')}
+          </button>
+          <button className="btn ghost" onClick={() => setAsking(null)}>
+            {t('push.later')}
+          </button>
+        </div>
+      </Sheet>
+    </>
+  )
+}
+
+function Preferences({
+  prefs,
+  setPrefs,
+  uid,
+  isAdmin,
+}: {
+  prefs: Prefs
+  setPrefs: (fn: (p: Prefs) => Prefs) => void
+  uid: string | null
+  isAdmin: boolean
+}) {
   const { t, lang, setLang } = useI18n()
   const set = <K extends keyof Prefs>(k: K) => (v: Prefs[K]) => setPrefs((p) => ({ ...p, [k]: v }))
   return (
@@ -264,6 +349,7 @@ function Preferences({ prefs, setPrefs }: { prefs: Prefs; setPrefs: (fn: (p: Pre
       <Toggle label={t('account.haptics')} hint={t('account.hapticsHint')} on={prefs.haptics} set={set('haptics')} />
       <div className="pref-group">{t('circuit.title')}</div>
       <Toggle label={t('account.alerts')} hint={t('account.alertsHint')} on={prefs.circuitAlerts} set={set('circuitAlerts')} />
+      <Notifications uid={uid} isAdmin={isAdmin} prefs={prefs} set={(k, v) => set(k)(v)} />
       <div className="pref-group">{t('common.lang')}</div>
       <div className="seg wide">
         {(['it', 'en'] as const).map((l) => (
@@ -629,6 +715,7 @@ export default function Account({
                 className="menu-row danger"
                 onClick={async () => {
                   if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
+                  await dropPush(user.uid)
                   await signOut()
                   onSignOut()
                 }}
@@ -644,7 +731,7 @@ export default function Account({
       ) : section === 'circuit' ? (
         <CircuitIdentity circuit={circuit} cp={circuitPrefs} openPlayer={openPlayer} findMe={findMe} />
       ) : section === 'prefs' ? (
-        <Preferences prefs={prefs} setPrefs={setPrefs} />
+        <Preferences prefs={prefs} setPrefs={setPrefs} uid={user?.uid ?? null} isAdmin={isAdmin} />
       ) : section === 'look' ? (
         <ThemeEditor theme={theme} setTheme={setTheme} />
       ) : section === 'data' ? (
