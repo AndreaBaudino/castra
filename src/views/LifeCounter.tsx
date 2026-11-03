@@ -21,6 +21,9 @@ import { useDialog } from '../components/Dialog'
 import { CardLookupSheet } from './Cards'
 import { DungeonSheet } from '../components/DungeonSheet'
 import { DUNGEONS, type DungeonRun, lastRoom } from '../lib/dungeons'
+import { ROUND_MINUTES, sideScore, unconfirmed, useTournament } from '../lib/tournaments'
+import type { Score } from '../lib/swiss'
+import { ResultSheet } from './Organizer'
 
 export interface PlayerState {
   life: number
@@ -43,6 +46,16 @@ const EXTRA_KEY = {
   dungeon: 'life.dungeon',
 } as const
 
+/** A tournament match opened from the home (docs/tornei.md): the round's clock, and the result goes to the tournament.
+ * The match reaches the stats only with the tournament's own record, once over: never recorded here, never twice. */
+export interface TourGame {
+  id: string
+  round: number
+  me: string // the circuit player
+  verified: boolean // otherwise the TO enters the results
+  games: Score // the games over so far: won, lost, drawn
+}
+
 export interface GameState {
   startLife: number
   players: [PlayerState, PlayerState]
@@ -53,6 +66,7 @@ export interface GameState {
   monarch?: 0 | 1 // the player who holds it
   initiative?: 0 | 1
   dungeons?: [DungeonRun, DungeonRun]
+  tour?: TourGame
 }
 
 const outside: DungeonRun = { d: 'undercity', path: [], done: 0 }
@@ -353,10 +367,22 @@ export default function LifeCounter({
   const [dungeonFor, setDungeonFor] = useState<0 | 1 | null>(null)
   useBackCloses(dungeonFor !== null, () => setDungeonFor(null))
   const [recording, setRecording] = useState(false)
+  const [reporting, setReporting] = useState(false) // a tournament match's result
   const [roll, setRoll] = useState<Roll | null>(null)
   const [banner, setBanner] = useState('')
   const [, tick] = useState(0)
-  const timer = game.timer ?? freshTimer()
+  const stored = game.timer ?? freshTimer()
+  // a tournament match (opened from the home) follows the live round: its clock runs on its own, with the minutes
+  // the TO added to the table, and the result goes to the tournament
+  const tg = game.tour
+  const live = useTournament(tg?.id ?? null)
+  const tm = tg && live.matches.find((x) => x.round === tg.round && (x.p1 === tg.me || x.p2 === tg.me))
+  const flip = tm?.p2 === tg?.me
+  const started = tg && live.t?.round === tg.round ? live.t.started : null
+  const clock = tg ? { ...settings, mainMin: ROUND_MINUTES } : settings
+  const round = started && { ...stored, elapsedMs: 0, runningSince: started.toMillis(), addedMs: (tm?.extra ?? 0) * 60_000 }
+  // the alarm rang with these minutes: more minutes from the TO give it back
+  const timer: TimerState = round ? { ...round, alerted: stored.addedMs === round.addedMs ? stored.alerted : 'none' } : stored
 
   // keep the screen awake during the game (unless turned off in the account's preferences)
   useEffect(() => {
@@ -385,20 +411,21 @@ export default function LifeCounter({
     if (!timer.runningSince) return
     const id = setInterval(() => {
       tick((n) => n + 1)
-      if (phaseOf(timer, settings).kind === 'turns' && timer.alerted !== 'turns') {
+      if (phaseOf(timer, clock).kind === 'turns' && timer.alerted !== 'turns') {
         if (settings.sound) playAlarm()
         setBanner(`${t('timer.timeUp')} ${t('timer.turnsStart')}`)
         // the clock is done: freeze it at the end of the timed part
         setTimer((x) => ({
           ...x,
-          elapsedMs: totalMs(settings, x),
+          elapsedMs: totalMs(clock, x),
+          addedMs: timer.addedMs,
           runningSince: null,
           alerted: 'turns',
         }))
       }
     }, 250)
     return () => clearInterval(id)
-  }, [timer, settings]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [timer, clock]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!banner) return
@@ -408,6 +435,7 @@ export default function LifeCounter({
 
   const toggleTimer = () => {
     unlockAudio()
+    if (tg) return // the round's clock doesn't stop
     setTimer((x) =>
       x.runningSince ? { ...x, elapsedMs: elapsed(x), runningSince: null } : { ...x, runningSince: Date.now() },
     )
@@ -464,8 +492,9 @@ export default function LifeCounter({
     return { ...g, extras: on.includes(x) ? on.filter((y) => y !== x) : EXTRAS.filter((y) => y === x || on.includes(y)) }
   })
 
-  const reset = (startLife = game.startLife) => {
-    setGame(fresh(startLife))
+  // a new game of a tournament match stays in the match, with its clock
+  const reset = (startLife = game.startLife, games?: Score) => {
+    setGame((g) => (g.tour ? { ...fresh(startLife), timer: g.timer, tour: { ...g.tour, games: games ?? g.tour.games } } : fresh(startLife)))
     setMenu(false)
   }
 
@@ -473,6 +502,12 @@ export default function LifeCounter({
   const someoneDead = game.players.some(isDead)
   // the bottom player is assumed to be the phone's owner
   const suggested = isDead(game.players[1]) && !isDead(game.players[0]) ? 'L' : isDead(game.players[0]) && !isDead(game.players[1]) ? 'W' : undefined
+
+  // a tournament match: the score so far, this game included once over
+  const games = (tg?.games ?? [0, 0, 0]).map((v, i) => v + (someoneDead && i === (suggested === 'W' ? 0 : suggested === 'L' ? 1 : 2) ? 1 : 0)) as Score
+  // a result already confirmed can't be entered again
+  const canReport = !!(tg?.verified && tm && (!tm.score || unconfirmed(tm)))
+  const nameOf = (k: string | null) => (k ? (live.players.find(([p]) => p === k)?.[1].name ?? k) : t('meta.bye'))
 
   return (
     <div className="life-root">
@@ -487,7 +522,7 @@ export default function LifeCounter({
         </button>
         <TimerPill
           timer={timer}
-          settings={settings}
+          settings={clock}
           onToggle={toggleTimer}
           onTurn={(d) => setTimer((x) => ({ ...x, turn: Math.max(0, x.turn + d) }))}
         />
@@ -511,12 +546,32 @@ export default function LifeCounter({
           someoneDead && (
             <div className="game-end">
               <div className="game-end-title">{t(suggested === 'W' ? 'life.won' : suggested === 'L' ? 'life.youLost' : 'life.over')}</div>
-              <button className="btn game-end-btn" onClick={() => setRecording(true)}>
-                <Icon name="meta" size={16} /> {t('game.record')}
-              </button>
-              <button className="game-end-skip" onClick={() => reset()}>
-                {t('life.newNoRecord')}
-              </button>
+              {tg ? (
+                <>
+                  <div className="small">{t('life.tourScore', { s: sideScore(games, false) })}</div>
+                  {canReport ? (
+                    <button className="btn game-end-btn" onClick={() => setReporting(true)}>
+                      <Icon name="meta" size={16} /> {t('join.report')}
+                    </button>
+                  ) : (
+                    (!tg.verified || tm?.score) && (
+                      <div className="small">{tm?.score ? t('join.result', { s: sideScore(tm.score, flip) }) : t('join.toReports')}</div>
+                    )
+                  )}
+                  <button className="game-end-skip" onClick={() => reset(game.startLife, games)}>
+                    {t('life.nextGame')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn game-end-btn" onClick={() => setRecording(true)}>
+                    <Icon name="meta" size={16} /> {t('game.record')}
+                  </button>
+                  <button className="game-end-skip" onClick={() => reset()}>
+                    {t('life.newNoRecord')}
+                  </button>
+                </>
+              )}
             </div>
           )
         }
@@ -600,15 +655,46 @@ export default function LifeCounter({
         <div className="roll-overlay dim" onClick={() => setMenu(false)}>
           <div className="reset-card" onClick={(e) => e.stopPropagation()}>
             <strong>{t('game.settings')}</strong>
-            <button
-              className="btn primary"
-              onClick={() => {
-                setMenu(false)
-                setRecording(true)
-              }}
-            >
-              <Icon name="meta" size={16} /> {t('game.record')}
-            </button>
+            {tg ? (
+              <>
+                {tm && (
+                  <p className="muted small no-margin">
+                    {t('run.table', { n: tm.table })} · {t('join.against', { p: nameOf(flip ? tm.p1 : tm.p2) })} ·{' '}
+                    {t('life.tourScore', { s: sideScore(games, false) })}
+                  </p>
+                )}
+                {canReport && (
+                  <button
+                    className="btn primary"
+                    onClick={() => {
+                      setMenu(false)
+                      setReporting(true)
+                    }}
+                  >
+                    <Icon name="meta" size={16} /> {t('join.report')}
+                  </button>
+                )}
+                <button
+                  className="btn ghost"
+                  onClick={() => {
+                    setGame(fresh(game.startLife))
+                    setMenu(false)
+                  }}
+                >
+                  {t('life.tourLeave')}
+                </button>
+              </>
+            ) : (
+              <button
+                className="btn primary"
+                onClick={() => {
+                  setMenu(false)
+                  setRecording(true)
+                }}
+              >
+                <Icon name="meta" size={16} /> {t('game.record')}
+              </button>
+            )}
 
             <div className="menu-section">{t('life.extras')}</div>
             <div className="extra-chips">
@@ -619,24 +705,34 @@ export default function LifeCounter({
               ))}
             </div>
 
-            <div className="menu-section">{t('timer.added')}</div>
-            <Stepper
-              label={t('timer.addedHint')}
-              value={(timer.addedMs ?? 0) / 60_000}
-              min={0}
-              max={60}
-              set={(v) =>
-                setTimer((x) => {
-                  const next = { ...x, addedMs: v * 60_000 }
-                  // time given back after the clock ran out: back to the countdown (paused), alarm re-armed
-                  return elapsed(x) < totalMs(settings, next) ? { ...next, alerted: 'none' } : next
-                })
-              }
-            />
+            {!tg && (
+              <>
+                <div className="menu-section">{t('timer.added')}</div>
+                <Stepper
+                  label={t('timer.addedHint')}
+                  value={(timer.addedMs ?? 0) / 60_000}
+                  min={0}
+                  max={60}
+                  set={(v) =>
+                    setTimer((x) => {
+                      const next = { ...x, addedMs: v * 60_000 }
+                      // time given back after the clock ran out: back to the countdown (paused), alarm re-armed
+                      return elapsed(x) < totalMs(settings, next) ? { ...next, alerted: 'none' } : next
+                    })
+                  }
+                />
+              </>
+            )}
 
             <div className="menu-section">{t('timer.title')}</div>
-            <Stepper label={t('timer.main')} value={settings.mainMin} min={5} max={120} step={5} set={(v) => setSettings((s) => ({ ...s, mainMin: v }))} />
-            <Stepper label={t('timer.extraTurns')} value={settings.extraTurns} min={0} max={10} set={(v) => setSettings((s) => ({ ...s, extraTurns: v }))} />
+            {tg ? (
+              <div className="muted small">{t('life.tourClock')}</div>
+            ) : (
+              <>
+                <Stepper label={t('timer.main')} value={settings.mainMin} min={5} max={120} step={5} set={(v) => setSettings((s) => ({ ...s, mainMin: v }))} />
+                <Stepper label={t('timer.extraTurns')} value={settings.extraTurns} min={0} max={10} set={(v) => setSettings((s) => ({ ...s, extraTurns: v }))} />
+              </>
+            )}
             <div className="stepper">
               <span>{t('timer.sound')}</span>
               <div className="seg">
@@ -647,10 +743,14 @@ export default function LifeCounter({
                 ))}
               </div>
             </div>
-            <div className="muted small">{t('timer.hint')}</div>
-            <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
-              {t('timer.resetTimer')}
-            </button>
+            {!tg && (
+              <>
+                <div className="muted small">{t('timer.hint')}</div>
+                <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
+                  {t('timer.resetTimer')}
+                </button>
+              </>
+            )}
 
             <div className="menu-section">{t('life.startLife')}</div>
             <div className="seg">
@@ -692,6 +792,22 @@ export default function LifeCounter({
             setBanner(t('match.saved'))
           }}
         />
+        {tg && (
+          <ResultSheet
+            id={tg.id}
+            match={reporting && tm ? tm : null}
+            cut={live.t?.status === 'cut'}
+            nameOf={nameOf}
+            me={tg.me}
+            initial={flip ? [games[1], games[0], games[2]] : games}
+            onClose={() => setReporting(false)}
+            onSaved={() => {
+              // the match is over here: it reaches the stats with the tournament's record
+              setGame(fresh(game.startLife))
+              setBanner(t('join.reportHint', { p: nameOf(flip ? tm!.p1 : tm!.p2) }))
+            }}
+          />
+        )}
       </div>
     </div>
   )

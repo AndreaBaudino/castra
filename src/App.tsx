@@ -322,6 +322,7 @@ export default function App() {
                   openLive={openLive}
                   login={() => go('account', 'login', true)}
                   linkPlayer={() => go('account', 'circuit', true)}
+                  openGame={() => go('game')}
                   record={(ms) =>
                     setMatches((all) => {
                       const have = new Set(all.map((m) => m.id))

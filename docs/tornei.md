@@ -124,8 +124,12 @@ scrivere codice. I mockup delle schermate sono su
   già stati segnati e andranno persi, rifà gli abbinamenti e fa ripartire il timer da 50 minuti.
 - **Torneo annullato**: finché non è pubblicato sul foglio, il TO o un admin può cancellarlo e il torneo registrato
   torna disponibile.
-- Abbinamenti e classifica si calcolano sul telefono del TO (non c'è un server). "Apri partita" (nel life counter con
-  avversario e timer già allineati al turno) è rimandato: vedi "In sospeso".
+- Abbinamenti e classifica si calcolano sul telefono del TO (non c'è un server).
+- **"Apri partita"** (card del torneo in Home): il life counter si collega al match del turno. Il timer è quello del
+  turno (50 minuti più quelli aggiunti dal TO al tavolo) e non si ferma; a fine game "Prossima partita del match"
+  tiene il conto dei game. "Segna risultato" apre il risultato del torneo già compilato e l'avversario lo conferma come
+  sempre. Il life counter non registra la partita tra quelle del giocatore: ci arriva una volta sola, a torneo
+  concluso, con le altre del torneo. Senza profilo verificato i risultati li segna il TO; dal menu si esce dal match.
 - Riaprendo l'app si ritrova la situazione attuale (tutto è su Firestore); se il telefono perde la rete si
   riallinea appena torna.
 - **Notifiche push**: quelle che esistono partono da un workflow di GitHub due volte al giorno, quindi non servono
@@ -255,13 +259,11 @@ torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le p
    comandante dal mazzo di Castra e decklist Moxfield privata.
 4. **Pubblicazione** (fatta): script Apps Script che scrive nel foglio ("Pubblica sul foglio", con i test in
    `src/lib/appsScript.test.ts`), decklist pubbliche nella classifica finale e, dalla colonna I, nel meta; partite
-   personali registrate da sole; "I miei match" e tavolo evidenziato nella pagina da spettatore. Rimandato: "Apri
-   partita" (vedi sopra).
+   personali registrate da sole; "I miei match" e tavolo evidenziato nella pagina da spettatore; "Apri partita" nel
+   life counter (vedi sopra).
 
 ## 11. In sospeso
 
 - Comitato: top cut nelle V/S/P e i tre fogli strani (Cogoleto, Damnation Lucca, Paupergeddon).
 - Proprietario: nuova versione dello script con il permesso di modifica dei fogli, e il suo URL in `PUBLISH_URL`.
-- "Apri partita": il life counter con il timer del turno. Va deciso come salvare quella partita, che altrimenti si
-  aggiungerebbe a quella registrata dal torneo.
 - POTY: se è un torneo a sé, un tipo in più.

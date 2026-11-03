@@ -4,6 +4,8 @@ import type { AppUser } from '../lib/auth'
 import type { Claim } from '../lib/claims'
 import type { Deck } from '../lib/decks'
 import type { Match as Played } from '../lib/matches'
+import { readStored, writeStored } from '../lib/storage'
+import { freshTimer } from '../lib/timer'
 import { placeLabel } from './Circuit'
 import {
   type Player,
@@ -33,6 +35,7 @@ import { Icon, Sheet } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { commanderNames } from './Decks'
 import { CommanderInput, ResultSheet } from './Organizer'
+import { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './LifeCounter'
 
 // The players' side of the tournaments run in the app (docs/tornei.md): on the home, the row to type a tournament's
 // code, and the card of the tournament they're registering for or playing: registration (commander, deck, decklist),
@@ -48,6 +51,7 @@ interface Me {
   login: () => void
   linkPlayer: () => void
   record: (ms: Played[]) => void // into the player's own matches, skipping the ones already there
+  openGame: () => void // the life counter
 }
 
 /** The cards of the account's tournaments and of the one whose code was typed, then the row for a code. */
@@ -110,7 +114,7 @@ function Clock({ tour, extra }: { tour: Tournament; extra?: number }) {
   return <b className={`to-score ${(left ?? 1) <= 0 ? 'bad-text' : ''}`}>{clockLabel(left, t)}</b>
 }
 
-function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLive, login, linkPlayer, record }: Me & { id: string; typed: boolean; close: () => void }) {
+function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLive, login, linkPlayer, record, openGame }: Me & { id: string; typed: boolean; close: () => void }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
   const { t: tour, players, matches } = useTournament(id)
@@ -257,6 +261,18 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
 
   // playing
   const current = m
+  // the life counter on this match, with the round's clock: its result goes to the tournament (docs/tornei.md)
+  const play = async () => {
+    const g = readStored<GameState>(GAME_KEY, defaultGame())
+    if (g.tour?.id !== id || g.tour.round !== tour.round) {
+      if (isGameInProgress(g) && !(await dialog.confirm(t('join.playReplace'), { ok: t('join.play') }))) return
+      // opened once the time is up: no alarm (unless the TO adds minutes)
+      const up = (timeLeft(tour, Date.now(), current?.extra) ?? 1) <= 0
+      const timer = { ...freshTimer(), addedMs: (current?.extra ?? 0) * 60_000, alerted: up ? 'turns' : 'none' } as const
+      writeStored<GameState>(GAME_KEY, { ...defaultGame(), timer, tour: { id, round: tour.round, me: me!, verified, games: [0, 0, 0] } })
+    }
+    openGame()
+  }
   return (
     <section className="card my-tour">
       {title}
@@ -275,11 +291,21 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
           </p>
           {!current.score ? (
             verified ? (
-              <button className="btn primary" disabled={busy} onClick={() => setResult(current)}>
-                {t('join.report')}
-              </button>
+              <div className="btn-pair">
+                <button className="btn ghost" onClick={play}>
+                  {t('join.play')}
+                </button>
+                <button className="btn primary" disabled={busy} onClick={() => setResult(current)}>
+                  {t('join.report')}
+                </button>
+              </div>
             ) : (
-              <p className="muted small no-margin">{t('join.toReports')}</p>
+              <>
+                <p className="muted small no-margin">{t('join.toReports')}</p>
+                <button className="btn ghost" onClick={play}>
+                  {t('join.play')}
+                </button>
+              </>
             )
           ) : unconfirmed(current) && current.reportedBy === me ? (
             <>

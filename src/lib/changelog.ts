@@ -10,9 +10,11 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-03',
     it: [
+      'Tornei in app: "Apri partita" nella card del torneo in Home apre il contapunti sul tuo match, con il tempo del turno (anche i minuti aggiunti dal TO). A fine game "Prossima partita del match" tiene il conto, e "Segna risultato" manda al torneo il risultato già compilato, che l\'avversario conferma. Il match finisce tra le tue partite una volta sola, a torneo concluso',
       'Area admin, Tornei: per un livello 1 nuovo "Crea il foglio dal modello" copia il modello ufficiale con nome e data e aggiunge il torneo all\'elenco, senza preparare il foglio a mano. "Elimina il foglio" lo sposta nel cestino, se è ancora vuoto e il torneo non è stato aperto in app',
     ],
     en: [
+      'Tournaments in the app: "Open match" on the tournament card in Home opens the life counter on your match, with the round\'s clock (including the minutes the TO added). After each game "Next game of the match" keeps the count, and "Enter result" sends the tournament the result already filled in, for your opponent to confirm. The match reaches your games only once, when the tournament is over',
       'Admin area, Tournaments: for a new level 1, "Create the sheet from the template" copies the official template with the name and date and adds the tournament to the list, with no sheet to prepare by hand. "Delete the sheet" moves it to the bin, while still empty and never opened in the app',
     ],
   },

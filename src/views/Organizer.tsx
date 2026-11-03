@@ -768,6 +768,8 @@ export function ResultSheet({
   nameOf,
   onClose,
   me,
+  initial,
+  onSaved,
 }: {
   id: string
   match: TableMatch | null
@@ -775,6 +777,8 @@ export function ResultSheet({
   nameOf: (k: string | null) => string
   onClose: () => void
   me?: string
+  initial?: Score // the games counted on the life counter
+  onSaved?: () => void
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
@@ -782,8 +786,9 @@ export function ResultSheet({
   const [busy, setBusy] = useState(false)
   const flip = !!me && match?.p2 === me
   useEffect(() => {
-    if (match) setS(match.score ?? (flip ? [0, 2, 0] : [2, 0, 0]))
-  }, [match]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (match) setS(initial ?? match.score ?? (flip ? [0, 2, 0] : [2, 0, 0]))
+    // once per opening: the live match changes with every result entered at the other tables
+  }, [match && `${match.round}-${match.table}`]) // eslint-disable-line react-hooks/exhaustive-deps
   const ok = validScore(s) && (!cut || winnerOf(s) !== 0)
   const run = async (fn: () => Promise<void>, close = true) => {
     setBusy(true)
@@ -821,7 +826,16 @@ export function ResultSheet({
           {!ok && <p className="bad-text small no-margin">{t(validScore(s) ? 'run.cutNeedsWinner' : 'run.notBo3')}</p>}
           {!me && unconfirmed(match) && <p className="muted small no-margin">{t('run.reportedBy', { p: nameOf(match.reportedBy!) })}</p>}
           {me && <p className="muted small no-margin">{t('join.reportHint', { p: nameOf(match.p1 === me ? match.p2 : match.p1) })}</p>}
-          <button className="btn primary" disabled={busy || !ok} onClick={() => run(() => (me ? reportScore(id, match, s, me) : setScore(id, match, s)))}>
+          <button
+            className="btn primary"
+            disabled={busy || !ok}
+            onClick={() =>
+              run(async () => {
+                await (me ? reportScore(id, match, s, me) : setScore(id, match, s))
+                onSaved?.()
+              })
+            }
+          >
             {t('run.saveResult')}
           </button>
           {!me && (
