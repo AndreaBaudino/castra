@@ -352,10 +352,13 @@ export async function setExtra(id: string, m: TableMatch, minutes: number) {
 
 /**
  * Writes a round's pairings and starts its clock, in one go: every phone sees them at once. The round's matches
- * already there go (pairing a round again after a mistake).
+ * already there go (pairing a round again after a mistake). A transaction, not a batch: it fails ('stale') when the
+ * tournament is no longer at the round `seen` (another phone moved it on), and it fails offline instead of waiting in
+ * the queue, where it would replace a round already being played once back online.
  */
 async function writeRound(
   id: string,
+  seen: number,
   round: number,
   pairs: [string, string | null][],
   old: TableMatch[],
@@ -363,20 +366,22 @@ async function writeRound(
   gone: string[] = [],
 ) {
   const { db, fs } = await fb()
-  const batch = fs.writeBatch(db)
-  for (const m of old) if (m.round === round) batch.delete(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)))
-  for (const key of gone) {
-    batch.delete(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
-    batch.delete(fs.doc(db, 'tournaments', id, 'players', key))
-  }
-  let table = 0
-  for (const [p1, p2] of pairs) {
-    const n = p2 ? ++table : 0
-    const m: TableMatch = { round, table: n, p1, p2, score: null }
-    batch.set(fs.doc(db, 'tournaments', id, 'matches', matchId(round, n)), m)
-  }
-  batch.update(fs.doc(db, 'tournaments', id), { ...patch, round, started: fs.serverTimestamp() })
-  await batch.commit()
+  const ref = fs.doc(db, 'tournaments', id)
+  await fs.runTransaction(db, async (tx) => {
+    if ((await tx.get(ref)).data()?.round !== seen) throw new Error('stale')
+    for (const m of old) if (m.round === round) tx.delete(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)))
+    for (const key of gone) {
+      tx.delete(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
+      tx.delete(fs.doc(db, 'tournaments', id, 'players', key))
+    }
+    let table = 0
+    for (const [p1, p2] of pairs) {
+      const n = p2 ? ++table : 0
+      const m: TableMatch = { round, table: n, p1, p2, score: null }
+      tx.set(fs.doc(db, 'tournaments', id, 'matches', matchId(round, n)), m)
+    }
+    tx.update(ref, { ...patch, round, started: fs.serverTimestamp() })
+  })
 }
 
 /** The next Swiss round; `again`: the current one paired again. */
@@ -385,19 +390,19 @@ export async function pairSwiss(id: string, t: Tournament, players: [string, Pla
   // round 1 closes registration: the code stops working and the requests not confirmed are turned down
   const first = t.status === 'open'
   const gone = first ? players.filter(([, p]) => p.pending).map(([k]) => k) : []
-  await writeRound(id, round, pairRound(entrantsOf(players), matches, round), matches, { status: 'swiss', ...(first ? { code: null } : {}) }, gone)
+  await writeRound(id, t.round, round, pairRound(entrantsOf(players), matches, round), matches, { status: 'swiss', ...(first ? { code: null } : {}) }, gone)
 }
 
 /** The first round of the top cut, from the Swiss standings: the Swiss rounds end with the one just played. */
 export async function startCut(id: string, t: Tournament, players: [string, Player][], matches: TableMatch[]) {
   const seeds = cutSeeds(standings(entrantsOf(players), matches), t.cut)
-  await writeRound(id, t.round + 1, cutPairings(seeds), matches, { status: 'cut', rounds: t.round })
+  await writeRound(id, t.round, t.round + 1, cutPairings(seeds), matches, { status: 'cut', rounds: t.round })
 }
 
 /** The next round of the top cut; null when the current one isn't over or was the final. */
 export async function nextCutRound(id: string, t: Tournament, matches: TableMatch[]) {
   const pairs = nextCut(matches.filter((m) => m.round === t.round))
-  if (pairs) await writeRound(id, t.round + 1, pairs, matches, {})
+  if (pairs) await writeRound(id, t.round, t.round + 1, pairs, matches, {})
   return pairs
 }
 

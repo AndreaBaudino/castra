@@ -131,7 +131,11 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await setDrop(id, 'a', 1)
     s = await read(id)
     await pairSwiss(id, s.t, s.players, s.matches)
+    // another phone still at round 1 (or offline until now) can't pair round 2 again over the one being played
+    const before = await read(id)
+    await expect(pairSwiss(id, s.t, s.players, s.matches)).rejects.toThrow('stale')
     s = await read(id)
+    expect(s.matches).toEqual(before.matches)
     const r2 = round(s.matches, 2).flatMap((m) => [m.p1, m.p2]).filter(Boolean)
     expect(r2.sort()).toEqual(['b', 'c', 'd', 'e', 'f', 'g', 'h']) // h in, a out
     await report(id, round(s.matches, 2))
