@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildCircuit, parseEventName, playerKey, potyStatus } from './circuit'
-import { type Deck, type DeckCard, logChange, newerDeck, parseDecklist } from './decks'
+import { type Deck, type DeckCard, checkDeck, logChange, newerDeck, parseDecklist } from './decks'
 import { parseCsv } from './meta'
 import { DUNGEONS } from './dungeons'
 import { readStored, writeStored } from './storage'
@@ -211,5 +211,21 @@ describe('playerKey', () => {
     expect(names.map(playerKey)).toEqual(names.map(nightly))
     expect(playerKey('Marco/Luca')).toBe('marco luca')
     expect(names.map(playerKey).some((k) => k.includes('/'))).toBe(false)
+  })
+})
+
+describe('checkDeck', () => {
+  const deck = (cards: [string, number, DeckCard['section']?][]) =>
+    ({ cards: cards.map(([name, qty, section = 'main']) => ({ name, qty, section })) }) as Deck
+  const dupes = (cards: [string, number, DeckCard['section']?][]) => checkDeck(deck(cards)).duplicates
+
+  it('takes the copies a card allows, and not one more', () => {
+    expect(dupes([['Island', 30], ['Relentless Rats', 20], ['Seven Dwarves', 7], ['Nazgûl', 9]])).toEqual([])
+    expect(dupes([['Seven Dwarves', 8], ['Nazgul', 10], ['Sol Ring', 2]])).toEqual(['Seven Dwarves', 'Nazgul', 'Sol Ring'])
+  })
+
+  it('counts a commander also in the 99 as two copies, never the sideboard', () => {
+    expect(dupes([['Atraxa, Grand Unifier', 1, 'commander'], ['Atraxa, Grand Unifier', 1]])).toEqual(['Atraxa, Grand Unifier'])
+    expect(dupes([['Sol Ring', 1], ['Sol Ring', 1, 'side']])).toEqual([])
   })
 })

@@ -198,17 +198,21 @@ export function exportDecklist(deck: Deck): string {
 // ---------- validation ----------
 
 const BASIC = /^(snow-covered )?(plains|island|swamp|mountain|forest|wastes)$/i
-const ANY_NUMBER = [
-  'relentless rats',
-  'rat colony',
-  'persistent petitioners',
-  'shadowborn apostle',
-  'dragon\'s approach',
-  'slime against humanity',
-  'templar knight',
-  'hare apparent',
-  'cid, timeless artificer',
-]
+// cards whose own text lets a deck have more than one copy: any number, or up to a limit
+const MANY: Record<string, number> = {
+  'relentless rats': Infinity,
+  'rat colony': Infinity,
+  'persistent petitioners': Infinity,
+  'shadowborn apostle': Infinity,
+  "dragon's approach": Infinity,
+  'slime against humanity': Infinity,
+  'templar knight': Infinity,
+  'hare apparent': Infinity,
+  'cid, timeless artificer': Infinity,
+  'seven dwarves': 7,
+  nazgul: 9,
+}
+const plain = (name: string) => name.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
 export interface DeckCheck {
   count: number
@@ -223,9 +227,12 @@ export function checkDeck(deck: Deck): DeckCheck {
   const inDeck = deck.cards.filter((c) => c.section !== 'side')
   const commanders = deck.cards.filter((c) => c.section === 'commander')
   const identity = [...new Set(commanders.flatMap((c) => c.info?.colorIdentity ?? []))]
-  const duplicates = inDeck
-    .filter((c) => c.qty > 1 && !BASIC.test(c.name) && !ANY_NUMBER.includes(c.name.toLowerCase()))
-    .map((c) => c.name)
+  // copies counted across the command zone and the 99: a commander also in the 99 is two
+  const copies = new Map<string, number>()
+  for (const c of inDeck) copies.set(plain(c.name), (copies.get(plain(c.name)) ?? 0) + c.qty)
+  const duplicates = [...copies]
+    .filter(([n, k]) => k > (MANY[n] ?? 1) && !BASIC.test(n))
+    .map(([n]) => inDeck.find((c) => plain(c.name) === n)!.name)
   const offIdentity = commanders.length
     ? inDeck.filter((c) => c.info && c.info.colorIdentity.some((x) => !identity.includes(x))).map((c) => c.name)
     : []
