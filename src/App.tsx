@@ -378,7 +378,8 @@ export default function App() {
             openPlayer={openCurrentPlayer}
             findMe={findMe}
             section={isAccountSection(route.deck) ? route.deck : null}
-            openSection={(sec) => go('account', sec, true)}
+            // a desktop shows the sections side by side with the menu: they replace each other, back goes home
+            openSection={(sec) => go('account', sec, !wide)}
             onBack={() => (route.deck ? history.back() : go('home'))}
             onSignOut={() => {
               // the data now lives in the account: don't leave it on a possibly shared device

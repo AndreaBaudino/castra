@@ -24,6 +24,7 @@ import { FeedbackSheet } from '../components/Feedback'
 import type { Feedback } from '../lib/feedback'
 import { cloudEnabled, useLiveCollection } from '../lib/firebase'
 import { dropPush, pushBlock, savePush } from '../lib/push'
+import { useWide } from '../lib/wide'
 
 function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -463,9 +464,9 @@ export type AccountSection = 'login' | 'circuit' | 'prefs' | 'look' | 'data' | '
 const SECTIONS: AccountSection[] = ['login', 'circuit', 'prefs', 'look', 'data', 'info', 'admin']
 export const isAccountSection = (s: string | null): s is AccountSection => SECTIONS.includes(s as AccountSection)
 
-function MenuRow({ icon, label, note, onClick }: { icon: string; label: string; note?: string; onClick: () => void }) {
+function MenuRow({ icon, label, note, on, onClick }: { icon: string; label: string; note?: string; on?: boolean; onClick: () => void }) {
   return (
-    <button className="menu-row" onClick={onClick}>
+    <button className={`menu-row ${on ? 'on' : ''}`} onClick={onClick} aria-current={on ? 'page' : undefined}>
       <Icon name={icon} size={20} />
       <span className="menu-label">{label}</span>
       {note && <span className="muted small ellipsis menu-note">{note}</span>}
@@ -484,12 +485,14 @@ function ProfileCard({
   onLogin,
   openPlayer,
   onLink,
+  wide,
 }: {
   circuit: Circuit | null
   cp: CircuitPrefs
   onLogin: () => void
   openPlayer: (key: string) => void
   onLink: () => void
+  wide: boolean
 }) {
   const { t, lang } = useI18n()
   const { user } = useAuth()
@@ -517,7 +520,7 @@ function ProfileCard({
         {user.photo ? <img src={user.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{(user.name ?? user.email ?? '?')[0].toUpperCase()}</span>}
         <div className="profile-text">
           <strong className="ellipsis">{user.name ?? user.email}</strong>
-          {me && poty ? (
+          {me && poty && !wide ? (
             <span className="muted small ellipsis">
               {me.rank ? placeLabel(me.rank, lang) : '—'} · {me.total} pt ·{' '}
               {me.potyInvited ? t('circuit.potyInvited') : poty.isIn(me) ? t('circuit.potyZone') : t('account.potyHeadOut')}
@@ -528,6 +531,25 @@ function ProfileCard({
           {!cp.me && <span className="link">{t('account.linkName')}</span>}
           {me && cp.claims.get(me.key)?.uid === cp.uid && <ClaimBadge claim={cp.claims.get(me.key)!} />}
         </div>
+        {/* a desktop has room for the circuit numbers beside the name */}
+        {wide && me && poty && (
+          <span className="stats3 profile-stats">
+            <span>
+              <span className="stat-num">{me.rank ? placeLabel(me.rank, lang) : '—'}</span>
+              <span className="stat-label">{t('circuit.position')}</span>
+            </span>
+            <span>
+              <span className="stat-num">{me.total}</span>
+              <span className="stat-label">{t('circuit.points')}</span>
+            </span>
+            <span>
+              <span className={`stat-num ${poty.isIn(me) ? 'good' : ''}`}>
+                {me.potyInvited ? t('account.potyInvited') : poty.isIn(me) ? t('account.potyIn') : t('account.potyOut')}
+              </span>
+              <span className="stat-label">POTY</span>
+            </span>
+          </span>
+        )}
         {open && (
           <span className="chev">
             <Icon name="chevron" size={16} />
@@ -590,6 +612,7 @@ export default function Account({
   const { announcement } = useBanlist()
   const banlistDate = announcement && new Date(announcement.date).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })
   const [deleting, setDeleting] = useState(false)
+  const wide = useWide()
 
   // signed in from the login page: back to the menu
   useEffect(() => {
@@ -644,106 +667,136 @@ export default function Account({
     ? t('account.matchesCount', { m: matches.length })
     : t(`account.syncShort.${!navigator.onLine ? 'offline' : sync.failed ? 'error' : sync.pending ? 'saving' : 'ok'}`)
 
+  // a desktop shows the menu and, beside it, a section: the circuit, or the preferences when signed out
+  const shown = section ?? (wide ? (user || !ready ? 'circuit' : 'prefs') : null)
+
+  const profile = !cloudEnabled ? (
+    <div className="notice">{t('auth.notConfigured')}</div>
+  ) : !ready ? (
+    <div className="empty">…</div>
+  ) : (
+    <ProfileCard
+      circuit={circuit}
+      cp={circuitPrefs}
+      onLogin={() => openSection('login')}
+      openPlayer={openPlayer}
+      onLink={() => openSection('circuit')}
+      wide={wide}
+    />
+  )
+  const menu = (
+    <>
+      <section className="card menu-card">
+        <MenuRow
+          icon="trophy"
+          label={titles.circuit}
+          note={circuitPrefs.follow.length ? t('account.followCount', { n: circuitPrefs.follow.length }) : undefined}
+          on={shown === 'circuit'}
+          onClick={() => openSection('circuit')}
+        />
+        <MenuRow icon="gear" label={titles.prefs} on={shown === 'prefs'} onClick={() => openSection('prefs')} />
+        <MenuRow icon="palette" label={titles.look} on={shown === 'look'} onClick={() => openSection('look')} />
+        <MenuRow icon="database" label={titles.data} note={syncNote} on={shown === 'data'} onClick={() => openSection('data')} />
+        <MenuRow icon="info" label={titles.info} note={versionLabel.split(' · ')[0]} on={shown === 'info'} onClick={() => openSection('info')} />
+        {isAdmin && (
+          <MenuRow
+            icon="shield"
+            label={titles.admin}
+            note={toSee ? t('feedback.open', { n: toSee }) : undefined}
+            on={shown === 'admin'}
+            onClick={() => openSection('admin')}
+          />
+        )}
+      </section>
+      <section className="card menu-card">
+        <MenuRow icon="chat" label={t('feedback.menu')} onClick={() => setReporting(true)} />
+        {(
+          [
+            ['info', 'account.guide', GUIDE_URL],
+            ['trophy', 'account.guideTournaments', TOURNAMENT_GUIDE_URL],
+            ['globe', 'account.formatSite', FORMAT_SITE_URL],
+            ['ban', 'account.banlist', BANLIST_URL],
+            ['shield', 'account.privacy', PRIVACY_URL],
+          ] as const
+        ).map(([icon, label, href]) => (
+          <a key={href} className="menu-row" href={href} target="_blank" rel="noopener noreferrer">
+            <Icon name={icon} size={20} />
+            <span className="menu-label">{t(label)}</span>
+            {href === BANLIST_URL && banlistDate && <span className="muted small ellipsis menu-note">{t('account.banlistUpdated', { d: banlistDate })}</span>}
+            <Icon name="external" size={16} />
+          </a>
+        ))}
+      </section>
+      {user && (
+        <section className="card menu-card">
+          <button
+            className="menu-row danger"
+            onClick={async () => {
+              if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
+              await dropPush(user.uid)
+              await signOut()
+              onSignOut()
+            }}
+          >
+            <Icon name="logout" size={20} />
+            <span className="menu-label">{t('auth.signOut')}</span>
+          </button>
+        </section>
+      )}
+    </>
+  )
+  const body =
+    shown === 'login' ? (
+      <LoginForm />
+    ) : shown === 'circuit' ? (
+      <CircuitIdentity circuit={circuit} cp={circuitPrefs} openPlayer={openPlayer} findMe={findMe} />
+    ) : shown === 'prefs' ? (
+      <Preferences prefs={prefs} setPrefs={setPrefs} uid={user?.uid ?? null} isAdmin={isAdmin} />
+    ) : shown === 'look' ? (
+      <ThemeEditor theme={theme} setTheme={setTheme} />
+    ) : shown === 'data' ? (
+      <DataSection decks={decks} matches={matches} restore={restore} onDeleteAccount={user && !deleting ? removeAccount : undefined} />
+    ) : shown === 'admin' ? (
+      isAdmin ? (
+        <Admin circuit={circuit} claims={circuitPrefs.claims} openPlayer={openPlayer} feedback={feedback} />
+      ) : (
+        <div className="notice">{t('admin.notAdmin')}</div>
+      )
+    ) : (
+      <Info />
+    )
+
   return (
-    <div className="page">
+    <div className="page account-page">
       <header className="page-head">
         <div className="head-left">
-          <button className="icon-btn" onClick={onBack} aria-label="back">
-            <Icon name="back" />
-          </button>
-          <h1>{section ? titles[section] : t('account.title')}</h1>
+          {!wide && (
+            <button className="icon-btn" onClick={onBack} aria-label="back">
+              <Icon name="back" />
+            </button>
+          )}
+          <h1>{section && !wide ? titles[section] : t('account.title')}</h1>
         </div>
       </header>
 
-      {!section ? (
+      {wide && shown ? (
         <>
-          {!cloudEnabled ? (
-            <div className="notice">{t('auth.notConfigured')}</div>
-          ) : !ready ? (
-            <div className="empty">…</div>
-          ) : (
-            <ProfileCard
-              circuit={circuit}
-              cp={circuitPrefs}
-              onLogin={() => openSection('login')}
-              openPlayer={openPlayer}
-              onLink={() => openSection('circuit')}
-            />
-          )}
-          <section className="card menu-card">
-            <MenuRow
-              icon="trophy"
-              label={titles.circuit}
-              note={circuitPrefs.follow.length ? t('account.followCount', { n: circuitPrefs.follow.length }) : undefined}
-              onClick={() => openSection('circuit')}
-            />
-            <MenuRow icon="gear" label={titles.prefs} onClick={() => openSection('prefs')} />
-            <MenuRow icon="palette" label={titles.look} onClick={() => openSection('look')} />
-            <MenuRow icon="database" label={titles.data} note={syncNote} onClick={() => openSection('data')} />
-            <MenuRow icon="info" label={titles.info} note={versionLabel.split(' · ')[0]} onClick={() => openSection('info')} />
-            {isAdmin && (
-              <MenuRow
-                icon="shield"
-                label={titles.admin}
-                note={toSee ? t('feedback.open', { n: toSee }) : undefined}
-                onClick={() => openSection('admin')}
-              />
-            )}
-          </section>
-          <section className="card menu-card">
-            <MenuRow icon="chat" label={t('feedback.menu')} onClick={() => setReporting(true)} />
-            {(
-              [
-                ['info', 'account.guide', GUIDE_URL],
-                ['trophy', 'account.guideTournaments', TOURNAMENT_GUIDE_URL],
-                ['globe', 'account.formatSite', FORMAT_SITE_URL],
-                ['ban', 'account.banlist', BANLIST_URL],
-                ['shield', 'account.privacy', PRIVACY_URL],
-              ] as const
-            ).map(([icon, label, href]) => (
-              <a key={href} className="menu-row" href={href} target="_blank" rel="noopener noreferrer">
-                <Icon name={icon} size={20} />
-                <span className="menu-label">{t(label)}</span>
-                {href === BANLIST_URL && banlistDate && <span className="muted small ellipsis menu-note">{t('account.banlistUpdated', { d: banlistDate })}</span>}
-                <Icon name="external" size={16} />
-              </a>
-            ))}
-          </section>
-          {user && (
-            <section className="card menu-card">
-              <button
-                className="menu-row danger"
-                onClick={async () => {
-                  if (!(await dialog.confirm(t('auth.signOutConfirm'), { ok: t('auth.signOut') }))) return
-                  await dropPush(user.uid)
-                  await signOut()
-                  onSignOut()
-                }}
-              >
-                <Icon name="logout" size={20} />
-                <span className="menu-label">{t('auth.signOut')}</span>
-              </button>
-            </section>
-          )}
+          {profile}
+          <div className="account-cols">
+            <div className="account-menu">{menu}</div>
+            <div className={`account-body ${shown}`}>
+              <h2>{titles[shown]}</h2>
+              {body}
+            </div>
+          </div>
         </>
-      ) : section === 'login' ? (
-        <LoginForm />
-      ) : section === 'circuit' ? (
-        <CircuitIdentity circuit={circuit} cp={circuitPrefs} openPlayer={openPlayer} findMe={findMe} />
-      ) : section === 'prefs' ? (
-        <Preferences prefs={prefs} setPrefs={setPrefs} uid={user?.uid ?? null} isAdmin={isAdmin} />
-      ) : section === 'look' ? (
-        <ThemeEditor theme={theme} setTheme={setTheme} />
-      ) : section === 'data' ? (
-        <DataSection decks={decks} matches={matches} restore={restore} onDeleteAccount={user && !deleting ? removeAccount : undefined} />
-      ) : section === 'admin' ? (
-        isAdmin ? (
-          <Admin circuit={circuit} claims={circuitPrefs.claims} openPlayer={openPlayer} feedback={feedback} />
-        ) : (
-          <div className="notice">{t('admin.notAdmin')}</div>
-        )
+      ) : section ? (
+        body
       ) : (
-        <Info />
+        <>
+          {profile}
+          {menu}
+        </>
       )}
       <FeedbackSheet open={reporting} onClose={() => setReporting(false)} />
     </div>
