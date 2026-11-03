@@ -24,7 +24,7 @@ export const POTY_SPOTS = 16
  * The Apps Script web app (scripts/meta/apps-script, the /exec link) that writes a tournament run in the app into its
  * sheet: the same one the nightly meta update reads the sheets with. Empty: the TOs copy the rows by hand.
  */
-export const PUBLISH_URL = ''
+export const PUBLISH_URL = 'https://script.google.com/macros/s/AKfycbwZ6k7iDXYg47BQxs0jHuVmm1HbXoOHqLTR6LR7hUiMqtjvUPtIKWD9lOe0alFlNdob/exec'
 
 export const STARTING_LIFE = 25
 export const COMMANDER_DAMAGE_LETHAL = 21
