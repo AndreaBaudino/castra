@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MetaDataset, MetaTournament } from './meta'
 import type { Source } from './sources'
+import type { Deck } from './decks'
 import {
   type Player,
   type TableMatch,
@@ -9,9 +10,12 @@ import {
   isListLink,
   newCode,
   nextStage,
+  personalMatches,
   ranking,
   results,
+  sheetData,
   sheetRows,
+  sideScore,
   tournamentId,
   unconfirmed,
 } from './tournaments'
@@ -111,8 +115,44 @@ describe('tournaments', () => {
       'Carla\tJeska, Thrice Reborn / Yoshimaru, Ever Faithful',
       'Luca\t',
     ])
-    // wins, losses, draws, bye: the top cut counts, the bye is a win, the missed round a loss
-    expect(rows.results.split('\n')).toEqual(['2\t1\t0\tFALSE', '1\t1\t1\tFALSE', '1\t0\t1\tTRUE', '0\t2\t0\tFALSE'])
+    // wins, losses, draws, bye, decklist: the top cut counts, the bye is a win, the missed round a loss
+    expect(rows.results.split('\n')).toEqual(['2\t1\t0\tFALSE\t', '1\t1\t1\tFALSE\t', '1\t0\t1\tTRUE\t', '0\t2\t0\tFALSE\t'])
+    // what the script writes: the same, with the decklists given
+    const mox = 'https://moxfield.com/decks/Ab3'
+    expect(sheetData({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches, new Map([['a', mox]]))).toEqual([
+      { name: 'Bruno', commander: 'Spider-Man 2099', w: 2, l: 1, d: 0, bye: false, list: '' },
+      { name: 'Anna', commander: 'Kinnan, Bonder Prodigy', w: 1, l: 1, d: 1, bye: false, list: mox },
+      { name: 'Carla', commander: 'Jeska, Thrice Reborn / Yoshimaru, Ever Faithful', w: 1, l: 0, d: 1, bye: true, list: '' },
+      { name: 'Luca', commander: null, w: 0, l: 2, d: 0, bye: false, list: '' },
+    ])
+    expect(sheetRows({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches, new Map([['a', mox]])).results.split('\n')[1]).toBe(
+      `1\t1\t1\tFALSE\t${mox}`,
+    )
+  })
+
+  it("records a player's matches as their own, from their side, once whatever happens", () => {
+    const players: [string, Player][] = [
+      ['a', { name: 'Anna', commander: 'Kinnan, Bonder Prodigy', deck: 'd1', at: '', by: '' }],
+      ['b', { name: 'Bruno', commander: 'Spider-Man 2099', at: '', by: '' }],
+      ['c', { name: 'Carla', commander: 'Urza, Lord High Artificer', at: '', by: '' }],
+    ]
+    const m = (round: number, table: number, p1: string, p2: string | null, score: [number, number, number] | null): TableMatch => ({ round, table, p1, p2, score })
+    const matches = [m(1, 1, 'b', 'a', [1, 2, 0]), m(1, 0, 'c', null, null), m(2, 1, 'a', 'c', [1, 1, 1]), m(3, 1, 'c', 'a', [2, 0, 0]), m(3, 0, 'b', null, null)]
+    const t = { date: '2026-11-23' } as Tournament
+    const deck = { id: 'd1', name: 'Kinnan turbo' } as Deck
+    const mine = personalMatches('S~5', t, players, matches, 'a', [deck], 'Savona · Tappa 5')
+    expect(mine.map((x) => [x.id, x.result, x.score, x.opponentName, x.opponent, x.deckId, x.deckName])).toEqual([
+      ['S~5~r1', 'W', [2, 1], 'Bruno', 'Spider-Man 2099', 'd1', 'Kinnan turbo'], // a was p2: turned round
+      ['S~5~r2', 'D', [1, 1], 'Carla', 'Urza, Lord High Artificer', 'd1', 'Kinnan turbo'],
+      ['S~5~r3', 'L', [0, 2], 'Carla', 'Urza, Lord High Artificer', 'd1', 'Kinnan turbo'],
+    ])
+    expect(mine.every((x) => x.kind === 'tournament' && x.format === 'bo3' && x.notes === 'Savona · Tappa 5')).toBe(true)
+    expect(mine.map((x) => x.date)).toEqual([...mine.map((x) => x.date)].sort()) // the rounds in order
+    // the bye isn't a match; a deck no longer in the app: the commander as its name
+    const c = personalMatches('S~5', t, players, matches, 'c', [], '')
+    expect(c.map((x) => [x.result, x.deckId, x.deckName])).toEqual([['D', undefined, 'Urza, Lord High Artificer'], ['W', undefined, 'Urza, Lord High Artificer']])
+    expect(sideScore([1, 2, 0], true)).toBe('2-1')
+    expect(sideScore([1, 1, 1], false)).toBe('1-1-1')
   })
 
   it('shows the Swiss standings while playing, the final order with the sheet\'s records once over', () => {

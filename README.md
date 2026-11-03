@@ -76,6 +76,12 @@ sul ramo main). Se modifichi
 `Code.gs`, va pubblicata una nuova versione dello stesso deployment (Gestisci deployment → modifica → Nuova versione),
 così l'URL resta lo stesso.
 
+Lo stesso script **scrive nei fogli** i tornei gestiti in app ("Pubblica sul foglio" nell'Area TO, `doPost`): per
+questo l'account che lo pubblica deve poter modificare i fogli, e `appsscript.json` chiede anche il permesso
+`spreadsheets` (dopo averlo aggiornato si rilancia `check` per autorizzarlo). Non serve la chiave: lo script usa
+l'accesso Firebase del TO e le regole di Firestore per sapere se può pubblicare quel torneo. L'URL `/exec` va anche
+in `PUBLISH_URL` (`src/config.ts`); finché è vuoto, nell'Area TO resta solo il copia-incolla.
+
 ### Banlist
 
 Si aggiorna dall'app: Profilo → Area admin → Banlist → **Controlla il sito di Centurion** legge la
@@ -180,6 +186,12 @@ verificato entra subito, altrimenti finisce tra le richieste "Da confermare" del
 verifica il collegamento (l'area admin mostra quale TO l'ha verificato). All'avvio del turno 1 il codice smette di
 funzionare e le richieste non confermate vengono rifiutate. Durante il torneo i giocatori verificati segnano i propri
 risultati, che l'avversario conferma (finché manca la conferma il TO li vede con "?"), e possono fare drop.
+
+A torneo chiuso, **"Pubblica sul foglio"** scrive la classifica finale nella scheda della tappa (o nella `Classifica`
+del livello): nomi, comandanti, vittorie, sconfitte, pareggi, BYE, decklist e data, aggiungendo i giocatori nuovi alla
+`Classifica` della lega e i comandanti nuovi alle righe libere dei `Comandanti`. Se la scheda ha già dei risultati non
+scrive niente. Le decklist diventano pubbliche nella classifica finale, e i giocatori con l'account trovano i match del
+torneo tra le proprie partite.
 
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID
 dell'account (lo trovi in *Authentication → Users*) e nessun campo. Per toglierlo, elimina il documento. L'app non può

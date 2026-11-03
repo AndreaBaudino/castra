@@ -4,6 +4,9 @@ import { cloudEnabled, fb, useLiveCollection } from './firebase'
 import { fmt } from './timer'
 import type { T } from '../i18n'
 import type { MetaDataset } from './meta'
+import type { Deck } from './decks'
+import type { Match as Played } from './matches'
+import { PUBLISH_URL } from '../config'
 import { type Source, type SourceKind, isEvent } from './sources'
 import {
   type Entrant,
@@ -126,23 +129,85 @@ export function ranking(t: Tournament, players: [string, Player][], matches: Tab
   })
 }
 
+export interface SheetRow {
+  name: string
+  commander: string | null
+  w: number
+  l: number
+  d: number
+  bye: boolean
+  list: string // the decklist link, or ''
+}
+
 /**
- * The rows for the sheet's stage tab (or a level's "Classifica"), in the final order, in the two blocks around the
- * points column, which is a formula: name and commander (columns B-C), then wins, losses, draws and bye (E-H). Wins
- * count the bye, as in the sheets; losses the rounds a late entry missed; both the top cut.
+ * What goes into the sheet's stage tab (or a level's "Classifica"), in the final order: name and commander (columns
+ * B-C), wins, losses, draws, bye and decklist (E-I); the points (D) are a formula. Wins count the bye, as in the sheets;
+ * losses the rounds a late entry missed; both the top cut.
  */
-export function sheetRows(t: Tournament, players: [string, Player][], matches: TableMatch[]) {
+export function sheetData(t: Tournament, players: [string, Player][], matches: TableMatch[], lists = new Map<string, string>()): SheetRow[] {
   const rec = new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s]))
   const names = new Map(players)
-  const order = results(t, players, matches).order
-  const row = (id: string) => {
+  return results(t, players, matches).order.map((id) => {
     const r = rec.get(id)!
-    return `${r.wins}\t${r.losses}\t${r.draws}\t${r.byes ? 'TRUE' : 'FALSE'}`
-  }
+    const p = names.get(id)!
+    return { name: p.name, commander: p.commander, w: r.wins, l: r.losses, d: r.draws, bye: r.byes > 0, list: lists.get(id) ?? '' }
+  })
+}
+
+/** The same rows to paste by hand, in the two blocks around the points column: B-C, then E-I. */
+export function sheetRows(t: Tournament, players: [string, Player][], matches: TableMatch[], lists?: Map<string, string>) {
+  const rows = sheetData(t, players, matches, lists)
   return {
-    names: order.map((id) => `${names.get(id)!.name}\t${names.get(id)!.commander ?? ''}`).join('\n'),
-    results: order.map(row).join('\n'),
+    names: rows.map((r) => `${r.name}\t${r.commander ?? ''}`).join('\n'),
+    results: rows.map((r) => [r.w, r.l, r.d, r.bye ? 'TRUE' : 'FALSE', r.list].join('\t')).join('\n'),
   }
+}
+
+/** A result from one player's side: their games first. */
+export const sideScore = (s: Score, flip: boolean) => {
+  const [a, b, d] = flip ? [s[1], s[0], s[2]] : s
+  return d ? `${a}-${b}-${d}` : `${a}-${b}`
+}
+
+/**
+ * The player's matches of a finished tournament, as their own records (the stats): the opponent and their commander,
+ * the games, the deck of the app they registered with. Ids from the tournament and round, so recording them again
+ * (another phone, another visit) changes nothing.
+ */
+export function personalMatches(
+  id: string,
+  t: Tournament,
+  players: [string, Player][],
+  matches: TableMatch[],
+  me: string,
+  decks: Deck[],
+  notes: string,
+): Played[] {
+  const names = new Map(players)
+  const p = names.get(me)
+  const deck = decks.find((d) => d.id === p?.deck)
+  return matches
+    .filter((m) => m.p2 && m.score && (m.p1 === me || m.p2 === me))
+    .map((m) => {
+      const flip = m.p2 === me
+      const opp = (flip ? m.p1 : m.p2)!
+      const [a, b] = flip ? [m.score![1], m.score![0]] : [m.score![0], m.score![1]]
+      return {
+        id: `${id}~r${m.round}`,
+        // the rounds in their order, on the tournament's day
+        date: new Date(Date.parse(`${t.date}T10:00:00`) + m.round * 3_600_000).toISOString(),
+        result: a > b ? 'W' : b > a ? 'L' : 'D',
+        format: 'bo3',
+        score: [a, b],
+        ...(deck ? { deckId: deck.id } : {}),
+        deckName: deck?.name ?? p?.commander ?? '',
+        opponent: names.get(opp)?.commander ?? '',
+        opponentName: names.get(opp)?.name ?? opp,
+        opponentPlayer: opp,
+        kind: 'tournament',
+        notes,
+      }
+    })
 }
 
 // ---------- showing ----------
@@ -415,6 +480,41 @@ export async function loadList(id: string, key: string) {
   const { db, fs } = await fb()
   const snap = await fs.getDoc(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
   return (snap.data()?.link as string | undefined) ?? null
+}
+
+/** Every decklist given, by player: for the TOs, and for everyone once the tournament is over. */
+export async function loadLists(id: string, players: [string, Player][]) {
+  const given = players.filter(([, p]) => p.list)
+  const links = await Promise.all(given.map(([k]) => loadList(id, k)))
+  return new Map(given.flatMap(([k], i): [string, string][] => (links[i] ? [[k, links[i]!]] : [])))
+}
+
+/** The decklists of a finished tournament, for whoever follows it. */
+export function useLists(id: string, players: [string, Player][], on: boolean) {
+  const [lists, setLists] = useState(new Map<string, string>())
+  const keys = players.filter(([, p]) => p.list).map(([k]) => k).join()
+  useEffect(() => {
+    if (on && keys) loadLists(id, players).then(setLists, () => {})
+  }, [id, on, keys]) // eslint-disable-line react-hooks/exhaustive-deps
+  return lists
+}
+
+export const canPublish = !!PUBLISH_URL
+
+/**
+ * Writes the final standings into the tournament's sheet, through the Apps Script (scripts/meta/apps-script, doPost):
+ * it checks with the TO's sign-in that they run this tournament, writes, and marks it as in the sheet. Throws the
+ * script's message when it refuses.
+ */
+export async function publishTournament(id: string, rows: SheetRow[]) {
+  const { auth } = await fb()
+  const token = await auth.currentUser?.getIdToken()
+  if (!token) throw new Error('login')
+  // plain text: a JSON content type would need a preflight, which Apps Script doesn't answer
+  const res = await fetch(PUBLISH_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ token, id, rows }) })
+  const out = (await res.json()) as { ok?: boolean; error?: string; tab: string; players: string[]; commanders: string[]; manual: string[] }
+  if (!out.ok) throw new Error(out.error ?? 'error')
+  return out
 }
 
 /** A Moxfield deck's address, the only decklists taken for now. */

@@ -322,6 +322,13 @@ export default function App() {
                   openLive={openLive}
                   login={() => go('account', 'login', true)}
                   linkPlayer={() => go('account', 'circuit', true)}
+                  record={(ms) =>
+                    setMatches((all) => {
+                      const have = new Set(all.map((m) => m.id))
+                      const add = ms.filter((m) => !have.has(m.id))
+                      return add.length ? [...add, ...all] : all
+                    })
+                  }
                 />
                 {organizer && uid && <OrganizerCard uid={uid} organizer={organizer} open={(id) => (id ? openRun(id) : go('to'))} />}
                 <LiveLink open={openLive} />
@@ -475,7 +482,7 @@ export default function App() {
           ))}
         {route.tab === 'live' &&
           (route.deck ? (
-            <LivePage id={decodeURIComponent(route.deck)} onBack={() => history.back()} />
+            <LivePage id={decodeURIComponent(route.deck)} me={me} onBack={() => history.back()} />
           ) : (
             <LiveList onBack={() => go('home')} open={openLive} />
           ))}

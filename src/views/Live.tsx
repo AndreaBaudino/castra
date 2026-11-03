@@ -7,10 +7,12 @@ import {
   type Tournament,
   clockLabel,
   ranking,
+  sideScore,
   timeLeft,
   tournamentStatus,
   tournamentTitle,
   unconfirmed,
+  useLists,
   useNow,
   useTournament,
   useTournaments,
@@ -26,15 +28,25 @@ import { SubPageShell, placeLabel } from './Circuit'
 const scoreText = (m: TableMatch) =>
   !m.p2 ? '2-0' : m.score ? m.score.slice(0, m.score[2] ? 3 : 2).join('-') + (unconfirmed(m) ? '?' : '') : '—'
 
-/** A round's tables, the bye last; `onPick` makes them tappable (the TO enters the results). */
-export function MatchList({ matches, nameOf, onPick }: { matches: TableMatch[]; nameOf: (k: string | null) => string; onPick?: (m: TableMatch) => void }) {
+/** A round's tables, the bye last; `onPick` makes them tappable (the TO enters the results), `me`'s table stands out. */
+export function MatchList({
+  matches,
+  nameOf,
+  onPick,
+  me,
+}: {
+  matches: TableMatch[]
+  nameOf: (k: string | null) => string
+  onPick?: (m: TableMatch) => void
+  me?: string | null
+}) {
   const { t } = useI18n()
   return (
     <ul className="card-list">
       {[...matches]
         .sort((a, b) => (a.table || 999) - (b.table || 999))
         .map((m) => (
-          <li key={`${m.round}-${m.table}`} className="event-row" onClick={() => m.p2 && onPick?.(m)}>
+          <li key={`${m.round}-${m.table}`} className={`event-row ${me && (m.p1 === me || m.p2 === me) ? 'mine' : ''}`} onClick={() => m.p2 && onPick?.(m)}>
             <span className="place-badge">{m.p2 ? m.table : '—'}</span>
             <div className="event-main">
               <span className="ellipsis">{nameOf(m.p1)}</span>
@@ -50,8 +62,8 @@ export function MatchList({ matches, nameOf, onPick }: { matches: TableMatch[]; 
   )
 }
 
-/** The standings (or the final order), with each one's commander, record and opponents' match-win %. */
-export function RankingList({ rows, onPick }: { rows: RankRow[]; onPick?: (id: string) => void }) {
+/** The standings (or the final order), with each one's commander, record, opponents' match-win % and decklist. */
+export function RankingList({ rows, onPick, lists }: { rows: RankRow[]; onPick?: (id: string) => void; lists?: Map<string, string> }) {
   const { t, lang } = useI18n()
   return (
     <ul className="card-list">
@@ -68,6 +80,11 @@ export function RankingList({ rows, onPick }: { rows: RankRow[]; onPick?: (id: s
               {r.draws ? `-${r.draws}` : ''} · OMW {Math.round(r.omwp * 100)}%
             </span>
           </div>
+          {lists?.get(r.id) && (
+            <a className="link small" href={lists.get(r.id)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+              {t('live.list')}
+            </a>
+          )}
           <b className="pts-inline">{r.points}</b>
         </li>
       ))}
@@ -151,10 +168,12 @@ export default function LiveList({ onBack, open }: { onBack: () => void; open: (
 }
 
 /** One tournament, as whoever follows it sees it: no results to enter, a search for a player. */
-export function LivePage({ id, onBack }: { id: string; onBack: () => void }) {
+export function LivePage({ id, me, onBack }: { id: string; me: string | null; onBack: () => void }) {
   const { t, lang } = useI18n()
   const now = useNow()
   const { t: tour, players, matches } = useTournament(id)
+  // the decklists turn public once it's over
+  const lists = useLists(id, players, tour?.status === 'done')
   const [tab, setTab] = useState<'pairings' | 'standings'>('pairings')
   const [q, setQ] = useState('')
   const rows = useMemo(() => (tour ? ranking(tour, players, matches) : []), [tour, players, matches])
@@ -173,6 +192,7 @@ export function LivePage({ id, onBack }: { id: string; onBack: () => void }) {
   const key = playerKey(q)
   const found = key.length < 2 ? [] : rows.map((r, i) => ({ r, place: i + 1 })).filter(({ r }) => playerKey(r.name).includes(key)).slice(0, 5)
   const title = tournamentTitle(tour, t)
+  const mine = me && names.has(me) ? matches.filter((m) => m.p1 === me || m.p2 === me) : []
 
   return (
     <SubPageShell title={title} onBack={onBack} actions={<ShareButton text={t('live.share', { n: title })} />}>
@@ -232,6 +252,27 @@ export function LivePage({ id, onBack }: { id: string; onBack: () => void }) {
         </>
       )}
 
+      {mine.length > 0 && (
+        <section className="card">
+          <div className="card-title">{t('live.mine')}</div>
+          <ul className="card-list">
+            {mine.map((m) => {
+              const opp = m.p1 === me ? m.p2 : m.p1
+              return (
+                <li key={m.round} className="event-row">
+                  <span className="place-badge">{m.round}</span>
+                  <div className="event-main">
+                    <span className="ellipsis">{opp ? nameOf(opp) : t('meta.bye')}</span>
+                    <span className="ellipsis muted small">{opp ? (names.get(opp)?.commander ?? '') : ''}</span>
+                  </div>
+                  <span className="to-score">{!opp ? '2-0' : m.score ? sideScore(m.score, m.p2 === me) + (unconfirmed(m) ? '?' : '') : '—'}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
       {tour.status === 'open' ? (
         <section className="card">
           <div className="card-title">{t('run.registered')}</div>
@@ -252,12 +293,12 @@ export function LivePage({ id, onBack }: { id: string; onBack: () => void }) {
       ) : shown === 'pairings' ? (
         <section className="card">
           <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.roundN', { n: tour.round })}</div>
-          <MatchList matches={current} nameOf={nameOf} />
+          <MatchList matches={current} nameOf={nameOf} me={me} />
         </section>
       ) : (
         <section className="card">
           <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
-          <RankingList rows={rows} />
+          <RankingList rows={rows} lists={lists} />
         </section>
       )}
     </SubPageShell>

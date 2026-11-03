@@ -69,8 +69,9 @@ scrivere codice. I mockup delle schermate sono su
   lì, oppure "Nessuno" e lo si sceglie a mano con la ricerca Scryfall. Senza comandante il pulsante Iscriviti resta
   disattivato. Per gli ospiti lo inserisce il TO.
 - Associare un mazzo di Castra serve anche per le statistiche: a fine torneo i match finiscono tra le partite
-  personali di quel mazzo (`kind: 'tournament'`, con `opponentPlayer`). Il mazzo scelto è già salvato
-  nell'iscrizione; le partite personali arrivano con la fase 4.
+  personali di quel mazzo (`kind: 'tournament'`, con `opponentPlayer`): le registra l'app del giocatore quando vede
+  il torneo concluso (nei due giorni in cui la Home lo mostra), con id fissi (`torneo~r<turno>`), così non si
+  duplicano tra telefoni o visite. Senza un mazzo di Castra il nome del mazzo è il comandante.
 - **La decklist è facoltativa**: per ora è un **link Moxfield**. Moxfield blocca la lettura delle liste da altre app
   (risponde 403), quindi dal link non si ricava il comandante. Il TO vede quanti l'hanno caricata (es. "Decklist
   8/11"), senza blocchi. Si può aggiungere fino alla pubblicazione sul foglio.
@@ -123,8 +124,8 @@ scrivere codice. I mockup delle schermate sono su
   già stati segnati e andranno persi, rifà gli abbinamenti e fa ripartire il timer da 50 minuti.
 - **Torneo annullato**: finché non è pubblicato sul foglio, il TO o un admin può cancellarlo e il torneo registrato
   torna disponibile.
-- Abbinamenti e classifica si calcolano sul telefono del TO (non c'è un server). "Apri partita" (fase 4, con le
-  partite personali) porterà nel life counter con avversario e timer già allineati al turno.
+- Abbinamenti e classifica si calcolano sul telefono del TO (non c'è un server). "Apri partita" (nel life counter con
+  avversario e timer già allineati al turno) è rimandato: vedi "In sospeso".
 - Riaprendo l'app si ritrova la situazione attuale (tutto è su Firestore); se il telefono perde la rete si
   riallinea appena torna.
 - **Notifiche push**: quelle che esistono partono da un workflow di GitHub due volte al giorno, quindi non servono
@@ -165,13 +166,24 @@ scrivere codice. I mockup delle schermate sono su
 - Leghe: il nome in colonna B si sceglie da un menu che legge la scheda `Classifica`, quindi i giocatori nuovi vanno
   aggiunti prima lì. I comandanti nuovi vanno scritti nella scheda `Comandanti` (partner con " / " in ordine
   alfabetico, carte bifronte con " // ", come i nomi di Scryfall nell'app).
-- **Come**: il TO tocca "Pubblica sul foglio" e l'app manda allo script Apps Script solo il proprio token di accesso
-  e l'id del torneo. Lo script verifica il token con Google, controlla su Firestore che quell'account sia un TO del
-  torneo e che il torneo sia concluso, legge i dati **da Firestore** (non dal telefono), aggiunge giocatori e
-  comandanti nuovi alle loro schede e scrive. Si ferma se la scheda ha già dei dati.
-- **Script**: va pubblicato da `centuriondati@gmail.com`, proprietario di tutti i fogli, con il permesso di modifica
-  dei fogli; poi si aggiornano i secret `META_SCRIPT_URL` e `META_SCRIPT_KEY` e si elimina il vecchio script. Uno
-  solo per lettura e scrittura.
+- **Come** (`doPost` in `scripts/meta/apps-script/Code.gs`): il TO tocca "Pubblica sul foglio" e l'app manda allo
+  script l'id del torneo, le righe della classifica finale (calcolate sul telefono con `swiss.ts`, decklist comprese)
+  e il token del suo accesso Firebase. Lo script legge il torneo da Firestore **con quel token**, controlla che sia
+  concluso e non ancora nel foglio, poi fa una scrittura che non cambia niente (`filed: false`): le regole la lasciano
+  passare solo a chi gestisce il torneo, quindi a decidere chi può pubblicare sono le stesse regole dell'app. Il foglio
+  e la scheda vengono dal torneo su Firestore, mai dal telefono. Le righe arrivano dal telefono, ma un TO può già
+  cambiare i risultati su Firestore (e di solito anche il foglio): lo script le controlla (numeri, lunghezze, link
+  Moxfield) e scrive i testi sempre come testo, mai come formule.
+- Prima di scrivere lo script controlla tutto: trova la tabella cercando "Nome giocatore" e "Comandante" (la data è
+  la cella sotto "Data"), si ferma se c'è già un nome, un risultato o un BYE spuntato, o se mancano righe. Nelle leghe
+  i giocatori nuovi vanno nelle righe libere della tabella della `Classifica` (quelle con le formule già pronte); i
+  comandanti nuovi nelle righe libere in cima ai `Comandanti`, sopra la formula del database (di solito ne restano
+  poche: quelli che non ci stanno li elenca al TO da aggiungere a mano). Nomi e comandanti già presenti, confrontati
+  come `playerKey`, prendono la grafia del foglio. Alla fine segna il torneo come nel foglio (`filed: true`). Uno alla
+  volta (`LockService`), perché due TO non trovino entrambi la scheda vuota.
+- **Script**: pubblicato da `centuriondati@gmail.com`, proprietario dei fogli e con il permesso di modificarli; lo
+  stesso deployment legge i fogli per il meta (con la chiave) e li scrive. L'URL `/exec` va in `PUBLISH_URL`
+  (`src/config.ts`): finché è vuoto il pulsante non c'è e resta il copia-incolla.
 - Di riserva, "Copia le righe": il TO le incolla nella scheda.
 - Il meta notturno legge il foglio come oggi: nessun doppio conteggio e nessuna modifica a `build-meta.mjs`.
 
@@ -223,12 +235,15 @@ torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le p
 3. **Giocatori nell'app** (fatta): link e codice, richieste da confermare con verifica, riga del codice e card del
    torneo in Home (`src/views/MyTournament.tsx`), timer, risultati segnati e confermati dai giocatori, drop,
    comandante dal mazzo di Castra e decklist Moxfield privata.
-4. **Pubblicazione**: script Apps Script che scrive nel foglio, decklist pubbliche nella pagina del torneo e nel meta,
-   partite personali compilate da sole, "Apri partita", "I miei match" e tavolo evidenziato nella pagina da
-   spettatore.
+4. **Pubblicazione** (fatta): script Apps Script che scrive nel foglio ("Pubblica sul foglio", con i test in
+   `src/lib/appsScript.test.ts`), decklist pubbliche nella classifica finale e, dalla colonna I, nel meta; partite
+   personali registrate da sole; "I miei match" e tavolo evidenziato nella pagina da spettatore. Rimandato: "Apri
+   partita" (vedi sopra).
 
 ## 11. In sospeso
 
 - Comitato: top cut nelle V/S/P e i tre fogli strani (Cogoleto, Damnation Lucca, Paupergeddon).
-- Proprietario: script Apps Script sull'account `centuriondati` e secret aggiornati (serve dalla fase 4).
+- Proprietario: nuova versione dello script con il permesso di modifica dei fogli, e il suo URL in `PUBLISH_URL`.
+- "Apri partita": il life counter con il timer del turno. Va deciso come salvare quella partita, che altrimenti si
+  aggiungerebbe a quella registrata dal torneo.
 - POTY: se è un torneo a sé, un tipo in più.

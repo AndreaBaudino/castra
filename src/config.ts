@@ -20,6 +20,12 @@ export const CIRCUIT_TABS = { leaderboard: '1845835181', s1: '638335391', s2: '7
 /** Players invited to the Player of the Year by ranking (on top of those invited at events). */
 export const POTY_SPOTS = 16
 
+/**
+ * The Apps Script web app (scripts/meta/apps-script, the /exec link) that writes a tournament run in the app into its
+ * sheet: the same one the nightly meta update reads the sheets with. Empty: the TOs copy the rows by hand.
+ */
+export const PUBLISH_URL = ''
+
 export const STARTING_LIFE = 25
 export const COMMANDER_DAMAGE_LETHAL = 21
 export const POISON_LETHAL = 10

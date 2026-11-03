@@ -3,7 +3,8 @@ import { useI18n } from '../i18n'
 import type { AppUser } from '../lib/auth'
 import type { Claim } from '../lib/claims'
 import type { Deck } from '../lib/decks'
-import type { Score } from '../lib/swiss'
+import type { Match as Played } from '../lib/matches'
+import { placeLabel } from './Circuit'
 import {
   type Player,
   type TableMatch,
@@ -14,9 +15,12 @@ import {
   isListLink,
   joinTournament,
   loadList,
+  personalMatches,
+  ranking,
   removePlayer,
   saveList,
   setDrop,
+  sideScore,
   timeLeft,
   tournamentStatus,
   tournamentTitle,
@@ -43,6 +47,7 @@ interface Me {
   openLive: (id: string) => void
   login: () => void
   linkPlayer: () => void
+  record: (ms: Played[]) => void // into the player's own matches, skipping the ones already there
 }
 
 /** The cards of the account's tournaments and of the one whose code was typed, then the row for a code. */
@@ -55,8 +60,8 @@ export function TournamentCards({ code, setCode, ...me }: Me & { code: string | 
     setFound(undefined)
     if (code) findByCode(code).then(setFound, () => setFound(null))
   }, [code])
-  // the ones being registered for or played: each card shows only if the player is in it
-  const ids = me.me ? tournaments.filter(([, x]) => x.status !== 'done').map(([id]) => id) : []
+  // the ones being registered for, played or just over: each card shows only if the player is in it
+  const ids = me.me ? tournaments.map(([id]) => id) : []
   const shown = [...new Set([...(found ? [found] : []), ...ids])]
   return (
     <>
@@ -105,14 +110,8 @@ function Clock({ tour, extra }: { tour: Tournament; extra?: number }) {
   return <b className={`to-score ${(left ?? 1) <= 0 ? 'bad-text' : ''}`}>{clockLabel(left, t)}</b>
 }
 
-/** A result from one player's side: their games first. */
-const sideOf = (s: Score, flip: boolean) => {
-  const [a, b, d] = flip ? [s[1], s[0], s[2]] : s
-  return d ? `${a}-${b}-${d}` : `${a}-${b}`
-}
-
-function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLive, login, linkPlayer }: Me & { id: string; typed: boolean; close: () => void }) {
-  const { t } = useI18n()
+function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLive, login, linkPlayer, record }: Me & { id: string; typed: boolean; close: () => void }) {
+  const { t, lang } = useI18n()
   const dialog = useDialog()
   const { t: tour, players, matches } = useTournament(id)
   const [joining, setJoining] = useState(false)
@@ -123,7 +122,35 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   useEffect(() => {
     if (typed && mine) close()
   }, [typed, !!mine]) // eslint-disable-line react-hooks/exhaustive-deps
-  if (!tour || tour.status === 'done' || (!mine && !typed)) return null
+  // once over, the matches go into the player's stats (the same ids every time: never twice)
+  const over = tour?.status === 'done' && !!mine
+  useEffect(() => {
+    if (over) record(personalMatches(id, tour!, players, matches, me!, decks, tournamentTitle(tour!, t)))
+  }, [over, matches]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!tour || (!mine && !typed)) return null
+  // over: on its day, how it went
+  if (tour.status === 'done') {
+    if (tour.date !== new Date().toLocaleDateString('sv')) return null
+    const rows = ranking(tour, players, matches)
+    const at = rows.findIndex((r) => r.id === me)
+    const r = rows[at]
+    return r ? (
+      <section className="card my-tour">
+        <div className="card-title">
+          <span className="ellipsis">{tournamentTitle(tour, t)}</span>
+          <span className="muted small">{tournamentStatus(tour, t)}</span>
+        </div>
+        <p className="no-margin">
+          <b>{placeLabel(at + 1, lang)}</b> · {r.wins}-{r.losses}
+          {r.draws ? `-${r.draws}` : ''} · {t('live.points', { n: r.points })}
+        </p>
+        <p className="muted small no-margin">{t('join.recorded')}</p>
+        <button className="link" onClick={() => openLive(id)}>
+          {t('join.final')}
+        </button>
+      </section>
+    ) : null
+  }
 
   const verified = !!claim?.verified
   const act = async (fn: () => Promise<unknown>) => {
@@ -256,14 +283,14 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
             )
           ) : unconfirmed(current) && current.reportedBy === me ? (
             <>
-              <p className="small no-margin">{t('join.waiting', { s: sideOf(current.score, flip), p: nameOf(opp) })}</p>
+              <p className="small no-margin">{t('join.waiting', { s: sideScore(current.score, flip), p: nameOf(opp) })}</p>
               <button className="btn ghost" disabled={busy} onClick={() => setResult(current)}>
                 {t('join.fix')}
               </button>
             </>
           ) : unconfirmed(current) ? (
             <>
-              <p className="small no-margin">{t('join.toConfirm', { p: nameOf(opp), s: sideOf(current.score, flip) })}</p>
+              <p className="small no-margin">{t('join.toConfirm', { p: nameOf(opp), s: sideScore(current.score, flip) })}</p>
               {verified && (
                 <div className="btn-pair">
                   <button className="btn ghost" disabled={busy} onClick={() => setResult(current)}>
@@ -276,7 +303,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
               )}
             </>
           ) : (
-            <p className="small no-margin good-text">{t('join.result', { s: sideOf(current.score, flip) })}</p>
+            <p className="small no-margin good-text">{t('join.result', { s: sideScore(current.score, flip) })}</p>
           )}
         </>
       )}

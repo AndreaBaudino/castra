@@ -12,6 +12,7 @@ import {
   type Player,
   type TableMatch,
   type Tournament,
+  canPublish,
   confirmPlayer,
   createTournament,
   deleteTournament,
@@ -22,6 +23,7 @@ import {
   nextCutRound,
   nextStage,
   pairSwiss,
+  publishTournament,
   removePlayer,
   ranking,
   reportScore,
@@ -32,6 +34,7 @@ import {
   setFiled,
   setScore,
   setTournament,
+  sheetData,
   sheetRows,
   startCut,
   timeLeft,
@@ -41,6 +44,7 @@ import {
   unconfirmed,
   useNow,
   useTournament,
+  useLists,
   useTournaments,
   useUnfiled,
 } from '../lib/tournaments'
@@ -301,6 +305,8 @@ export function TournamentAdmin({
   const [adding, setAdding] = useState(false)
   const [busy, setBusy] = useState(false)
   const rows = useMemo(() => (tour ? ranking(tour, players, matches) : []), [tour, players, matches])
+  // the decklists, read once it's over: copying needs them at hand (a phone allows it only right after the tap)
+  const lists = useLists(id, players, tour?.status === 'done')
 
   if (!organizer || !user)
     return (
@@ -324,7 +330,7 @@ export function TournamentAdmin({
   const entered = players.filter(([, p]) => !p.pending)
   const active = entered.filter(([, p]) => p.drop == null)
   const noCommander = entered.filter(([, p]) => !p.commander).length
-  const lists = entered.filter(([, p]) => p.list).length
+  const listed = entered.filter(([, p]) => p.list).length
   const playing = tour.status === 'swiss' || tour.status === 'cut'
   const lastSwiss = tour.status === 'swiss' && tour.round >= tour.rounds
   const cutDone = tour.status === 'cut' && !missing && current.every((m) => !m.p2 || (m.score && winnerOf(m.score)))
@@ -350,6 +356,25 @@ export function TournamentAdmin({
     const url = joinLink(code)
     if (navigator.share) return navigator.share({ title: 'Castra', text: t('run.codeShare', { n: tournamentTitle(tour, t), c: code }), url }).catch(() => {})
     copy(url)
+  }
+  const publish = async () => {
+    const tab = tour.stage ? t('run.stage', { n: tour.stage }) : 'Classifica'
+    if (!(await dialog.confirm(t('run.publishConfirm', { n: tab }), { ok: t('run.publish') }))) return
+    setBusy(true)
+    try {
+      const res = await publishTournament(id, sheetData(tour, players, matches, lists))
+      const added = [
+        res.players.length ? t('run.publishedPlayers', { p: res.players.join(', ') }) : '',
+        res.commanders.length ? t('run.publishedCommanders', { p: res.commanders.join(', ') }) : '',
+        res.manual.length ? t('run.publishedManual', { p: res.manual.join(', ') }) : '',
+      ]
+      await dialog.alert([t('run.published', { n: res.tab }), ...added].filter(Boolean).join('\n\n'))
+    } catch (e) {
+      const msg = (e as Error).message
+      await dialog.alert(msg === 'login' ? t('run.publishLogin') : t('run.publishError', { e: msg }))
+    } finally {
+      setBusy(false)
+    }
   }
   const copy = async (text: string) => {
     try {
@@ -525,12 +550,20 @@ export function TournamentAdmin({
       {tour.status === 'done' && (
         <section className="card">
           <div className="card-title">{t('run.sheet')}</div>
+          {canPublish && !tour.filed && (
+            <>
+              <button className="btn primary" disabled={busy || noCommander > 0} onClick={publish}>
+                {t('run.publish')}
+              </button>
+              <p className="muted small no-margin">{t(noCommander ? 'run.publishNoCommander' : 'run.publishHint')}</p>
+            </>
+          )}
           <p className="muted small no-margin">{t('run.sheetHint')}</p>
           <div className="btn-pair">
             <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches).names)}>
               <Icon name="copy" size={16} /> {t('run.copyNames')}
             </button>
-            <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches).results)}>
+            <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches, lists).results)}>
               <Icon name="copy" size={16} /> {t('run.copyResults')}
             </button>
           </div>
@@ -599,7 +632,7 @@ export function TournamentAdmin({
         <div className="card-title">
           {t('run.registered')}
           <span className="muted small">
-            {t('run.players', { n: entered.length })} · {t('run.lists', { n: lists, of: entered.length })}
+            {t('run.players', { n: entered.length })} · {t('run.lists', { n: listed, of: entered.length })}
           </span>
         </div>
         {noCommander > 0 && <p className="bad-text small no-margin">{t('run.missingCommanders', { n: noCommander })}</p>}

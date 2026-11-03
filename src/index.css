@@ -2530,6 +2530,11 @@ textarea {
 .my-tour {
   border-color: var(--gold);
 }
+/* the player's own table among the pairings */
+.event-row.mine {
+  box-shadow: inset 3px 0 0 var(--gold);
+  color: var(--text);
+}
 .card details summary {
   padding: 8px 0;
   font-weight: 600;
@@ -3006,6 +3011,7 @@ textarea {
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.45;
+  white-space: pre-line; /* a message in more paragraphs */
 }
 .dialog-actions {
   display: flex;
