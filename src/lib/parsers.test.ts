@@ -220,7 +220,7 @@ describe('checkDeck', () => {
   const dupes = (cards: [string, number, DeckCard['section']?][]) => checkDeck(deck(cards)).duplicates
 
   it('takes the copies a card allows, and not one more', () => {
-    expect(dupes([['Island', 30], ['Relentless Rats', 20], ['Seven Dwarves', 7], ['Nazgûl', 9]])).toEqual([])
+    expect(dupes([['Island', 30], ['Relentless Rats', 20], ['Tempest Hawk', 10], ["Sphinx's Approach", 4], ['Seven Dwarves', 7], ['Nazgûl', 9]])).toEqual([])
     expect(dupes([['Seven Dwarves', 8], ['Nazgul', 10], ['Sol Ring', 2]])).toEqual(['Seven Dwarves', 'Nazgul', 'Sol Ring'])
   })
 
