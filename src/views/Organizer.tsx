@@ -135,7 +135,11 @@ export default function OrganizerArea({
     )
 
   const year = new Date().getFullYear()
-  const leagues = sources.filter((s) => s.kind === 'league' && sourceYear(s) === year && canRun(uid, organizer, s))
+  // the season being played (January to May the first, as in the meta): an older season's sheet takes no new stages
+  const season = new Date().getMonth() < 5 ? 's1' : 's2'
+  const leagues = sources.filter(
+    (s) => s.kind === 'league' && sourceYear(s) === year && s.season === season && canRun(uid, organizer, s),
+  )
   const started = new Set(tournaments.map(([id]) => id))
   const levels = sources
     .filter((s) => isEvent(s.kind) && (s.date ?? '') >= today && canRun(uid, organizer, s) && !started.has(s.drive))
