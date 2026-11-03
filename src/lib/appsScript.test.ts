@@ -81,12 +81,18 @@ const RESULTS = [
   row('=HYPERLINK("x")', 'Urza, Lord High Artificer', 0, 3), // a formula, written as text; a second new commander: no room
 ]
 
-function setup(o: { tab?: Grid; status?: string; filed?: boolean; denied?: boolean; kind?: string; more?: Record<string, Grid> } = {}) {
+const TEMPLATE = '1yKd6dRUKoMontyCUbGxodtd0kEl2cHuthmyXr3bZFxI'
+
+function setup(
+  o: { tab?: Grid; status?: string; filed?: boolean; denied?: boolean; kind?: string; more?: Record<string, Grid>; admin?: boolean } = {},
+) {
   const target = o.kind === 'l1' ? 'Classifica' : '17'
   const tabs: Record<string, ReturnType<typeof sheet>> = { [target]: sheet(target, o.tab ?? stageTab()), Comandanti: sheet('Comandanti', comandanti()) }
   if (o.kind !== 'l1') tabs.Classifica = sheet('Classifica', classifica())
   for (const [n, g] of Object.entries(o.more ?? {})) tabs[n] = sheet(n, g)
   const calls: { method: string; url: string; payload?: string; auth: string }[] = []
+  // the level 1 template's copies, with their "Classifica"
+  const copies: { name: string; tab: ReturnType<typeof sheet> }[] = []
   const fields: Record<string, unknown> = {
     drive: { stringValue: DRIVE },
     kind: { stringValue: o.kind ?? 'league' },
@@ -98,13 +104,25 @@ function setup(o: { tab?: Grid; status?: string; filed?: boolean; denied?: boole
   const ctx = {
     LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
     SpreadsheetApp: {
-      openById: (id: string) => (id === DRIVE ? { getSheetByName: (n: string) => tabs[n] ?? null, getSheets: () => Object.values(tabs) } : null),
+      openById: (id: string) =>
+        id === DRIVE
+          ? { getSheetByName: (n: string) => tabs[n] ?? null, getSheets: () => Object.values(tabs) }
+          : id === TEMPLATE
+            ? {
+                copy: (name: string) => {
+                  const tab = sheet('Classifica', [[], [null, 'Nome evento', 'Data'], [null, null, null]])
+                  copies.push({ name, tab })
+                  return { getId: () => `NEW${copies.length}`, getSheetByName: (n: string) => (n === 'Classifica' ? tab : null) }
+                },
+              }
+            : null,
       flush: () => {},
     },
     UrlFetchApp: {
       fetch: (url: string, opt: { method: string; payload?: string; headers: { Authorization: string } }) => {
         calls.push({ method: opt.method, url, payload: opt.payload, auth: opt.headers.Authorization })
-        const code = opt.method === 'patch' && o.denied ? 403 : 200
+        // admins/{uid}: readable only with that account's sign-in, missing for who isn't an admin
+        const code = url.includes('/admins/') ? (o.admin === false ? 404 : 200) : opt.method === 'patch' && o.denied ? 403 : 200
         // a patch writes the fields of its mask: the ones it doesn't carry go
         if (code === 200 && opt.method === 'patch') {
           const sent = JSON.parse(opt.payload!).fields
@@ -119,7 +137,7 @@ function setup(o: { tab?: Grid; status?: string; filed?: boolean; denied?: boole
   }
   runInNewContext(code, ctx)
   const post = (body: unknown) => JSON.parse((ctx as unknown as { doPost: (e: unknown) => string }).doPost({ postData: { contents: JSON.stringify(body) } }))
-  return { tabs, calls, post, fields }
+  return { tabs, calls, post, fields, copies }
 }
 
 describe('publishing a tournament into its sheet (Apps Script)', () => {
@@ -263,5 +281,36 @@ describe('publishing a tournament into its sheet (Apps Script)', () => {
     moved.tabs['17'].grid[5][1] = 'Someone'
     expect(moved.post({ token: 'tok', id: TID, action: 'clear' }).error).toMatch(/è cambiata/)
     expect(moved.tabs['17'].grid[5][1]).toBe('Someone')
+  })
+})
+
+describe("creating a level 1's sheet (Apps Script)", () => {
+  const ask = { token: 'tok', uid: 'Ab12cd34', name: 'Dark Zone Roma', date: '2026-12-06', action: 'create' }
+
+  it("copies the template for an admin, with the event's name and date", () => {
+    const { calls, post, copies } = setup()
+    expect(post({ ...ask, name: '  Dark Zone Roma ' })).toEqual({ ok: true, id: 'NEW1' })
+    expect(calls).toEqual([{ method: 'get', url: expect.stringMatching(/\/documents\/admins\/Ab12cd34$/), payload: undefined, auth: 'Bearer tok' }])
+    expect(copies.map((c) => c.name)).toEqual(['LVL 1 - Dark Zone Roma'])
+    const g = copies[0].tab.grid
+    expect(g[1][1]).toBe('Dark Zone Roma') // B2
+    expect(g[2][2]).toBe('2026-12-06') // C3, under "Data"
+  })
+
+  it("copies nothing for who isn't an admin, nor for a request out of shape", () => {
+    const denied = setup({ admin: false })
+    expect(denied.post(ask).error).toMatch(/solo gli admin/)
+    expect(denied.copies).toEqual([])
+    const bad = setup()
+    for (const body of [
+      { ...ask, date: '6/12/2026' },
+      { ...ask, name: ' ' },
+      { ...ask, name: 'x'.repeat(81) },
+      { ...ask, uid: '../tournaments/x' },
+      { ...ask, token: undefined },
+    ])
+      expect(bad.post(body).error).toBe('richiesta non valida')
+    expect(bad.calls).toEqual([]) // Firestore never asked
+    expect(bad.copies).toEqual([])
   })
 })

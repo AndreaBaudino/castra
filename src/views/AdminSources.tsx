@@ -21,6 +21,7 @@ import {
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { leagues } from './Circuit'
+import { canPublish, createLevelSheet } from '../lib/tournaments'
 import AdminCircuit from './AdminCircuit'
 import AdminLinks from './AdminLinks'
 import { useCircuitSheets } from '../lib/circuits'
@@ -158,6 +159,33 @@ function SourceForm({
     }
   }
 
+  // a new level 1 without a sheet yet: the Apps Script copies the template, then it is saved as any other
+  const createSheet = async () => {
+    if (!user) return
+    const name = s.name?.trim() ?? ''
+    if (!name || !s.date) return setError(t(!name ? 'sources.err.name' : 'sources.err.date'))
+    if (!(await dialog.confirm(t('sources.createConfirm', { n: name }), { ok: t('sources.create') }))) return
+    setBusy(true)
+    setError(null)
+    let drive: string
+    try {
+      drive = (await createLevelSheet(user.uid, name, s.date)).id
+    } catch (e) {
+      setError(t('sources.createError', { e: (e as Error).message }))
+      return setBusy(false)
+    }
+    // shown at once: if saving fails, "Salva" retries with the sheet just made
+    setLink(`https://docs.google.com/spreadsheets/d/${drive}/edit`)
+    try {
+      await saveSource(user, { ...s, name, drive })
+      onDone()
+    } catch {
+      setError(t('admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <section className="card form">
       <div className="card-title">{initial ? t('sources.edit') : t('sources.add')}</div>
@@ -272,6 +300,14 @@ function SourceForm({
         </p>
       )}
       {error && <div className="notice warn">{error}</div>}
+      {!initial && s.kind === 'l1' && !link.trim() && canPublish && (
+        <>
+          <button className="btn ghost" disabled={busy} onClick={createSheet}>
+            {t('sources.create')}
+          </button>
+          <p className="muted small no-margin">{t('sources.createHint')}</p>
+        </>
+      )}
       <div className="btn-pair">
         <button className="btn ghost" disabled={busy} onClick={onDone}>
           {t('common.cancel')}

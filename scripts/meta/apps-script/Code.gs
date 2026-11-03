@@ -7,10 +7,13 @@
 // Only the files in the list of tournament sheets are served: Firestore's sources collection (kept from the app's
 // admin area) and the repository's scripts/meta/sources.json.
 // POST {token, id, rows} publishes a tournament (docs/tornei.md), {token, id, action: 'clear'} takes it off: see doPost.
+// POST {token, uid, name, date, action: 'create'} copies the level 1 template into a new sheet (admins only).
 
 const SOURCES_URL = 'https://raw.githubusercontent.com/AndreaBaudino/castra/main/scripts/meta/sources.json'
 const FIRESTORE_URL = 'https://firestore.googleapis.com/v1/projects/castra-a69ab/databases/(default)/documents/sources'
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+// the blank level 1 sheet ("Blank LVL 1"), owned by this account
+const TEMPLATE_L1 = '1yKd6dRUKoMontyCUbGxodtd0kEl2cHuthmyXr3bZFxI'
 
 function doGet(e) {
   const key = PropertiesService.getScriptProperties().getProperty('KEY')
@@ -81,13 +84,32 @@ function doPost(e) {
   const lock = LockService.getScriptLock()
   lock.waitLock(30000) // one at a time: two TOs can't both find the tab empty
   try {
-    const { token, id, rows, action } = JSON.parse(e.postData.contents)
+    const { token, id, rows, action, uid, name, date } = JSON.parse(e.postData.contents)
+    if (action === 'create') return json(createLevel(token, uid, name, date))
     return json(action === 'clear' ? unpublish(token, id) : publish(token, id, rows))
   } catch (err) {
     return json({ error: err.message })
   } finally {
     lock.releaseLock()
   }
+}
+
+/** A new level 1's sheet: the template copied, with the event's name (B2) and date (C3). Answers with its drive id. */
+function createLevel(token, uid, name, date) {
+  if (typeof token !== 'string' || typeof uid !== 'string' || !/^[A-Za-z0-9]{1,128}$/.test(uid) || typeof name !== 'string' ||
+    !name.trim() || name.trim().length > 80 || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date))
+    throw new Error('richiesta non valida')
+  // each account may read only its own entry in admins: found, with this sign-in, means an admin asks
+  const auth = { Authorization: 'Bearer ' + token }
+  const res = UrlFetchApp.fetch(DOCS + 'admins/' + uid, { method: 'get', headers: auth, muteHttpExceptions: true })
+  if (res.getResponseCode() === 401) throw new Error('accesso scaduto: esci e rientra nell\'app')
+  if (res.getResponseCode() !== 200) throw new Error('solo gli admin creano i fogli')
+  const ss = SpreadsheetApp.openById(TEMPLATE_L1).copy('LVL 1 - ' + name.trim())
+  const tab = ss.getSheetByName('Classifica')
+  tab.getRange(2, 2).setValue(cell(name.trim()))
+  const [y, m, d] = date.split('-').map(Number)
+  tab.getRange(3, 3).setValue(new Date(y, m - 1, d))
+  return { ok: true, id: ss.getId() }
 }
 
 /** The tournament, read with the TO's sign-in. */

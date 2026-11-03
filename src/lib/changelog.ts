@@ -8,6 +8,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-03',
+    it: [
+      'Area admin, Tornei: per un livello 1 nuovo "Crea il foglio dal modello" copia il modello ufficiale con nome e data e aggiunge il torneo all\'elenco, senza preparare il foglio a mano',
+    ],
+    en: [
+      'Admin area, Tournaments: for a new level 1, "Create the sheet from the template" copies the official template with the name and date and adds the tournament to the list, with no sheet to prepare by hand',
+    ],
+  },
+  {
     date: '2026-11-02',
     it: [
       'Area TO: a torneo chiuso, "Pubblica sul foglio" scrive la classifica finale nella scheda della tappa (o del livello): nomi, comandanti, risultati, BYE, decklist e data, aggiungendo i giocatori e i comandanti nuovi. Se la scheda ha già dei risultati non tocca niente. Il copia-incolla resta, ora con le decklist. "Togli dal foglio" la riporta com\'era (righe, data, giocatori e comandanti aggiunti), per esempio dopo una tappa di prova',

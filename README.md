@@ -31,7 +31,9 @@ dati di ogni anno, che viene pubblicato con l'app.
    catene. Finché la raccolta è vuota vale `scripts/meta/aliases.json`, che l'area admin importa con un tocco.
 
 Per aggiungere un torneo: Area admin → Tornei → Aggiungi torneo, con il link al foglio (Google Sheets o Excel su Drive,
-leggibile dall'account Google dell'Apps Script qui sotto). Entra nel meta al primo aggiornamento notturno. I bye spuntati nella colonna BYE non contano
+leggibile dall'account Google dell'Apps Script qui sotto). Per un livello 1 nuovo si può lasciare vuoto il link e
+toccare **Crea il foglio dal modello**: lo script copia il modello del livello 1 (`TEMPLATE_L1` in `Code.gs`, di
+`centuriondati@gmail.com`) nel Drive di quell'account, scrive nome e data e il torneo entra nell'elenco. Entra nel meta al primo aggiornamento notturno. I bye spuntati nella colonna BYE non contano
 nel winrate; quelli non spuntati restano vittorie finché qualcuno non li spunta.
 
 ### Un anno nuovo
@@ -80,7 +82,9 @@ Lo stesso script **scrive nei fogli** i tornei gestiti in app ("Pubblica sul fog
 questo l'account che lo pubblica deve poter modificare i fogli, e `appsscript.json` chiede anche il permesso
 `spreadsheets` (dopo averlo aggiornato si rilancia `check` per autorizzarlo). Non serve la chiave: lo script usa
 l'accesso Firebase del TO e le regole di Firestore per sapere se può pubblicare quel torneo. L'URL `/exec` va anche
-in `PUBLISH_URL` (`src/config.ts`); finché è vuoto, nell'Area TO resta solo il copia-incolla.
+in `PUBLISH_URL` (`src/config.ts`); finché è vuoto, nell'Area TO resta solo il copia-incolla. Con lo stesso URL lo
+script crea i fogli dei livelli 1 dal modello (`action: 'create'`, solo per gli admin: lo controlla leggendo
+`admins/{uid}` con l'accesso di chi chiede).
 
 ### Banlist
 

@@ -190,6 +190,12 @@ scrivere codice. I mockup delle schermate sono su
 - **Script**: pubblicato da `centuriondati@gmail.com`, proprietario dei fogli e con il permesso di modificarli; lo
   stesso deployment legge i fogli per il meta (con la chiave) e li scrive. L'URL `/exec` va in `PUBLISH_URL`
   (`src/config.ts`): finché è vuoto il pulsante non c'è e resta il copia-incolla.
+- **Fogli nuovi dei livelli 1** (stesso script, `action: 'create'`): dall'area admin (Tornei → Aggiungi torneo, link
+  vuoto, "Crea il foglio dal modello") lo script legge `admins/{uid}` con il token di chi chiede (le regole lasciano
+  leggere a ognuno solo la propria voce: trovata vuol dire admin), copia il modello `Blank LVL 1` (`TEMPLATE_L1`) nel
+  Drive di centuriondati come "LVL 1 - nome", scrive il nome in B2 e la data in C3 della `Classifica` e risponde con
+  l'id; l'app lo aggiunge all'elenco come un torneo inserito a mano. I livelli 2 hanno punti diversi: per ora solo a
+  mano.
 - Di riserva, "Copia le righe": il TO le incolla nella scheda.
 - Il meta notturno legge il foglio come oggi: nessun doppio conteggio e nessuna modifica a `build-meta.mjs`.
 

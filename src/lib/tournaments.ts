@@ -514,6 +514,9 @@ export const publishTournament = (id: string, rows: SheetRow[]) =>
 /** Takes a published tournament off its sheet ("Togli dal foglio"); `kept`: the names other stages still use. */
 export const unpublishTournament = (id: string) => script<{ tab: string; kept: string[] }>({ id, action: 'clear' })
 
+/** A new level 1's sheet, copied by the Apps Script from the template with its name and date (admins only): its id. */
+export const createLevelSheet = (uid: string, name: string, date: string) => script<{ id: string }>({ action: 'create', uid, name, date })
+
 async function script<T>(body: object): Promise<T> {
   const { auth } = await fb()
   const token = await auth.currentUser?.getIdToken()
