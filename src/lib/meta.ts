@@ -43,6 +43,14 @@ export interface MetaEntry {
   list: string | null
 }
 
+/** One match between two commanders: only the tournaments run in the app know who played whom. */
+export interface MetaPairing {
+  t: number // tournament index
+  a: number // commander ids
+  b: number
+  r: 0 | 1 | 2 // the winner: a (1), b (2), or a draw (0)
+}
+
 export interface MetaDataset {
   year: number
   years: number[] // every year with data, the newest first
@@ -50,6 +58,7 @@ export interface MetaDataset {
   tournaments: MetaTournament[]
   commanders: MetaCommander[]
   entries: MetaEntry[]
+  pairings: MetaPairing[]
 }
 
 export interface MetaDeck {
@@ -152,6 +161,22 @@ export function recordOf(entries: MetaEntry[]): MetaRecord {
   return r
 }
 
+/** A commander's matches against each other commander, the most played first; mirror matches left out. */
+export function matchupsOf(ds: MetaDataset, f: MetaFilter, cmd: number) {
+  const by = new Map<number, MetaRecord>()
+  for (const p of ds.pairings) {
+    if ((p.a === cmd) === (p.b === cmd) || !inFilter(ds.tournaments[p.t], f)) continue
+    const [opp, won] = p.a === cmd ? [p.b, 1] : [p.a, 2]
+    const r = by.get(opp) ?? { wins: 0, losses: 0, draws: 0, games: 0 }
+    if (!p.r) r.draws++
+    else if (p.r === won) r.wins++
+    else r.losses++
+    r.games++
+    by.set(opp, r)
+  }
+  return [...by].map(([id, r]) => ({ id, ...r })).sort((a, b) => b.games - a.games || winrate(b) - winrate(a))
+}
+
 export function aggregate(ds: MetaDataset, f: MetaFilter): MetaData {
   const rows = entriesOf(ds, f)
   const byCmd = new Map<number, MetaEntry[]>()
@@ -188,6 +213,7 @@ interface RawMeta {
   t: RawTournament[]
   c: { n: string; c: string }[]
   e: RawEntry[]
+  m?: [number, number, number, 0 | 1 | 2][] // missing: no tournament run in the app that year
 }
 /** public/meta.json: every year, the newest first. A single year (RawMeta) is the file of earlier versions. */
 type RawFile = { v: 2; years: RawMeta[] } | RawMeta
@@ -223,6 +249,7 @@ function fromRaw(raw: RawMeta, years: number[]): MetaDataset {
       bye: !!bye,
       list,
     })),
+    pairings: (raw.m ?? []).map(([t, a, b, r]) => ({ t, a, b, r })),
   }
 }
 

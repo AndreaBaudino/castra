@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MetaDataset, MetaTournament } from './meta'
+import { type MetaDataset, type MetaTournament, ALL, matchupsOf } from './meta'
 import type { Source } from './sources'
 import type { Deck } from './decks'
 import {
@@ -167,5 +167,60 @@ describe('tournaments', () => {
     expect(done.map((r) => [r.id, r.points, `${r.wins}-${r.losses}`])).toEqual([['c', 6, '2-1'], ['a', 6, '2-1'], ['b', 3, '1-1'], ['d', 0, '0-2']])
     expect(done[0]).toMatchObject({ name: 'C', commander: 'X', dropped: false, omwp: cut.find((r) => r.id === 'c')!.omwp })
     expect(done[3].commander).toBeNull()
+  })
+})
+
+describe('commanders against commanders', () => {
+  // the nightly meta build turns each tournament run in the app into pairings (scripts/meta/pairings.mjs)
+  const pairingsOf = async (...args: unknown[]) =>
+    (await import(/* @vite-ignore */ new URL('../../scripts/meta/pairings.mjs', import.meta.url).href)).pairingsOf(...args)
+
+  it('takes each played match with the commanders of the sheet, by player key', async () => {
+    const cmdOf = new Map([['ada', 0], ['bea', 1], ['cleo', 2], ['dan', -1]])
+    const m = (p1: string, p2: string | null, score?: number[]) => ({ round: 1, table: 1, p1, p2, ...(score ? { score } : {}) })
+    expect(
+      await pairingsOf(4, [
+        m('ada', 'bea', [2, 1, 0]), // ada's commander wins
+        m('cleo', 'ada', [0, 2, 0]), // the second one wins
+        m('bea', 'cleo', [1, 1, 1]), // a draw
+        m('ada', null, [2, 0, 0]), // the bye
+        m('bea', 'ada'), // no result
+        m('ada', 'dan', [2, 0, 0]), // no commander in the sheet
+        m('ada', 'zoe', [2, 0, 0]), // not in the sheet
+      ], cmdOf),
+    ).toEqual([
+      [4, 0, 1, 1],
+      [4, 2, 0, 2],
+      [4, 1, 2, 0],
+    ])
+  })
+
+  it("adds up a commander's matches against each other one, from either side, mirrors left out", () => {
+    const ds = {
+      tournaments: [stage(1, { season: 's1' }), stage(2)],
+      pairings: [
+        { t: 0, a: 0, b: 1, r: 1 },
+        { t: 1, a: 1, b: 0, r: 1 },
+        { t: 1, a: 0, b: 1, r: 1 },
+        { t: 1, a: 2, b: 0, r: 2 },
+        { t: 1, a: 0, b: 2, r: 0 },
+        { t: 1, a: 0, b: 0, r: 1 }, // mirror
+        { t: 1, a: 1, b: 2, r: 1 }, // without commander 0
+      ],
+    } as MetaDataset
+    expect(matchupsOf(ds, ALL, 0)).toEqual([
+      { id: 1, wins: 2, losses: 1, draws: 0, games: 3 },
+      { id: 2, wins: 1, losses: 0, draws: 1, games: 2 },
+    ])
+    // the filters of the page: the second season only; as many matches, the better winrate first
+    expect(matchupsOf(ds, { ...ALL, season: 's2' }, 0)).toEqual([
+      { id: 2, wins: 1, losses: 0, draws: 1, games: 2 },
+      { id: 1, wins: 1, losses: 1, draws: 0, games: 2 },
+    ])
+    // the same matches seen from the other side
+    expect(matchupsOf(ds, ALL, 1)).toEqual([
+      { id: 0, wins: 1, losses: 2, draws: 0, games: 3 },
+      { id: 2, wins: 1, losses: 0, draws: 0, games: 1 },
+    ])
   })
 })

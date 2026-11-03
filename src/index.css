@@ -1019,6 +1019,9 @@ button.kv.clickable b {
   letter-spacing: 0.06em;
   margin: 4px 2px 6px;
 }
+.group-note {
+  margin: 6px 2px 0;
+}
 .card-list {
   list-style: none;
   margin: 0;

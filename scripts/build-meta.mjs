@@ -14,6 +14,7 @@ import ExcelJS from 'exceljs'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { aliasLookup, commanderKey, loadAliases, playerKey } from './meta/aliases.mjs'
 import { firestoreDocs } from './meta/firestore.mjs'
+import { pairingsOf } from './meta/pairings.mjs'
 
 const dir = new URL('./meta/', import.meta.url)
 const root = new URL('../', import.meta.url)
@@ -265,7 +266,7 @@ for (const src of sources.tournaments) {
     const t = { id: `${src.kind}-${date}-${slug(src.name)}`, k: src.kind, s: seasonOf(date), n: src.name, d: date }
     if (src.circuit) t.c = src.circuit
     const year = +date.slice(0, 4)
-    tables.push({ year, t, players: tab.players, rows: tab.rows, ctx: { year, drive: src.drive, label } })
+    tables.push({ year, t, players: tab.players, rows: tab.rows, app: src.drive, ctx: { year, drive: src.drive, label } })
     read[src.drive]++
   } else {
     if (!src.year) {
@@ -282,7 +283,8 @@ for (const src of sources.tournaments) {
       if (tab.date) t.d = tab.date
       else warn(where, 'senza data')
       if (tab.date && +tab.date.slice(0, 4) !== src.year) warn(where, `data ${tab.date} fuori dall'anno ${src.year}`)
-      tables.push({ year: src.year, t, players: tab.players, rows: tab.rows, ctx: { year: src.year, drive: src.drive, label: where } })
+      const ctx = { year: src.year, drive: src.drive, label: where }
+      tables.push({ year: src.year, t, players: tab.players, rows: tab.rows, app: `${src.drive}~${stage}`, ctx })
       read[src.drive]++
     }
   }
@@ -290,15 +292,29 @@ for (const src of sources.tournaments) {
 
 await resolveCards(tables.flatMap(({ rows, ctx }) => rows.flatMap((r) => (r.commander ? splitPartners(r.commander, ctx, false).map(frontFace) : []))))
 
-// one dataset per year, the newest first: tournaments, commanders and entries, each indexed within its year
+// who played whom: only the tournaments run in the app know it (docs/tornei.md), once their results are in the sheet.
+// The tournament's id is its sheet, and stage for the leagues.
+const played = new Map()
+let playedFailed = false
+try {
+  for (const x of await firestoreDocs('tournaments'))
+    if (x.status === 'done' && (x.published || x.filed)) played.set(x.id, await firestoreDocs(`tournaments/${x.id}/matches`))
+} catch (e) {
+  playedFailed = true
+  warn('tornei in app', `match non letti da Firestore (${e.message}): restano quelli già pubblicati`)
+}
+
+// one dataset per year, the newest first: tournaments, commanders, entries and pairings, each indexed within its year
 function build(tables) {
   const commanders = []
   const cmdIndex = new Map()
   const entries = []
   const tournaments = []
-  for (const { t, players, rows, ctx } of tables) {
+  const pairings = []
+  for (const { t, players, rows, app, ctx } of tables) {
     const ti = tournaments.length
     tournaments.push({ ...t, p: players || rows.length }) // as declared in the sheet: some rows can be drops or duplicates
+    const cmdOf = new Map() // player key (as written, and corrected) → commander, for the app's matches
     rows.forEach((r, i) => {
       let ci = -1
       if (r.commander) {
@@ -310,10 +326,14 @@ function build(tables) {
         ci = cmdIndex.get(c.name)
       }
       // [tournament, player, commander, place, wins, losses, draws, bye ticked, list]
-      entries.push([ti, r.player && playerOf(r.player, ctx), ci, i + 1, r.wins, r.losses, r.draws, r.bye ? 1 : 0, r.list])
+      const player = r.player && playerOf(r.player, ctx)
+      entries.push([ti, player, ci, i + 1, r.wins, r.losses, r.draws, r.bye ? 1 : 0, r.list])
+      if (player) cmdOf.set(playerKey(r.player), ci).set(playerKey(player), ci)
     })
+    if (played.has(app)) pairings.push(...pairingsOf(ti, played.get(app), cmdOf))
   }
-  return { t: tournaments, c: commanders, e: entries }
+  // only when there are some: the years without stay as they were
+  return { t: tournaments, c: commanders, e: entries, ...(pairings.length ? { m: pairings } : {}) }
 }
 const yearList = [...new Set(tables.map((x) => x.year))].sort((a, b) => b - a)
 const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.year === year)) }))
@@ -351,9 +371,11 @@ for (const { year } of built) {
 // each year's update time moves only when its data does, so the nightly run publishes nothing on quiet days
 const outUrl = new URL('public/meta.json', root)
 const prev = existsSync(outUrl) ? readJson(outUrl).years : []
-const rebuilt = built.map(({ year, t, c, e }) => {
-  const out = { v: 1, year, updated: new Date().toISOString(), t, c, e }
+const rebuilt = built.map(({ year, t, c, e, m }) => {
   const old = prev.find((y) => y.year === year)
+  // Firestore not read: the pairings already published stay, while their tournaments and commanders are the same
+  const same = playedFailed && old?.m && JSON.stringify([old.t, old.c]) === JSON.stringify([t, c])
+  const out = { v: 1, year, updated: new Date().toISOString(), t, c, e, ...(m ? { m } : same ? { m: old.m } : {}) }
   if (old && JSON.stringify({ ...old, updated: '' }) === JSON.stringify({ ...out, updated: '' })) out.updated = old.updated
   return out
 })
@@ -374,7 +396,7 @@ if (existsSync(new URL('.meta-cache/', root)))
     JSON.stringify({ warnings, read, years: summary, issues: issueList, aliases: aliasUse, aliasOrigin: aliases.origin }),
   )
 
-for (const y of years) console.log(`${y.year}: ${y.t.length} tornei, ${y.e.length} presenze, ${y.c.length} comandanti`)
+for (const y of years) console.log(`${y.year}: ${y.t.length} tornei, ${y.e.length} presenze, ${y.c.length} comandanti, ${y.m?.length ?? 0} match in app`)
 const unused = aliases.list.filter((a) => !usage[a.id]).length
 console.log(`Correzioni (${aliases.origin === 'firestore' ? 'Firestore' : 'aliases.json'}): ${aliases.list.length}, ${unused} non usate`)
 if (issueList.length)

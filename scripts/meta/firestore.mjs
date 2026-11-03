@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 const config = readFileSync(new URL('../../src/config.ts', import.meta.url), 'utf8')
 const API = `https://firestore.googleapis.com/v1/projects/${config.match(/projectId: '([^']+)'/)[1]}/databases/(default)/documents`
 
-// Firestore's REST values ({ stringValue: … }, { integerValue: "2026" }, { mapValue: { fields } }…) as plain ones
+// Firestore's REST values ({ stringValue: … }, { integerValue: "2026" }, { arrayValue: … }, { mapValue: … }…) as plain ones
 const plain = (v) =>
   'stringValue' in v
     ? v.stringValue
@@ -13,9 +13,13 @@ const plain = (v) =>
       ? +v.integerValue
       : 'doubleValue' in v
         ? v.doubleValue
-        : 'mapValue' in v
-          ? fields(v.mapValue)
-          : null
+        : 'booleanValue' in v
+          ? v.booleanValue
+          : 'arrayValue' in v
+            ? (v.arrayValue.values ?? []).map(plain)
+            : 'mapValue' in v
+              ? fields(v.mapValue)
+              : null
 const fields = (d) => Object.fromEntries(Object.entries(d.fields ?? {}).map(([k, v]) => [k, plain(v)]))
 
 /** Every document of the collection as { id, ...fields }; fails with the HTTP status (`status`) when it can't be read. */

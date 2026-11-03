@@ -206,7 +206,11 @@ scrivere codice. I mockup delle schermate sono su
   `Classifica` non abbia risultati; poi lo sposta nel cestino (30 giorni per recuperarlo) e l'app lo toglie
   dall'elenco. Serve il permesso `drive` completo, limitato all'account dello script.
 - Di riserva, "Copia le righe": il TO le incolla nella scheda.
-- Il meta notturno legge il foglio come oggi: nessun doppio conteggio e nessuna modifica a `build-meta.mjs`.
+- Il meta notturno legge il foglio come oggi, senza doppi conteggi. In più `build-meta.mjs` legge i match dei
+  tornei in app chiusi e pubblicati (o segnati come riportati) e li aggiunge al meta come abbinamenti tra comandanti,
+  con i comandanti delle righe del foglio (`scripts/meta/pairings.mjs`): la pagina di ogni comandante mostra i suoi
+  match contro gli altri comandanti. Bye, match senza risultato e mirror restano fuori. Se Firestore non risponde
+  restano gli abbinamenti già pubblicati.
 
 ## 9. Dati su Firestore
 

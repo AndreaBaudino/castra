@@ -17,7 +17,10 @@ Per pubblicare in una sotto-cartella (es. GitHub Pages): `BASE=/centurion-compan
 Il meta si calcola dai fogli dei tornei (Livelli 1 e 2, leghe S1/S2, lega online). L'elenco dei fogli si gestisce
 dall'app (Profilo → Area admin → Tornei) ed è salvato su Firestore (`sources/{id del file}`); finché quella raccolta è
 vuota vale `scripts/meta/sources.json`, che l'area admin importa con un tocco. I fogli sono privati: lo script legge copie locali e scrive `public/meta.json`, con i
-dati di ogni anno, che viene pubblicato con l'app.
+dati di ogni anno, che viene pubblicato con l'app. Dai tornei gestiti in app, chiusi e pubblicati sul foglio (o
+segnati come riportati), legge anche i match su Firestore: chi ha giocato contro chi, con i comandanti presi dalle
+righe del foglio. Finiscono nel meta come abbinamenti tra comandanti, mostrati nella pagina di ogni comandante
+("Contro gli altri comandanti"); i fogli da soli non dicono chi ha giocato contro chi.
 
 1. Scarica ogni foglio come .xlsx in `.meta-cache/<id del file>.xlsx` (l'id è quello nel link del foglio).
 2. `npm run meta`: legge i fogli, riconosce i comandanti su Scryfall e stampa quello che va controllato

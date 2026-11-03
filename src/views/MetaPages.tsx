@@ -9,6 +9,7 @@ import {
   aggregate,
   entriesOf,
   findMetaDeck,
+  matchupsOf,
   recordOf,
   shortName,
   wilson,
@@ -65,6 +66,7 @@ export function CommanderPage({
   openPlayer,
   openTournament,
   openDeck,
+  openCommander,
 }: {
   dataset: MetaDataset | null
   name: string
@@ -73,10 +75,12 @@ export function CommanderPage({
   openPlayer: (key: string) => void
   openTournament: (id: string) => void
   openDeck: (id: string) => void
+  openCommander: (name: string) => void
 }) {
   const { t, lang } = useI18n()
   const [filter, setFilter] = useStoredState<MetaFilter>(META_FILTER_KEY, ALL)
   const [allPlayers, setAllPlayers] = useState(false)
+  const [allOpponents, setAllOpponents] = useState(false)
   const [allResults, setAllResults] = useState(false)
   const [showLists, setShowLists] = useState(false)
   const cmd = dataset?.commanders.find((c) => c.name === name)
@@ -121,6 +125,7 @@ export function CommanderPage({
       wins: rows.filter((e) => e.place === 1).length,
       top8: rows.filter((e) => isEvent(tour(e)) && e.place <= 8).length,
       months: monthlyShare(dataset, filter, cmd.id),
+      matchups: matchupsOf(dataset, filter, cmd.id),
     }
   }, [dataset, cmd, filter])
 
@@ -240,6 +245,35 @@ export function CommanderPage({
                 </li>
               ))}
             </ul>
+          )}
+
+          {view.matchups.length > 0 && (
+            <section className="group">
+              <div className="group-title">{t('meta.vsCommanders')}</div>
+              <ul className="card-list">
+                {(allOpponents ? view.matchups : view.matchups.slice(0, SHOW)).map((m) => {
+                  const c = dataset.commanders[m.id]
+                  return (
+                    <li key={m.id} className="event-row" onClick={() => openCommander(c.name)}>
+                      <div className="event-main">
+                        <span className="ellipsis">
+                          <Pips colors={c.colors} size={12} /> {shortName(c.name)}
+                        </span>
+                        <span className="muted small">{t('meta.nMatches', { n: m.games })}</span>
+                      </div>
+                      <span className="rec-inline">{fmtRec(m)}</span>
+                      {m.wins + m.losses > 0 && <b className={`wr ${wrClass(winrate(m))}`}>{pct(winrate(m), 0)}</b>}
+                    </li>
+                  )
+                })}
+                {view.matchups.length > SHOW && (
+                  <li className="event-row more" onClick={() => setAllOpponents(!allOpponents)}>
+                    {allOpponents ? t('meta.showLess') : t('meta.allOpponents', { n: view.matchups.length })}
+                  </li>
+                )}
+              </ul>
+              <p className="muted small group-note">{t('meta.vsNote', { n: view.matchups.reduce((s, m) => s + m.games, 0) })}</p>
+            </section>
           )}
 
           {view.players.length > 0 && (

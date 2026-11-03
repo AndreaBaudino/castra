@@ -411,6 +411,7 @@ export default function App() {
                 openPlayer={openPlayer}
                 openTournament={openTournament}
                 openDeck={(id) => go('decks', id)}
+                openCommander={openCommander}
               />
             ) : metaSub === 't' || (metaSub === 'e' && eventTournament) ? (
               <TournamentPage
