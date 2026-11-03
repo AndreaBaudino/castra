@@ -16,6 +16,26 @@ async function load() {
 let loading: ReturnType<typeof load> | null = null
 export const fb = () => (loading ??= load())
 
+/** A Firestore document kept up to date: null while loading, when missing or unreadable. */
+export function useLiveDoc<T>(path: string | null) {
+  const [data, setData] = useState<T | null>(null)
+  useEffect(() => {
+    setData(null)
+    if (!cloudEnabled || !path) return
+    let unsub = () => {}
+    let cancelled = false
+    fb().then(({ db, fs }) => {
+      if (cancelled) return
+      unsub = fs.onSnapshot(fs.doc(db, path), (snap) => setData((snap.data() as T) ?? null), () => setData(null))
+    })
+    return () => {
+      cancelled = true
+      unsub()
+    }
+  }, [path])
+  return data
+}
+
 /**
  * A Firestore collection kept up to date, as [id, data] pairs; `loaded` once the server confirmed it. `where` keeps
  * only the documents whose field compares so with the value.

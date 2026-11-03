@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { AppUser } from './auth'
-import { cloudEnabled, fb, useLiveCollection } from './firebase'
+import { fb, useLiveCollection, useLiveDoc } from './firebase'
 import { fmt } from './timer'
 import type { T } from '../i18n'
 import type { MetaDataset } from './meta'
@@ -268,22 +268,7 @@ export async function findByCode(code: string): Promise<string | null> {
 
 /** A tournament with its players and matches, live. */
 export function useTournament(id: string | null) {
-  const [t, setT] = useState<Tournament | null>(null)
-  useEffect(() => {
-    setT(null)
-    if (!cloudEnabled || !id) return
-    let unsub = () => {}
-    let cancelled = false
-    fb().then(({ db, fs }) => {
-      if (cancelled) return
-      const ref = fs.doc(db, 'tournaments', id)
-      unsub = fs.onSnapshot(ref, (snap) => setT((snap.data() as Tournament) ?? null), () => setT(null))
-    })
-    return () => {
-      cancelled = true
-      unsub()
-    }
-  }, [id])
+  const t = useLiveDoc<Tournament>(id && `tournaments/${id}`)
   const players = useLiveCollection<Player>(id && `tournaments/${id}/players`).docs
   const docs = useLiveCollection<TableMatch>(id && `tournaments/${id}/matches`).docs
   const matches = useMemo(() => docs.map(([, m]) => m).sort((a, b) => a.round - b.round || a.table - b.table), [docs])

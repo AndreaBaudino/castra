@@ -4,6 +4,7 @@ import type { AppUser } from '../lib/auth'
 import type { Claim } from '../lib/claims'
 import type { Deck } from '../lib/decks'
 import type { Match as Played } from '../lib/matches'
+import { useLiveDoc } from '../lib/firebase'
 import { readStored, writeStored } from '../lib/storage'
 import { freshTimer } from '../lib/timer'
 import { placeLabel } from './Circuit'
@@ -117,15 +118,17 @@ function Clock({ tour, extra }: { tour: Tournament; extra?: number }) {
 function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLive, login, linkPlayer, record, openGame }: Me & { id: string; typed: boolean; close: () => void }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
-  const { t: tour, players, matches } = useTournament(id)
+  // the whole tournament only when the player is in it (or typed its code): one document read for each of the others
+  const entered = useLiveDoc<Player>(me && `tournaments/${id}/players/${me}`) != null
+  const { t: tour, players, matches } = useTournament(typed || entered ? id : null)
   const [joining, setJoining] = useState(false)
   const [result, setResult] = useState<TableMatch | null>(null)
   const [busy, setBusy] = useState(false)
   const mine = me ? players.find(([k]) => k === me)?.[1] : undefined
   // once in, the card stays as one of the player's: the code would turn invalid at round 1
   useEffect(() => {
-    if (typed && mine) close()
-  }, [typed, !!mine]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (typed && entered) close()
+  }, [typed, entered]) // eslint-disable-line react-hooks/exhaustive-deps
   // once over, the matches go into the player's stats (the same ids every time: never twice)
   const over = tour?.status === 'done' && !!mine
   useEffect(() => {
