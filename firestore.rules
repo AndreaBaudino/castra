@@ -5,6 +5,12 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
+    // a moment as the app writes it (toISOString), not after today: documents everyone downloads stay small, and the
+    // admins' notifications (scripts/notify.mjs) take the newer ones as new
+    function stamp(v) {
+      return v is string && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z')
+        && timestamp.date(int(v[0:4]), int(v[5:7]), int(v[8:10])) <= request.time;
+    }
 
     // each account can see whether it is an admin, and nobody can make themselves one
     match /admins/{userId} {
@@ -54,6 +60,7 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at'])
+        && stamp(request.resource.data.at)
         // every app downloads all the claims: no oversized names
         && optionalText('name', 200)
         && pictures()
@@ -71,6 +78,7 @@ service cloud.firestore {
         && request.resource.data.get('verified', null) == resource.data.get('verified', null)
         && request.resource.data.get('verifiedBy', null) == resource.data.get('verifiedBy', null)
         && request.resource.data.get('verifiedIn', null) == resource.data.get('verifiedIn', null)
+        && (request.resource.data.get('at', null) == resource.data.get('at', null) || stamp(request.resource.data.get('at', null)))
         && optionalText('name', 200)
         && pictures()
         && optionalText('coverName', 150)
@@ -246,7 +254,7 @@ service cloud.firestore {
           return d.uid == request.auth.uid && d.by == request.auth.uid
             && text(d, 'commander', 1, 300)
             && (d.get('deck', null) == null || text(d, 'deck', 1, 100))
-            && d.at is string;
+            && stamp(d.get('at', null));
         }
         allow create: if holds(key)
           && tour().status == 'open' && tour().get('code', null) != null
