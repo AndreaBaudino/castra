@@ -507,6 +507,7 @@ export default function App() {
             />,
             openDeck && (
               <DeckDetail
+                key={openDeck.id}
                 deck={openDeck}
                 metaDecks={meta.decks}
                 matches={matches}

@@ -64,7 +64,7 @@ const it = {
   'home.welcomeGame': 'Tieni traccia e registra le tue partite',
   'home.welcomeDecks': 'Importa i mazzi e controlla la banlist',
   'home.welcomeOk': 'Ho capito',
-  'home.importDeck': 'Importa mazzo',
+  'home.importDeck': 'Nuovo mazzo',
   'home.inMeta': 'nel meta',
   'home.notInMeta': 'non nel meta',
 
@@ -289,10 +289,12 @@ const it = {
   'life.cmdDamageFrom': 'Danno dal comandante avversario',
 
   'decks.title': 'Mazzi',
-  'decks.import': 'Importa',
-  'decks.empty': 'Nessun mazzo trovato. Esporta la lista come testo da Moxfield, Archidekt, MTGO o Arena e incollala qui.',
+  'decks.new': 'Nuovo mazzo',
+  'decks.createEmpty': 'Crea mazzo vuoto',
+  'decks.empty':
+    'Nessun mazzo trovato. Esporta la lista come testo da Moxfield, Archidekt, MTGO o Arena e incollala qui, oppure crea un mazzo vuoto e aggiungi le carte una a una.',
   'decks.name': 'Nome del mazzo',
-  'decks.paste': 'Incolla la lista',
+  'decks.paste': 'Incolla la lista (o lascia vuoto per partire da zero)',
   'decks.pasteHint':
     '1 Atraxa, Praetors\' Voice\n1 Sol Ring\n…\n\nSuggerimento: metti il comandante sotto una riga "Commander" oppure sceglilo dopo.',
   'decks.tags': 'Etichette (separate da virgola)',
@@ -1268,7 +1270,7 @@ const en: Record<Key, string> = {
   'home.welcomeGame': 'Keep track of your games and record them',
   'home.welcomeDecks': 'Import your decks and check the banlist',
   'home.welcomeOk': 'Got it',
-  'home.importDeck': 'Import deck',
+  'home.importDeck': 'New deck',
   'home.inMeta': 'in meta',
   'home.notInMeta': 'not in meta',
 
@@ -1493,10 +1495,12 @@ const en: Record<Key, string> = {
   'life.cmdDamageFrom': 'Damage from opposing commander',
 
   'decks.title': 'Decks',
-  'decks.import': 'Import',
-  'decks.empty': 'No decks found. Export your list as text from Moxfield, Archidekt, MTGO or Arena and paste it here.',
+  'decks.new': 'New deck',
+  'decks.createEmpty': 'Create empty deck',
+  'decks.empty':
+    'No decks found. Export your list as text from Moxfield, Archidekt, MTGO or Arena and paste it here, or create an empty deck and add the cards one by one.',
   'decks.name': 'Deck name',
-  'decks.paste': 'Paste the list',
+  'decks.paste': 'Paste the list (or leave it empty to start from scratch)',
   'decks.pasteHint':
     '1 Atraxa, Praetors\' Voice\n1 Sol Ring\n…\n\nTip: put the commander under a "Commander" line, or pick it later.',
   'decks.tags': 'Tags (comma separated)',

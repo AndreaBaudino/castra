@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-03',
     it: [
+      'Mazzi: "Nuovo mazzo" crea anche un mazzo da zero. Lascia vuota la lista e tocca "Crea mazzo vuoto": il mazzo si apre già in modifica, pronto per aggiungere le carte una a una e scegliere il comandante',
       'Circuito, pagina del comandante: "Contro gli altri comandanti" mostra i match giocati contro ogni altro comandante, con vittorie, sconfitte, pareggi e winrate. Arrivano dai tornei gestiti in app, una volta pubblicati sul foglio: i fogli da soli non dicono chi ha giocato contro chi. Tocca un avversario per aprire la sua pagina',
       'Contapunti: nel menu della partita, con il tema chiaro, i contatori spenti ("Contatori della partita") ora si leggono. Il menu ha gli stessi colori in entrambi i temi',
       'Tornei in app: "Apri partita" nella card del torneo in Home apre il contapunti sul tuo match, con il tempo del turno (anche i minuti aggiunti dal TO). A fine game "Prossima partita del match" tiene il conto, e "Segna risultato" manda al torneo il risultato già compilato, che l\'avversario conferma. Il match finisce tra le tue partite una volta sola, a torneo concluso',
@@ -17,6 +18,7 @@ export const CHANGELOG: Release[] = [
       'Guide in PDF: nel Profilo, sotto "Segnala un problema o un\'idea", la Guida a Castra con tutte le funzioni dell\'app e la Guida ai tornei, da aprire o condividere con un link. I TO trovano la guida ai tornei anche in fondo all\'Area TO, da mandare ai giocatori',
     ],
     en: [
+      'Decks: "New deck" can also start a deck from scratch. Leave the list empty and tap "Create empty deck": the deck opens ready to edit, to add the cards one by one and pick the commander',
       'Circuit, commander page: "Against other commanders" shows the matches played against each other commander, with wins, losses, draws and winrate. They come from the tournaments run in the app, once published to the sheet: the sheets alone don\'t say who played whom. Tap an opponent to open their page',
       'Life counter: in the game menu, with the light theme, the counters turned off ("Game counters") are readable again. The menu has the same colours in both themes',
       'Tournaments in the app: "Open match" on the tournament card in Home opens the life counter on your match, with the round\'s clock (including the minutes the TO added). After each game "Next game of the match" keeps the count, and "Enter result" sends the tournament the result already filled in, for your opponent to confirm. The match reaches your games only once, when the tournament is over',

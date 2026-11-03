@@ -3,7 +3,7 @@ import { DECK_SIZE } from '../config'
 import { useI18n } from '../i18n'
 import { useLongPress } from '../lib/longPress'
 import { useBanlist } from '../lib/banlist'
-import { type Deck, checkDeck, deckCover, isValid, newId, parseDecklist, sortColors } from '../lib/decks'
+import { type Deck, type DeckCard, checkDeck, deckCover, isValid, newId, parseDecklist, sortColors } from '../lib/decks'
 import { type MetaDeck, findMetaDeck, normName, winrate } from '../lib/meta'
 import { fetchCollection, requestKey } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
@@ -69,7 +69,29 @@ function ImportSheet({ open, onClose, onImport }: { open: boolean; onClose: () =
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  const create = (cards: DeckCard[], commander?: string) => {
+    const now = new Date().toISOString()
+    onImport({
+      id: newId(),
+      name: name.trim() || commander || 'Deck',
+      tags: tags
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      notes: '',
+      cards,
+      createdAt: now,
+      updatedAt: now,
+    })
+    setName('')
+    setText('')
+    setTags('')
+    onClose()
+  }
+
   const submit = async () => {
+    // nothing pasted: an empty deck, filled in card by card from its page
+    if (!text.trim()) return create([])
     const cards = parseDecklist(text)
     if (!cards.length) return
     setBusy(true)
@@ -104,27 +126,11 @@ function ImportSheet({ open, onClose, onImport }: { open: boolean; onClose: () =
           if (canLead(b) && b.qty === 1 && a.info?.partner && b.info?.partner) b.section = 'commander'
         }
       }
-      const now = new Date().toISOString()
       // partners: "Rograkh / Tevesh Szat"
       const commanders = cards.filter((c) => c.section === 'commander').map((c) => c.name)
       const commander = commanders.length > 1 ? commanders.map((n) => n.split(/,| \/\/ /)[0]).join(' / ') : commanders[0]
-      onImport({
-        id: newId(),
-        name: name.trim() || commander || 'Deck',
-        tags: tags
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
-        notes: '',
-        cards,
-        createdAt: now,
-        updatedAt: now,
-      })
+      create(cards, commander)
       if (notFound.length) dialog.alert(`${t('decks.notFound')}: ${notFound.join(', ')}`)
-      setName('')
-      setText('')
-      setTags('')
-      onClose()
     } catch (e) {
       setError(String(e))
     } finally {
@@ -133,7 +139,7 @@ function ImportSheet({ open, onClose, onImport }: { open: boolean; onClose: () =
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={t('decks.import')}>
+    <Sheet open={open} onClose={onClose} title={t('decks.new')}>
       <div className="form">
         <label>
           <span>{t('decks.name')}</span>
@@ -148,8 +154,8 @@ function ImportSheet({ open, onClose, onImport }: { open: boolean; onClose: () =
           <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="cEDH, torneo…" />
         </label>
         {error && <div className="notice warn">{error}</div>}
-        <button className="btn primary" disabled={busy || !text.trim()} onClick={submit}>
-          {busy ? t('decks.importing') : t('decks.doImport')}
+        <button className="btn primary" disabled={busy} onClick={submit}>
+          {busy ? t('decks.importing') : t(text.trim() ? 'decks.doImport' : 'decks.createEmpty')}
         </button>
       </div>
     </Sheet>
@@ -193,7 +199,7 @@ export default function Decks({
         {/* with no decks, the button in the middle of the page is enough */}
         {decks.length > 0 && (
           <button className="btn small primary" onClick={() => setImportOpen(true)}>
-            <Icon name="plus" size={16} /> {t('decks.import')}
+            <Icon name="plus" size={16} /> {t('decks.new')}
           </button>
         )}
       </header>
@@ -223,7 +229,7 @@ export default function Decks({
           <Icon name="decks" size={40} />
           <p>{t('decks.empty')}</p>
           <button className="btn primary" onClick={() => setImportOpen(true)}>
-            <Icon name="plus" size={16} /> {t('decks.import')}
+            <Icon name="plus" size={16} /> {t('decks.new')}
           </button>
         </div>
       )}

@@ -218,7 +218,7 @@ export default function DeckDetail({
 }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(!deck.cards.length) // a deck made from scratch opens ready to fill
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [choosingPrint, setChoosingPrint] = useState(false)
   const [reading, setReading] = useState(false) // the card's Oracle text, errata and rulings, in place of its actions
