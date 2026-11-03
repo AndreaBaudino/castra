@@ -3,12 +3,13 @@ import { useI18n } from '../i18n'
 import type { AppUser } from '../lib/auth'
 import { type Circuit, playerKey } from '../lib/circuit'
 import type { MetaDataset } from '../lib/meta'
-import { type Organizer, canRun } from '../lib/organizers'
+import { type Organizer, canRun, useOrganizers } from '../lib/organizers'
 import { isEvent, sourceYear, useSources, type Source } from '../lib/sources'
 import { type Score, suggestedRounds, validScore, winnerOf } from '../lib/swiss'
 import { cardSuggestions, closest } from '../lib/aliases'
 import type { Claim } from '../lib/claims'
 import {
+  type LogEntry,
   type Player,
   type TableMatch,
   type Tournament,
@@ -46,6 +47,7 @@ import {
   useTournament,
   unpublishTournament,
   useLists,
+  useLog,
   useTournaments,
   useUnfiled,
 } from '../lib/tournaments'
@@ -336,6 +338,7 @@ export function TournamentAdmin({
   const rows = useMemo(() => (tour ? ranking(tour, players, matches) : []), [tour, players, matches])
   // the decklists, read once it's over: copying needs them at hand (a phone allows it only right after the tap)
   const lists = useLists(id, players, tour?.status === 'done')
+  const { organizers } = useOrganizers()
 
   if (!organizer || !user)
     return (
@@ -352,6 +355,8 @@ export function TournamentAdmin({
 
   const names = new Map(players)
   const nameOf = (k: string | null) => (k ? (names.get(k)?.name ?? k) : t('meta.bye'))
+  // who did it: a TO, a player of the tournament, otherwise an admin
+  const whoOf = (uid: string) => organizers.get(uid)?.name ?? players.find(([, p]) => p.uid === uid)?.[1].name ?? t('log.admin')
   const current = matches.filter((m) => m.round === tour.round)
   const missing = current.filter((m) => m.p2 && !m.score).length
   const toConfirm = current.filter(unconfirmed).length
@@ -735,6 +740,8 @@ export function TournamentAdmin({
           </section>
         )}
 
+        <LogCard id={id} since={tour.at} nameOf={nameOf} whoOf={whoOf} />
+
         <button
           className="btn danger"
           disabled={busy}
@@ -758,6 +765,7 @@ export function TournamentAdmin({
         cut={!!result && result.round > tour.rounds && tour.status !== 'swiss'}
         nameOf={nameOf}
         onClose={() => setResult(null)}
+        log={{ since: tour.at, whoOf }}
       />
       <PlayerSheet
         id={id}
@@ -794,6 +802,7 @@ export function ResultSheet({
   me,
   initial,
   onSaved,
+  log,
 }: {
   id: string
   match: TableMatch | null
@@ -803,9 +812,11 @@ export function ResultSheet({
   me?: string
   initial?: Score // the games counted on the life counter
   onSaved?: () => void
+  log?: { since: string; whoOf: (uid: string) => string } // the TO: the table's changes
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
+  const lines = useLog(match && log ? id : null, log?.since ?? '').filter((e) => e.round === match?.round && e.table === match?.table)
   const [s, setS] = useState<Score>([0, 0, 0])
   const [busy, setBusy] = useState(false)
   const flip = !!me && match?.p2 === me
@@ -872,9 +883,47 @@ export function ResultSheet({
               </button>
             </div>
           )}
+          {log && lines.length > 0 && <LogLines log={lines} nameOf={nameOf} whoOf={log.whoOf} />}
         </div>
       )}
     </Sheet>
+  )
+}
+
+/** The tournament's log, read only once opened: who changed what, newest first. */
+function LogCard({ id, since, nameOf, whoOf }: { id: string; since: string; nameOf: (k: string | null) => string; whoOf: (uid: string) => string }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const log = useLog(open ? id : null, since)
+  return (
+    <section className="card">
+      <details onToggle={(e) => setOpen(e.currentTarget.open)}>
+        <summary>{t('log.title')}</summary>
+        <p className="muted small">{t('log.hint')}</p>
+        {log.length ? <LogLines log={log} nameOf={nameOf} whoOf={whoOf} /> : <p className="muted small no-margin">{t('log.empty')}</p>}
+      </details>
+    </section>
+  )
+}
+
+function LogLines({ log, nameOf, whoOf }: { log: LogEntry[]; nameOf: (k: string | null) => string; whoOf: (uid: string) => string }) {
+  const { t, lang } = useI18n()
+  return (
+    <ul className="card-list log">
+      {log.map((e, i) => (
+        <li key={i}>
+          <span className="muted">{e.at ? new Date(e.at.toMillis()).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }) : '…'}</span>{' '}
+          <b>{whoOf(e.by)}</b>{' '}
+          {t(e.kind === 'add' && e.round ? 'log.addLate' : e.kind === 'commander' && e.from ? 'log.commanderFrom' : `log.${e.kind}`, {
+            p: nameOf(e.player ?? null),
+            r: e.round ?? '',
+            n: e.table ?? '',
+            from: e.from ?? '',
+            to: e.to ?? '',
+          })}
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -962,7 +1011,7 @@ function PlayerSheet({
           <button
             className="btn primary"
             disabled={busy || !cmd.trim() || cmd.trim() === player.commander}
-            onClick={() => run(() => savePlayer(user, id, k, { name: player.name, commander: cmd.trim(), joined: player.joined }))}
+            onClick={() => run(() => savePlayer(user, id, k, { name: player.name, commander: cmd.trim(), joined: player.joined }, player))}
           >
             {t('run.saveCommander')}
           </button>

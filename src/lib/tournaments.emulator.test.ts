@@ -54,7 +54,7 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
   let env: Env
   let fs: typeof import('firebase/firestore')
   const as = (uid: string) => {
-    state.ctx = { db: env.authenticatedContext(uid).firestore(), fs }
+    state.ctx = { db: env.authenticatedContext(uid).firestore(), fs, auth: { currentUser: { uid } } }
   }
   // what every phone reads
   async function read(id: string) {
@@ -226,7 +226,7 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     // pam: waiting, leaves, asks again
     as('pam')
     await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, invalid: false, verified: false }, false)
-    await removePlayer(id, 'pat')
+    await removePlayer(id, 'pat', true)
     await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, invalid: false, verified: false }, false)
     s = await read(id)
     const nina = s.players.find(([k]) => k === 'nina')![1]
@@ -257,11 +257,11 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     let [m] = round(s.matches, 1)
     const kimP1 = m.p1 === 'mia'
     await reportScore(id, m, kimP1 ? [2, 1, 0] : [1, 2, 0], 'mia')
-    await expect(confirmScore(id, m)).rejects.toThrow() // her own
+    await expect(confirmScore(id, m, 'mia')).rejects.toThrow() // her own
     as('lea')
     await reportScore(id, m, kimP1 ? [1, 2, 0] : [2, 1, 0], 'nina')
     as('kim')
-    await confirmScore(id, m)
+    await confirmScore(id, m, 'mia')
     s = await read(id)
     ;[m] = round(s.matches, 1)
     expect(m).toMatchObject({ score: kimP1 ? [1, 2, 0] : [2, 1, 0], reportedBy: 'nina', confirmed: true })
@@ -286,9 +286,24 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await finishTournament(id)
     state.ctx = { db: env.unauthenticatedContext().firestore(), fs }
     expect(await loadList(id, 'mia')).toBe(MOX)
+    // the log: every change with who made it, for the TOs only
+    const log = async () => (await fs.getDocs(fs.collection(env.authenticatedContext('gina').firestore(), 'tournaments', id, 'log'))).docs.map((d) => d.data())
+    const lines = await log()
+    expect(lines.find((e) => e.kind === 'confirm')).toMatchObject({ by: 'kim', player: 'mia' })
+    expect(lines.find((e) => e.kind === 'drop' && e.player === 'nina')).toMatchObject({ by: 'lea', round: 2 })
+    expect(lines.filter((e) => e.kind === 'pair').length).toBeGreaterThan(1)
+    expect(lines.every((e) => e.at && e.by)).toBe(true)
+    await expect(fs.getDocs(fs.collection(env.authenticatedContext('kim').firestore(), 'tournaments', id, 'log'))).rejects.toThrow()
     as('gina')
     s = await read(id)
     await deleteTournament(id, s.players, s.matches)
+    await expect(log()).rejects.toThrow() // the tournament is gone: its log stays, read from the console only
+    let cancelled: unknown
+    await env.withSecurityRulesDisabled(async (c) => {
+      const all = (await fs.getDocs(fs.collection(c.firestore(), 'tournaments', id, 'log'))).docs.map((d) => d.data())
+      cancelled = all.find((e) => e.kind === 'cancel')?.by
+    })
+    expect(cancelled).toBe('gina')
     let left = true
     await env.withSecurityRulesDisabled(async (c) => {
       left = (await fs.getDoc(fs.doc(c.firestore(), 'tournaments', id, 'players', 'mia', 'private', 'deck'))).exists()

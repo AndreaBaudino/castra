@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { AppUser } from './auth'
 import { fb, useLiveCollection, useLiveDoc } from './firebase'
+import type { WriteBatch } from 'firebase/firestore'
 import { fmt } from './timer'
 import type { T } from '../i18n'
 import type { MetaDataset } from './meta'
@@ -69,6 +70,24 @@ export interface TableMatch extends Match {
   extra?: number // minutes added to this table's clock
   reportedBy?: string // the player who entered the result, until the other confirms it (missing: the TO entered it)
   confirmed?: boolean
+}
+
+/** What the log tells: the TO's actions, and the players' own (registering, results, drop). */
+export type LogKind =
+  | 'join' | 'commander' | 'leave' | 'report' | 'confirm' | 'drop' // also the players
+  | 'undrop' | 'add' | 'remove' | 'accept' | 'score' | 'extra' | 'pair' | 'repair' | 'cut' | 'done'
+  | 'filed' | 'unfiled' | 'publish' | 'unpublish' | 'cancel'
+
+/** A line of the tournament's log, log/{auto}: only its TOs read it, nobody changes it. */
+export interface LogEntry {
+  at: { toMillis: () => number } | null // the server's time (null until the write reaches it)
+  by: string // the account that did it
+  kind: LogKind
+  round?: number
+  table?: number
+  player?: string // the player it's about
+  from?: string
+  to?: string
 }
 
 /** A result one player entered and the other hasn't confirmed yet. */
@@ -280,6 +299,24 @@ export function useTournament(id: string | null) {
 
 const now = () => new Date().toISOString()
 
+const scoreText = (s?: Score | null) => (s ? s.slice(0, s[2] ? 3 : 2).join('-') : '—')
+
+/** A new line of the tournament's log, signed and timed: written in the same go as the change it tells. */
+function logLine({ db, fs, auth }: Awaited<ReturnType<typeof fb>>, id: string, e: Omit<LogEntry, 'at' | 'by'>) {
+  // Firestore takes no undefined fields
+  const data = Object.fromEntries(Object.entries(e).filter(([, v]) => v !== undefined))
+  return [fs.doc(fs.collection(db, 'tournaments', id, 'log')), { ...data, at: fs.serverTimestamp(), by: auth.currentUser?.uid }] as const
+}
+
+/** A change made in one write, with its log line. */
+async function logged(id: string, e: Omit<LogEntry, 'at' | 'by'>, write: (f: Awaited<ReturnType<typeof fb>>, batch: WriteBatch) => void) {
+  const f = await fb()
+  const batch = f.fs.writeBatch(f.db)
+  write(f, batch)
+  batch.set(...logLine(f, id, e))
+  await batch.commit()
+}
+
 /** Starts registering a tournament on a sheet; fails ('taken') when a TO already did. */
 export async function createTournament(user: AppUser, s: Source, date: string, stage?: number) {
   const { db, fs } = await fb()
@@ -313,42 +350,47 @@ export async function setTournament(id: string, patch: Partial<Pick<Tournament, 
   await fs.updateDoc(fs.doc(db, 'tournaments', id), patch)
 }
 
-/** Adds a player (a late one from the round they join), or changes their commander. */
-export async function savePlayer(user: AppUser, id: string, key: string, p: Pick<Player, 'name' | 'commander' | 'joined'>) {
-  const { db, fs } = await fb()
+/** Adds a player (a late one from the round they join), or changes their commander (`old`: as they were). */
+export async function savePlayer(user: AppUser, id: string, key: string, p: Pick<Player, 'name' | 'commander' | 'joined'>, old?: Player) {
   // Firestore takes no undefined fields
   const data = { name: p.name, commander: p.commander, ...(p.joined ? { joined: p.joined } : {}), at: now(), by: user.uid }
-  await fs.setDoc(fs.doc(db, 'tournaments', id, 'players', key), data, { merge: true })
+  const e = old
+    ? { kind: 'commander' as const, player: key, from: old.commander ?? '—', to: p.commander ?? '—' }
+    : { kind: 'add' as const, player: key, round: p.joined, to: p.commander ?? undefined }
+  await logged(id, e, ({ db, fs }, b) => b.set(fs.doc(db, 'tournaments', id, 'players', key), data, { merge: true }))
 }
 
-/** Takes a player off (the TO), or the player leaves before round 1: their decklist goes with them. */
-export async function removePlayer(id: string, key: string) {
-  const { db, fs } = await fb()
-  const batch = fs.writeBatch(db)
-  batch.delete(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
-  batch.delete(fs.doc(db, 'tournaments', id, 'players', key))
-  await batch.commit()
+/** Takes a player off (the TO), or the player leaves before round 1 (`self`): their decklist goes with them. */
+export async function removePlayer(id: string, key: string, self = false) {
+  await logged(id, { kind: self ? 'leave' : 'remove', player: key }, ({ db, fs }, b) => {
+    b.delete(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
+    b.delete(fs.doc(db, 'tournaments', id, 'players', key))
+  })
 }
 
 /** Drops a player after `round` (null: takes the drop back). */
 export async function setDrop(id: string, key: string, round: number | null) {
-  const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'tournaments', id, 'players', key), { drop: round ?? fs.deleteField() })
+  await logged(id, round ? { kind: 'drop', player: key, round } : { kind: 'undrop', player: key }, ({ db, fs }, b) =>
+    b.update(fs.doc(db, 'tournaments', id, 'players', key), { drop: round ?? fs.deleteField() }),
+  )
 }
 
 /** A result entered by the TO: it needs no confirmation. */
 export async function setScore(id: string, m: TableMatch, score: Score | null) {
-  const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), {
-    score,
-    reportedBy: fs.deleteField(),
-    confirmed: fs.deleteField(),
-  })
+  const e = { kind: 'score' as const, round: m.round, table: m.table, from: scoreText(m.score), to: scoreText(score) }
+  await logged(id, e, ({ db, fs }, b) =>
+    b.update(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), {
+      score,
+      reportedBy: fs.deleteField(),
+      confirmed: fs.deleteField(),
+    }),
+  )
 }
 
 export async function setExtra(id: string, m: TableMatch, minutes: number) {
-  const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), { extra: minutes })
+  await logged(id, { kind: 'extra', round: m.round, table: m.table, to: String(minutes) }, ({ db, fs }, b) =>
+    b.update(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), { extra: minutes }),
+  )
 }
 
 /**
@@ -364,9 +406,11 @@ async function writeRound(
   pairs: [string, string | null][],
   old: TableMatch[],
   patch: Partial<Tournament>,
+  kind: LogKind,
   gone: string[] = [],
 ) {
-  const { db, fs } = await fb()
+  const f = await fb()
+  const { db, fs } = f
   const ref = fs.doc(db, 'tournaments', id)
   await fs.runTransaction(db, async (tx) => {
     if ((await tx.get(ref)).data()?.round !== seen) throw new Error('stale')
@@ -382,6 +426,7 @@ async function writeRound(
       tx.set(fs.doc(db, 'tournaments', id, 'matches', matchId(round, n)), m)
     }
     tx.update(ref, { ...patch, round, started: fs.serverTimestamp() })
+    tx.set(...logLine(f, id, { kind, round }))
   })
 }
 
@@ -391,53 +436,65 @@ export async function pairSwiss(id: string, t: Tournament, players: [string, Pla
   // round 1 closes registration: the code stops working and the requests not confirmed are turned down
   const first = t.status === 'open'
   const gone = first ? players.filter(([, p]) => p.pending).map(([k]) => k) : []
-  await writeRound(id, t.round, round, pairRound(entrantsOf(players), matches, round), matches, { status: 'swiss', ...(first ? { code: null } : {}) }, gone)
+  await writeRound(id, t.round, round, pairRound(entrantsOf(players), matches, round), matches, { status: 'swiss', ...(first ? { code: null } : {}) }, again ? 'repair' : 'pair', gone)
 }
 
 /** The first round of the top cut, from the Swiss standings: the Swiss rounds end with the one just played. */
 export async function startCut(id: string, t: Tournament, players: [string, Player][], matches: TableMatch[]) {
   const seeds = cutSeeds(standings(entrantsOf(players), matches), t.cut)
-  await writeRound(id, t.round, t.round + 1, cutPairings(seeds), matches, { status: 'cut', rounds: t.round })
+  await writeRound(id, t.round, t.round + 1, cutPairings(seeds), matches, { status: 'cut', rounds: t.round }, 'cut')
 }
 
 /** The next round of the top cut; null when the current one isn't over or was the final. */
 export async function nextCutRound(id: string, t: Tournament, matches: TableMatch[]) {
   const pairs = nextCut(matches.filter((m) => m.round === t.round))
-  if (pairs) await writeRound(id, t.round, t.round + 1, pairs, matches, {})
+  if (pairs) await writeRound(id, t.round, t.round + 1, pairs, matches, {}, 'pair')
   return pairs
 }
 
 export async function finishTournament(id: string) {
-  const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'tournaments', id), { status: 'done' })
+  await logged(id, { kind: 'done' }, ({ db, fs }, b) => b.update(fs.doc(db, 'tournaments', id), { status: 'done' }))
 }
 
 /** Marks the results as copied into the sheet (or not). */
 export async function setFiled(id: string, filed: boolean) {
-  const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'tournaments', id), { filed })
+  await logged(id, { kind: filed ? 'filed' : 'unfiled' }, ({ db, fs }, b) => b.update(fs.doc(db, 'tournaments', id), { filed }))
 }
 
-/** Cancels a tournament, with its players and matches: the sheet can be started again. */
+/**
+ * Cancels a tournament, with its players and matches: the sheet can be started again. The log stays, with who
+ * cancelled it: a tournament started again on the same sheet shows only its own lines.
+ */
 export async function deleteTournament(id: string, players: [string, Player][], matches: TableMatch[]) {
-  const { db, fs } = await fb()
-  const batch = fs.writeBatch(db)
-  for (const [key] of players) {
-    batch.delete(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
-    batch.delete(fs.doc(db, 'tournaments', id, 'players', key))
-  }
-  for (const m of matches) batch.delete(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)))
-  batch.delete(fs.doc(db, 'tournaments', id))
-  await batch.commit()
+  await logged(id, { kind: 'cancel' }, ({ db, fs }, batch) => {
+    for (const [key] of players) {
+      batch.delete(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
+      batch.delete(fs.doc(db, 'tournaments', id, 'players', key))
+    }
+    for (const m of matches) batch.delete(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)))
+    batch.delete(fs.doc(db, 'tournaments', id))
+  })
 }
 
 /** Confirms a registration from the app; a claim not verified yet becomes verified, signed by this TO. */
 export async function confirmPlayer(user: AppUser, id: string, key: string, verify: boolean) {
-  const { db, fs } = await fb()
-  const batch = fs.writeBatch(db)
-  batch.update(fs.doc(db, 'tournaments', id, 'players', key), { pending: fs.deleteField() })
-  if (verify) batch.update(fs.doc(db, 'claims', key), { verified: true, verifiedBy: user.uid, verifiedIn: id })
-  await batch.commit()
+  await logged(id, { kind: 'accept', player: key }, ({ db, fs }, batch) => {
+    batch.update(fs.doc(db, 'tournaments', id, 'players', key), { pending: fs.deleteField() })
+    if (verify) batch.update(fs.doc(db, 'claims', key), { verified: true, verifiedBy: user.uid, verifiedIn: id })
+  })
+}
+
+/** The tournament's log, newest first, for its TOs: only the lines of this run of it (`since`: when it started). */
+export function useLog(id: string | null, since: string) {
+  const { docs } = useLiveCollection<LogEntry>(id && `tournaments/${id}/log`)
+  return useMemo(
+    () =>
+      docs
+        .map(([, e]) => e)
+        .filter((e) => !e.at || new Date(e.at.toMillis()).toISOString() >= since)
+        .sort((a, b) => (b.at?.toMillis() ?? Infinity) - (a.at?.toMillis() ?? Infinity)),
+    [docs, since],
+  )
 }
 
 // ---------- writing (the players, from the app) ----------
@@ -456,8 +513,10 @@ export async function joinTournament(
   const { db, fs } = await fb()
   const ref = fs.doc(db, 'tournaments', id, 'players', key)
   const mine = { commander: p.commander, deck: p.deck, invalid: p.invalid, uid: user.uid, at: now(), by: user.uid }
-  if (existing) await fs.updateDoc(ref, mine)
-  else await fs.setDoc(ref, { name: p.name, ...mine, ...(p.verified ? {} : { pending: true }) })
+  await logged(id, { kind: existing ? 'commander' : 'join', player: key, to: p.commander }, (_, b) => {
+    if (existing) b.update(ref, mine)
+    else b.set(ref, { name: p.name, ...mine, ...(p.verified ? {} : { pending: true }) })
+  })
 }
 
 /** The decklist link (null: none), private until the tournament is over. */
@@ -500,10 +559,10 @@ export const canPublish = !!PUBLISH_URL
  * script's message when it refuses.
  */
 export const publishTournament = (id: string, rows: SheetRow[]) =>
-  script<{ tab: string; players: string[]; commanders: string[]; manual: string[] }>({ id, rows })
+  script<{ tab: string; players: string[]; commanders: string[]; manual: string[] }>({ id, rows }, id, 'publish')
 
 /** Takes a published tournament off its sheet ("Togli dal foglio"); `kept`: the names other stages still use. */
-export const unpublishTournament = (id: string) => script<{ tab: string; kept: string[] }>({ id, action: 'clear' })
+export const unpublishTournament = (id: string) => script<{ tab: string; kept: string[] }>({ id, action: 'clear' }, id, 'unpublish')
 
 /** A new level 1's sheet, copied by the Apps Script from the template with its name and date (admins only): its id. */
 export const createLevelSheet = (uid: string, name: string, date: string) => script<{ id: string }>({ action: 'create', uid, name, date })
@@ -511,7 +570,8 @@ export const createLevelSheet = (uid: string, name: string, date: string) => scr
 /** Bins a level 1's sheet of the script's account while still empty and never opened in the app (admins only). */
 export const trashLevelSheet = (uid: string, id: string) => script<object>({ action: 'trash', uid, id })
 
-async function script<T>(body: object): Promise<T> {
+/** A call to the Apps Script; `id`: the tournament whose log tells it, once done (the script writes on its own). */
+async function script<T>(body: object, id?: string, kind?: LogKind): Promise<T> {
   const { auth } = await fb()
   const token = await auth.currentUser?.getIdToken()
   if (!token) throw new Error('login')
@@ -519,6 +579,7 @@ async function script<T>(body: object): Promise<T> {
   const res = await fetch(PUBLISH_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ token, ...body }) })
   const out = (await res.json()) as T & { ok?: boolean; error?: string }
   if (!out.ok) throw new Error(out.error ?? 'error')
+  if (id && kind) await logged(id, { kind }, () => {}).catch(() => {}) // done anyway: a missing line mustn't say otherwise
   return out
 }
 
@@ -527,11 +588,13 @@ export const isListLink = (s: string) => /^https:\/\/(www\.)?moxfield\.com\/deck
 
 /** A result entered by one of the two players: the other confirms it. */
 export async function reportScore(id: string, m: TableMatch, score: Score, me: string) {
-  const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), { score, reportedBy: me, confirmed: false })
+  await logged(id, { kind: 'report', round: m.round, table: m.table, player: me, to: scoreText(score) }, ({ db, fs }, b) =>
+    b.update(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), { score, reportedBy: me, confirmed: false }),
+  )
 }
 
-export async function confirmScore(id: string, m: TableMatch) {
-  const { db, fs } = await fb()
-  await fs.updateDoc(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), { confirmed: true })
+export async function confirmScore(id: string, m: TableMatch, me: string) {
+  await logged(id, { kind: 'confirm', round: m.round, table: m.table, player: me, to: scoreText(m.score) }, ({ db, fs }, b) =>
+    b.update(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), { confirmed: true }),
+  )
 }

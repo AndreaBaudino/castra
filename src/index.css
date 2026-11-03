@@ -2552,6 +2552,13 @@ textarea {
   font-weight: 600;
   cursor: pointer;
 }
+.card-list.log li {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+.card-list.log li + li {
+  border-top: 1px solid var(--line);
+}
 .kv.total {
   border-top: 1px solid var(--line);
   padding-top: 6px;

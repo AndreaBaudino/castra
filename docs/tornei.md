@@ -247,6 +247,20 @@ tournaments/{tid}                + code (6 caratteri, null dal turno 1: iscrizio
 Il giocatore scrive solo la propria iscrizione (il `playerKey` del suo collegamento), il proprio drop e i risultati del
 proprio tavolo nel turno in corso; per drop e risultati serve il collegamento verificato.
 
+Registro del torneo (dopo la fase 4):
+
+```
+tournaments/{tid}/log/{auto}     at (ora del server), by (account), kind (cosa è successo), round?, table?, player?,
+                                 from?, to?          (lo leggono solo i TO; nessuno lo modifica o lo cancella)
+  /players/{playerKey}           + invalid (il mazzo di Castra non passava il controllo all'iscrizione)
+```
+
+Ogni funzione di `tournaments.ts` che cambia il torneo scrive la sua riga nella stessa operazione, quindi o vanno a buon
+fine entrambe o nessuna. Il giocatore scrive solo le righe delle proprie azioni (iscrizione, risultato, conferma, drop).
+È l'app a scrivere il registro: le regole ne garantiscono autore e ora, non che ogni modifica ne abbia una (basta per
+errori e telefoni diversi; se servisse, le regole potrebbero imporlo sulle correzioni dei risultati). Annullando il
+torneo il registro resta, con chi l'ha annullato; un torneo ripartito sullo stesso foglio mostra solo le righe sue.
+
 Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`, e `src/lib/tournaments.emulator.test.ts` fa girare un
 torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le prova e le pubblica dopo i test.
 

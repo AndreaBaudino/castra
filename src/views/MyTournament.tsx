@@ -221,7 +221,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
                 className="btn ghost"
                 disabled={busy}
                 onClick={async () => {
-                  if (await dialog.confirm(t('join.leaveConfirm'), { ok: t('join.leave'), danger: true })) act(() => removePlayer(id, me!))
+                  if (await dialog.confirm(t('join.leaveConfirm'), { ok: t('join.leave'), danger: true })) act(() => removePlayer(id, me!, true))
                 }}
               >
                 {t('join.leave')}
@@ -327,7 +327,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
                   <button className="btn ghost" disabled={busy} onClick={() => setResult(current)}>
                     {t('join.wrong')}
                   </button>
-                  <button className="btn primary" disabled={busy} onClick={() => act(() => confirmScore(id, current))}>
+                  <button className="btn primary" disabled={busy} onClick={() => act(() => confirmScore(id, current, me!))}>
                     {t('join.confirm')}
                   </button>
                 </div>

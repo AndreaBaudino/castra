@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-03',
     it: [
+      'Area TO: il registro del torneo. In fondo alla gestione, "Registro" elenca ogni modifica con chi l\'ha fatta e quando: risultati segnati, confermati o corretti (con il prima e il dopo), drop, iscritti aggiunti, tolti o confermati, cambi di comandante, abbinamenti rifatti, minuti aggiunti, top cut, chiusura e pubblicazione. Nel foglio del risultato di un tavolo ci sono le modifiche di quel tavolo. Lo vedono solo i TO e nessuno lo può cambiare',
       'Tornei in app: iscrivendoti con uno dei tuoi mazzi vedi subito il controllo del mazzo (100 carte, copie, identità di colore, banlist). Ti puoi iscrivere lo stesso, ma nell\'Area TO accanto al tuo nome compare "mazzo da controllare"',
       'Mazzi, controllo del mazzo: Seven Dwarves (fino a 7 copie), Nazgûl (fino a 9), Tempest Hawk e Sphinx\'s Approach (quante se ne vuole) non risultano più copie doppie; il comandante messo anche nel resto del mazzo ora conta come una copia doppia',
       'Profilo, sul computer: la scheda del profilo occupa tutta la larghezza, con posizione, punti e zona POTY accanto al nome. Sotto, il menu resta a sinistra e la sezione scelta si apre a destra (all\'inizio "Circuito e seguiti"), senza cambiare pagina. Sul telefono non cambia niente',
@@ -22,6 +23,7 @@ export const CHANGELOG: Release[] = [
       'Guide in PDF: nel Profilo, sotto "Segnala un problema o un\'idea", la Guida a Castra con tutte le funzioni dell\'app e la Guida ai tornei, da aprire o condividere con un link. I TO trovano la guida ai tornei anche in fondo all\'Area TO, da mandare ai giocatori',
     ],
     en: [
+      'TO area: the tournament log. At the bottom of the tournament page, "Log" lists every change with who made it and when: results entered, confirmed or corrected (before and after), drops, players added, taken off or confirmed, commander changes, rounds paired again, minutes added, the top cut, closing and publishing. A table\'s result sheet shows the changes to that table. Only the TOs see it and nobody can change it',
       'Tournaments in the app: registering with one of your decks shows the deck check right away (100 cards, copies, colour identity, banlist). You can still register, but in the TO area "deck to check" shows next to your name',
       'Decks, deck check: Seven Dwarves (up to 7 copies), Nazgûl (up to 9), Tempest Hawk and Sphinx\'s Approach (any number) no longer count as duplicates; a commander also in the rest of the deck now counts as a duplicate',
       'Profile, on a computer: the profile card takes the whole width, with position, points and POTY zone beside the name. Below, the menu stays on the left and the chosen section opens on the right ("Circuit and followed" at first), without changing page. Nothing changes on a phone',
