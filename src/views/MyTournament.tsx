@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import type { AppUser } from '../lib/auth'
 import type { Claim } from '../lib/claims'
-import type { Deck } from '../lib/decks'
+import { type Deck, checkDeck, isValid } from '../lib/decks'
+import { useBanlist } from '../lib/banlist'
+import { CheckBox } from './DeckDetail'
 import type { Match as Played } from '../lib/matches'
 import { useLiveDoc } from '../lib/firebase'
 import { readStored, writeStored } from '../lib/storage'
@@ -400,6 +402,9 @@ function JoinSheet({
   // Moxfield links often carry a query or a fragment
   const clean = link.trim().replace(/[?#].*$/, '')
   const badLink = !!clean && !isListLink(clean)
+  useBanlist() // a newer banlist changes the check
+  const chosen = decks.find((d) => d.id === deck)
+  const check = chosen && checkDeck(chosen)
   const pick = (deckId: string) => {
     setDeck(deckId)
     const d = decks.find((x) => x.id === deckId)
@@ -409,7 +414,7 @@ function JoinSheet({
   const save = async () => {
     setBusy(true)
     try {
-      await joinTournament(user, id, me, { name, commander: cmd.trim(), deck: deck || null, verified }, !!mine)
+      await joinTournament(user, id, me, { name, commander: cmd.trim(), deck: deck || null, invalid: !!check && !isValid(check), verified }, !!mine)
       if (clean !== saved) await saveList(id, me, clean || null)
       onClose()
     } catch {
@@ -433,6 +438,12 @@ function JoinSheet({
           </select>
           <span className="field-hint">{t('join.deckHint')}</span>
         </label>
+        {check && (
+          <>
+            <CheckBox check={check} />
+            {!isValid(check) && <p className="muted small no-margin">{t('join.badDeckHint')}</p>}
+          </>
+        )}
         <CommanderInput value={cmd} onChange={setCmd} />
         <label>
           <span>{t('join.list')}</span>

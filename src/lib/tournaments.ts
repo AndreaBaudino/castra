@@ -57,6 +57,7 @@ export interface Player {
   uid?: string // the account that registered (or confirmed) from the app
   pending?: boolean // registered from the app with a claim not verified yet: in once a TO confirms
   deck?: string // the player's deck in the app, for their stats
+  invalid?: boolean // that deck failed the app's check when they registered
   list?: boolean // they gave their decklist (the link is in players/{key}/private/deck)
   at: string
   by: string
@@ -449,12 +450,12 @@ export async function joinTournament(
   user: AppUser,
   id: string,
   key: string,
-  p: { name: string; commander: string; deck: string | null; verified: boolean },
+  p: { name: string; commander: string; deck: string | null; invalid: boolean; verified: boolean },
   existing: boolean,
 ) {
   const { db, fs } = await fb()
   const ref = fs.doc(db, 'tournaments', id, 'players', key)
-  const mine = { commander: p.commander, deck: p.deck, uid: user.uid, at: now(), by: user.uid }
+  const mine = { commander: p.commander, deck: p.deck, invalid: p.invalid, uid: user.uid, at: now(), by: user.uid }
   if (existing) await fs.updateDoc(ref, mine)
   else await fs.setDoc(ref, { name: p.name, ...mine, ...(p.verified ? {} : { pending: true }) })
 }

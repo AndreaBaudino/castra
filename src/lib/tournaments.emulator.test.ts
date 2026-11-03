@@ -214,20 +214,20 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     expect(await findByCode('ZZZZZZ')).toBeNull()
 
     // kim, verified: in at once, with her deck and decklist
-    await joinTournament(user('kim'), id, 'mia', { name: 'Mia', commander: 'Kinnan, Bonder Prodigy', deck: 'd1', verified: true }, false)
+    await joinTournament(user('kim'), id, 'mia', { name: 'Mia', commander: 'Kinnan, Bonder Prodigy', deck: 'd1', invalid: false, verified: true }, false)
     await saveList(id, 'mia', MOX)
     expect(await loadList(id, 'mia')).toBe(MOX)
     // lea, only linked: waiting; she changes her commander meanwhile
     as('lea')
-    await joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'Atraxa, Grand Unifier', deck: null, verified: false }, false)
-    await joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'Spider-Man 2099', deck: null, verified: false }, true)
-    await expect(joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'X', deck: null, verified: true }, false)).rejects.toThrow()
+    await joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'Atraxa, Grand Unifier', deck: null, invalid: true, verified: false }, false)
+    await joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'Spider-Man 2099', deck: null, invalid: true, verified: false }, true)
+    await expect(joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'X', deck: null, invalid: false, verified: true }, false)).rejects.toThrow()
     await expect(loadList(id, 'mia')).rejects.toThrow() // someone else's decklist, during the tournament
     // pam: waiting, leaves, asks again
     as('pam')
-    await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, verified: false }, false)
+    await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, invalid: false, verified: false }, false)
     await removePlayer(id, 'pat')
-    await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, verified: false }, false)
+    await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, invalid: false, verified: false }, false)
     s = await read(id)
     const nina = s.players.find(([k]) => k === 'nina')![1]
     expect(nina).toMatchObject({ pending: true, uid: 'lea', commander: 'Spider-Man 2099' })

@@ -234,7 +234,7 @@ service cloud.firestore {
         allow read: if true;
         allow create, update: if managed()
           && key.size() <= 200
-          && request.resource.data.keys().hasOnly(['name', 'commander', 'joined', 'drop', 'uid', 'pending', 'deck', 'list', 'at', 'by'])
+          && request.resource.data.keys().hasOnly(['name', 'commander', 'joined', 'drop', 'uid', 'pending', 'deck', 'invalid', 'list', 'at', 'by'])
           && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
           && (request.resource.data.get('commander', null) == null
             || (request.resource.data.commander is string && request.resource.data.commander.size() <= 300))
@@ -248,18 +248,19 @@ service cloud.firestore {
           return d.uid == request.auth.uid && d.by == request.auth.uid
             && text(d, 'commander', 1, 300)
             && (d.get('deck', null) == null || text(d, 'deck', 1, 100))
+            && d.get('invalid', false) is bool
             && stamp(d.get('at', null));
         }
         allow create: if holds(key)
           && tour().status == 'open' && tour().get('code', null) != null
-          && request.resource.data.keys().hasOnly(['name', 'commander', 'uid', 'pending', 'deck', 'at', 'by'])
+          && request.resource.data.keys().hasOnly(['name', 'commander', 'uid', 'pending', 'deck', 'invalid', 'at', 'by'])
           && text(request.resource.data, 'name', 1, 200)
           && entry(request.resource.data)
           && request.resource.data.get('pending', false) == !verified(key);
         // their commander and deck until round 1 (also when the TO added them)
         allow update: if holds(key)
           && tour().status == 'open'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commander', 'deck', 'uid', 'at', 'by'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commander', 'deck', 'invalid', 'uid', 'at', 'by'])
           && entry(request.resource.data);
         // whether they gave their decklist, until it's in the sheet
         allow update: if holds(key)

@@ -5,6 +5,7 @@ import {
   type Deck,
   type DeckCard,
   type DeckChange,
+  type DeckCheck,
   type DeckView,
   type Group,
   GROUP_ORDER,
@@ -392,24 +393,7 @@ export default function DeckDetail({
       )}
 
       <section className="card">
-        <div className={`check ${isValid(check) ? 'ok' : 'bad'}`}>
-          <Icon name="shield" size={16} />
-          <div>
-            {isValid(check) ? (
-              t('deck.check.ok')
-            ) : (
-              <>
-                {check.count !== 100 && <div>{t('deck.check.count', { n: check.count })}</div>}
-                {!check.commanders.length && <div>{t('deck.check.noCommander')}</div>}
-                {check.duplicates.length > 0 && <div>{t('deck.check.singleton', { cards: check.duplicates.join(', ') })}</div>}
-                {check.offIdentity.length > 0 && <div>{t('deck.check.identity', { cards: check.offIdentity.join(', ') })}</div>}
-                {check.bans.banned.length > 0 && <div>{t('deck.check.banned', { cards: check.bans.banned.join(', ') })}</div>}
-                {check.bans.asCommander.length > 0 && <div>{t('deck.check.bannedCommander', { cards: check.bans.asCommander.join(', ') })}</div>}
-                {check.bans.asPartner.length > 0 && <div>{t('deck.check.bannedPartner', { cards: check.bans.asPartner.join(', ') })}</div>}
-              </>
-            )}
-          </div>
-        </div>
+        <CheckBox check={check} />
         {deck.notes && !editing && <p className="summary-text">{deck.notes}</p>}
         <div className="btn-pair">
           <button
@@ -651,6 +635,31 @@ export default function DeckDetail({
       </Sheet>
 
       {toast && <div className="toast">{toast}</div>}
+    </div>
+  )
+}
+
+/** What the deck check found: the deck page, and registering for a tournament. */
+export function CheckBox({ check }: { check: DeckCheck }) {
+  const { t } = useI18n()
+  return (
+    <div className={`check ${isValid(check) ? 'ok' : 'bad'}`}>
+      <Icon name="shield" size={16} />
+      <div>
+        {isValid(check) ? (
+          t('deck.check.ok')
+        ) : (
+          <>
+            {check.count !== 100 && <div>{t('deck.check.count', { n: check.count })}</div>}
+            {!check.commanders.length && <div>{t('deck.check.noCommander')}</div>}
+            {check.duplicates.length > 0 && <div>{t('deck.check.singleton', { cards: check.duplicates.join(', ') })}</div>}
+            {check.offIdentity.length > 0 && <div>{t('deck.check.identity', { cards: check.offIdentity.join(', ') })}</div>}
+            {check.bans.banned.length > 0 && <div>{t('deck.check.banned', { cards: check.bans.banned.join(', ') })}</div>}
+            {check.bans.asCommander.length > 0 && <div>{t('deck.check.bannedCommander', { cards: check.bans.asCommander.join(', ') })}</div>}
+            {check.bans.asPartner.length > 0 && <div>{t('deck.check.bannedPartner', { cards: check.bans.asPartner.join(', ') })}</div>}
+          </>
+        )}
+      </div>
     </div>
   )
 }

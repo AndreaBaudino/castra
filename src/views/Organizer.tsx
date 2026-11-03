@@ -659,6 +659,7 @@ export function TournamentAdmin({
                         <span className="ellipsis">{p.name}</span>
                         <span className="ellipsis muted small">
                           {c?.name ?? t('admin.noName')} · {p.commander}
+                          {p.invalid && <span className="bad-text"> · {t('run.badDeck')}</span>}
                         </span>
                       </div>
                       <button
@@ -705,7 +706,10 @@ export function TournamentAdmin({
                         {p.drop != null && <span className="muted small"> · {t('run.dropped')}</span>}
                         {p.joined && <span className="muted small"> · {t('run.lateFrom', { n: p.joined })}</span>}
                       </span>
-                      <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>{p.commander ?? t('run.noCommander')}</span>
+                      <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>
+                        {p.commander ?? t('run.noCommander')}
+                        {p.invalid && <span className="bad-text"> · {t('run.badDeck')}</span>}
+                      </span>
                     </div>
                     <Icon name="chevron" size={16} />
                   </li>
