@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { AppUser } from './auth'
 import type { Claim } from './claims'
-import { cloudEnabled, fb, useLiveCollection } from './firebase'
+import { fb, useLiveCollection, useLiveDoc } from './firebase'
 import { readStored } from './storage'
 
 // The admin area: the accounts listed in admins/{uid} (added from the Firebase console) can revoke the claims of
@@ -15,28 +15,8 @@ export interface Revoked {
   by: string // the admin's uid
 }
 
-export function useIsAdmin(uid: string | null) {
-  const [admin, setAdmin] = useState(false)
-  useEffect(() => {
-    setAdmin(false)
-    if (!cloudEnabled || !uid) return
-    let unsub = () => {}
-    let cancelled = false
-    fb().then(({ db, fs }) => {
-      if (cancelled) return
-      unsub = fs.onSnapshot(
-        fs.doc(db, 'admins', uid),
-        (snap) => setAdmin(snap.exists()),
-        () => setAdmin(false), // rules not deployed yet, or offline
-      )
-    })
-    return () => {
-      cancelled = true
-      unsub()
-    }
-  }, [uid])
-  return admin
-}
+// the admin's own entry is an empty document: there or not
+export const useIsAdmin = (uid: string | null) => useLiveDoc(uid && `admins/${uid}`) != null
 
 /** When this device last showed the claims to an admin: later ones are "new" until the players tab is opened. */
 export const SEEN_CLAIMS = 'cc.admin.seenClaims'
