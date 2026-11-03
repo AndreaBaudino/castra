@@ -14,12 +14,14 @@ export const CHANGELOG: Release[] = [
       'Contapunti: nel menu della partita, con il tema chiaro, i contatori spenti ("Contatori della partita") ora si leggono. Il menu ha gli stessi colori in entrambi i temi',
       'Tornei in app: "Apri partita" nella card del torneo in Home apre il contapunti sul tuo match, con il tempo del turno (anche i minuti aggiunti dal TO). A fine game "Prossima partita del match" tiene il conto, e "Segna risultato" manda al torneo il risultato già compilato, che l\'avversario conferma. Il match finisce tra le tue partite una volta sola, a torneo concluso',
       'Area admin, Tornei: per un livello 1 nuovo "Crea il foglio dal modello" copia il modello ufficiale con nome e data e aggiunge il torneo all\'elenco, senza preparare il foglio a mano. "Elimina il foglio" lo sposta nel cestino, se è ancora vuoto e il torneo non è stato aperto in app',
+      'Guide in PDF: nel Profilo, sotto "Segnala un problema o un\'idea", la Guida a Castra con tutte le funzioni dell\'app e la Guida ai tornei, da aprire o condividere con un link. I TO trovano la guida ai tornei anche in fondo all\'Area TO, da mandare ai giocatori',
     ],
     en: [
       'Circuit, commander page: "Against other commanders" shows the matches played against each other commander, with wins, losses, draws and winrate. They come from the tournaments run in the app, once published to the sheet: the sheets alone don\'t say who played whom. Tap an opponent to open their page',
       'Life counter: in the game menu, with the light theme, the counters turned off ("Game counters") are readable again. The menu has the same colours in both themes',
       'Tournaments in the app: "Open match" on the tournament card in Home opens the life counter on your match, with the round\'s clock (including the minutes the TO added). After each game "Next game of the match" keeps the count, and "Enter result" sends the tournament the result already filled in, for your opponent to confirm. The match reaches your games only once, when the tournament is over',
       'Admin area, Tournaments: for a new level 1, "Create the sheet from the template" copies the official template with the name and date and adds the tournament to the list, with no sheet to prepare by hand. "Delete the sheet" moves it to the bin, while still empty and never opened in the app',
+      'PDF guides: in the Profile, under "Report a problem or an idea", the Castra guide with every feature of the app and the tournament guide, to open or share with a link (both in Italian). TOs also find the tournament guide at the bottom of the TO area, to send to the players',
     ],
   },
   {

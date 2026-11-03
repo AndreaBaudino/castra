@@ -12,7 +12,7 @@ import { useSyncStatus } from '../lib/sync'
 import { deleteAccount } from '../lib/account'
 import { backupName, csvName, download, makeBackup, matchesCsv, mergeById, parseBackup } from '../lib/backup'
 import { CHANGELOG } from '../lib/changelog'
-import { BANLIST_URL, FORMAT_SITE_URL, PRIVACY_URL } from '../config'
+import { BANLIST_URL, FORMAT_SITE_URL, GUIDE_URL, PRIVACY_URL, TOURNAMENT_GUIDE_URL } from '../config'
 import { Icon, Sheet } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { ClaimBadge, type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
@@ -694,6 +694,8 @@ export default function Account({
             <MenuRow icon="chat" label={t('feedback.menu')} onClick={() => setReporting(true)} />
             {(
               [
+                ['info', 'account.guide', GUIDE_URL],
+                ['trophy', 'account.guideTournaments', TOURNAMENT_GUIDE_URL],
                 ['globe', 'account.formatSite', FORMAT_SITE_URL],
                 ['ban', 'account.banlist', BANLIST_URL],
                 ['shield', 'account.privacy', PRIVACY_URL],

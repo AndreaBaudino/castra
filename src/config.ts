@@ -56,3 +56,6 @@ export const FORMAT_SITE_URL = 'https://www.centurioncommander.eu/it/home-ita/'
 export const BANLIST_URL = 'https://www.centurioncommander.eu/it/ban-list-it/'
 /** the privacy notice: a plain page published with the app (public/privacy.html) */
 export const PRIVACY_URL = `${import.meta.env.BASE_URL}privacy.html`
+/** The presentations of the app and of its tournaments, PDFs published with the app (public/) */
+export const GUIDE_URL = `${import.meta.env.BASE_URL}castra.pdf`
+export const TOURNAMENT_GUIDE_URL = `${import.meta.env.BASE_URL}castra-tornei.pdf`

@@ -50,6 +50,7 @@ import {
   useUnfiled,
 } from '../lib/tournaments'
 import { Icon, Sheet } from '../components/ui'
+import { TOURNAMENT_GUIDE_URL } from '../config'
 import { useDialog } from '../components/Dialog'
 import { SubPageShell } from './Circuit'
 import { MatchList, RankingList } from './Live'
@@ -247,6 +248,15 @@ export default function OrganizerArea({
           </ul>
         )}
         <p className="muted small no-margin">{t('run.levelsHint')}</p>
+      </section>
+
+      <section className="card menu-card">
+        <a className="menu-row" href={TOURNAMENT_GUIDE_URL} target="_blank" rel="noopener noreferrer">
+          <Icon name="trophy" size={20} />
+          <span className="menu-label">{t('account.guideTournaments')}</span>
+          <span className="muted small ellipsis menu-note">{t('run.guideHint')}</span>
+          <Icon name="external" size={16} />
+        </a>
       </section>
 
       <Sheet open={!!adding} onClose={() => setAdding(null)} title={adding ? `${adding.s.league} · ${t('run.newStage')}` : ''}>
