@@ -42,6 +42,8 @@ export default defineConfig({
       },
       workbox: {
         importScripts: ['push-sw.js'], // push notifications
+        // the guides in public/ (castra.pdf…) are files, not app pages: the browser must fetch them
+        navigateFallbackDenylist: [/\.pdf$/],
         runtimeCaching: [
           {
             // card images: cache-first, they never change
