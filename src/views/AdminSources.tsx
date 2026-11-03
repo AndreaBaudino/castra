@@ -21,7 +21,7 @@ import {
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { leagues } from './Circuit'
-import { canPublish, createLevelSheet, trashLevelSheet } from '../lib/tournaments'
+import { canPublish, createLevelSheet, tournamentsOf, trashLevelSheet } from '../lib/tournaments'
 import AdminCircuit from './AdminCircuit'
 import AdminLinks from './AdminLinks'
 import { useCircuitSheets } from '../lib/circuits'
@@ -132,6 +132,9 @@ function SourceForm({
   const tos = [...organizers].sort((a, b) => a[1].name.localeCompare(b[1].name))
   const toggleTo = (uid: string) => set('tos', s.tos?.includes(uid) ? s.tos.filter((x) => x !== uid) : [...(s.tos ?? []), uid])
   const years = [...new Set([thisYear - 1, thisYear, thisYear + 1, ...(s.year ? [s.year] : [])])].sort()
+  // the tournaments run in the app find their TOs through their sheet in the list (firestore.rules), and the meta
+  // their matches: the sheet stays as long as they are there
+  const inApp = async () => !!initial && (await tournamentsOf(initial.drive)).length > 0
 
   const save = async () => {
     if (!user) return
@@ -150,6 +153,7 @@ function SourceForm({
     setBusy(true)
     setError(null)
     try {
+      if (initial && drive !== initial.drive && (await inApp())) return setError(t('sources.err.inApp'))
       await saveSource(user, { ...s, drive }, initial?.drive)
       onDone()
     } catch {
@@ -352,6 +356,10 @@ function SourceForm({
             if (!(await dialog.confirm(t('sources.deleteConfirm', { n: sourceLabel(initial) }), { ok: t('sources.delete'), danger: true }))) return
             setBusy(true)
             try {
+              if (await inApp()) {
+                setError(t('sources.err.inApp'))
+                return setBusy(false)
+              }
               await deleteSource(initial.drive)
               onDone()
             } catch {

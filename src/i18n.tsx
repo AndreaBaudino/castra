@@ -1196,6 +1196,8 @@ const it = {
   'sources.err.name': 'Scrivi il nome del torneo.',
   'sources.err.date': 'Scegli la data del torneo.',
   'sources.err.league': 'Scrivi il nome della lega.',
+  'sources.err.inApp':
+    'Su questo foglio ci sono tornei gestiti nell\'app: non si può togliere dall\'elenco né cambiarne il link, altrimenti i TO non potrebbero più gestirli. Prima vanno annullati dall\'Area TO, dal TO che li gestisce.',
   'sources.create': 'Crea il foglio dal modello',
   'sources.createHint': 'Per un livello 1 nuovo puoi lasciare vuoto il link: copio il modello del livello 1 nel Drive di centuriondati con nome e data, e lo aggiungo all\'elenco.',
   'sources.createConfirm': 'Creo il foglio di "{n}" copiando il modello del livello 1. Va bene?',
@@ -2402,6 +2404,8 @@ const en: Record<Key, string> = {
   'sources.err.name': "Write the tournament's name.",
   'sources.err.date': "Pick the tournament's date.",
   'sources.err.league': "Write the league's name.",
+  'sources.err.inApp':
+    "This sheet has tournaments run in the app: it can't be taken off the list or get another link, or their TOs couldn't run them any more. They must first be cancelled from the TO area, by the TO who runs them.",
   'sources.create': 'Create the sheet from the template',
   'sources.createHint': "For a new level 1 you can leave the link empty: I copy the level 1 template into centuriondati's Drive with its name and date, and add it to the list.",
   'sources.createConfirm': 'Create the sheet for "{n}" by copying the level 1 template?',
