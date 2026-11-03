@@ -311,28 +311,31 @@ export default function App() {
           <Home
             banner={
               <>
-                <TournamentCards
-                  code={joinCode}
-                  setCode={setJoinCode}
-                  user={user}
-                  me={me}
-                  claim={me ? claims.get(me)! : null}
-                  name={circuit.data?.players.find((p) => p.key === me)?.name ?? me ?? ''}
-                  decks={decks}
-                  openLive={openLive}
-                  login={() => go('account', 'login', true)}
-                  linkPlayer={() => go('account', 'circuit', true)}
-                  openGame={() => go('game')}
-                  record={(ms) =>
-                    setMatches((all) => {
-                      const have = new Set(all.map((m) => m.id))
-                      const add = ms.filter((m) => !have.has(m.id))
-                      return add.length ? [...add, ...all] : all
-                    })
-                  }
-                />
-                {organizer && uid && <OrganizerCard uid={uid} organizer={organizer} open={(id) => (id ? openRun(id) : go('to'))} />}
-                <LiveLink open={openLive} />
+                {/* the tournaments' cards: two by two on a computer */}
+                <div className="home-tours">
+                  <TournamentCards
+                    code={joinCode}
+                    setCode={setJoinCode}
+                    user={user}
+                    me={me}
+                    claim={me ? claims.get(me)! : null}
+                    name={circuit.data?.players.find((p) => p.key === me)?.name ?? me ?? ''}
+                    decks={decks}
+                    openLive={openLive}
+                    login={() => go('account', 'login', true)}
+                    linkPlayer={() => go('account', 'circuit', true)}
+                    openGame={() => go('game')}
+                    record={(ms) =>
+                      setMatches((all) => {
+                        const have = new Set(all.map((m) => m.id))
+                        const add = ms.filter((m) => !have.has(m.id))
+                        return add.length ? [...add, ...all] : all
+                      })
+                    }
+                  />
+                  {organizer && uid && <OrganizerCard uid={uid} organizer={organizer} open={(id) => (id ? openRun(id) : go('to'))} />}
+                  <LiveLink open={openLive} />
+                </div>
                 <BanlistNoticeCard decks={decks} openDeck={(id) => go('decks', id)} openCard={openCard} />
                 {noticeCard}
               </>

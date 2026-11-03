@@ -18,6 +18,7 @@ import {
   useTournaments,
 } from '../lib/tournaments'
 import { Icon, ShareButton } from '../components/ui'
+import { useWide } from '../lib/wide'
 import { SubPageShell, placeLabel } from './Circuit'
 
 // The tournaments run in the app, for whoever follows them (docs/tornei.md): the link on the home, the list of the ones
@@ -141,28 +142,33 @@ export default function LiveList({ onBack, open }: { onBack: () => void; open: (
   const over = tournaments.filter(([, x]) => x.status === 'done' && x.date === today())
   return (
     <SubPageShell title={t('live.title')} onBack={onBack}>
-      <section className="card">
-        <div className="card-title">{t('live.now')}</div>
-        {!live.length ? (
-          <p className="muted small no-margin">{loaded ? t('live.none') : '…'}</p>
-        ) : (
-          <ul className="card-list">
-            {live.map(([id, x]) => (
-              <Row key={id} id={id} x={x} open={open} />
-            ))}
-          </ul>
-        )}
-      </section>
-      {over.length > 0 && (
+      {/* on a computer the ones over today beside the ones being played */}
+      <div className="to-cols even">
         <section className="card">
-          <div className="card-title">{t('live.today')}</div>
-          <ul className="card-list">
-            {over.map(([id, x]) => (
-              <Row key={id} id={id} x={x} open={open} />
-            ))}
-          </ul>
+          <div className="card-title">{t('live.now')}</div>
+          {!live.length ? (
+            <p className="muted small no-margin">{loaded ? t('live.none') : '…'}</p>
+          ) : (
+            <ul className="card-list">
+              {live.map(([id, x]) => (
+                <Row key={id} id={id} x={x} open={open} />
+              ))}
+            </ul>
+          )}
         </section>
-      )}
+        {over.length > 0 && (
+          <div className="to-side">
+            <section className="card">
+              <div className="card-title">{t('live.today')}</div>
+              <ul className="card-list">
+                {over.map(([id, x]) => (
+                  <Row key={id} id={id} x={x} open={open} />
+                ))}
+              </ul>
+            </section>
+          </div>
+        )}
+      </div>
     </SubPageShell>
   )
 }
@@ -175,6 +181,7 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
   // the decklists turn public once it's over
   const lists = useLists(id, players, tour?.status === 'done')
   const [tab, setTab] = useState<'pairings' | 'standings'>('pairings')
+  const wide = useWide()
   const [q, setQ] = useState('')
   const rows = useMemo(() => (tour ? ranking(tour, players, matches) : []), [tour, players, matches])
   if (!tour)
@@ -187,12 +194,20 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
   const names = new Map(players)
   const nameOf = (k: string | null) => (k ? (names.get(k)?.name ?? k) : t('meta.bye'))
   const current = matches.filter((m) => m.round === tour.round)
-  // a finished tournament opens on its final standings, one being registered on who's in
+  // a finished tournament opens on its final standings, one being registered on who's in; a computer shows the
+  // pairings and the standings side by side
+  const both = wide && tour.status !== 'done'
   const shown = tour.status === 'done' ? 'standings' : tab
   const key = playerKey(q)
   const found = key.length < 2 ? [] : rows.map((r, i) => ({ r, place: i + 1 })).filter(({ r }) => playerKey(r.name).includes(key)).slice(0, 5)
   const title = tournamentTitle(tour, t)
   const mine = me && names.has(me) ? matches.filter((m) => m.p1 === me || m.p2 === me) : []
+  const standings = (
+    <section className="card">
+      <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
+      <RankingList rows={rows} lists={lists} />
+    </section>
+  )
 
   return (
     <SubPageShell title={title} onBack={onBack} actions={<ShareButton text={t('live.share', { n: title })} />}>
@@ -240,7 +255,7 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
               </section>
             )
           })}
-          {tour.status !== 'done' && (
+          {tour.status !== 'done' && !both && (
             <div className="seg wide">
               {(['pairings', 'standings'] as const).map((v) => (
                 <button key={v} className={shown === v ? 'on' : ''} onClick={() => setTab(v)}>
@@ -252,55 +267,58 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
         </>
       )}
 
-      {mine.length > 0 && (
-        <section className="card">
-          <div className="card-title">{t('live.mine')}</div>
-          <ul className="card-list">
-            {mine.map((m) => {
-              const opp = m.p1 === me ? m.p2 : m.p1
-              return (
-                <li key={m.round} className="event-row">
-                  <span className="place-badge">{m.round}</span>
-                  <div className="event-main">
-                    <span className="ellipsis">{opp ? nameOf(opp) : t('meta.bye')}</span>
-                    <span className="ellipsis muted small">{opp ? (names.get(opp)?.commander ?? '') : ''}</span>
-                  </div>
-                  <span className="to-score">{!opp ? '2-0' : m.score ? sideScore(m.score, m.p2 === me) + (unconfirmed(m) ? '?' : '') : '—'}</span>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
+      {/* on a computer the pairings beside the standings */}
+      <div className="to-cols">
+        {mine.length > 0 && (
+          <section className="card">
+            <div className="card-title">{t('live.mine')}</div>
+            <ul className="card-list">
+              {mine.map((m) => {
+                const opp = m.p1 === me ? m.p2 : m.p1
+                return (
+                  <li key={m.round} className="event-row">
+                    <span className="place-badge">{m.round}</span>
+                    <div className="event-main">
+                      <span className="ellipsis">{opp ? nameOf(opp) : t('meta.bye')}</span>
+                      <span className="ellipsis muted small">{opp ? (names.get(opp)?.commander ?? '') : ''}</span>
+                    </div>
+                    <span className="to-score">{!opp ? '2-0' : m.score ? sideScore(m.score, m.p2 === me) + (unconfirmed(m) ? '?' : '') : '—'}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
 
-      {tour.status === 'open' ? (
-        <section className="card">
-          <div className="card-title">{t('run.registered')}</div>
-          <ul className="card-list">
-            {players
-              .filter(([, p]) => !p.pending)
-              .sort((a, b) => a[1].name.localeCompare(b[1].name))
-              .map(([k, p]) => (
-                <li key={k} className="event-row">
-                  <div className="event-main">
-                    <span className="ellipsis">{p.name}</span>
-                    <span className="ellipsis muted small">{p.commander ?? ''}</span>
-                  </div>
-                </li>
-              ))}
-          </ul>
-        </section>
-      ) : shown === 'pairings' ? (
-        <section className="card">
-          <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.roundN', { n: tour.round })}</div>
-          <MatchList matches={current} nameOf={nameOf} me={me} />
-        </section>
-      ) : (
-        <section className="card">
-          <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
-          <RankingList rows={rows} lists={lists} />
-        </section>
-      )}
+        {tour.status === 'open' ? (
+          <section className="card">
+            <div className="card-title">{t('run.registered')}</div>
+            <ul className="card-list">
+              {players
+                .filter(([, p]) => !p.pending)
+                .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                .map(([k, p]) => (
+                  <li key={k} className="event-row">
+                    <div className="event-main">
+                      <span className="ellipsis">{p.name}</span>
+                      <span className="ellipsis muted small">{p.commander ?? ''}</span>
+                    </div>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        ) : (
+          <>
+            {(both || shown === 'pairings') && (
+              <section className="card">
+                <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.roundN', { n: tour.round })}</div>
+                <MatchList matches={current} nameOf={nameOf} me={me} />
+              </section>
+            )}
+            {both ? <div className="to-side">{standings}</div> : shown === 'standings' && standings}
+          </>
+        )}
+      </div>
     </SubPageShell>
   )
 }

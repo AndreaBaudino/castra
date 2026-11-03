@@ -274,7 +274,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
     openGame()
   }
   return (
-    <section className="card my-tour">
+    <section className="card my-tour playing">
       {title}
       <span className="muted small">{tournamentStatus(tour, t)}</span>
       {mine?.drop != null ? (

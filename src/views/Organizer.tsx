@@ -162,102 +162,107 @@ export default function OrganizerArea({
 
   return (
     <SubPageShell title={t('run.area')} onBack={onBack}>
-      <section className="card">
-        <div className="card-title">{t('run.yours')}</div>
-        {!run.length ? (
-          <p className="muted small no-margin">{t('run.none')}</p>
-        ) : (
-          <ul className="card-list">
-            {run.map(([id, x]) => (
-              <li key={id} className="event-row" onClick={() => openTournament(id)}>
-                <div className="event-main">
-                  <strong className="ellipsis">{tournamentTitle(x, t)}</strong>
-                  <span className="muted small">
-                    {day(x.date)} · {tournamentStatus(x, t)}
-                    {x.status === 'done' && !x.filed && <span className="bad-text"> · {t('run.toFile')}</span>}
-                  </span>
-                </div>
-                <Icon name="chevron" size={16} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* on a computer two columns: the tournaments on the left, the rest on the right */}
+      <div className="to-cols">
+        <section className="card">
+          <div className="card-title">{t('run.yours')}</div>
+          {!run.length ? (
+            <p className="muted small no-margin">{t('run.none')}</p>
+          ) : (
+            <ul className="card-list">
+              {run.map(([id, x]) => (
+                <li key={id} className="event-row" onClick={() => openTournament(id)}>
+                  <div className="event-main">
+                    <strong className="ellipsis">{tournamentTitle(x, t)}</strong>
+                    <span className="muted small">
+                      {day(x.date)} · {tournamentStatus(x, t)}
+                      {x.status === 'done' && !x.filed && <span className="bad-text"> · {t('run.toFile')}</span>}
+                    </span>
+                  </div>
+                  <Icon name="chevron" size={16} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <section className="card">
-        <div className="card-title">{t('run.newStage')}</div>
-        {!leagues.length ? (
-          <p className="muted small no-margin">{t('run.noLeagues')}</p>
-        ) : (
-          <ul className="card-list">
-            {leagues.map((s) => (
-              <li key={s.drive} className="event-row">
-                <div className="event-main">
-                  <strong className="ellipsis">{s.league}</strong>
-                  <span className="muted small">
-                    {(s.season ?? '').toUpperCase()} {s.year}
-                  </span>
-                </div>
-                <button
-                  className="btn ghost small"
-                  disabled={busy}
-                  onClick={async () => {
-                    setBusy(true)
-                    try {
-                      setAdding({ s, stage: String(nextStage(s, dataset, await tournamentsOf(s.drive))), date: today })
-                    } catch {
-                      await dialog.alert(t('admin.error'))
-                    } finally {
-                      setBusy(false)
-                    }
-                  }}
-                >
-                  <Icon name="plus" size={16} /> {t('run.stageShort')}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <div className="to-side">
+          <section className="card">
+            <div className="card-title">{t('run.newStage')}</div>
+            {!leagues.length ? (
+              <p className="muted small no-margin">{t('run.noLeagues')}</p>
+            ) : (
+              <ul className="card-list">
+                {leagues.map((s) => (
+                  <li key={s.drive} className="event-row">
+                    <div className="event-main">
+                      <strong className="ellipsis">{s.league}</strong>
+                      <span className="muted small">
+                        {(s.season ?? '').toUpperCase()} {s.year}
+                      </span>
+                    </div>
+                    <button
+                      className="btn ghost small"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true)
+                        try {
+                          setAdding({ s, stage: String(nextStage(s, dataset, await tournamentsOf(s.drive))), date: today })
+                        } catch {
+                          await dialog.alert(t('admin.error'))
+                        } finally {
+                          setBusy(false)
+                        }
+                      }}
+                    >
+                      <Icon name="plus" size={16} /> {t('run.stageShort')}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-      <section className="card">
-        <div className="card-title">{t('run.levels')}</div>
-        {!levels.length ? (
-          <p className="muted small no-margin">{t('run.noLevels')}</p>
-        ) : (
-          <ul className="card-list">
-            {levels.map((s) => (
-              <li key={s.drive} className="event-row">
-                <div className="event-main">
-                  <strong className="ellipsis">{s.name}</strong>
-                  <span className="muted small">
-                    {t(`sources.kind.${s.kind}`)} · {day(s.date!)}
-                  </span>
-                </div>
-                <button
-                  className="btn ghost small"
-                  disabled={busy}
-                  onClick={async () => {
-                    if (await dialog.confirm(t('run.startLevel', { n: s.name ?? '' }), { ok: t('run.start') })) create(s, s.date!)
-                  }}
-                >
-                  {t('run.start')}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="muted small no-margin">{t('run.levelsHint')}</p>
-      </section>
+          <section className="card">
+            <div className="card-title">{t('run.levels')}</div>
+            {!levels.length ? (
+              <p className="muted small no-margin">{t('run.noLevels')}</p>
+            ) : (
+              <ul className="card-list">
+                {levels.map((s) => (
+                  <li key={s.drive} className="event-row">
+                    <div className="event-main">
+                      <strong className="ellipsis">{s.name}</strong>
+                      <span className="muted small">
+                        {t(`sources.kind.${s.kind}`)} · {day(s.date!)}
+                      </span>
+                    </div>
+                    <button
+                      className="btn ghost small"
+                      disabled={busy}
+                      onClick={async () => {
+                        if (await dialog.confirm(t('run.startLevel', { n: s.name ?? '' }), { ok: t('run.start') })) create(s, s.date!)
+                      }}
+                    >
+                      {t('run.start')}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="muted small no-margin">{t('run.levelsHint')}</p>
+          </section>
 
-      <section className="card menu-card">
-        <a className="menu-row" href={TOURNAMENT_GUIDE_URL} target="_blank" rel="noopener noreferrer">
-          <Icon name="trophy" size={20} />
-          <span className="menu-label">{t('account.guideTournaments')}</span>
-          <span className="muted small ellipsis menu-note">{t('run.guideHint')}</span>
-          <Icon name="external" size={16} />
-        </a>
-      </section>
+          <section className="card menu-card">
+            <a className="menu-row" href={TOURNAMENT_GUIDE_URL} target="_blank" rel="noopener noreferrer">
+              <Icon name="trophy" size={20} />
+              <span className="menu-label">{t('account.guideTournaments')}</span>
+              <span className="muted small ellipsis menu-note">{t('run.guideHint')}</span>
+              <Icon name="external" size={16} />
+            </a>
+          </section>
+        </div>
+      </div>
 
       <Sheet open={!!adding} onClose={() => setAdding(null)} title={adding ? `${adding.s.league} · ${t('run.newStage')}` : ''}>
         {adding && (
@@ -423,320 +428,325 @@ export function TournamentAdmin({
   }
   return (
     <SubPageShell title={tournamentTitle(tour, t)} onBack={onBack}>
-      <section className="card">
-        <div className="card-title">
-          {tournamentStatus(tour, t)}
-          <span className="muted small">
-            {new Date(tour.date).toLocaleDateString(lang, { day: 'numeric', month: 'short' })} · {t('run.players', { n: active.length })}
-          </span>
-        </div>
-        {playing && (
-          <div className="to-clock">
-            <b className={(timeLeft(tour, now) ?? 1) <= 0 ? 'bad-text' : ''}>{clockLabel(timeLeft(tour, now), t)}</b>
-            <span className="muted small">
-              {missing ? t('run.missing', { n: missing }) : t('run.allIn')}
-              {toConfirm > 0 && ` · ${t('run.toConfirm', { n: toConfirm })}`}
-            </span>
-          </div>
-        )}
-        {tour.status === 'open' && (
-          <div className="to-code">
-            <span className="muted small">{t('run.code')}</span>
-            <b>{tour.code ?? '—'}</b>
-            {tour.code && (
-              <button className="icon-btn" onClick={() => shareCode(tour.code!)} aria-label={t('share.label')}>
-                <Icon name="share" size={18} />
-              </button>
-            )}
-            <button
-              className="btn ghost small"
-              disabled={busy}
-              onClick={async () => {
-                if (!tour.code || (await dialog.confirm(t('run.newCodeConfirm'), { ok: t('run.newCode') }))) act(() => setTournament(id, { code: newCode() }))
-              }}
-            >
-              {t(tour.code ? 'run.newCode' : 'run.makeCode')}
-            </button>
-          </div>
-        )}
-        {tour.status === 'open' && <p className="muted small no-margin">{t('run.codeHint')}</p>}
-        <button className="link" onClick={openLive}>
-          {t('run.livePage')}
-        </button>
-        {(tour.status === 'open' || tour.status === 'swiss') && (
-          <>
-            <div className="stepper to-step">
-              <span>
-                {t('run.rounds')} <span className="muted small">{t('run.suggested', { n: suggestedRounds(active.length) })}</span>
-              </span>
-              <div className="stepper-ctrl">
-                <button
-                  disabled={busy || (tour.rounds || suggestedRounds(active.length)) <= Math.max(1, tour.round)}
-                  onClick={() => act(() => setTournament(id, { rounds: (tour.rounds || suggestedRounds(active.length)) - 1 }))}
-                >
-                  −
-                </button>
-                <b>{tour.rounds || suggestedRounds(active.length)}</b>
-                <button
-                  disabled={busy || (tour.rounds || suggestedRounds(active.length)) >= 15}
-                  onClick={() => act(() => setTournament(id, { rounds: (tour.rounds || suggestedRounds(active.length)) + 1 }))}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div className="stepper to-step">
-              <span>{t('run.cut')}</span>
-              <div className="seg">
-                {([0, 2, 4, 8] as const).map((n) => (
-                  <button
-                    key={n}
-                    className={tour.cut === n ? 'on' : ''}
-                    disabled={busy || n > active.length}
-                    onClick={() => act(() => setTournament(id, { cut: n }))}
-                  >
-                    {n ? `Top ${n}` : t('run.noCut')}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </section>
-
-      {playing && (
-        <section className="card">
-          <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.pairings')}</div>
-          <MatchList matches={current} nameOf={nameOf} onPick={setResult} />
-          <p className="muted small no-margin">{t('run.tapTable')}</p>
-        </section>
-      )}
-
-      <div className="btn-col">
-        {tour.status === 'open' && (
-          <button
-            className="btn primary"
-            disabled={busy || active.length < 2}
-            onClick={async () => {
-              if (pending.length && !(await dialog.confirm(t('run.pendingConfirm', { n: pending.length }), { ok: t('run.startAnyway'), danger: true })))
-                return
-              if (noCommander && !(await dialog.confirm(t('run.noCommanderConfirm', { n: noCommander }), { ok: t('run.startAnyway') }))) return
-              act(async () => {
-                if (!tour.rounds) await setTournament(id, { rounds: suggestedRounds(active.length) })
-                await pairSwiss(id, { ...tour, rounds: tour.rounds || suggestedRounds(active.length) }, players, matches)
-              })
-            }}
-          >
-            {t('run.startRound', { n: 1 })}
-          </button>
-        )}
-        {tour.status === 'swiss' && !lastSwiss && (
-          <button className="btn primary" disabled={busy} onClick={nextRound}>
-            {t('run.startRound', { n: tour.round + 1 })}
-          </button>
-        )}
-        {lastSwiss && tour.cut > 0 && (
-          <button
-            className="btn primary"
-            disabled={busy || missing > 0 || active.length < tour.cut}
-            onClick={async () => {
-              if (await confirmed()) act(() => startCut(id, tour, players, matches))
-            }}
-          >
-            {t('run.startCut', { n: tour.cut })}
-          </button>
-        )}
-        {cutDone && current.length > 1 && (
-          <button
-            className="btn primary"
-            disabled={busy}
-            onClick={async () => {
-              if (await confirmed()) act(() => nextCutRound(id, tour, matches))
-            }}
-          >
-            {t('run.nextCut')}
-          </button>
-        )}
-        {((lastSwiss && !tour.cut) || (cutDone && current.length === 1)) && (
-          <button
-            className="btn primary"
-            disabled={busy || missing > 0}
-            onClick={async () => {
-              if ((await confirmed()) && (await dialog.confirm(t('run.finishConfirm'), { ok: t('run.finish') }))) act(() => finishTournament(id))
-            }}
-          >
-            {t('run.finish')}
-          </button>
-        )}
-        {lastSwiss && tour.cut > 0 && active.length < tour.cut && <p className="muted small no-margin">{t('run.cutTooBig')}</p>}
-        {tour.status === 'swiss' && (
-          <button
-            className="btn ghost"
-            disabled={busy}
-            onClick={async () => {
-              const done = current.filter((m) => m.p2 && m.score).length
-              const msg = done ? t('run.redoConfirmLost', { n: done }) : t('run.redoConfirm')
-              if (await dialog.confirm(msg, { ok: t('run.redo'), danger: done > 0 })) act(() => pairSwiss(id, tour, players, matches, true))
-            }}
-          >
-            <Icon name="refresh" size={16} /> {t('run.redo')}
-          </button>
-        )}
-      </div>
-
-      {tour.status === 'done' && (
-        <section className="card">
-          <div className="card-title">{t('run.sheet')}</div>
-          {canPublish && !tour.filed && (
-            <>
-              <button className="btn primary" disabled={busy || noCommander > 0} onClick={publish}>
-                {t('run.publish')}
-              </button>
-              <p className="muted small no-margin">{t(noCommander ? 'run.publishNoCommander' : 'run.publishHint')}</p>
-            </>
-          )}
-          <p className="muted small no-margin">{t('run.sheetHint')}</p>
-          <div className="btn-pair">
-            <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches).names)}>
-              <Icon name="copy" size={16} /> {t('run.copyNames')}
-            </button>
-            <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches, lists).results)}>
-              <Icon name="copy" size={16} /> {t('run.copyResults')}
-            </button>
-          </div>
-          {tour.published ? (
-            <>
-              <p className="muted small no-margin">{t('run.publishedIn', { n: tour.published.tab })}</p>
-              {canPublish && (
-                <button className="btn ghost" disabled={busy} onClick={unpublish}>
-                  {t('run.unpublish')}
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <button className={`btn ${tour.filed ? 'ghost' : 'primary'}`} disabled={busy} onClick={() => act(() => setFiled(id, !tour.filed))}>
-                {tour.filed ? t('run.unfile') : t('run.file')}
-              </button>
-              <p className="muted small no-margin">{t(tour.filed ? 'run.filed' : 'run.fileHint')}</p>
-            </>
-          )}
-        </section>
-      )}
-
-      {tour.status !== 'open' && (
-        <section className="card">
-          <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
-          <RankingList rows={rows} onPick={setPlayer} />
-        </section>
-      )}
-
-      {pending.length > 0 && (
+      {/* on a computer two columns: the round on the left, standings and players on the right */}
+      <div className="to-cols">
         <section className="card">
           <div className="card-title">
-            {t('run.requests')}
-            <span className="muted small">{pending.length}</span>
+            {tournamentStatus(tour, t)}
+            <span className="muted small">
+              {new Date(tour.date).toLocaleDateString(lang, { day: 'numeric', month: 'short' })} · {t('run.players', { n: active.length })}
+            </span>
           </div>
-          <ul className="card-list">
-            {pending.map(([k, p]) => {
-              const c = claims.get(k)
-              return (
-                <li key={k} className="event-row">
-                  {c?.photo ? (
-                    <img className="admin-avatar" src={c.photo} alt="" referrerPolicy="no-referrer" />
-                  ) : (
-                    <span className="admin-avatar">{(c?.name || '?').charAt(0).toUpperCase()}</span>
-                  )}
-                  <div className="event-main">
-                    <span className="ellipsis">{p.name}</span>
-                    <span className="ellipsis muted small">
-                      {c?.name ?? t('admin.noName')} · {p.commander}
-                    </span>
-                  </div>
-                  <button
-                    className="btn ghost small"
-                    disabled={busy}
-                    onClick={async () => {
-                      if (await dialog.confirm(t('run.rejectConfirm', { p: p.name }), { ok: t('run.reject'), danger: true })) act(() => removePlayer(id, k))
-                    }}
-                  >
-                    {t('run.reject')}
-                  </button>
-                  <button
-                    className="btn primary small"
-                    disabled={busy}
-                    // the claim, if still the one that asked and not verified yet, is verified with the same tap
-                    onClick={() => act(() => confirmPlayer(user, id, k, !!c && c.uid === p.uid && !c.verified))}
-                  >
-                    {t('run.accept')}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-          <p className="muted small no-margin">{t('run.requestsHint')}</p>
-        </section>
-      )}
-
-      <section className="card">
-        <div className="card-title">
-          {t('run.registered')}
-          <span className="muted small">
-            {t('run.players', { n: entered.length })} · {t('run.lists', { n: listed, of: entered.length })}
-          </span>
-        </div>
-        {noCommander > 0 && <p className="bad-text small no-margin">{t('run.missingCommanders', { n: noCommander })}</p>}
-        <ul className="card-list">
-          {[...entered]
-            .sort((a, b) => a[1].name.localeCompare(b[1].name))
-            .map(([k, p]) => (
-              <li key={k} className="event-row" onClick={() => setPlayer(k)}>
-                <div className="event-main">
-                  <span className="ellipsis">
-                    {p.name}
-                    {p.drop != null && <span className="muted small"> · {t('run.dropped')}</span>}
-                    {p.joined && <span className="muted small"> · {t('run.lateFrom', { n: p.joined })}</span>}
-                  </span>
-                  <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>{p.commander ?? t('run.noCommander')}</span>
-                </div>
-                <Icon name="chevron" size={16} />
-              </li>
-            ))}
-        </ul>
-        {tour.status !== 'done' && tour.status !== 'cut' && (
-          <button className="btn ghost" onClick={() => setAdding(true)}>
-            <Icon name="plus" size={16} /> {tour.status === 'open' ? t('run.addPlayer') : t('run.addLate', { n: tour.round + 1 })}
+          {playing && (
+            <div className="to-clock">
+              <b className={(timeLeft(tour, now) ?? 1) <= 0 ? 'bad-text' : ''}>{clockLabel(timeLeft(tour, now), t)}</b>
+              <span className="muted small">
+                {missing ? t('run.missing', { n: missing }) : t('run.allIn')}
+                {toConfirm > 0 && ` · ${t('run.toConfirm', { n: toConfirm })}`}
+              </span>
+            </div>
+          )}
+          {tour.status === 'open' && (
+            <div className="to-code">
+              <span className="muted small">{t('run.code')}</span>
+              <b>{tour.code ?? '—'}</b>
+              {tour.code && (
+                <button className="icon-btn" onClick={() => shareCode(tour.code!)} aria-label={t('share.label')}>
+                  <Icon name="share" size={18} />
+                </button>
+              )}
+              <button
+                className="btn ghost small"
+                disabled={busy}
+                onClick={async () => {
+                  if (!tour.code || (await dialog.confirm(t('run.newCodeConfirm'), { ok: t('run.newCode') }))) act(() => setTournament(id, { code: newCode() }))
+                }}
+              >
+                {t(tour.code ? 'run.newCode' : 'run.makeCode')}
+              </button>
+            </div>
+          )}
+          {tour.status === 'open' && <p className="muted small no-margin">{t('run.codeHint')}</p>}
+          <button className="link" onClick={openLive}>
+            {t('run.livePage')}
           </button>
-        )}
-      </section>
-
-      {rounds.length > 0 && (
-        <section className="card">
-          <div className="card-title">{t('run.pastRounds')}</div>
-          {rounds.map((r) => (
-            <details key={r}>
-              <summary>{r > tour.rounds && tour.status !== 'swiss' ? t('run.cutRoundN', { n: r - tour.rounds }) : t('run.roundN', { n: r })}</summary>
-              <MatchList matches={matches.filter((m) => m.round === r)} nameOf={nameOf} onPick={setResult} />
-            </details>
-          ))}
+          {(tour.status === 'open' || tour.status === 'swiss') && (
+            <>
+              <div className="stepper to-step">
+                <span>
+                  {t('run.rounds')} <span className="muted small">{t('run.suggested', { n: suggestedRounds(active.length) })}</span>
+                </span>
+                <div className="stepper-ctrl">
+                  <button
+                    disabled={busy || (tour.rounds || suggestedRounds(active.length)) <= Math.max(1, tour.round)}
+                    onClick={() => act(() => setTournament(id, { rounds: (tour.rounds || suggestedRounds(active.length)) - 1 }))}
+                  >
+                    −
+                  </button>
+                  <b>{tour.rounds || suggestedRounds(active.length)}</b>
+                  <button
+                    disabled={busy || (tour.rounds || suggestedRounds(active.length)) >= 15}
+                    onClick={() => act(() => setTournament(id, { rounds: (tour.rounds || suggestedRounds(active.length)) + 1 }))}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="stepper to-step">
+                <span>{t('run.cut')}</span>
+                <div className="seg">
+                  {([0, 2, 4, 8] as const).map((n) => (
+                    <button
+                      key={n}
+                      className={tour.cut === n ? 'on' : ''}
+                      disabled={busy || n > active.length}
+                      onClick={() => act(() => setTournament(id, { cut: n }))}
+                    >
+                      {n ? `Top ${n}` : t('run.noCut')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </section>
-      )}
 
-      <button
-        className="btn danger"
-        disabled={busy}
-        onClick={async () => {
-          // published: cancelling here leaves the sheet as it is
-          const ask = tour.published ? t('run.cancelPublished', { n: tour.published.tab }) : t('run.cancelConfirm', { n: tournamentTitle(tour, t) })
-          if (!(await dialog.confirm(ask, { ok: t('run.cancel'), danger: true }))) return
-          act(async () => {
-            await deleteTournament(id, players, matches)
-            onBack()
-          })
-        }}
-      >
-        <Icon name="trash" size={16} /> {t('run.cancel')}
-      </button>
+        {playing && (
+          <section className="card to-tables">
+            <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.pairings')}</div>
+            <MatchList matches={current} nameOf={nameOf} onPick={setResult} />
+            <p className="muted small no-margin">{t('run.tapTable')}</p>
+          </section>
+        )}
+
+        <div className="btn-col">
+          {tour.status === 'open' && (
+            <button
+              className="btn primary"
+              disabled={busy || active.length < 2}
+              onClick={async () => {
+                if (pending.length && !(await dialog.confirm(t('run.pendingConfirm', { n: pending.length }), { ok: t('run.startAnyway'), danger: true })))
+                  return
+                if (noCommander && !(await dialog.confirm(t('run.noCommanderConfirm', { n: noCommander }), { ok: t('run.startAnyway') }))) return
+                act(async () => {
+                  if (!tour.rounds) await setTournament(id, { rounds: suggestedRounds(active.length) })
+                  await pairSwiss(id, { ...tour, rounds: tour.rounds || suggestedRounds(active.length) }, players, matches)
+                })
+              }}
+            >
+              {t('run.startRound', { n: 1 })}
+            </button>
+          )}
+          {tour.status === 'swiss' && !lastSwiss && (
+            <button className="btn primary" disabled={busy} onClick={nextRound}>
+              {t('run.startRound', { n: tour.round + 1 })}
+            </button>
+          )}
+          {lastSwiss && tour.cut > 0 && (
+            <button
+              className="btn primary"
+              disabled={busy || missing > 0 || active.length < tour.cut}
+              onClick={async () => {
+                if (await confirmed()) act(() => startCut(id, tour, players, matches))
+              }}
+            >
+              {t('run.startCut', { n: tour.cut })}
+            </button>
+          )}
+          {cutDone && current.length > 1 && (
+            <button
+              className="btn primary"
+              disabled={busy}
+              onClick={async () => {
+                if (await confirmed()) act(() => nextCutRound(id, tour, matches))
+              }}
+            >
+              {t('run.nextCut')}
+            </button>
+          )}
+          {((lastSwiss && !tour.cut) || (cutDone && current.length === 1)) && (
+            <button
+              className="btn primary"
+              disabled={busy || missing > 0}
+              onClick={async () => {
+                if ((await confirmed()) && (await dialog.confirm(t('run.finishConfirm'), { ok: t('run.finish') }))) act(() => finishTournament(id))
+              }}
+            >
+              {t('run.finish')}
+            </button>
+          )}
+          {lastSwiss && tour.cut > 0 && active.length < tour.cut && <p className="muted small no-margin">{t('run.cutTooBig')}</p>}
+          {tour.status === 'swiss' && (
+            <button
+              className="btn ghost"
+              disabled={busy}
+              onClick={async () => {
+                const done = current.filter((m) => m.p2 && m.score).length
+                const msg = done ? t('run.redoConfirmLost', { n: done }) : t('run.redoConfirm')
+                if (await dialog.confirm(msg, { ok: t('run.redo'), danger: done > 0 })) act(() => pairSwiss(id, tour, players, matches, true))
+              }}
+            >
+              <Icon name="refresh" size={16} /> {t('run.redo')}
+            </button>
+          )}
+        </div>
+
+        {tour.status === 'done' && (
+          <section className="card">
+            <div className="card-title">{t('run.sheet')}</div>
+            {canPublish && !tour.filed && (
+              <>
+                <button className="btn primary" disabled={busy || noCommander > 0} onClick={publish}>
+                  {t('run.publish')}
+                </button>
+                <p className="muted small no-margin">{t(noCommander ? 'run.publishNoCommander' : 'run.publishHint')}</p>
+              </>
+            )}
+            <p className="muted small no-margin">{t('run.sheetHint')}</p>
+            <div className="btn-pair">
+              <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches).names)}>
+                <Icon name="copy" size={16} /> {t('run.copyNames')}
+              </button>
+              <button className="btn ghost" onClick={() => copy(sheetRows(tour, players, matches, lists).results)}>
+                <Icon name="copy" size={16} /> {t('run.copyResults')}
+              </button>
+            </div>
+            {tour.published ? (
+              <>
+                <p className="muted small no-margin">{t('run.publishedIn', { n: tour.published.tab })}</p>
+                {canPublish && (
+                  <button className="btn ghost" disabled={busy} onClick={unpublish}>
+                    {t('run.unpublish')}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button className={`btn ${tour.filed ? 'ghost' : 'primary'}`} disabled={busy} onClick={() => act(() => setFiled(id, !tour.filed))}>
+                  {tour.filed ? t('run.unfile') : t('run.file')}
+                </button>
+                <p className="muted small no-margin">{t(tour.filed ? 'run.filed' : 'run.fileHint')}</p>
+              </>
+            )}
+          </section>
+        )}
+
+        <div className="to-side">
+          {tour.status !== 'open' && (
+            <section className="card">
+              <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
+              <RankingList rows={rows} onPick={setPlayer} />
+            </section>
+          )}
+
+          {pending.length > 0 && (
+            <section className="card">
+              <div className="card-title">
+                {t('run.requests')}
+                <span className="muted small">{pending.length}</span>
+              </div>
+              <ul className="card-list">
+                {pending.map(([k, p]) => {
+                  const c = claims.get(k)
+                  return (
+                    <li key={k} className="event-row">
+                      {c?.photo ? (
+                        <img className="admin-avatar" src={c.photo} alt="" referrerPolicy="no-referrer" />
+                      ) : (
+                        <span className="admin-avatar">{(c?.name || '?').charAt(0).toUpperCase()}</span>
+                      )}
+                      <div className="event-main">
+                        <span className="ellipsis">{p.name}</span>
+                        <span className="ellipsis muted small">
+                          {c?.name ?? t('admin.noName')} · {p.commander}
+                        </span>
+                      </div>
+                      <button
+                        className="btn ghost small"
+                        disabled={busy}
+                        onClick={async () => {
+                          if (await dialog.confirm(t('run.rejectConfirm', { p: p.name }), { ok: t('run.reject'), danger: true })) act(() => removePlayer(id, k))
+                        }}
+                      >
+                        {t('run.reject')}
+                      </button>
+                      <button
+                        className="btn primary small"
+                        disabled={busy}
+                        // the claim, if still the one that asked and not verified yet, is verified with the same tap
+                        onClick={() => act(() => confirmPlayer(user, id, k, !!c && c.uid === p.uid && !c.verified))}
+                      >
+                        {t('run.accept')}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+              <p className="muted small no-margin">{t('run.requestsHint')}</p>
+            </section>
+          )}
+
+          <section className="card">
+            <div className="card-title">
+              {t('run.registered')}
+              <span className="muted small">
+                {t('run.players', { n: entered.length })} · {t('run.lists', { n: listed, of: entered.length })}
+              </span>
+            </div>
+            {noCommander > 0 && <p className="bad-text small no-margin">{t('run.missingCommanders', { n: noCommander })}</p>}
+            <ul className="card-list">
+              {[...entered]
+                .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                .map(([k, p]) => (
+                  <li key={k} className="event-row" onClick={() => setPlayer(k)}>
+                    <div className="event-main">
+                      <span className="ellipsis">
+                        {p.name}
+                        {p.drop != null && <span className="muted small"> · {t('run.dropped')}</span>}
+                        {p.joined && <span className="muted small"> · {t('run.lateFrom', { n: p.joined })}</span>}
+                      </span>
+                      <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>{p.commander ?? t('run.noCommander')}</span>
+                    </div>
+                    <Icon name="chevron" size={16} />
+                  </li>
+                ))}
+            </ul>
+            {tour.status !== 'done' && tour.status !== 'cut' && (
+              <button className="btn ghost" onClick={() => setAdding(true)}>
+                <Icon name="plus" size={16} /> {tour.status === 'open' ? t('run.addPlayer') : t('run.addLate', { n: tour.round + 1 })}
+              </button>
+            )}
+          </section>
+        </div>
+
+        {rounds.length > 0 && (
+          <section className="card to-tables">
+            <div className="card-title">{t('run.pastRounds')}</div>
+            {rounds.map((r) => (
+              <details key={r}>
+                <summary>{r > tour.rounds && tour.status !== 'swiss' ? t('run.cutRoundN', { n: r - tour.rounds }) : t('run.roundN', { n: r })}</summary>
+                <MatchList matches={matches.filter((m) => m.round === r)} nameOf={nameOf} onPick={setResult} />
+              </details>
+            ))}
+          </section>
+        )}
+
+        <button
+          className="btn danger"
+          disabled={busy}
+          onClick={async () => {
+            // published: cancelling here leaves the sheet as it is
+            const ask = tour.published ? t('run.cancelPublished', { n: tour.published.tab }) : t('run.cancelConfirm', { n: tournamentTitle(tour, t) })
+            if (!(await dialog.confirm(ask, { ok: t('run.cancel'), danger: true }))) return
+            act(async () => {
+              await deleteTournament(id, players, matches)
+              onBack()
+            })
+          }}
+        >
+          <Icon name="trash" size={16} /> {t('run.cancel')}
+        </button>
+      </div>
 
       <ResultSheet
         id={id}

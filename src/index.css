@@ -4297,7 +4297,10 @@ mark.diff-new {
 .deck-groups,
 .stats-filters,
 .stats-cols,
-.stats-side {
+.stats-side,
+.to-cols,
+.to-side,
+.home-tours {
   display: contents;
 }
 
@@ -4641,5 +4644,70 @@ mark.diff-new {
   .split-page .card-view-img {
     position: sticky;
     top: 72px;
+  }
+}
+
+/* desktop: the tournaments' pages in two columns, the side one (.to-side) running from the top down, and the home's
+   tournament cards two by two */
+@media (min-width: 1024px) {
+  .page:has(> .to-cols > .to-side) {
+    max-width: 1180px;
+  }
+  .to-cols:has(> .to-side) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    /* the side column spans every row and its extra height goes to the last one: the left column stays packed */
+    grid-template-rows: repeat(10, auto) 1fr;
+    column-gap: 16px;
+    align-items: start;
+  }
+  .to-cols.even:has(> .to-side) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .to-cols:has(> .to-side) > * {
+    grid-column: 1;
+    margin-bottom: 12px;
+  }
+  .to-cols > .to-side {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .to-clock b {
+    font-size: 3rem;
+  }
+  .home-tours {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
+  }
+  /* the tournament being played first, the code row and the live link paired after the cards */
+  .home-tours > .playing {
+    order: -1;
+  }
+  .home-tours > .home-row {
+    order: 1;
+  }
+  .home-tours:not(:has(> .home-row:not(.join-row))) > .join-row {
+    grid-column: 1 / -1;
+  }
+}
+/* a round's tables two by two, where the left column has room for the names */
+@media (min-width: 1360px) {
+  .to-tables .card-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    border: 0;
+    background: none;
+    overflow: visible;
+  }
+  .to-tables .event-row {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
   }
 }

@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-03',
     it: [
+      'Tornei, sul computer: la gestione di un torneo è su due colonne, con turno, tempo e abbinamenti a sinistra (i tavoli a due a due sugli schermi larghi) e classifica e iscritti a destra. La pagina dal vivo mostra abbinamenti e classifica affiancati, con il tempo più grande; Area TO e Tornei in corso sono su due colonne, e in Home le card dei tornei stanno a due a due, con quello in corso per primo. Sul telefono non cambia niente',
       'Mazzi: "Nuovo mazzo" crea anche un mazzo da zero. Lascia vuota la lista e tocca "Crea mazzo vuoto": il mazzo si apre già in modifica, pronto per aggiungere le carte una a una e scegliere il comandante',
       'Circuito, pagina del comandante: "Contro gli altri comandanti" mostra i match giocati contro ogni altro comandante, con vittorie, sconfitte, pareggi e winrate. Arrivano dai tornei gestiti in app, una volta pubblicati sul foglio: i fogli da soli non dicono chi ha giocato contro chi. Tocca un avversario per aprire la sua pagina',
       'Contapunti: nel menu della partita, con il tema chiaro, i contatori spenti ("Contatori della partita") ora si leggono. Il menu ha gli stessi colori in entrambi i temi',
@@ -18,6 +19,7 @@ export const CHANGELOG: Release[] = [
       'Guide in PDF: nel Profilo, sotto "Segnala un problema o un\'idea", la Guida a Castra con tutte le funzioni dell\'app e la Guida ai tornei, da aprire o condividere con un link. I TO trovano la guida ai tornei anche in fondo all\'Area TO, da mandare ai giocatori',
     ],
     en: [
+      'Tournaments, on a computer: running a tournament takes two columns, with the round, clock and pairings on the left (tables two by two on wide screens) and standings and players on the right. The live page shows pairings and standings side by side, with a bigger clock; the TO area and Tournaments in progress take two columns, and on the home the tournament cards sit two by two, the one being played first. Nothing changes on a phone',
       'Decks: "New deck" can also start a deck from scratch. Leave the list empty and tap "Create empty deck": the deck opens ready to edit, to add the cards one by one and pick the commander',
       'Circuit, commander page: "Against other commanders" shows the matches played against each other commander, with wins, losses, draws and winrate. They come from the tournaments run in the app, once published to the sheet: the sheets alone don\'t say who played whom. Tap an opponent to open their page',
       'Life counter: in the game menu, with the light theme, the counters turned off ("Game counters") are readable again. The menu has the same colours in both themes',
