@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildCircuit, parseEventName, playerKey, potyStatus } from './circuit'
-import { type DeckCard, logChange, parseDecklist } from './decks'
+import { type Deck, type DeckCard, logChange, newerDeck, parseDecklist } from './decks'
 import { parseCsv } from './meta'
 import { DUNGEONS } from './dungeons'
 import { readStored, writeStored } from './storage'
 import { matchesCsv } from './backup'
+import { mergeFirst } from './sync'
 import type { Match } from './matches'
 
 // The text the app reads from outside (pasted lists, the circuit sheet): a change of format must fail here,
@@ -184,5 +185,20 @@ describe('matchesCsv', () => {
     const row = matchesCsv([m], new Map(), 'it').split('\r\n')[1].split(';')
     expect(row[6]).toBe('"\'=HYPERLINK(""x"")"')
     expect(row[9]).toBe("'-2+3")
+  })
+})
+
+describe('mergeFirst', () => {
+  const deck = (id: string, name: string, updatedAt: string) => ({ id, name, updatedAt }) as Deck
+  const names = (ds: Deck[]) => ds.map((d) => `${d.id}:${d.name}`).sort()
+
+  it("keeps what only the phone has and what only the cloud has; for a deck in both, the copy changed last", () => {
+    const local = [deck('a', 'offline edit', '2026-11-03T10:00:00.000Z'), deck('b', 'old', '2026-11-01T10:00:00.000Z'), deck('c', 'phone only', '2026-11-02T10:00:00.000Z')]
+    const remote = [deck('a', 'cloud', '2026-11-02T10:00:00.000Z'), deck('b', 'edited elsewhere', '2026-11-02T10:00:00.000Z'), deck('d', 'cloud only', '2026-11-02T10:00:00.000Z')]
+    expect(names(mergeFirst(local, remote, newerDeck))).toEqual(['a:offline edit', 'b:edited elsewhere', 'c:phone only', 'd:cloud only'])
+  })
+
+  it('without a rule (the matches) the cloud wins for the ones in both', () => {
+    expect(names(mergeFirst([deck('a', 'phone', '2'), deck('c', 'phone only', '1')], [deck('a', 'cloud', '1')]))).toEqual(['a:cloud', 'c:phone only'])
   })
 })

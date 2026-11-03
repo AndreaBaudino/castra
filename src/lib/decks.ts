@@ -43,6 +43,9 @@ export interface Deck {
   updatedAt: string
 }
 
+/** Which copy of a deck wins when the phone and the cloud both have it: the one changed last. */
+export const newerDeck = (local: Deck, remote: Deck) => local.updatedAt > remote.updatedAt
+
 /** One day's change of the commander and the 99: copies in (positive) and out (negative), by card name. */
 export interface DeckChange {
   at: string

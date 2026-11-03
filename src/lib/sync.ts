@@ -42,6 +42,16 @@ async function tracked(write: () => Promise<unknown>, what: string) {
   }
 }
 
+/** The first snapshot after login: the cloud's items, plus the local ones it lacks or that `newer` prefers. */
+export function mergeFirst<T extends { id: string }>(local: T[], remote: T[], newer?: (local: T, remote: T) => boolean) {
+  const byId = new Map(remote.map((r) => [r.id, r]))
+  for (const l of local) {
+    const r = byId.get(l.id)
+    if (!r || newer?.(l, r)) byId.set(l.id, l)
+  }
+  return [...byId.values()]
+}
+
 /**
  * Keeps a local list (already persisted in localStorage) in sync with users/{uid}/{name} in Firestore.
  * - first snapshot after login: merges remote and local (local wins only if `newer` says so)
@@ -70,15 +80,7 @@ export function useCollectionSync<T extends { id: string }>(
         synced.current = new Map(remote.map((r) => [r.id, JSON.stringify(r)]))
         const isFirst = first
         first = false
-        setItems((local) => {
-          if (!isFirst) return remote
-          const byId = new Map(remote.map((r) => [r.id, r]))
-          for (const l of local) {
-            const r = byId.get(l.id)
-            if (!r || newer?.(l, r)) byId.set(l.id, l)
-          }
-          return [...byId.values()]
-        })
+        setItems((local) => (isFirst ? mergeFirst(local, remote, newer) : remote))
       })
     })
     return () => {

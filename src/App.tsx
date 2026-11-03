@@ -6,7 +6,7 @@ import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
 import { pushBlock, savePush } from './lib/push'
 import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
 import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
-import { type Deck, newId } from './lib/decks'
+import { type Deck, newId, newerDeck } from './lib/decks'
 import type { Match } from './lib/matches'
 import { resetPickedYear, useMeta, usePickedYear } from './lib/meta'
 import { loadCircuitSheets, useCircuitSheets } from './lib/circuits'
@@ -87,7 +87,7 @@ export default function App() {
     return true
   }
 
-  useCollectionSync(uid, 'decks', decks, setDecks, (l, r) => l.updatedAt > r.updatedAt)
+  useCollectionSync(uid, 'decks', decks, setDecks, newerDeck)
   useCollectionSync(uid, 'matches', matches, setMatches)
   useDocFieldSync(uid, 'theme', theme, setTheme)
   useDocFieldSync(uid, 'prefs', prefs, (p) => setPrefs({ ...DEFAULT_PREFS, ...p }))
