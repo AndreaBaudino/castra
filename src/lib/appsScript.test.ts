@@ -114,10 +114,10 @@ function setup(
   }
   const ctx = {
     LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
-    Session: { getEffectiveUser: () => ({ getEmail: () => 'centuriondati@gmail.com' }) },
+    // no Session: getEffectiveUser needs a permission the script doesn't have
     DriveApp: {
       getFileById: (id: string) => ({
-        getOwner: () => ({ getEmail: () => o.owner ?? 'centuriondati@gmail.com' }),
+        getOwner: () => ({ getEmail: () => (id !== TEMPLATE && o.owner) || 'centuriondati@gmail.com' }),
         setTrashed: (v: boolean) => v && trashed.push(id),
       }),
     },
