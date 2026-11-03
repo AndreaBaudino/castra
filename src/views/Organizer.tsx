@@ -44,6 +44,7 @@ import {
   unconfirmed,
   useNow,
   useTournament,
+  unpublishTournament,
   useLists,
   useTournaments,
   useUnfiled,
@@ -380,6 +381,19 @@ export function TournamentAdmin({
       setBusy(false)
     }
   }
+  const unpublish = async () => {
+    if (!(await dialog.confirm(t('run.unpublishConfirm', { n: tour.published!.tab }), { ok: t('run.unpublish'), danger: true }))) return
+    setBusy(true)
+    try {
+      const res = await unpublishTournament(id)
+      await dialog.alert([t('run.unpublished', { n: res.tab }), res.kept.length ? t('run.unpublishedKept', { p: res.kept.join(', ') }) : ''].filter(Boolean).join('\n\n'))
+    } catch (e) {
+      const msg = (e as Error).message
+      await dialog.alert(msg === 'login' ? t('run.publishLogin') : t('run.unpublishError', { e: msg }))
+    } finally {
+      setBusy(false)
+    }
+  }
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -571,10 +585,23 @@ export function TournamentAdmin({
               <Icon name="copy" size={16} /> {t('run.copyResults')}
             </button>
           </div>
-          <button className={`btn ${tour.filed ? 'ghost' : 'primary'}`} disabled={busy} onClick={() => act(() => setFiled(id, !tour.filed))}>
-            {tour.filed ? t('run.unfile') : t('run.file')}
-          </button>
-          <p className="muted small no-margin">{t(tour.filed ? 'run.filed' : 'run.fileHint')}</p>
+          {tour.published ? (
+            <>
+              <p className="muted small no-margin">{t('run.publishedIn', { n: tour.published.tab })}</p>
+              {canPublish && (
+                <button className="btn ghost" disabled={busy} onClick={unpublish}>
+                  {t('run.unpublish')}
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button className={`btn ${tour.filed ? 'ghost' : 'primary'}`} disabled={busy} onClick={() => act(() => setFiled(id, !tour.filed))}>
+                {tour.filed ? t('run.unfile') : t('run.file')}
+              </button>
+              <p className="muted small no-margin">{t(tour.filed ? 'run.filed' : 'run.fileHint')}</p>
+            </>
+          )}
         </section>
       )}
 
@@ -680,7 +707,9 @@ export function TournamentAdmin({
         className="btn danger"
         disabled={busy}
         onClick={async () => {
-          if (!(await dialog.confirm(t('run.cancelConfirm', { n: tournamentTitle(tour, t) }), { ok: t('run.cancel'), danger: true }))) return
+          // published: cancelling here leaves the sheet as it is
+          const ask = tour.published ? t('run.cancelPublished', { n: tour.published.tab }) : t('run.cancelConfirm', { n: tournamentTitle(tour, t) })
+          if (!(await dialog.confirm(ask, { ok: t('run.cancel'), danger: true }))) return
           act(async () => {
             await deleteTournament(id, players, matches)
             onBack()

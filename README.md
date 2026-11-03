@@ -190,7 +190,9 @@ risultati, che l'avversario conferma (finché manca la conferma il TO li vede co
 A torneo chiuso, **"Pubblica sul foglio"** scrive la classifica finale nella scheda della tappa (o nella `Classifica`
 del livello): nomi, comandanti, vittorie, sconfitte, pareggi, BYE, decklist e data, aggiungendo i giocatori nuovi alla
 `Classifica` della lega e i comandanti nuovi alle righe libere dei `Comandanti`. Se la scheda ha già dei risultati non
-scrive niente. Le decklist diventano pubbliche nella classifica finale, e i giocatori con l'account trovano i match del
+scrive niente. **"Togli dal foglio"** fa il contrario: svuota le righe e la data scritte dall'app (le formule restano) e
+toglie i giocatori e i comandanti aggiunti allora, se nessun'altra tappa li usa; poi il torneo si può ripubblicare.
+"Annulla il torneo" invece non tocca il foglio. Le decklist diventano pubbliche nella classifica finale, e i giocatori con l'account trovano i match del
 torneo tra le proprie partite.
 
 Per rendere admin un account: **Firestore Database → Data → Start collection** `admins`, con ID documento l'UID

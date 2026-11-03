@@ -179,8 +179,14 @@ scrivere codice. I mockup delle schermate sono su
   i giocatori nuovi vanno nelle righe libere della tabella della `Classifica` (quelle con le formule già pronte); i
   comandanti nuovi nelle righe libere in cima ai `Comandanti`, sopra la formula del database (di solito ne restano
   poche: quelli che non ci stanno li elenca al TO da aggiungere a mano). Nomi e comandanti già presenti, confrontati
-  come `playerKey`, prendono la grafia del foglio. Alla fine segna il torneo come nel foglio (`filed: true`). Uno alla
-  volta (`LockService`), perché due TO non trovino entrambi la scheda vuota.
+  come `playerKey`, prendono la grafia del foglio. Alla fine segna il torneo come nel foglio (`filed: true`) e salva
+  cosa ha scritto (`published`: scheda, prima riga, quante righe, giocatori e comandanti aggiunti). Uno alla volta
+  (`LockService`), perché due TO non trovino entrambi la scheda vuota.
+- **"Togli dal foglio"** (stesso script, `action: 'clear'`): con `published` svuota le righe e la data scritte (le
+  formule restano, i BYE tornano non spuntati), toglie dalla `Classifica` e dai `Comandanti` i nomi aggiunti allora
+  se nessun'altra scheda di tappa li usa, cancella `published` e rimette il torneo tra quelli da pubblicare. Si ferma
+  se la tabella della scheda non comincia più dalla riga di allora. "Annulla il torneo" non tocca il foglio: se il
+  torneo è pubblicato, l'app lo ricorda prima di annullare.
 - **Script**: pubblicato da `centuriondati@gmail.com`, proprietario dei fogli e con il permesso di modificarli; lo
   stesso deployment legge i fogli per il meta (con la chiave) e li scrive. L'URL `/exec` va in `PUBLISH_URL`
   (`src/config.ts`): finché è vuoto il pulsante non c'è e resta il copia-incolla.
@@ -208,7 +214,8 @@ accesso. Aggiunti nella fase 3:
 
 ```
 claims/{playerKey}               + verifiedBy, verifiedIn      (la verifica data da un TO, confermando l'iscrizione)
-tournaments/{tid}                + code (6 caratteri, null dal turno 1: iscrizioni chiuse)
+tournaments/{tid}                + code (6 caratteri, null dal turno 1: iscrizioni chiuse), published (cosa lo script
+                                   ha scritto nel foglio: tab, first, rows, players, commanders)
   /players/{playerKey}           + uid (l'account che si è iscritto), pending (in attesa del TO), deck (mazzo in
                                    Castra), list (ha dato la decklist)
   /players/{playerKey}/private/deck  link: la decklist Moxfield (la leggono il giocatore e i TO, tutti a torneo concluso)

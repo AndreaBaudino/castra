@@ -179,6 +179,13 @@ await denied('a tournament that starts already in the sheet', setDoc(doc(gina, '
 await allowed('marking the results as copied into the sheet', updateDoc(doc(gina, 'tournaments', STAGE), { filed: true }))
 await denied('marking it, by someone who is not a TO', updateDoc(doc(ivan, 'tournaments', STAGE), { filed: false }))
 await denied('marking it with something else than yes or no', updateDoc(doc(gina, 'tournaments', STAGE), { filed: 'yes' }))
+const published = { tab: '5', first: 6, rows: 12, players: ['Giulia Nuova'], commanders: [] }
+await allowed('what the script wrote into the sheet, kept by the TO', updateDoc(doc(gina, 'tournaments', STAGE), { filed: true, published }))
+await denied('what was written, by someone who is not a TO', updateDoc(doc(ivan, 'tournaments', STAGE), { published: null }))
+await denied('what was written, with other fields', updateDoc(doc(gina, 'tournaments', STAGE), { published: { ...published, sheet: 'x' } }))
+await denied('what was written, with a row number that is not one', updateDoc(doc(gina, 'tournaments', STAGE), { published: { ...published, first: '6' } }))
+await denied('a tournament that starts already published', setDoc(doc(gina, 'tournaments', `${SAVONA}~6`), tour(SAVONA, 'league', { stage: 6, by: 'gina', published })))
+await allowed('taken off the sheet', updateDoc(doc(gina, 'tournaments', STAGE), { filed: false, published: deleteField() }))
 await allowed('taking the mark back', updateDoc(doc(gina, 'tournaments', STAGE), { filed: false }))
 
 // players

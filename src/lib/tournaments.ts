@@ -42,6 +42,8 @@ export interface Tournament {
   started: { toMillis: () => number } | null // the round's clock, at the server's time
   filed: boolean // its results are in the sheet: until then the TO keeps finding it
   code?: string | null // to register from the app (#join~CODE): none once round 1 starts
+  // what "Pubblica sul foglio" wrote, kept by the Apps Script to take it off again
+  published?: { tab: string; first: number; rows: number; players: string[]; commanders: string[] }
   at: string
   by: string
 }
@@ -506,13 +508,19 @@ export const canPublish = !!PUBLISH_URL
  * it checks with the TO's sign-in that they run this tournament, writes, and marks it as in the sheet. Throws the
  * script's message when it refuses.
  */
-export async function publishTournament(id: string, rows: SheetRow[]) {
+export const publishTournament = (id: string, rows: SheetRow[]) =>
+  script<{ tab: string; players: string[]; commanders: string[]; manual: string[] }>({ id, rows })
+
+/** Takes a published tournament off its sheet ("Togli dal foglio"); `kept`: the names other stages still use. */
+export const unpublishTournament = (id: string) => script<{ tab: string; kept: string[] }>({ id, action: 'clear' })
+
+async function script<T>(body: object): Promise<T> {
   const { auth } = await fb()
   const token = await auth.currentUser?.getIdToken()
   if (!token) throw new Error('login')
   // plain text: a JSON content type would need a preflight, which Apps Script doesn't answer
-  const res = await fetch(PUBLISH_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ token, id, rows }) })
-  const out = (await res.json()) as { ok?: boolean; error?: string; tab: string; players: string[]; commanders: string[]; manual: string[] }
+  const res = await fetch(PUBLISH_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ token, ...body }) })
+  const out = (await res.json()) as T & { ok?: boolean; error?: string }
   if (!out.ok) throw new Error(out.error ?? 'error')
   return out
 }

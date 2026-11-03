@@ -6,7 +6,7 @@
 // (Project settings → Script properties) and the same value is the META_SCRIPT_KEY secret on GitHub.
 // Only the files in the list of tournament sheets are served: Firestore's sources collection (kept from the app's
 // admin area) and the repository's scripts/meta/sources.json.
-// POST {token, id, rows} publishes a tournament (docs/tornei.md): see doPost.
+// POST {token, id, rows} publishes a tournament (docs/tornei.md), {token, id, action: 'clear'} takes it off: see doPost.
 
 const SOURCES_URL = 'https://raw.githubusercontent.com/AndreaBaudino/castra/main/scripts/meta/sources.json'
 const FIRESTORE_URL = 'https://firestore.googleapis.com/v1/projects/castra-a69ab/databases/(default)/documents/sources'
@@ -66,7 +66,8 @@ function check() {
 // ---------- publishing a tournament run in the app ----------
 
 const DOCS = 'https://firestore.googleapis.com/v1/projects/castra-a69ab/databases/(default)/documents/'
-const MARK = '?updateMask.fieldPaths=filed&currentDocument.exists=true' // "filed" only, never creating the tournament
+// writes only these fields, never creating the tournament; a field in the mask but not in the data is deleted
+const mask = (...fields) => '?' + fields.map((f) => 'updateMask.fieldPaths=' + f).join('&') + '&currentDocument.exists=true'
 
 /**
  * Writes a finished tournament into its sheet, from the TO area (src/lib/tournaments.ts publishTournament): the stage's
@@ -80,8 +81,8 @@ function doPost(e) {
   const lock = LockService.getScriptLock()
   lock.waitLock(30000) // one at a time: two TOs can't both find the tab empty
   try {
-    const { token, id, rows } = JSON.parse(e.postData.contents)
-    return json(publish(token, id, rows))
+    const { token, id, rows, action } = JSON.parse(e.postData.contents)
+    return json(action === 'clear' ? unpublish(token, id) : publish(token, id, rows))
   } catch (err) {
     return json({ error: err.message })
   } finally {
@@ -89,16 +90,22 @@ function doPost(e) {
   }
 }
 
-function publish(token, id, rows) {
+/** The tournament, read with the TO's sign-in. */
+function tournament(token, id) {
   if (typeof token !== 'string' || typeof id !== 'string' || !/^[-_A-Za-z0-9]{20,100}(~[0-9]{1,2})?$/.test(id))
     throw new Error('richiesta non valida')
+  return fieldsOf(firestore('get', 'tournaments/' + id, token))
+}
+
+/** A write that changes nothing: the rules let it through only for who runs the tournament. */
+const mayRun = (token, id, t) => firestore('patch', 'tournaments/' + id + mask('filed'), token, { filed: !!t.filed }, 'non gestisci questo torneo')
+
+function publish(token, id, rows) {
   checkRows(rows)
-  const path = 'tournaments/' + id
-  const t = fieldsOf(firestore('get', path, token))
+  const t = tournament(token, id)
   if (t.status !== 'done') throw new Error('il torneo non è concluso')
-  if (t.filed) throw new Error('il torneo risulta già nel foglio')
-  // a write that changes nothing: the rules let it through only for who runs the tournament
-  firestore('patch', path + MARK, token, { filed: false }, 'non gestisci questo torneo')
+  if (t.filed || t.published) throw new Error('il torneo risulta già nel foglio')
+  mayRun(token, id, t)
 
   const ss = SpreadsheetApp.openById(t.drive)
   const name = t.kind === 'league' ? String(t.stage) : 'Classifica'
@@ -131,8 +138,56 @@ function publish(token, id, rows) {
     tab.getRange(table.date[0] + 1, table.date[1] + 1).setValue(new Date(y, m - 1, d))
   }
   SpreadsheetApp.flush()
-  firestore('patch', path + MARK, token, { filed: true })
-  return { ok: true, tab: name, players: names.add.map((a) => a[1]), commanders: cmds.add.map((a) => a[1]), manual: cmds.left }
+  // what was written, for "Togli dal foglio"
+  const published = { tab: name, first, rows: rows.length, players: names.add.map((a) => a[1]), commanders: cmds.add.map((a) => a[1]) }
+  firestore('patch', 'tournaments/' + id + mask('filed', 'published'), token, { filed: true, published })
+  return { ok: true, tab: name, players: published.players, commanders: published.commanders, manual: cmds.left }
+}
+
+/**
+ * Takes a published tournament off its sheet: the rows and the date written are emptied (the formulas and the BYE
+ * boxes stay), and so are the players and commanders added then, unless another tab of the sheet uses them by now.
+ * The tournament can then be published again.
+ */
+function unpublish(token, id) {
+  const t = tournament(token, id)
+  const p = t.published
+  if (!p) throw new Error('il torneo non risulta pubblicato dall\'app')
+  mayRun(token, id, t)
+  const ss = SpreadsheetApp.openById(t.drive)
+  const tab = ss.getSheetByName(p.tab)
+  if (!tab) throw new Error('nel foglio non c\'è più la scheda "' + p.tab + '"')
+  const table = tablePlan(read(tab, 9), formulasOf(tab, 2))
+  if (!table || table.header + 2 !== p.first) throw new Error('la scheda "' + p.tab + '" è cambiata: toglilo a mano')
+  const empty = (n) => Array.from({ length: p.rows }, () => Array(n).fill(''))
+  tab.getRange(p.first, 2, p.rows, 2).setValues(empty(2))
+  tab.getRange(p.first, 5, p.rows, 3).setValues(empty(3))
+  tab.getRange(p.first, 8, p.rows, 1).setValues(Array.from({ length: p.rows }, () => [false]))
+  tab.getRange(p.first, 9, p.rows, 1).setValues(empty(1))
+  if (table.date) tab.getRange(table.date[0] + 1, table.date[1] + 1).setValue('')
+  // the names still used in the sheet's other stages (a league's numbered tabs)
+  const used = { names: {}, commanders: {} }
+  for (const other of ss.getSheets())
+    if (/^[0-9]+$/.test(other.getName()) && other.getName() !== p.tab)
+      for (const r of read(other, 3)) {
+        used.names[normal(r[1])] = true
+        used.commanders[normal(r[2])] = true
+      }
+  const drop = (sheet, names, keep) => {
+    const kept = []
+    if (!sheet) return kept
+    const col = read(sheet, 2).map((r) => String(r[1]).trim())
+    for (const n of names) {
+      const at = col.indexOf(n)
+      if (keep[normal(n)] || at < 0) kept.push(n)
+      else sheet.getRange(at + 1, 2).setValue('')
+    }
+    return kept
+  }
+  const kept = [...drop(ss.getSheetByName('Classifica'), p.players, used.names), ...drop(ss.getSheetByName('Comandanti'), p.commanders, used.commanders)]
+  SpreadsheetApp.flush()
+  firestore('patch', 'tournaments/' + id + mask('filed', 'published'), token, { filed: false })
+  return { ok: true, tab: p.tab, kept }
 }
 
 /** The rows as the app sends them: checked, as they go into a sheet many people use. */
@@ -216,7 +271,7 @@ function firestore(method, path, token, data, denied) {
   const opt = { method, headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true }
   if (data) {
     opt.contentType = 'application/json'
-    opt.payload = JSON.stringify({ fields: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, { booleanValue: v }])) })
+    opt.payload = JSON.stringify({ fields: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, typed(v)])) })
   }
   const res = UrlFetchApp.fetch(DOCS + path, opt)
   const code = res.getResponseCode()
@@ -226,12 +281,26 @@ function firestore(method, path, token, data, denied) {
   return JSON.parse(res.getContentText())
 }
 
+/** A value as Firestore's REST API wants it, and back. */
+function typed(v) {
+  if (typeof v === 'boolean') return { booleanValue: v }
+  if (typeof v === 'number') return { integerValue: String(v) }
+  if (typeof v === 'string') return { stringValue: v }
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(typed) } }
+  return { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typed(x)])) } }
+}
+function plain(v) {
+  if ('integerValue' in v) return Number(v.integerValue)
+  if ('stringValue' in v) return v.stringValue
+  if ('booleanValue' in v) return v.booleanValue
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(plain)
+  if ('mapValue' in v) return fieldsOf(v.mapValue)
+  return null
+}
+
 /** A Firestore document's fields, as plain values. */
 function fieldsOf(doc) {
-  const out = {}
-  for (const [k, v] of Object.entries(doc.fields || {}))
-    out[k] = 'integerValue' in v ? Number(v.integerValue) : 'stringValue' in v ? v.stringValue : 'booleanValue' in v ? v.booleanValue : null
-  return out
+  return Object.fromEntries(Object.entries(doc.fields || {}).map(([k, v]) => [k, plain(v)]))
 }
 
 function json(o) {

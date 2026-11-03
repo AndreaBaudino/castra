@@ -2,19 +2,23 @@ import { readFileSync } from 'node:fs'
 import { runInNewContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
 
-// The Apps Script that writes a tournament run in the app into its sheet (scripts/meta/apps-script/Code.gs), run here
-// on sheets kept in memory, laid out as the real ones: a league stage's tab, its "Classifica" and "Comandanti".
+// The Apps Script that writes a tournament run in the app into its sheet and takes it off again
+// (scripts/meta/apps-script/Code.gs), run here on sheets kept in memory, laid out as the real ones: a league stage's
+// tab, its "Classifica" and "Comandanti". Firestore keeps what the script writes, as the real one would.
 
 type Cell = string | number | boolean | null | { f: string; v?: string }
 type Grid = Cell[][]
 
 const code = readFileSync(new URL('../../scripts/meta/apps-script/Code.gs', import.meta.url), 'utf8')
 
-function sheet(grid: Grid) {
+function sheet(name: string, grid: Grid) {
   const at = (r: number, c: number) => grid[r]?.[c] ?? null
-  const shown = (v: Cell) => (v == null ? '' : typeof v === 'object' ? (v.v ?? '') : typeof v === 'boolean' ? String(v).toUpperCase() : String(v))
+  // as the sheet shows it: a leading apostrophe only says "text"
+  const shown = (v: Cell) =>
+    v == null ? '' : typeof v === 'object' ? (v.v ?? '') : typeof v === 'boolean' ? String(v).toUpperCase() : String(v).replace(/^'/, '')
   return {
     grid,
+    getName: () => name,
     getMaxRows: () => grid.length,
     getRange: (r: number, c: number, nr = 1, nc = 1) => {
       const cells = (fn: (v: Cell) => unknown) => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => fn(at(r - 1 + i, c - 1 + j))))
@@ -77,14 +81,13 @@ const RESULTS = [
   row('=HYPERLINK("x")', 'Urza, Lord High Artificer', 0, 3), // a formula, written as text; a second new commander: no room
 ]
 
-function setup(o: { tab?: Grid; status?: string; filed?: boolean; denied?: boolean; kind?: string } = {}) {
-  const tabs: Record<string, ReturnType<typeof sheet>> = {
-    [o.kind === 'l1' ? 'Classifica' : '17']: sheet(o.tab ?? stageTab()),
-    Comandanti: sheet(comandanti()),
-  }
-  if (o.kind !== 'l1') tabs.Classifica = sheet(classifica())
+function setup(o: { tab?: Grid; status?: string; filed?: boolean; denied?: boolean; kind?: string; more?: Record<string, Grid> } = {}) {
+  const target = o.kind === 'l1' ? 'Classifica' : '17'
+  const tabs: Record<string, ReturnType<typeof sheet>> = { [target]: sheet(target, o.tab ?? stageTab()), Comandanti: sheet('Comandanti', comandanti()) }
+  if (o.kind !== 'l1') tabs.Classifica = sheet('Classifica', classifica())
+  for (const [n, g] of Object.entries(o.more ?? {})) tabs[n] = sheet(n, g)
   const calls: { method: string; url: string; payload?: string; auth: string }[] = []
-  const fields = {
+  const fields: Record<string, unknown> = {
     drive: { stringValue: DRIVE },
     kind: { stringValue: o.kind ?? 'league' },
     stage: { integerValue: '17' },
@@ -94,11 +97,21 @@ function setup(o: { tab?: Grid; status?: string; filed?: boolean; denied?: boole
   }
   const ctx = {
     LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
-    SpreadsheetApp: { openById: (id: string) => (id === DRIVE ? { getSheetByName: (n: string) => tabs[n] ?? null } : null), flush: () => {} },
+    SpreadsheetApp: {
+      openById: (id: string) => (id === DRIVE ? { getSheetByName: (n: string) => tabs[n] ?? null, getSheets: () => Object.values(tabs) } : null),
+      flush: () => {},
+    },
     UrlFetchApp: {
       fetch: (url: string, opt: { method: string; payload?: string; headers: { Authorization: string } }) => {
         calls.push({ method: opt.method, url, payload: opt.payload, auth: opt.headers.Authorization })
         const code = opt.method === 'patch' && o.denied ? 403 : 200
+        // a patch writes the fields of its mask: the ones it doesn't carry go
+        if (code === 200 && opt.method === 'patch') {
+          const sent = JSON.parse(opt.payload!).fields
+          for (const f of [...url.matchAll(/updateMask\.fieldPaths=(\w+)/g)].map((m) => m[1]))
+            if (f in sent) fields[f] = sent[f]
+            else delete fields[f]
+        }
         return { getResponseCode: () => code, getContentText: () => JSON.stringify({ fields }) }
       },
     },
@@ -106,7 +119,7 @@ function setup(o: { tab?: Grid; status?: string; filed?: boolean; denied?: boole
   }
   runInNewContext(code, ctx)
   const post = (body: unknown) => JSON.parse((ctx as unknown as { doPost: (e: unknown) => string }).doPost({ postData: { contents: JSON.stringify(body) } }))
-  return { tabs, calls, post }
+  return { tabs, calls, post, fields }
 }
 
 describe('publishing a tournament into its sheet (Apps Script)', () => {
@@ -141,7 +154,20 @@ describe('publishing a tournament into its sheet (Apps Script)', () => {
       ['patch', true],
     ])
     expect(calls.every((c) => c.auth === 'Bearer tok' && c.url.includes(`/documents/tournaments/${TID}`))).toBe(true)
-    expect(calls[1].url).toContain('updateMask.fieldPaths=filed&currentDocument.exists=true')
+    expect(calls[1].url).toContain('?updateMask.fieldPaths=filed&currentDocument.exists=true')
+    expect(calls[2].url).toContain('?updateMask.fieldPaths=filed&updateMask.fieldPaths=published&currentDocument.exists=true')
+    // with what it wrote, as Firestore's REST API wants it
+    expect(JSON.parse(calls[2].payload!).fields.published).toEqual({
+      mapValue: {
+        fields: {
+          tab: { stringValue: '17' },
+          first: { integerValue: '6' },
+          rows: { integerValue: '4' },
+          players: { arrayValue: { values: [{ stringValue: 'Dario Neri' }, { stringValue: '=HYPERLINK("x")' }] } },
+          commanders: { arrayValue: { values: [{ stringValue: 'Ojer Axonil, Deepest Might' }] } },
+        },
+      },
+    })
   })
 
   it("writes a level's Classifica, without a list of players", () => {
@@ -195,5 +221,47 @@ describe('publishing a tournament into its sheet (Apps Script)', () => {
     expect(setup({ tab: short }).post({ token: 'tok', id: TID, rows: RESULTS }).error).toMatch(/solo 2 righe/)
     const three = [row('A', 'X', 1, 0), row('B', 'X', 1, 0), row('C', 'X', 1, 0)]
     expect(setup().post({ token: 'tok', id: TID, rows: three }).error).toMatch(/mancano righe libere per C/)
+  })
+
+  it('takes it off the sheet: rows, date, and the players and commanders added then, unless used elsewhere', () => {
+    // another stage played meanwhile by one of the new players
+    const later = stageTab()
+    later[5][1] = 'Dario Neri'
+    later[5][2] = 'Spider-Man 2099'
+    const { tabs, post, fields } = setup({ more: { '18': later } })
+    const before = { classifica: JSON.stringify(classifica()), comandanti: JSON.stringify(comandanti()) }
+    post({ token: 'tok', id: TID, rows: RESULTS })
+    expect(post({ token: 'tok', id: TID, rows: RESULTS }).error).toMatch(/già nel foglio/) // not twice
+    const res = post({ token: 'tok', id: TID, action: 'clear' })
+    expect(res).toEqual({ ok: true, tab: '17', kept: ['Dario Neri'] })
+    const g = tabs['17'].grid
+    // the tab as it was: rows and date empty, formulas and BYE boxes there
+    expect(g[2][2]).toBe('')
+    expect(g.slice(5, 9).map((r) => r.slice(1, 9))).toEqual(
+      Array.from({ length: 4 }, () => ['', '', { f: 'IF(B6="","",E6*3+G6)' }, '', '', '', false, '']),
+    )
+    expect(g[9].slice(1, 9)).toEqual(stageTab()[9].slice(1, 9))
+    // the player of the later stage stays; the other new one and the new commander go
+    expect(tabs.Classifica.grid.slice(12, 14).map((r) => r[1])).toEqual(['Dario Neri', ''])
+    expect(tabs.Comandanti.grid[3][1]).toBe('')
+    expect(JSON.stringify(tabs.Comandanti.grid.map((r) => r.map((c) => c || null)))).toBe(before.comandanti)
+    expect(before.classifica).not.toBe(JSON.stringify(tabs.Classifica.grid))
+    // back to be published, and it can be
+    expect(fields.filed).toEqual({ booleanValue: false })
+    expect(fields.published).toBeUndefined()
+    expect(post({ token: 'tok', id: TID, action: 'clear' }).error).toMatch(/non risulta pubblicato/)
+    expect(post({ token: 'tok', id: TID, rows: RESULTS })).toMatchObject({ ok: true })
+  })
+
+  it('takes nothing off for who does not run it, nor from a tab laid out otherwise', () => {
+    const published = { mapValue: { fields: { tab: { stringValue: '17' }, first: { integerValue: '7' }, rows: { integerValue: '2' }, players: { arrayValue: {} }, commanders: { arrayValue: {} } } } }
+    const denied = setup({ denied: true, filed: true })
+    denied.fields.published = published
+    expect(denied.post({ token: 'tok', id: TID, action: 'clear' }).error).toBe('non gestisci questo torneo')
+    const moved = setup({ filed: true })
+    moved.fields.published = published // written from row 7, but the table starts on row 6 now
+    moved.tabs['17'].grid[5][1] = 'Someone'
+    expect(moved.post({ token: 'tok', id: TID, action: 'clear' }).error).toMatch(/è cambiata/)
+    expect(moved.tabs['17'].grid[5][1]).toBe('Someone')
   })
 })
