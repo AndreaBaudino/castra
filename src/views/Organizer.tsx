@@ -124,7 +124,7 @@ export default function OrganizerArea({
   const dialog = useDialog()
   const uid = user?.uid ?? ''
   const { sources, tournaments, run } = useRun(uid, organizer ?? { player: '', name: '', leagues: [], at: '', by: '' })
-  const [adding, setAdding] = useState<{ s: Source; stage: number; date: string } | null>(null)
+  const [adding, setAdding] = useState<{ s: Source; stage: string; date: string } | null>(null)
   const [busy, setBusy] = useState(false)
   const today = new Date().toISOString().slice(0, 10)
   const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { weekday: 'short', day: 'numeric', month: 'short' })
@@ -203,7 +203,7 @@ export default function OrganizerArea({
                   onClick={async () => {
                     setBusy(true)
                     try {
-                      setAdding({ s, stage: nextStage(s, dataset, await tournamentsOf(s.drive)), date: today })
+                      setAdding({ s, stage: String(nextStage(s, dataset, await tournamentsOf(s.drive))), date: today })
                     } catch {
                       await dialog.alert(t('admin.error'))
                     } finally {
@@ -256,10 +256,12 @@ export default function OrganizerArea({
               <span>{t('run.stageNumber')}</span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={60}
+                required
                 value={adding.stage}
-                onChange={(e) => setAdding({ ...adding, stage: Math.max(1, Math.min(60, Math.round(+e.target.value) || 1)) })}
+                onChange={(e) => setAdding({ ...adding, stage: e.target.value })}
               />
               <span className="field-hint">{t('run.stageHint')}</span>
             </label>
@@ -267,7 +269,11 @@ export default function OrganizerArea({
               <span>{t('sources.date')}</span>
               <input type="date" value={adding.date} onChange={(e) => setAdding({ ...adding, date: e.target.value })} />
             </label>
-            <button className="btn primary" disabled={busy || !adding.date} onClick={() => create(adding.s, adding.date, adding.stage)}>
+            <button
+              className="btn primary"
+              disabled={busy || !adding.date || !stageOk(adding.stage)}
+              onClick={() => create(adding.s, adding.date, +adding.stage)}
+            >
               {t('run.create')}
             </button>
           </div>
@@ -278,6 +284,9 @@ export default function OrganizerArea({
 }
 
 // ---------- one tournament ----------
+
+// the field may be emptied while typing: only a whole number 1-60 creates the stage
+const stageOk = (v: string) => /^\d+$/.test(v) && +v >= 1 && +v <= 60
 
 const QUICK: Score[] = [[2, 0, 0], [2, 1, 0], [1, 0, 0], [1, 1, 0], [0, 0, 0], [0, 1, 0], [1, 2, 0], [0, 2, 0]]
 const same = (a: Score, b: Score) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2]
