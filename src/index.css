@@ -1494,6 +1494,15 @@ button.kv.clickable b {
 .reset-card .btn.ghost {
   border-color: #3a322c;
 }
+/* the game menu is always dark: its gold and chips stay those of the dark theme, whatever the app's theme */
+.reset-card {
+  --gold: #d4a64a;
+}
+.reset-card .chip:not(.on) {
+  background: transparent;
+  border-color: #3a322c;
+  color: #fff;
+}
 
 @media (min-width: 700px) {
   .page {
