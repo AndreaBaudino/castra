@@ -4684,14 +4684,16 @@ mark.diff-new {
     gap: 14px;
     align-items: start;
   }
-  /* the tournament being played first, the code row and the live link paired after the cards */
+  /* the tournament being played first, then the code row and the live link, which fill the place left beside the
+     last card (the cards are the sections): one of them alone on its line takes the whole width */
   .home-tours > .playing {
     order: -1;
   }
   .home-tours > .home-row {
     order: 1;
   }
-  .home-tours:not(:has(> .home-row:not(.join-row))) > .join-row {
+  .home-tours:not(:has(> .home-row:not(.join-row))):not(:has(> section:last-of-type:nth-of-type(odd))) > .join-row,
+  .home-tours:has(> section:last-of-type:nth-of-type(odd)) > .home-row:not(.join-row) {
     grid-column: 1 / -1;
   }
 }
