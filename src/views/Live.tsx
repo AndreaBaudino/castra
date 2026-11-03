@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { playerKey } from '../lib/circuit'
+import { useLiveCollection } from '../lib/firebase'
 import {
+  type Player,
   type RankRow,
   type TableMatch,
   type Tournament,
@@ -116,8 +118,10 @@ export function LiveLink({ open }: { open: (id?: string) => void }) {
 function Row({ id, x, open }: { id: string; x: Tournament; open: (id: string) => void }) {
   const { t } = useI18n()
   const now = useNow()
-  const { players, matches } = useTournament(id)
-  const winner = x.status === 'done' && players.length ? ranking(x, players, matches)[0] : null
+  // the list already has the tournament; the matches only for the winner, once it's over
+  const players = useLiveCollection<Player>(`tournaments/${id}/players`).docs
+  const matches = useLiveCollection<TableMatch>(x.status === 'done' ? `tournaments/${id}/matches` : null).docs
+  const winner = x.status === 'done' && players.length ? ranking(x, players, matches.map(([, m]) => m))[0] : null
   return (
     <li className="event-row" onClick={() => open(id)}>
       <div className="event-main">
