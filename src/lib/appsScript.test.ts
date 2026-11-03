@@ -84,7 +84,17 @@ const RESULTS = [
 const TEMPLATE = '1yKd6dRUKoMontyCUbGxodtd0kEl2cHuthmyXr3bZFxI'
 
 function setup(
-  o: { tab?: Grid; status?: string; filed?: boolean; denied?: boolean; kind?: string; more?: Record<string, Grid>; admin?: boolean } = {},
+  o: {
+    tab?: Grid
+    status?: string
+    filed?: boolean
+    denied?: boolean
+    kind?: string
+    more?: Record<string, Grid>
+    admin?: boolean
+    played?: boolean // false: no tournament opened in the app on the level's sheet
+    owner?: string
+  } = {},
 ) {
   const target = o.kind === 'l1' ? 'Classifica' : '17'
   const tabs: Record<string, ReturnType<typeof sheet>> = { [target]: sheet(target, o.tab ?? stageTab()), Comandanti: sheet('Comandanti', comandanti()) }
@@ -93,6 +103,7 @@ function setup(
   const calls: { method: string; url: string; payload?: string; auth: string }[] = []
   // the level 1 template's copies, with their "Classifica"
   const copies: { name: string; tab: ReturnType<typeof sheet> }[] = []
+  const trashed: string[] = []
   const fields: Record<string, unknown> = {
     drive: { stringValue: DRIVE },
     kind: { stringValue: o.kind ?? 'league' },
@@ -103,6 +114,13 @@ function setup(
   }
   const ctx = {
     LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'centuriondati@gmail.com' }) },
+    DriveApp: {
+      getFileById: (id: string) => ({
+        getOwner: () => ({ getEmail: () => o.owner ?? 'centuriondati@gmail.com' }),
+        setTrashed: (v: boolean) => v && trashed.push(id),
+      }),
+    },
     SpreadsheetApp: {
       openById: (id: string) =>
         id === DRIVE
@@ -122,7 +140,11 @@ function setup(
       fetch: (url: string, opt: { method: string; payload?: string; headers: { Authorization: string } }) => {
         calls.push({ method: opt.method, url, payload: opt.payload, auth: opt.headers.Authorization })
         // admins/{uid}: readable only with that account's sign-in, missing for who isn't an admin
-        const code = url.includes('/admins/') ? (o.admin === false ? 404 : 200) : opt.method === 'patch' && o.denied ? 403 : 200
+        const code = url.includes('/admins/')
+          ? o.admin === false ? 404 : 200
+          : url.endsWith('/tournaments/' + DRIVE) && o.played === false
+            ? 404
+            : opt.method === 'patch' && o.denied ? 403 : 200
         // a patch writes the fields of its mask: the ones it doesn't carry go
         if (code === 200 && opt.method === 'patch') {
           const sent = JSON.parse(opt.payload!).fields
@@ -137,7 +159,7 @@ function setup(
   }
   runInNewContext(code, ctx)
   const post = (body: unknown) => JSON.parse((ctx as unknown as { doPost: (e: unknown) => string }).doPost({ postData: { contents: JSON.stringify(body) } }))
-  return { tabs, calls, post, fields, copies }
+  return { tabs, calls, post, fields, copies, trashed }
 }
 
 describe('publishing a tournament into its sheet (Apps Script)', () => {
@@ -312,5 +334,36 @@ describe("creating a level 1's sheet (Apps Script)", () => {
       expect(bad.post(body).error).toBe('richiesta non valida')
     expect(bad.calls).toEqual([]) // Firestore never asked
     expect(bad.copies).toEqual([])
+  })
+})
+
+describe("throwing away a level 1's sheet (Apps Script)", () => {
+  const ask = { token: 'tok', uid: 'Ab12cd34', id: DRIVE, action: 'trash' }
+
+  it("bins an empty level 1 sheet of this account, once an admin's sign-in, the list and the app are checked", () => {
+    const { calls, post, trashed } = setup({ kind: 'l1', played: false })
+    expect(post(ask)).toEqual({ ok: true })
+    expect(calls.map((c) => c.url.replace(/.*\/documents\//, ''))).toEqual(['admins/Ab12cd34', `sources/${DRIVE}`, `tournaments/${DRIVE}`])
+    expect(trashed).toEqual([DRIVE])
+  })
+
+  it('bins nothing else', () => {
+    const played = stageTab()
+    played[5][1] = 'Anna Rossi'
+    const cases: [Parameters<typeof setup>[0], object, RegExp][] = [
+      [{ kind: 'l1', played: false, admin: false }, {}, /solo gli admin/],
+      [{ kind: 'l1', played: false }, { id: TEMPLATE }, /modello/],
+      [{ kind: 'league', played: false }, {}, /solo i fogli dei livelli 1/],
+      [{ kind: 'l1' }, {}, /aperto in app/],
+      [{ kind: 'l1', played: false, owner: 'someone@example.com' }, {}, /non è di centuriondati/],
+      [{ kind: 'l1', played: false, tab: played }, {}, /già dei risultati/],
+      [{ kind: 'l1', played: false }, { id: '../admins/x' }, /richiesta non valida/],
+      [{ kind: 'l1', played: false }, { uid: undefined }, /richiesta non valida/],
+    ]
+    for (const [o, body, error] of cases) {
+      const { post, trashed } = setup(o)
+      expect(post({ ...ask, ...body }).error).toMatch(error)
+      expect(trashed).toEqual([])
+    }
   })
 })

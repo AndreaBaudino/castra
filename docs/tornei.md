@@ -196,6 +196,11 @@ scrivere codice. I mockup delle schermate sono su
   Drive di centuriondati come "LVL 1 - nome", scrive il nome in B2 e la data in C3 della `Classifica` e risponde con
   l'id; l'app lo aggiunge all'elenco come un torneo inserito a mano. I livelli 2 hanno punti diversi: per ora solo a
   mano.
+- **Eliminare un foglio di livello 1** (`action: 'trash'`, "Elimina il foglio" aprendo il livello nell'area admin): lo
+  script controlla che chi chiede sia admin, che non sia il modello, che il foglio sia nell'elenco come livello 1, che
+  non ci sia un torneo in app su quel foglio (`tournaments/{drive}`), che il file sia di centuriondati e che la
+  `Classifica` non abbia risultati; poi lo sposta nel cestino (30 giorni per recuperarlo) e l'app lo toglie
+  dall'elenco. Serve il permesso `drive` completo, limitato all'account dello script.
 - Di riserva, "Copia le righe": il TO le incolla nella scheda.
 - Il meta notturno legge il foglio come oggi: nessun doppio conteggio e nessuna modifica a `build-meta.mjs`.
 

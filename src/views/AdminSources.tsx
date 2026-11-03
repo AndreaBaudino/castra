@@ -21,7 +21,7 @@ import {
 import { Icon } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { leagues } from './Circuit'
-import { canPublish, createLevelSheet } from '../lib/tournaments'
+import { canPublish, createLevelSheet, trashLevelSheet } from '../lib/tournaments'
 import AdminCircuit from './AdminCircuit'
 import AdminLinks from './AdminLinks'
 import { useCircuitSheets } from '../lib/circuits'
@@ -316,6 +316,34 @@ function SourceForm({
           {t('sources.save')}
         </button>
       </div>
+      {initial?.kind === 'l1' && canPublish && (
+        <button
+          className="btn danger"
+          disabled={busy}
+          onClick={async () => {
+            if (!user || !(await dialog.confirm(t('sources.trashConfirm', { n: sourceLabel(initial) }), { ok: t('sources.trash'), danger: true })))
+              return
+            setBusy(true)
+            setError(null)
+            try {
+              await trashLevelSheet(user.uid, initial.drive)
+            } catch (e) {
+              setError(t('sources.trashError', { e: (e as Error).message }))
+              return setBusy(false)
+            }
+            try {
+              await deleteSource(initial.drive)
+              onDone()
+            } catch {
+              // the sheet is in the bin already: "Togli dall'elenco" finishes the job
+              setError(t('sources.trashedNotRemoved'))
+              setBusy(false)
+            }
+          }}
+        >
+          <Icon name="trash" size={16} /> {t('sources.trash')}
+        </button>
+      )}
       {initial && (
         <button
           className="btn danger"

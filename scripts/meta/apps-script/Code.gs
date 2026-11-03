@@ -7,7 +7,8 @@
 // Only the files in the list of tournament sheets are served: Firestore's sources collection (kept from the app's
 // admin area) and the repository's scripts/meta/sources.json.
 // POST {token, id, rows} publishes a tournament (docs/tornei.md), {token, id, action: 'clear'} takes it off: see doPost.
-// POST {token, uid, name, date, action: 'create'} copies the level 1 template into a new sheet (admins only).
+// POST {token, uid, name, date, action: 'create'} copies the level 1 template into a new sheet, {token, uid, id,
+// action: 'trash'} throws one away while nothing was played on it (admins only).
 
 const SOURCES_URL = 'https://raw.githubusercontent.com/AndreaBaudino/castra/main/scripts/meta/sources.json'
 const FIRESTORE_URL = 'https://firestore.googleapis.com/v1/projects/castra-a69ab/databases/(default)/documents/sources'
@@ -58,7 +59,7 @@ function text(s) {
   return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT)
 }
 
-/** Run once from the editor: grants access to Drive and checks that every sheet can be read. */
+/** Run from the editor once, and again when appsscript.json asks for more: grants access, reads every sheet. */
 function check() {
   for (const id of allowed()) {
     const name = DriveApp.getFileById(id).getName()
@@ -86,6 +87,7 @@ function doPost(e) {
   try {
     const { token, id, rows, action, uid, name, date } = JSON.parse(e.postData.contents)
     if (action === 'create') return json(createLevel(token, uid, name, date))
+    if (action === 'trash') return json(trashLevel(token, uid, id))
     return json(action === 'clear' ? unpublish(token, id) : publish(token, id, rows))
   } catch (err) {
     return json({ error: err.message })
@@ -96,20 +98,55 @@ function doPost(e) {
 
 /** A new level 1's sheet: the template copied, with the event's name (B2) and date (C3). Answers with its drive id. */
 function createLevel(token, uid, name, date) {
-  if (typeof token !== 'string' || typeof uid !== 'string' || !/^[A-Za-z0-9]{1,128}$/.test(uid) || typeof name !== 'string' ||
-    !name.trim() || name.trim().length > 80 || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date))
+  if (typeof name !== 'string' || !name.trim() || name.trim().length > 80 || typeof date !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(date))
     throw new Error('richiesta non valida')
-  // each account may read only its own entry in admins: found, with this sign-in, means an admin asks
-  const auth = { Authorization: 'Bearer ' + token }
-  const res = UrlFetchApp.fetch(DOCS + 'admins/' + uid, { method: 'get', headers: auth, muteHttpExceptions: true })
-  if (res.getResponseCode() === 401) throw new Error('accesso scaduto: esci e rientra nell\'app')
-  if (res.getResponseCode() !== 200) throw new Error('solo gli admin creano i fogli')
+  admin(token, uid)
   const ss = SpreadsheetApp.openById(TEMPLATE_L1).copy('LVL 1 - ' + name.trim())
   const tab = ss.getSheetByName('Classifica')
   tab.getRange(2, 2).setValue(cell(name.trim()))
   const [y, m, d] = date.split('-').map(Number)
   tab.getRange(3, 3).setValue(new Date(y, m - 1, d))
   return { ok: true, id: ss.getId() }
+}
+
+/**
+ * Throws away (to the bin, for 30 days) a level 1's sheet of this account, as when it was made: still empty, no
+ * tournament opened on it in the app, never the template. Who asks then takes it off the list.
+ */
+function trashLevel(token, uid, id) {
+  if (typeof id !== 'string' || !/^[-_A-Za-z0-9]{20,100}$/.test(id)) throw new Error('richiesta non valida')
+  admin(token, uid)
+  if (id === TEMPLATE_L1) throw new Error('il modello non si elimina')
+  const kind = fieldsOf(firestore('get', 'sources/' + id, token)).kind
+  if (kind !== 'l1') throw new Error('elimino solo i fogli dei livelli 1')
+  if (found('tournaments/' + id, token)) throw new Error('il torneo è stato aperto in app: annullalo prima')
+  const file = DriveApp.getFileById(id)
+  const mine = file.getOwner().getEmail() === Session.getEffectiveUser().getEmail()
+  if (!mine) throw new Error('il foglio non è di centuriondati')
+  const tab = SpreadsheetApp.openById(id).getSheetByName('Classifica')
+  const table = tab && tablePlan(read(tab, 9), formulasOf(tab, 2))
+  if (!table || table.busy) throw new Error('il foglio ha già dei risultati: eliminalo a mano')
+  file.setTrashed(true)
+  return { ok: true }
+}
+
+/** Each account may read only its own entry in admins: found, with this sign-in, means an admin asks. */
+function admin(token, uid) {
+  if (typeof token !== 'string' || typeof uid !== 'string' || !/^[A-Za-z0-9]{1,128}$/.test(uid))
+    throw new Error('richiesta non valida')
+  if (!found('admins/' + uid, token, 'solo gli admin')) throw new Error('solo gli admin')
+}
+
+/** Whether a document exists, read with this sign-in. */
+function found(path, token, denied) {
+  const opt = { method: 'get', headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true }
+  const res = UrlFetchApp.fetch(DOCS + path, opt)
+  const code = res.getResponseCode()
+  if (code === 401) throw new Error('accesso scaduto: esci e rientra nell\'app')
+  if (code === 403 && denied) throw new Error(denied)
+  if (code !== 200 && code !== 404) throw new Error('Firestore ha risposto ' + code)
+  return code === 200
 }
 
 /** The tournament, read with the TO's sign-in. */

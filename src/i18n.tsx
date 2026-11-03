@@ -1183,6 +1183,10 @@ const it = {
   'sources.createHint': 'Per un livello 1 nuovo puoi lasciare vuoto il link: copio il modello del livello 1 nel Drive di centuriondati con nome e data, e lo aggiungo all\'elenco.',
   'sources.createConfirm': 'Creo il foglio di "{n}" copiando il modello del livello 1. Va bene?',
   'sources.createError': 'Non ho creato il foglio: {e}.',
+  'sources.trash': 'Elimina il foglio',
+  'sources.trashConfirm': 'Sposto nel cestino il foglio di {n} (dal Drive di centuriondati si recupera per 30 giorni) e lo tolgo dall\'elenco. Funziona solo se il foglio non ha risultati e il torneo non è stato aperto in app.',
+  'sources.trashError': 'Non ho eliminato il foglio: {e}.',
+  'sources.trashedNotRemoved': 'Il foglio è nel cestino, ma non sono riuscito a toglierlo dall\'elenco: tocca "Togli dall\'elenco".',
   'account.banlistUpdated': 'Aggiornata al {d}',
 }
 
@@ -2368,6 +2372,10 @@ const en: Record<Key, string> = {
   'sources.createHint': "For a new level 1 you can leave the link empty: I copy the level 1 template into centuriondati's Drive with its name and date, and add it to the list.",
   'sources.createConfirm': 'Create the sheet for "{n}" by copying the level 1 template?',
   'sources.createError': "The sheet wasn't created: {e}.",
+  'sources.trash': 'Delete the sheet',
+  'sources.trashConfirm': "I move {n}'s sheet to the bin (it can be restored from centuriondati's Drive for 30 days) and take it off the list. It works only if the sheet has no results and the tournament wasn't opened in the app.",
+  'sources.trashError': "The sheet wasn't deleted: {e}.",
+  'sources.trashedNotRemoved': 'The sheet is in the bin, but it couldn\'t be taken off the list: tap "Remove from the list".',
   'account.banlistUpdated': 'Updated {d}',
 }
 

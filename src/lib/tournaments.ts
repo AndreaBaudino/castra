@@ -517,6 +517,9 @@ export const unpublishTournament = (id: string) => script<{ tab: string; kept: s
 /** A new level 1's sheet, copied by the Apps Script from the template with its name and date (admins only): its id. */
 export const createLevelSheet = (uid: string, name: string, date: string) => script<{ id: string }>({ action: 'create', uid, name, date })
 
+/** Bins a level 1's sheet of the script's account while still empty and never opened in the app (admins only). */
+export const trashLevelSheet = (uid: string, id: string) => script<object>({ action: 'trash', uid, id })
+
 async function script<T>(body: object): Promise<T> {
   const { auth } = await fb()
   const token = await auth.currentUser?.getIdToken()

@@ -33,7 +33,9 @@ dati di ogni anno, che viene pubblicato con l'app.
 Per aggiungere un torneo: Area admin → Tornei → Aggiungi torneo, con il link al foglio (Google Sheets o Excel su Drive,
 leggibile dall'account Google dell'Apps Script qui sotto). Per un livello 1 nuovo si può lasciare vuoto il link e
 toccare **Crea il foglio dal modello**: lo script copia il modello del livello 1 (`TEMPLATE_L1` in `Code.gs`, di
-`centuriondati@gmail.com`) nel Drive di quell'account, scrive nome e data e il torneo entra nell'elenco. Entra nel meta al primo aggiornamento notturno. I bye spuntati nella colonna BYE non contano
+`centuriondati@gmail.com`) nel Drive di quell'account, scrive nome e data e il torneo entra nell'elenco. Aprendo un
+livello 1, **Elimina il foglio** lo sposta nel cestino di quel Drive (recuperabile per 30 giorni) e lo toglie
+dall'elenco, ma solo se il foglio è di centuriondati, non ha risultati e il torneo non è stato aperto in app. Entra nel meta al primo aggiornamento notturno. I bye spuntati nella colonna BYE non contano
 nel winrate; quelli non spuntati restano vittorie finché qualcuno non li spunta.
 
 ### Un anno nuovo
@@ -80,11 +82,12 @@ così l'URL resta lo stesso.
 
 Lo stesso script **scrive nei fogli** i tornei gestiti in app ("Pubblica sul foglio" nell'Area TO, `doPost`): per
 questo l'account che lo pubblica deve poter modificare i fogli, e `appsscript.json` chiede anche il permesso
-`spreadsheets` (dopo averlo aggiornato si rilancia `check` per autorizzarlo). Non serve la chiave: lo script usa
+`spreadsheets`, e `drive` (non più solo lettura) per cestinare i fogli dei livelli creati per sbaglio (dopo averlo
+aggiornato si rilancia `check` dall'editor per autorizzarlo). Non serve la chiave: lo script usa
 l'accesso Firebase del TO e le regole di Firestore per sapere se può pubblicare quel torneo. L'URL `/exec` va anche
 in `PUBLISH_URL` (`src/config.ts`); finché è vuoto, nell'Area TO resta solo il copia-incolla. Con lo stesso URL lo
-script crea i fogli dei livelli 1 dal modello (`action: 'create'`, solo per gli admin: lo controlla leggendo
-`admins/{uid}` con l'accesso di chi chiede).
+script crea i fogli dei livelli 1 dal modello e li cestina (`action: 'create'` e `'trash'`, solo per gli admin: lo
+controlla leggendo `admins/{uid}` con l'accesso di chi chiede).
 
 ### Banlist
 

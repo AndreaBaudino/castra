@@ -10,10 +10,10 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-03',
     it: [
-      'Area admin, Tornei: per un livello 1 nuovo "Crea il foglio dal modello" copia il modello ufficiale con nome e data e aggiunge il torneo all\'elenco, senza preparare il foglio a mano',
+      'Area admin, Tornei: per un livello 1 nuovo "Crea il foglio dal modello" copia il modello ufficiale con nome e data e aggiunge il torneo all\'elenco, senza preparare il foglio a mano. "Elimina il foglio" lo sposta nel cestino, se è ancora vuoto e il torneo non è stato aperto in app',
     ],
     en: [
-      'Admin area, Tournaments: for a new level 1, "Create the sheet from the template" copies the official template with the name and date and adds the tournament to the list, with no sheet to prepare by hand',
+      'Admin area, Tournaments: for a new level 1, "Create the sheet from the template" copies the official template with the name and date and adds the tournament to the list, with no sheet to prepare by hand. "Delete the sheet" moves it to the bin, while still empty and never opened in the app',
     ],
   },
   {
