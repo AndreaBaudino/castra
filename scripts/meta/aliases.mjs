@@ -17,6 +17,7 @@ export const playerKey = (name) =>
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .replace(/[’`]/g, "'")
+    .replace(/\//g, ' ') // the key names a Firestore document: a slash would split its path
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase()

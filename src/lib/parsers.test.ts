@@ -202,3 +202,14 @@ describe('mergeFirst', () => {
     expect(names(mergeFirst([deck('a', 'phone', '2'), deck('c', 'phone only', '1')], [deck('a', 'cloud', '1')]))).toEqual(['a:cloud', 'c:phone only'])
   })
 })
+
+describe('playerKey', () => {
+  const names = ['Nicolò  Pagàno', "D’Amico", 'D`Amico', ' LUCA rossi ', 'Marco/Luca', 'Marco / Luca', 'Ångström Æsir']
+
+  it('makes a key Firestore can use as a document id, the same in the app and in the nightly update', async () => {
+    const nightly = (await import(/* @vite-ignore */ new URL('../../scripts/meta/aliases.mjs', import.meta.url).href)).playerKey
+    expect(names.map(playerKey)).toEqual(names.map(nightly))
+    expect(playerKey('Marco/Luca')).toBe('marco luca')
+    expect(names.map(playerKey).some((k) => k.includes('/'))).toBe(false)
+  })
+})
