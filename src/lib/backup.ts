@@ -18,7 +18,8 @@ const stamp = () => new Date().toISOString().slice(0, 10)
 /** Semicolon-separated with a BOM: what Excel opens correctly with Italian settings; Google Sheets detects it. */
 export function matchesCsv(matches: Match[], deckNames: Map<string, string>, lang: 'it' | 'en') {
   const cell = (v: string | number | undefined) => {
-    const s = v == null ? '' : String(v)
+    // text that starts like a formula (an opponent's commander comes from their registration) stays text
+    const s = v == null ? '' : typeof v === 'string' && /^[=+\-@]/.test(v) ? `'${v}` : String(v)
     return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
   }
   const it = lang === 'it'

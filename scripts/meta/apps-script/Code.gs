@@ -262,7 +262,7 @@ function checkRows(rows) {
 }
 
 /** Text that the sheet takes as it is, never as a formula. */
-const cell = (s) => (/^[=+@]/.test(s) ? "'" + s : s)
+const cell = (s) => (/^[=+\-@]/.test(s) ? "'" + s : s)
 
 /** How names compare: case, accents, apostrophes and spaces aside. */
 const normal = (s) =>

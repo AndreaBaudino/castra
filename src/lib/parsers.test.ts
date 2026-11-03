@@ -4,6 +4,8 @@ import { type DeckCard, logChange, parseDecklist } from './decks'
 import { parseCsv } from './meta'
 import { DUNGEONS } from './dungeons'
 import { readStored, writeStored } from './storage'
+import { matchesCsv } from './backup'
+import type { Match } from './matches'
 
 // The text the app reads from outside (pasted lists, the circuit sheet): a change of format must fail here,
 // not silently on the users' phones.
@@ -173,5 +175,14 @@ describe('dungeons', () => {
       expect(seen.size).toBe(rooms.length) // every room can be reached
       expect(rooms[rooms.length - 1].next).toEqual([])
     }
+  })
+})
+
+describe('matchesCsv', () => {
+  it('keeps text that starts like a formula as text, as an opponent can type anything as their commander', () => {
+    const m = { id: 'x', date: '2026-11-02T10:00:00.000Z', result: 'W', kind: 'tournament', opponent: '=HYPERLINK("x")', notes: '-2+3' } as Match
+    const row = matchesCsv([m], new Map(), 'it').split('\r\n')[1].split(';')
+    expect(row[6]).toBe('"\'=HYPERLINK(""x"")"')
+    expect(row[9]).toBe("'-2+3")
   })
 })

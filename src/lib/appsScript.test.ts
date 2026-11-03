@@ -214,9 +214,10 @@ describe('publishing a tournament into its sheet (Apps Script)', () => {
     const tab = stageTab()
     tab[1][1] = 'MR Magic LV1'
     const { tabs, post } = setup({ kind: 'l1', tab })
-    const res = post({ token: 'tok', id: DRIVE, rows: RESULTS.slice(0, 2) })
+    const res = post({ token: 'tok', id: DRIVE, rows: [...RESULTS.slice(0, 2), row('-SUM(1)', null, 0, 2)] })
     expect(res).toMatchObject({ ok: true, tab: 'Classifica', players: [] })
     expect(tabs.Classifica.grid[6][1]).toBe('Dario Neri') // as sent: no list to take the spelling from
+    expect(tabs.Classifica.grid[7][1]).toBe("'-SUM(1)") // a minus starts a formula too: written as text
   })
 
   it('writes nothing when the tab already has results', () => {
