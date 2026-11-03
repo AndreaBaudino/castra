@@ -11,6 +11,14 @@ service cloud.firestore {
       return v is string && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z')
         && timestamp.date(int(v[0:4]), int(v[5:7]), int(v[8:10])) <= request.time;
     }
+    // a text field of `d`, from `min` to `max` characters
+    function text(d, field, min, max) {
+      return d.get(field, null) is string && d[field].size() >= min && d[field].size() <= max;
+    }
+    // a field that is missing, null, or text up to `max` characters
+    function optional(d, field, max) {
+      return d.get(field, null) == null || text(d, field, 0, max);
+    }
 
     // each account can see whether it is an admin, and nobody can make themselves one
     match /admins/{userId} {
@@ -38,11 +46,6 @@ service cloud.firestore {
     // circuit players claimed by an account ("this is me"): everyone can see who is linked (and verified),
     // a free player can be claimed once, and only the claimer can change or release it
     match /claims/{playerKey} {
-      // a field that is missing, null, or text up to `max` characters
-      function optionalText(field, max) {
-        return request.resource.data.get(field, null) == null
-          || (request.resource.data[field] is string && request.resource.data[field].size() <= max);
-      }
       // a picture every viewer's browser loads: from that site only, and without quotes or brackets, which in a CSS
       // url("…") would add an image from anywhere
       function optionalUrl(field, site) {
@@ -62,7 +65,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'at'])
         && stamp(request.resource.data.at)
         // every app downloads all the claims: no oversized names
-        && optionalText('name', 200)
+        && optional(request.resource.data, 'name', 200)
         && pictures()
         // the account must point to this very player, so one account holds one claim
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.circuitMe == playerKey
@@ -79,10 +82,10 @@ service cloud.firestore {
         && request.resource.data.get('verifiedBy', null) == resource.data.get('verifiedBy', null)
         && request.resource.data.get('verifiedIn', null) == resource.data.get('verifiedIn', null)
         && (request.resource.data.get('at', null) == resource.data.get('at', null) || stamp(request.resource.data.get('at', null)))
-        && optionalText('name', 200)
+        && optional(request.resource.data, 'name', 200)
         && pictures()
-        && optionalText('coverName', 150)
-        && optionalText('deck', 200);
+        && optional(request.resource.data, 'coverName', 150)
+        && optional(request.resource.data, 'deck', 200);
       // an admin can only clear that customisation, leaving the claim as it is
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverName', 'coverArt', 'deck'])
@@ -112,31 +115,25 @@ service cloud.firestore {
     // the tournament sheets read by the nightly meta update, one per drive file id: public (the update reads them
     // without signing in), kept by the admins
     match /sources/{drive} {
-      function optionalString(d, field, max) {
-        return d.get(field, null) == null || (d[field] is string && d[field].size() <= max);
-      }
-      function requiredString(d, field, max) {
-        return d.get(field, null) is string && d[field].size() > 0 && d[field].size() <= max;
-      }
       function validSource(d) {
         return d.keys().hasOnly(['drive', 'kind', 'name', 'date', 'circuit', 'year', 'season', 'league', 'venue', 'zone', 'tos', 'at', 'by'])
           && d.drive == drive
           && drive.matches('[-_A-Za-z0-9]{20,100}')
           && d.by == request.auth.uid
-          && optionalString(d, 'circuit', 150)
-          && optionalString(d, 'venue', 80)
+          && optional(d, 'circuit', 150)
+          && optional(d, 'venue', 80)
           // events: the league whose organizers run it, and organizers assigned by hand (uids)
-          && optionalString(d, 'zone', 80)
+          && optional(d, 'zone', 80)
           && (d.get('tos', null) == null || (d.tos is list && d.tos.size() <= 20))
           && ((d.kind in ['l1', 'l2']
-              && requiredString(d, 'name', 80)
+              && text(d, 'name', 1, 80)
               && d.get('date', null) is string
               && d.date.matches('20[0-9]{2}-[01][0-9]-[0-3][0-9]'))
             || (d.kind in ['league', 'online']
               && d.get('year', null) is int
               && d.year >= 2020 && d.year <= 2100
               && d.get('season', null) in ['s1', 's2']
-              && requiredString(d, 'league', 80)));
+              && text(d, 'league', 1, 80)));
       }
 
       allow read: if true;
@@ -229,9 +226,6 @@ service cloud.firestore {
       }
       function verified(key) {
         return holds(key) && get(/databases/$(database)/documents/claims/$(key)).data.get('verified', false) == true;
-      }
-      function text(d, field, min, max) {
-        return d.get(field, null) is string && d[field].size() >= min && d[field].size() <= max;
       }
       function round(d, field) {
         return d.get(field, null) == null || (d[field] is int && d[field] >= 0 && d[field] <= 30);
@@ -386,12 +380,6 @@ service cloud.firestore {
     // reports sent from the app (src/lib/feedback.ts): any account can send one in its own name, only admins read
     // them, mark them done or delete them
     match /feedback/{id} {
-      function text(d, field, min, max) {
-        return d.get(field, null) is string && d[field].size() >= min && d[field].size() <= max;
-      }
-      function optional(d, field, max) {
-        return d.get(field, null) == null || text(d, field, 0, max);
-      }
       allow read, delete: if isAdmin();
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'kind', 'text', 'page', 'about', 'version', 'device', 'at', 'done'])
