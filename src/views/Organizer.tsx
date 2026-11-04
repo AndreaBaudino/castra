@@ -583,7 +583,7 @@ export function TournamentAdmin({
               className="btn primary"
               disabled={busy || missing > 0}
               onClick={async () => {
-                if ((await confirmed()) && (await dialog.confirm(t('run.finishConfirm'), { ok: t('run.finish') }))) act(() => finishTournament(id))
+                if ((await confirmed()) && (await dialog.confirm(t('run.finishConfirm'), { ok: t('run.finish') }))) act(() => finishTournament(id, rows.map((r) => r.id)))
               }}
             >
               {t('run.finish')}

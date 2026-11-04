@@ -479,8 +479,10 @@ export async function nextCutRound(id: string, t: Tournament, matches: TableMatc
   return pairs
 }
 
-export async function finishTournament(id: string) {
+/** Closes the tournament; `order`: the final standings' player keys, for each one's notification of their place. */
+export async function finishTournament(id: string, order: string[]) {
   await logged(id, { kind: 'done' }, ({ db, fs }, b) => b.update(fs.doc(db, 'tournaments', id), { status: 'done' }))
+  ping({ id, action: 'done', order })
 }
 
 /** Marks the results as copied into the sheet (or not). */
@@ -509,6 +511,7 @@ export async function confirmPlayer(user: AppUser, id: string, key: string, veri
     batch.update(fs.doc(db, 'tournaments', id, 'players', key), { pending: fs.deleteField() })
     if (verify) batch.update(fs.doc(db, 'claims', key), { verified: true, verifiedBy: user.uid, verifiedIn: id })
   })
+  ping({ id, action: 'accepted', player: key })
 }
 
 /** A penalty, a note or a deck check, by a TO. */
@@ -555,6 +558,7 @@ export async function joinTournament(
     if (existing) b.update(ref, mine)
     else b.set(ref, { name: p.name, ...mine, ...(p.verified ? {} : { pending: true }) })
   })
+  if (!existing && !p.verified) ping({ id, action: 'request', player: key })
 }
 
 /** The decklist link (null: none), private until the tournament is over. */

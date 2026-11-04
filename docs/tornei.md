@@ -132,7 +132,10 @@ scrivere codice. I mockup delle schermate sono su
   concluso, con le altre del torneo. Senza profilo verificato i risultati li segna il TO; dal menu si esce dal match.
 - Riaprendo l'app si ritrova la situazione attuale (tutto è su Firestore); se il telefono perde la rete si
   riallinea appena torna.
-- **Notifiche push**: abbinamenti del turno a ogni giocatore e risultato da confermare all'avversario, subito, da un
+- **Notifiche push**: abbinamenti del turno a ogni giocatore (al primo turno di top cut con "sei nella top 8"),
+  risultato da confermare all'avversario, iscrizione confermata, posto finale alla chiusura (la classifica la manda
+  il telefono del TO, lo script controlla che gestisca il torneo) e, al TO che l'ha aperto, le richieste di
+  iscrizione; subito, da un
   Apps Script a parte (`scripts/notify/apps-script`, README "Notifiche dei tornei"), che l'app chiama dopo l'avvio
   del turno e dopo il risultato segnato e che legge da Firestore cosa mandare. Le altre notifiche partono dal workflow
   di GitHub due volte al giorno. Durante il torneo l'app si aggiorna in diretta quando è aperta, e il telefono di un

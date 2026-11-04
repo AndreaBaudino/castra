@@ -166,7 +166,10 @@ Actions con un clic.
 ### Notifiche dei tornei
 
 Durante un torneo gestito in app le notifiche partono subito, non dal workflow: a ogni turno ogni giocatore riceve
-tavolo e avversario (o il bye), e quando uno dei due segna il risultato l'altro riceve quello da confermare. Le manda
+tavolo e avversario (o il bye; al primo turno di top cut anche "sei nella top 8"), quando uno dei due segna il
+risultato l'altro riceve quello da confermare, chi era in attesa sa quando il TO conferma l'iscrizione e alla chiusura
+ognuno riceve il proprio posto in classifica. Il TO che ha aperto il torneo riceve le richieste di iscrizione da
+confermare (anche lui deve avere "Tornei" acceso). Le manda
 un secondo Apps Script (`scripts/notify/apps-script`), separato da quello dei fogli e senza accesso a Drive: l'app lo
 chiama dopo l'avvio di un turno e dopo un risultato segnato, e lui legge da Firestore cosa mandare e a chi (solo agli
 account con "Tornei" acceso nelle Preferenze, che l'app propone di accendere all'iscrizione). Ogni notifica parte una

@@ -26,7 +26,7 @@ const fields = (o: object) => Object.fromEntries(Object.entries(o).map(([k, v]) 
 
 function setup() {
   const db = new Map<string, object>([
-    [`tournaments/${ID}`, { name: 'Savona', stage: 4, status: 'swiss', round: 2, rounds: 4, started: 'T1' }],
+    [`tournaments/${ID}`, { name: 'Savona', stage: 4, status: 'swiss', round: 2, rounds: 4, cut: 0, started: 'T1', by: 'gina' }],
     [`tournaments/${ID}/players/mia`, { name: 'Mia', commander: 'Kinnan, Bonder Prodigy', uid: 'kim' }],
     [`tournaments/${ID}/players/nina`, { name: 'Nina', commander: 'Atraxa, Grand Unifier', uid: 'lea' }],
     [`tournaments/${ID}/players/mario rossi`, { name: 'Mario Rossi', commander: 'Spider-Man 2099' }], // added by the TO
@@ -38,6 +38,8 @@ function setup() {
     ['users/kim', { lang: 'it', prefs: { notifyTournaments: true } }],
     ['users/lea', { lang: 'en', prefs: { notifyTournaments: true } }],
     ['users/pam', { lang: 'it', prefs: { notifyTournaments: false } }], // turned off
+    ['users/gina', { lang: 'it', prefs: { notifyTournaments: true } }], // the TO
+    ['users/gina/devices/tok-gina', { at: 'x' }],
     ['users/kim/devices/tok-kim', { at: 'x' }],
     ['users/lea/devices/tok-lea', { at: 'x' }],
     ['users/lea/devices/tok-lea-2', { at: 'x' }],
@@ -47,7 +49,7 @@ function setup() {
   const sent: { token: string; title: string; body: string; url: string; tag: string }[] = []
   const cache = new Map<string, string>()
   const res = (code: number, body: unknown = {}) => ({ getResponseCode: () => code, getContentText: () => JSON.stringify(body) })
-  const answer = (url: string, opt: { headers?: { Authorization?: string }; payload?: string | object } = {}) => {
+  const answer = (url: string, opt: { method?: string; headers?: { Authorization?: string }; payload?: string | object } = {}) => {
     if (url === 'https://oauth2.googleapis.com/token') return res(200, { access_token: 'sa' })
     if (url.startsWith('https://fcm.googleapis.com/')) {
       const { message } = JSON.parse(opt.payload as string)
@@ -57,8 +59,10 @@ function setup() {
     const auth = opt.headers?.Authorization
     if (auth === 'Bearer expired') return res(401)
     const path = decodeURIComponent(url.slice(DOCS.length).split('?')[0])
+    // the write that changes nothing: the rules let only the TO (`to`) through
+    if (opt.method === 'patch') return res(auth === 'Bearer to' && path === `tournaments/${ID}` ? 200 : 403)
     // a sign-in reads only the tournament; every other read is the service account's
-    if (auth !== 'Bearer sa' && !(auth === 'Bearer tok' && path === `tournaments/${ID}`)) return res(403)
+    if (auth !== 'Bearer sa' && !(['Bearer tok', 'Bearer to'].includes(auth!) && path === `tournaments/${ID}`)) return res(403)
     if (path.endsWith(':runQuery')) {
       const parent = path.slice(0, -':runQuery'.length)
       const { from, where } = JSON.parse(opt.payload as string).structuredQuery
@@ -106,10 +110,17 @@ describe('tournament notifications (Apps Script)', () => {
   it('tells the bye, and the top cut its own rounds', () => {
     const { db, sent, post } = setup()
     db.set('users/pam', { lang: 'it', prefs: { notifyTournaments: true } })
-    db.set(`tournaments/${ID}`, { name: 'Genova L2', status: 'cut', round: 5, rounds: 4, started: 'T3' })
+    db.set(`tournaments/${ID}`, { name: 'Genova L2', status: 'cut', round: 5, rounds: 4, cut: 8, started: 'T3' })
     db.set(`tournaments/${ID}/matches/r5t0`, { round: 5, table: 0, p1: 'pat', p2: null, score: null })
     post({ token: 'tok', id: ID, action: 'round' })
-    expect(sent).toEqual([{ token: 'tok-pam', title: 'Genova L2 · top cut, turno 1', body: 'Hai il bye: 3 punti, come una vittoria 2-0.', url: '#home', tag: `tour-${ID}` }])
+    expect(sent).toEqual([
+      { token: 'tok-pam', title: 'Genova L2 · top cut, turno 1', body: 'Sei nella top 8. Hai il bye: 3 punti, come una vittoria 2-0.', url: '#home', tag: `tour-${ID}` },
+    ])
+    // the next rounds of the top cut: no "top 8" any more
+    db.set(`tournaments/${ID}`, { name: 'Genova L2', status: 'cut', round: 6, rounds: 4, cut: 8, started: 'T4' })
+    db.set(`tournaments/${ID}/matches/r6t0`, { round: 6, table: 0, p1: 'pat', p2: null, score: null })
+    post({ token: 'tok', id: ID, action: 'round' })
+    expect(sent[1].body).toBe('Hai il bye: 3 punti, come una vittoria 2-0.')
   })
 
   it('sends nothing before the first round', () => {
@@ -137,6 +148,44 @@ describe('tournament notifications (Apps Script)', () => {
     expect(post({ token: 'tok', id: ID, action: 'report', match: 'r2t1' }).sent).toBe(0)
   })
 
+  it('tells the TO who opened the tournament of a registration waiting, with how many are waiting', () => {
+    const { db, sent, post } = setup()
+    db.set(`tournaments/${ID}/players/luca`, { name: 'Luca Bianchi', commander: 'Kraum / Tymna', uid: 'lu', pending: true, at: 'A1' })
+    expect(post({ token: 'tok', id: ID, action: 'request', player: 'luca' }).sent).toBe(1)
+    expect(post({ token: 'tok', id: ID, action: 'request', player: 'luca' }).sent).toBe(0) // once
+    db.set(`tournaments/${ID}/players/ugo`, { name: 'Ugo', commander: 'Atraxa, Grand Unifier', uid: 'ug', pending: true, at: 'A2' })
+    post({ token: 'tok', id: ID, action: 'request', player: 'ugo' })
+    expect(sent).toEqual([
+      { token: 'tok-gina', title: 'Savona · tappa 4', body: 'Nuova richiesta di iscrizione: Luca Bianchi', url: `#to/${ID}`, tag: `tour-req-${ID}` },
+      { token: 'tok-gina', title: 'Savona · tappa 4', body: "2 richieste di iscrizione da confermare, l'ultima di Ugo", url: `#to/${ID}`, tag: `tour-req-${ID}` },
+    ])
+    expect(post({ token: 'tok', id: ID, action: 'request', player: 'mia' }).sent).toBe(0) // not waiting
+  })
+
+  it('tells a player their registration was confirmed, only once it is', () => {
+    const { db, sent, post } = setup()
+    db.set(`tournaments/${ID}/players/nina`, { name: 'Nina', commander: 'Atraxa, Grand Unifier', uid: 'lea', pending: true })
+    expect(post({ token: 'tok', id: ID, action: 'accepted', player: 'nina' }).sent).toBe(0)
+    db.set(`tournaments/${ID}/players/nina`, { name: 'Nina', commander: 'Atraxa, Grand Unifier', uid: 'lea' })
+    expect(post({ token: 'tok', id: ID, action: 'accepted', player: 'nina' }).sent).toBe(2) // her two phones
+    expect(sent[0]).toEqual({ token: 'tok-lea', title: 'Savona · stage 4', body: 'The TO confirmed your registration.', url: '#home', tag: `tour-${ID}` })
+  })
+
+  it("tells each player their final place, only when the TO who runs it sends it, once it's over", () => {
+    const { db, sent, post } = setup()
+    const order = ['nina', 'mario rossi', 'mia', 'pat']
+    expect(post({ token: 'to', id: ID, action: 'done', order }).sent).toBe(0) // still being played
+    db.set(`tournaments/${ID}`, { ...db.get(`tournaments/${ID}`), status: 'done' })
+    expect(post({ token: 'tok', id: ID, action: 'done', order: ['mia'] })).toEqual({ ok: false, error: 'non gestisci questo torneo' })
+    expect(post({ token: 'to', id: ID, action: 'done', order }).sent).toBe(3)
+    expect(post({ token: 'to', id: ID, action: 'done', order }).sent).toBe(0) // once
+    expect(sent.map((m) => [m.token, m.body, m.url])).toEqual([
+      ['tok-lea', 'Tournament over: you placed #1 of 4. Tap for the final standings.', `#live/${ID}`],
+      ['tok-lea-2', 'Tournament over: you placed #1 of 4. Tap for the final standings.', `#live/${ID}`],
+      ['tok-kim', 'Torneo concluso: sei 3° su 4. Tocca per la classifica finale.', `#live/${ID}`],
+    ])
+  })
+
   it('answers only to a signed-in caller, and to well-formed requests', () => {
     const { sent, post } = setup()
     expect(post({ token: 'expired', id: ID, action: 'round' }).ok).toBe(false)
@@ -144,6 +193,8 @@ describe('tournament notifications (Apps Script)', () => {
     expect(post({ token: 'tok', id: '../users/kim', action: 'round' }).ok).toBe(false)
     expect(post({ token: 'tok', id: ID, action: 'report', match: '../../users' }).ok).toBe(false)
     expect(post({ token: 'tok', id: ID, action: 'other' }).ok).toBe(false)
+    expect(post({ token: 'tok', id: ID, action: 'accepted' }).ok).toBe(false)
+    expect(post({ token: 'to', id: ID, action: 'done', order: 'mia' }).ok).toBe(false)
     expect(sent).toHaveLength(0)
   })
 })

@@ -165,7 +165,7 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await setScore(id, final[0], [0, 2, 0])
     s = await read(id)
     expect(await nextCutRound(id, s.t, s.matches)).toBeNull() // that was the final
-    await finishTournament(id)
+    await finishTournament(id, [])
     s = await read(id)
     // not in the sheet yet: the TO area keeps finding it, however old, until it is
     const unfiled = async () => {
@@ -285,7 +285,7 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
 
     // over: the decklists are public; cancelled, they go with the tournament
     as('gina')
-    await finishTournament(id)
+    await finishTournament(id, [])
     state.ctx = { db: env.unauthenticatedContext().firestore(), fs }
     expect(await loadList(id, 'mia')).toBe(MOX)
     // a player's phone reads only their own matches (useTournament with `me`): the same ones as in the whole list

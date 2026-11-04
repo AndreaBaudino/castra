@@ -8,6 +8,9 @@
 //
 // POST {token, id, action: 'round'}: the pairings of the round being played, to every player at it.
 // POST {token, id, action: 'report', match: 'r3t5'}: the result just entered, to the opponent, to confirm.
+// POST {token, id, action: 'request', player}: a registration waiting for a TO, to the TO who opened the tournament.
+// POST {token, id, action: 'accepted', player}: the registration the TO confirmed, to the player.
+// POST {token, id, action: 'done', order: [player keys]}: each one's final place, from the TO who closed it.
 // What to send comes from Firestore, not from the request, and each is sent once: calling again sends nothing.
 // `token` is the caller's Firebase sign-in, so only the app's users can call it.
 
@@ -22,7 +25,11 @@ const T = {
     cut: (n) => 'top cut, turno ' + n,
     table: (n, p, c) => 'Tavolo ' + n + ' contro ' + p + (c ? ' (' + c + ')' : ''),
     bye: 'Hai il bye: 3 punti, come una vittoria 2-0.',
+    top: (n) => 'Sei nella top ' + n + '. ',
     reported: (p, s) => p + ' ha segnato ' + s + ' per te: confermalo o correggilo.',
+    requests: (n, p) => (n > 1 ? n + ' richieste di iscrizione da confermare, l\'ultima di ' + p : 'Nuova richiesta di iscrizione: ' + p),
+    accepted: 'Il TO ha confermato la tua iscrizione.',
+    final: (n, of) => 'Torneo concluso: sei ' + n + '° su ' + of + '. Tocca per la classifica finale.',
   },
   en: {
     stage: (n) => 'stage ' + n,
@@ -30,7 +37,11 @@ const T = {
     cut: (n) => 'top cut, round ' + n,
     table: (n, p, c) => 'Table ' + n + ' against ' + p + (c ? ' (' + c + ')' : ''),
     bye: 'You have the bye: 3 points, as a 2-0 win.',
+    top: (n) => 'You made the top ' + n + '. ',
     reported: (p, s) => p + ' entered ' + s + ' for you: confirm it or fix it.',
+    requests: (n, p) => (n > 1 ? n + ' registrations to confirm, the latest from ' + p : 'New registration request: ' + p),
+    accepted: 'The TO confirmed your registration.',
+    final: (n, of) => 'Tournament over: you placed #' + n + ' of ' + of + '. Tap for the final standings.',
   },
 }
 
@@ -38,12 +49,17 @@ function doPost(e) {
   const lock = LockService.getScriptLock()
   lock.waitLock(30000) // one at a time: two phones calling for the same round send it once
   try {
-    const { token, id, action, match } = JSON.parse(e.postData.contents)
+    const { token, id, action, match, player, order } = JSON.parse(e.postData.contents)
     if (typeof id !== 'string' || !/^[-_A-Za-z0-9]{20,100}(~[0-9]{1,2})?$/.test(id)) throw new Error('richiesta non valida')
     const tour = signedIn(token, id)
     if (!tour) return json({ ok: true, sent: 0 })
     if (action === 'round') return json({ ok: true, sent: round(id, tour) })
     if (action === 'report' && typeof match === 'string' && /^r[0-9]{1,2}t[0-9]{1,3}$/.test(match)) return json({ ok: true, sent: report(id, tour, match) })
+    const key = typeof player === 'string' && player.length > 0 && player.length <= 200 ? player : null
+    if (action === 'request' && key) return json({ ok: true, sent: request(id, tour, key) })
+    if (action === 'accepted' && key) return json({ ok: true, sent: accepted(id, tour, key) })
+    if (action === 'done' && Array.isArray(order) && order.length <= 300 && order.every((k) => typeof k === 'string'))
+      return json({ ok: true, sent: done(token, id, tour, order) })
     throw new Error('richiesta non valida')
   } catch (err) {
     return json({ ok: false, error: err.message })
@@ -89,7 +105,8 @@ function pairings(id, tour) {
         uid: p.uid,
         text: (t) => [
           title(tour, t) + ' · ' + (tour.status === 'cut' ? t.cut(n) : t.round(n)),
-          o ? t.table(m.table, o.name, o.commander) : t.bye,
+          // the first round of the top cut: who's in hears it here
+          (tour.status === 'cut' && n === 1 ? t.top(tour.cut) : '') + (o ? t.table(m.table, o.name, o.commander) : t.bye),
         ],
       })
     }
@@ -114,6 +131,49 @@ function toConfirm(id, tour, m) {
   return send([{ uid: p.uid, text: (t) => [title(tour, t), t.reported(by ? by.name : m.reportedBy, score)] }], id)
 }
 
+/** A registration waiting for a TO: to the one who opened the tournament, with how many are waiting. */
+function request(id, tour, key) {
+  const p = get('tournaments/' + id + '/players/' + encodeURIComponent(key))
+  if (!p || !p.pending || !tour.by) return 0
+  return once(id + '|request|' + key + '|' + p.at, () => {
+    const waiting = list('tournaments/' + id + '/players').filter((d) => fieldsOf(d).pending).length
+    const text = (t) => [title(tour, t), t.requests(waiting, p.name)]
+    return send([{ uid: tour.by, text, url: '#to/' + id, tag: 'tour-req-' + id }], id)
+  })
+}
+
+/** The registration a TO confirmed, to the player. */
+function accepted(id, tour, key) {
+  const p = get('tournaments/' + id + '/players/' + encodeURIComponent(key))
+  if (!p || p.pending || !p.uid) return 0
+  return once(id + '|accepted|' + key, () => send([{ uid: p.uid, text: (t) => [title(tour, t), t.accepted] }], id))
+}
+
+/**
+ * Each player's final place, in the order the TO's phone worked out (the app's standings: tiebreakers and top cut).
+ * Only who runs the tournament may send it: a write that changes nothing, which the rules let through only for them.
+ */
+function done(token, id, tour, order) {
+  if (tour.status !== 'done') return 0
+  const res = UrlFetchApp.fetch(DOCS + 'tournaments/' + id + '?updateMask.fieldPaths=filed', {
+    method: 'patch',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + token },
+    muteHttpExceptions: true,
+    payload: JSON.stringify({ fields: { filed: { booleanValue: !!tour.filed } } }),
+  })
+  if (res.getResponseCode() !== 200) throw new Error('non gestisci questo torneo')
+  return once(id + '|done', () => {
+    const players = new Map(list('tournaments/' + id + '/players').map((d) => [key(d), fieldsOf(d)]))
+    const out = []
+    order.forEach((k, i) => {
+      const p = players.get(k)
+      if (p && p.uid) out.push({ uid: p.uid, text: (t) => [title(tour, t), t.final(i + 1, order.length)], url: '#live/' + id })
+    })
+    return send(out, id)
+  })
+}
+
 const title = (tour, t) => (tour.stage ? tour.name + ' · ' + t.stage(tour.stage) : tour.name)
 
 /** To every device of the accounts that turned the tournament notifications on, in their language. */
@@ -130,11 +190,11 @@ function send(out, id) {
         contentType: 'application/json',
         headers: { Authorization: 'Bearer ' + access() },
         muteHttpExceptions: true,
-        // the card of the tournament is in Home; a newer one of this tournament replaces it
+        // the card of the tournament is in Home, unless told otherwise; a newer one of this tournament replaces it
         payload: JSON.stringify({
           message: {
             token: key(d),
-            data: { title: heading, body, url: '#home', tag: 'tour-' + id },
+            data: { title: heading, body, url: m.url || '#home', tag: m.tag || 'tour-' + id },
             webpush: { headers: { TTL: String(TTL), Urgency: 'high' } },
           },
         }),
