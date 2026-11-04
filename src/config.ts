@@ -28,7 +28,7 @@ export const POTY_SPOTS = 16
  * The Apps Script web app (scripts/notify/apps-script, the /exec link) that sends the tournament notifications: the
  * pairings of each round, the results to confirm. Empty: none are sent, and the switch in the preferences is hidden.
  */
-export const NOTIFY_URL = ''
+export const NOTIFY_URL = 'https://script.google.com/macros/s/AKfycbz5u3ydXQ3Y-PZAOFRj8B3OdCIKmF2X4BAHcK5wDNFHNn1I5OhmPrcX-DmTuVDIedahUw/exec'
 
 export const PUBLISH_URL = 'https://script.google.com/macros/s/AKfycbwZ6k7iDXYg47BQxs0jHuVmm1HbXoOHqLTR6LR7hUiMqtjvUPtIKWD9lOe0alFlNdob/exec'
 
