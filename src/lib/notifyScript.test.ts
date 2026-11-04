@@ -174,7 +174,7 @@ describe('tournament notifications (Apps Script)', () => {
     const { db, sent, post } = setup()
     db.set(`tournaments/${ID}/players/luca`, { name: 'Luca Bianchi', commander: 'Kraum / Tymna', uid: 'lu', at: 'A1' })
     expect(post({ token: 'tok', id: ID, action: 'request', player: 'luca' }).sent).toBe(2)
-    expect(sent[0]).toEqual({ token: 'tok-gina', title: 'Savona · tappa 4', body: 'Nuova iscrizione: Luca Bianchi (5 iscritti)', url: `#to/${ID}`, tag: `tour-req-${ID}` })
+    expect(sent[0]).toEqual({ token: 'tok-gina', title: 'Savona · tappa 4', body: 'Nuova iscrizione: Luca Bianchi', url: `#to/${ID}`, tag: `tour-join-${ID}-luca` })
     db.set(`tournaments/${ID}/players/olga`, { name: 'Olga', commander: 'Kraum / Tymna', uid: 'olga', at: 'A2' })
     post({ token: 'tok', id: ID, action: 'request', player: 'olga' })
     expect(sent.slice(2).map((m) => m.token)).toEqual(['tok-gina'])

@@ -28,7 +28,7 @@ const T = {
     top: (n) => 'Sei nella top ' + n + '. ',
     reported: (p, s) => p + ' ha segnato ' + s + ' per te: confermalo o correggilo.',
     requests: (n, p) => (n > 1 ? n + ' richieste di iscrizione da confermare, l\'ultima di ' + p : 'Nuova richiesta di iscrizione: ' + p),
-    joined: (p, n) => 'Nuova iscrizione: ' + p + ' (' + n + ' iscritti)',
+    joined: (p) => 'Nuova iscrizione: ' + p,
     accepted: 'Il TO ha confermato la tua iscrizione.',
     final: (n, of) => 'Torneo concluso: sei ' + n + '° su ' + of + '. Tocca per la classifica finale.',
   },
@@ -41,7 +41,7 @@ const T = {
     top: (n) => 'You made the top ' + n + '. ',
     reported: (p, s) => p + ' entered ' + s + ' for you: confirm it or fix it.',
     requests: (n, p) => (n > 1 ? n + ' registrations to confirm, the latest from ' + p : 'New registration request: ' + p),
-    joined: (p, n) => 'New registration: ' + p + ' (' + n + ' players)',
+    joined: (p) => 'New registration: ' + p,
     accepted: 'The TO confirmed your registration.',
     final: (n, of) => 'Tournament over: you placed #' + n + ' of ' + of + '. Tap for the final standings.',
   },
@@ -133,16 +133,19 @@ function toConfirm(id, tour, m) {
   return send([{ uid: p.uid, text: (t) => [title(tour, t), t.reported(by ? by.name : m.reportedBy, score)] }], id)
 }
 
-/** A registration from the app: to the TOs who run the stage, with how many are waiting (or registered). */
+/**
+ * A registration from the app, to the TOs who run the stage: one waiting for them with how many are waiting (a newer
+ * one replaces it), one already in on its own.
+ */
 function request(id, tour, key) {
   const p = get('tournaments/' + id + '/players/' + encodeURIComponent(key))
   if (!p) return 0
   return once(id + '|request|' + key + '|' + p.at, () => {
-    const all = list('tournaments/' + id + '/players').map(fieldsOf)
-    const waiting = all.filter((d) => d.pending).length
-    const text = (t) => [title(tour, t), p.pending ? t.requests(waiting, p.name) : t.joined(p.name, all.length - waiting)]
+    const waiting = p.pending ? list('tournaments/' + id + '/players').filter((d) => fieldsOf(d).pending).length : 0
+    const text = (t) => [title(tour, t), p.pending ? t.requests(waiting, p.name) : t.joined(p.name)]
+    const tag = p.pending ? 'tour-req-' + id : 'tour-join-' + id + '-' + key
     const to = runners(tour).filter((uid) => uid !== p.uid) // a TO registering themselves knows already
-    return send(to.map((uid) => ({ uid, text, url: '#to/' + id, tag: 'tour-req-' + id })), id)
+    return send(to.map((uid) => ({ uid, text, url: '#to/' + id, tag })), id)
   })
 }
 
