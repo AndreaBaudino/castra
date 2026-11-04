@@ -558,7 +558,7 @@ export async function joinTournament(
     if (existing) b.update(ref, mine)
     else b.set(ref, { name: p.name, ...mine, ...(p.verified ? {} : { pending: true }) })
   })
-  if (!existing && !p.verified) ping({ id, action: 'request', player: key })
+  if (!existing) ping({ id, action: 'request', player: key })
 }
 
 /** The decklist link (null: none), private until the tournament is over. */

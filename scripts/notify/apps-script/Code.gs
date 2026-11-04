@@ -8,7 +8,7 @@
 //
 // POST {token, id, action: 'round'}: the pairings of the round being played, to every player at it.
 // POST {token, id, action: 'report', match: 'r3t5'}: the result just entered, to the opponent, to confirm.
-// POST {token, id, action: 'request', player}: a registration waiting for a TO, to the TO who opened the tournament.
+// POST {token, id, action: 'request', player}: a registration from the app, to the TOs who run that stage.
 // POST {token, id, action: 'accepted', player}: the registration the TO confirmed, to the player.
 // POST {token, id, action: 'done', order: [player keys]}: each one's final place, from the TO who closed it.
 // What to send comes from Firestore, not from the request, and each is sent once: calling again sends nothing.
@@ -28,6 +28,7 @@ const T = {
     top: (n) => 'Sei nella top ' + n + '. ',
     reported: (p, s) => p + ' ha segnato ' + s + ' per te: confermalo o correggilo.',
     requests: (n, p) => (n > 1 ? n + ' richieste di iscrizione da confermare, l\'ultima di ' + p : 'Nuova richiesta di iscrizione: ' + p),
+    joined: (p, n) => 'Nuova iscrizione: ' + p + ' (' + n + ' iscritti)',
     accepted: 'Il TO ha confermato la tua iscrizione.',
     final: (n, of) => 'Torneo concluso: sei ' + n + '° su ' + of + '. Tocca per la classifica finale.',
   },
@@ -40,6 +41,7 @@ const T = {
     top: (n) => 'You made the top ' + n + '. ',
     reported: (p, s) => p + ' entered ' + s + ' for you: confirm it or fix it.',
     requests: (n, p) => (n > 1 ? n + ' registrations to confirm, the latest from ' + p : 'New registration request: ' + p),
+    joined: (p, n) => 'New registration: ' + p + ' (' + n + ' players)',
     accepted: 'The TO confirmed your registration.',
     final: (n, of) => 'Tournament over: you placed #' + n + ' of ' + of + '. Tap for the final standings.',
   },
@@ -131,15 +133,30 @@ function toConfirm(id, tour, m) {
   return send([{ uid: p.uid, text: (t) => [title(tour, t), t.reported(by ? by.name : m.reportedBy, score)] }], id)
 }
 
-/** A registration waiting for a TO: to the one who opened the tournament, with how many are waiting. */
+/** A registration from the app: to the TOs who run the stage, with how many are waiting (or registered). */
 function request(id, tour, key) {
   const p = get('tournaments/' + id + '/players/' + encodeURIComponent(key))
-  if (!p || !p.pending || !tour.by) return 0
+  if (!p) return 0
   return once(id + '|request|' + key + '|' + p.at, () => {
-    const waiting = list('tournaments/' + id + '/players').filter((d) => fieldsOf(d).pending).length
-    const text = (t) => [title(tour, t), t.requests(waiting, p.name)]
-    return send([{ uid: tour.by, text, url: '#to/' + id, tag: 'tour-req-' + id }], id)
+    const all = list('tournaments/' + id + '/players').map(fieldsOf)
+    const waiting = all.filter((d) => d.pending).length
+    const text = (t) => [title(tour, t), p.pending ? t.requests(waiting, p.name) : t.joined(p.name, all.length - waiting)]
+    const to = runners(tour).filter((uid) => uid !== p.uid) // a TO registering themselves knows already
+    return send(to.map((uid) => ({ uid, text, url: '#to/' + id, tag: 'tour-req-' + id })), id)
   })
+}
+
+/** Who runs the tournament: who opened it, and the organizers of its sheet, as firestore.rules' runs(). */
+function runners(tour) {
+  const s = (tour.drive && get('sources/' + tour.drive)) || {}
+  const event = ['l1', 'l2'].includes(s.kind)
+  const out = new Set(tour.by ? [tour.by] : [])
+  for (const d of list('organizers')) {
+    const uid = key(d)
+    const leagues = fieldsOf(d).leagues || []
+    if (event ? (s.tos || []).includes(uid) || leagues.includes(s.zone) : s.kind === 'league' && leagues.includes(s.league)) out.add(uid)
+  }
+  return [...out]
 }
 
 /** The registration a TO confirmed, to the player. */

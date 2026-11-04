@@ -26,7 +26,11 @@ const fields = (o: object) => Object.fromEntries(Object.entries(o).map(([k, v]) 
 
 function setup() {
   const db = new Map<string, object>([
-    [`tournaments/${ID}`, { name: 'Savona', stage: 4, status: 'swiss', round: 2, rounds: 4, cut: 0, started: 'T1', by: 'gina' }],
+    [`tournaments/${ID}`, { name: 'Savona', stage: 4, status: 'swiss', round: 2, rounds: 4, cut: 0, started: 'T1', by: 'gina', drive: 'sv' }],
+    ['sources/sv', { kind: 'league', league: 'Liguria' }],
+    ['organizers/gina', { leagues: ['Liguria'] }],
+    ['organizers/olga', { leagues: ['Liguria', 'Piemonte'] }], // a TO of the league who didn't open it
+    ['organizers/kim', { leagues: ['Piemonte'] }], // a TO of another league
     [`tournaments/${ID}/players/mia`, { name: 'Mia', commander: 'Kinnan, Bonder Prodigy', uid: 'kim' }],
     [`tournaments/${ID}/players/nina`, { name: 'Nina', commander: 'Atraxa, Grand Unifier', uid: 'lea' }],
     [`tournaments/${ID}/players/mario rossi`, { name: 'Mario Rossi', commander: 'Spider-Man 2099' }], // added by the TO
@@ -39,7 +43,9 @@ function setup() {
     ['users/lea', { lang: 'en', prefs: { notifyTournaments: true } }],
     ['users/pam', { lang: 'it', prefs: { notifyTournaments: false } }], // turned off
     ['users/gina', { lang: 'it', prefs: { notifyTournaments: true } }], // the TO
+    ['users/olga', { lang: 'it', prefs: { notifyTournaments: true } }],
     ['users/gina/devices/tok-gina', { at: 'x' }],
+    ['users/olga/devices/tok-olga', { at: 'x' }],
     ['users/kim/devices/tok-kim', { at: 'x' }],
     ['users/lea/devices/tok-lea', { at: 'x' }],
     ['users/lea/devices/tok-lea-2', { at: 'x' }],
@@ -148,18 +154,30 @@ describe('tournament notifications (Apps Script)', () => {
     expect(post({ token: 'tok', id: ID, action: 'report', match: 'r2t1' }).sent).toBe(0)
   })
 
-  it('tells the TO who opened the tournament of a registration waiting, with how many are waiting', () => {
+  it('tells the TOs who run the stage of a registration waiting, with how many are waiting', () => {
     const { db, sent, post } = setup()
     db.set(`tournaments/${ID}/players/luca`, { name: 'Luca Bianchi', commander: 'Kraum / Tymna', uid: 'lu', pending: true, at: 'A1' })
-    expect(post({ token: 'tok', id: ID, action: 'request', player: 'luca' }).sent).toBe(1)
+    expect(post({ token: 'tok', id: ID, action: 'request', player: 'luca' }).sent).toBe(2)
     expect(post({ token: 'tok', id: ID, action: 'request', player: 'luca' }).sent).toBe(0) // once
     db.set(`tournaments/${ID}/players/ugo`, { name: 'Ugo', commander: 'Atraxa, Grand Unifier', uid: 'ug', pending: true, at: 'A2' })
     post({ token: 'tok', id: ID, action: 'request', player: 'ugo' })
+    const req = (token: string, body: string) => ({ token, title: 'Savona · tappa 4', body, url: `#to/${ID}`, tag: `tour-req-${ID}` })
     expect(sent).toEqual([
-      { token: 'tok-gina', title: 'Savona · tappa 4', body: 'Nuova richiesta di iscrizione: Luca Bianchi', url: `#to/${ID}`, tag: `tour-req-${ID}` },
-      { token: 'tok-gina', title: 'Savona · tappa 4', body: "2 richieste di iscrizione da confermare, l'ultima di Ugo", url: `#to/${ID}`, tag: `tour-req-${ID}` },
+      req('tok-gina', 'Nuova richiesta di iscrizione: Luca Bianchi'),
+      req('tok-olga', 'Nuova richiesta di iscrizione: Luca Bianchi'),
+      req('tok-gina', "2 richieste di iscrizione da confermare, l'ultima di Ugo"),
+      req('tok-olga', "2 richieste di iscrizione da confermare, l'ultima di Ugo"),
     ])
-    expect(post({ token: 'tok', id: ID, action: 'request', player: 'mia' }).sent).toBe(0) // not waiting
+  })
+
+  it('tells the TOs of a verified registration too, but not the TO who registered themselves', () => {
+    const { db, sent, post } = setup()
+    db.set(`tournaments/${ID}/players/luca`, { name: 'Luca Bianchi', commander: 'Kraum / Tymna', uid: 'lu', at: 'A1' })
+    expect(post({ token: 'tok', id: ID, action: 'request', player: 'luca' }).sent).toBe(2)
+    expect(sent[0]).toEqual({ token: 'tok-gina', title: 'Savona · tappa 4', body: 'Nuova iscrizione: Luca Bianchi (5 iscritti)', url: `#to/${ID}`, tag: `tour-req-${ID}` })
+    db.set(`tournaments/${ID}/players/olga`, { name: 'Olga', commander: 'Kraum / Tymna', uid: 'olga', at: 'A2' })
+    post({ token: 'tok', id: ID, action: 'request', player: 'olga' })
+    expect(sent.slice(2).map((m) => m.token)).toEqual(['tok-gina'])
   })
 
   it('tells a player their registration was confirmed, only once it is', () => {
