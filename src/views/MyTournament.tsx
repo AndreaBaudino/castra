@@ -5,6 +5,8 @@ import type { Claim } from '../lib/claims'
 import { type Deck, checkDeck, isValid } from '../lib/decks'
 import { useBanlist } from '../lib/banlist'
 import { CheckBox } from './DeckDetail'
+import { NOTIFY_URL } from '../config'
+import { pushBlock, savePush } from '../lib/push'
 import type { Match as Played } from '../lib/matches'
 import { useLiveDoc } from '../lib/firebase'
 import { readStored, writeStored } from '../lib/storage'
@@ -57,6 +59,8 @@ interface Me {
   linkPlayer: () => void
   record: (ms: Played[]) => void // into the player's own matches, skipping the ones already there
   openGame: () => void // the life counter
+  tourNotify: boolean // the tournament notifications are on
+  setTourNotify: (on: boolean) => void
 }
 
 /** The cards of the account's tournaments and of the one whose code was typed, then the row for a code. */
@@ -119,7 +123,7 @@ function Clock({ tour, extra }: { tour: Tournament; extra?: number }) {
   return <b className={`to-score ${(left ?? 1) <= 0 ? 'bad-text' : ''}`}>{clockLabel(left, t)}</b>
 }
 
-function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLive, login, linkPlayer, record, openGame }: Me & { id: string; typed: boolean; close: () => void }) {
+function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLive, login, linkPlayer, record, openGame, tourNotify, setTourNotify }: Me & { id: string; typed: boolean; close: () => void }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
   // the whole tournament only when the player is in it (or typed its code): one document read for each of the others
@@ -165,6 +169,14 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   }
 
   const verified = !!claim?.verified
+  // right after registering: when the phone's permission makes sense
+  const askNotify = async () => {
+    if (!NOTIFY_URL || tourNotify || !user || pushBlock()) return
+    if (!(await dialog.confirm(t('push.tourAsk'), { ok: t('push.enable') }))) return
+    if ((await Notification.requestPermission()) !== 'granted') return
+    setTourNotify(true)
+    await savePush(user.uid).catch(() => setTourNotify(false))
+  }
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true)
     try {
@@ -262,6 +274,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
             verified={verified}
             decks={decks}
             mine={mine}
+            onJoined={askNotify}
           />
         )}
       </section>
@@ -381,6 +394,7 @@ function JoinSheet({
   verified,
   decks,
   mine,
+  onJoined,
 }: {
   open: boolean
   onClose: () => void
@@ -391,6 +405,7 @@ function JoinSheet({
   verified: boolean
   decks: Deck[]
   mine?: Player
+  onJoined: () => void
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
@@ -432,6 +447,7 @@ function JoinSheet({
       await joinTournament(user, id, me, { name, commander: cmd.trim(), deck: deck || null, invalid: !!check && !isValid(check), verified }, !!mine)
       if (clean !== saved) await saveList(id, me, clean || null)
       onClose()
+      if (!mine) onJoined()
     } catch {
       await dialog.alert(t('admin.error'))
     } finally {

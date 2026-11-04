@@ -29,7 +29,8 @@
   `npm run build` per i cambi a Vite/PWA.
 - Test: Vitest, in `src/lib/parsers.test.ts` (liste dei mazzi, foglio del circuito, salvataggio con memoria piena) e
   `src/lib/swiss.test.ts` (abbinamenti, classifica e top cut dei tornei, anche su tornei simulati),
-  `src/lib/appsScript.test.ts` (lo script che scrive i tornei nei fogli, su fogli finti in memoria); girano anche nel
+  `src/lib/appsScript.test.ts` (lo script che scrive i tornei nei fogli, su fogli finti in memoria),
+  `src/lib/notifyScript.test.ts` (lo script delle notifiche dei tornei, su un Firestore finto); girano anche nel
   deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
   il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.

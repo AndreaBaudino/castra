@@ -163,6 +163,34 @@ giro prima (`notify/state` su Firestore): il primo giro registra solo lo stato e
 GitHub sospende i workflow programmati dopo 60 giorni senza commit nel repository: in quel caso si riattivano da
 Actions con un clic.
 
+### Notifiche dei tornei
+
+Durante un torneo gestito in app le notifiche partono subito, non dal workflow: a ogni turno ogni giocatore riceve
+tavolo e avversario (o il bye), e quando uno dei due segna il risultato l'altro riceve quello da confermare. Le manda
+un secondo Apps Script (`scripts/notify/apps-script`), separato da quello dei fogli e senza accesso a Drive: l'app lo
+chiama dopo l'avvio di un turno e dopo un risultato segnato, e lui legge da Firestore cosa mandare e a chi (solo agli
+account con "Tornei" acceso nelle Preferenze, che l'app propone di accendere all'iscrizione). Ogni notifica parte una
+volta sola, anche se lo script viene chiamato più volte. Finché `NOTIFY_URL` in `src/config.ts` è vuoto non parte
+niente e l'interruttore non compare. Setup una tantum:
+
+1. **Account di servizio** (solo lettura del database e invio delle notifiche):
+   https://console.cloud.google.com/iam-admin/serviceaccounts?project=castra-a69ab → **Crea account di servizio**,
+   nome `castra-notify`, ruoli **Visualizzatore Cloud Datastore** (Cloud Datastore Viewer) e **Amministratore API
+   Firebase Cloud Messaging** (Firebase Cloud Messaging API Admin). Poi **Chiavi → Aggiungi chiave → Crea nuova
+   chiave → JSON**: si scarica un file.
+2. **Script**, con l'account `andreabaudino98@gmail.com`: https://script.google.com → **Nuovo progetto**, chiamalo
+   "Castra Notifiche". In **Impostazioni progetto** spunta "Mostra il file manifest appsscript.json". Nell'editor
+   incolla `scripts/notify/apps-script/Code.gs` in `Codice.gs` e `scripts/notify/apps-script/appsscript.json` in
+   `appsscript.json`.
+3. **Chiave**: in **Impostazioni progetto → Proprietà script** aggiungi `SERVICE_ACCOUNT` con valore tutto il
+   contenuto del file JSON del punto 1. Poi cancella il file dal computer.
+4. **Pubblica**: **Esegui il deployment → Nuovo deployment** → tipo "App web", esegui come "Me", accesso "Chiunque".
+   Autorizza (chiede solo di collegarsi a servizi esterni), copia l'URL che finisce con `/exec` e mettilo in
+   `NOTIFY_URL` in `src/config.ts`.
+
+Per aggiornare lo script dopo una modifica: incolla il codice nuovo, poi **Gestisci deployment → modifica → Nuova
+versione**, così l'URL resta lo stesso.
+
 ### Admin
 
 Gli account admin vedono **Area admin** nel Profilo: l'elenco dei giocatori del circuito collegati a un account, con

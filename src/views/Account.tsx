@@ -12,7 +12,7 @@ import { useSyncStatus } from '../lib/sync'
 import { deleteAccount } from '../lib/account'
 import { backupName, csvName, download, makeBackup, matchesCsv, mergeById, parseBackup } from '../lib/backup'
 import { CHANGELOG } from '../lib/changelog'
-import { BANLIST_URL, FORMAT_SITE_URL, GUIDE_URL, PRIVACY_URL, TOURNAMENT_GUIDE_URL } from '../config'
+import { BANLIST_URL, FORMAT_SITE_URL, GUIDE_URL, NOTIFY_URL, PRIVACY_URL, TOURNAMENT_GUIDE_URL } from '../config'
 import { Icon, Sheet } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { ClaimBadge, type CircuitPrefs, VerifiedTick, placeLabel } from './Circuit'
@@ -235,7 +235,7 @@ function CircuitIdentity({
   )
 }
 
-type Notify = 'notifyCircuit' | 'notifyBanlist' | 'notifyAdmin'
+type Notify = 'notifyCircuit' | 'notifyBanlist' | 'notifyAdmin' | 'notifyTournaments'
 
 /** The push notifications of the account: the first one turned on explains them before the phone asks. */
 function Notifications({ uid, isAdmin, prefs, set }: { uid: string | null; isAdmin: boolean; prefs: Prefs; set: (k: Notify, v: boolean) => void }) {
@@ -260,7 +260,10 @@ function Notifications({ uid, isAdmin, prefs, set }: { uid: string | null; isAdm
     if (Notification.permission === 'granted') activate(k)
     else setAsking(k)
   }
-  const kinds: Notify[] = isAdmin ? ['notifyCircuit', 'notifyBanlist', 'notifyAdmin'] : ['notifyCircuit', 'notifyBanlist']
+  // the tournaments' only once their script is there
+  const kinds = (['notifyCircuit', 'notifyBanlist', 'notifyTournaments', 'notifyAdmin'] as Notify[]).filter(
+    (k) => (k !== 'notifyAdmin' || isAdmin) && (k !== 'notifyTournaments' || !!NOTIFY_URL),
+  )
 
   return (
     <>

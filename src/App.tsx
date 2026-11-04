@@ -96,7 +96,7 @@ export default function App() {
   useDocFieldSync(uid, 'circuitMe', circuitMe, setCircuitMe)
   useDocFieldSync(uid, 'circuitFollow', follow, setFollow)
   // a device's token can change: saved again at start while notifications are on and allowed
-  const notify = prefs.notifyCircuit || prefs.notifyBanlist || prefs.notifyAdmin
+  const notify = prefs.notifyCircuit || prefs.notifyBanlist || prefs.notifyAdmin || prefs.notifyTournaments
   useEffect(() => {
     if (uid && notify && !pushBlock() && Notification.permission === 'granted') savePush(uid).catch(() => {})
   }, [uid, notify])
@@ -325,6 +325,8 @@ export default function App() {
                     login={() => go('account', 'login', true)}
                     linkPlayer={() => go('account', 'circuit', true)}
                     openGame={() => go('game')}
+                    tourNotify={prefs.notifyTournaments}
+                    setTourNotify={(on) => setPrefs((p) => ({ ...p, notifyTournaments: on }))}
                     record={(ms) =>
                       setMatches((all) => {
                         const have = new Set(all.map((m) => m.id))

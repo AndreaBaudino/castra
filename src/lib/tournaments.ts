@@ -7,7 +7,7 @@ import type { T } from '../i18n'
 import type { MetaDataset } from './meta'
 import type { Deck } from './decks'
 import type { Match as Played } from './matches'
-import { PUBLISH_URL } from '../config'
+import { NOTIFY_URL, PUBLISH_URL } from '../config'
 import { type Source, type SourceKind, isEvent } from './sources'
 import {
   type Entrant,
@@ -442,6 +442,19 @@ async function writeRound(
     tx.update(ref, { ...patch, round, started: fs.serverTimestamp() })
     tx.set(...logLine(f, id, { kind, round }))
   })
+  ping({ id, action: 'round' })
+}
+
+/** Has the notifications' Apps Script send what this change means to the players: it never holds the change up. */
+function ping(body: object) {
+  if (!NOTIFY_URL) return
+  fb()
+    .then(({ auth }) => auth.currentUser?.getIdToken())
+    // plain text: a JSON content type would need a preflight, which Apps Script doesn't answer
+    .then((token) => {
+      if (token) fetch(NOTIFY_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ token, ...body }) }).catch(() => {})
+    })
+    .catch(() => {})
 }
 
 /** The next Swiss round; `again`: the current one paired again. */
@@ -616,6 +629,7 @@ export async function reportScore(id: string, m: TableMatch, score: Score, me: s
   await logged(id, { kind: 'report', round: m.round, table: m.table, player: me, to: scoreText(score) }, ({ db, fs }, b) =>
     b.update(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)), { score, reportedBy: me, confirmed: false }),
   )
+  ping({ id, action: 'report', match: matchId(m.round, m.table) })
 }
 
 export async function confirmScore(id: string, m: TableMatch, me: string) {

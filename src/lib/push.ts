@@ -2,7 +2,8 @@ import { fb } from './firebase'
 import { readStored, writeStored } from './storage'
 
 // Push notifications: this device's Firebase Messaging token, saved at users/{uid}/devices/{token}. What to send is in
-// the account's prefs (notifyCircuit, notifyBanlist, notifyAdmin), and scripts/notify.mjs sends it.
+// the account's prefs (notifyCircuit, notifyBanlist, notifyAdmin), and scripts/notify.mjs sends it; notifyTournaments
+// is sent at once by scripts/notify/apps-script.
 
 const SAVED = 'cc.push' // { uid, token }: the token already saved for that account
 

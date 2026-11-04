@@ -132,8 +132,11 @@ scrivere codice. I mockup delle schermate sono su
   concluso, con le altre del torneo. Senza profilo verificato i risultati li segna il TO; dal menu si esce dal match.
 - Riaprendo l'app si ritrova la situazione attuale (tutto è su Firestore); se il telefono perde la rete si
   riallinea appena torna.
-- **Notifiche push**: quelle che esistono partono da un workflow di GitHub due volte al giorno, quindi non servono
-  per i turni. Durante il torneo l'app si aggiorna in diretta quando è aperta.
+- **Notifiche push**: abbinamenti del turno a ogni giocatore e risultato da confermare all'avversario, subito, da un
+  Apps Script a parte (`scripts/notify/apps-script`, README "Notifiche dei tornei"), che l'app chiama dopo l'avvio
+  del turno e dopo il risultato segnato e che legge da Firestore cosa mandare. Le altre notifiche partono dal workflow
+  di GitHub due volte al giorno. Durante il torneo l'app si aggiorna in diretta quando è aperta, e il telefono di un
+  giocatore legge solo i suoi match (meno letture di Firestore).
 - Sul computer (da 1024 px) gestione del torneo, pagina dal vivo, Area TO e Tornei in corso sono su due colonne; la
   pagina dal vivo affianca abbinamenti e classifica con il tempo più grande, già adatta a un monitor in sala.
 - Più avanti, forse: uno schermo da proiettare in sala con abbinamenti, timer e classifica.

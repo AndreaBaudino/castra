@@ -12,6 +12,7 @@ export interface Prefs {
   notifyCircuit: boolean
   notifyBanlist: boolean
   notifyAdmin: boolean
+  notifyTournaments: boolean // sent at once by scripts/notify/apps-script
 }
 
 export const PREFS_KEY = 'cc.prefs'
@@ -24,6 +25,7 @@ export const DEFAULT_PREFS: Prefs = {
   notifyCircuit: false,
   notifyBanlist: false,
   notifyAdmin: false,
+  notifyTournaments: false,
 }
 
 /** Saved prefs over the defaults, so settings added later get their default value. */

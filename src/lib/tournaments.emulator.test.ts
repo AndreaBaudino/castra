@@ -43,7 +43,8 @@ const SAVONA = '1Qck40xjQ_zODQtI3YY6qFGFq1adeHsMiUCwPIhZ7mvw'
 const source: Source = { drive: SAVONA, kind: 'league', year: 2026, season: 's2', league: 'Savona' }
 const gina = { uid: 'gina' } as AppUser
 
-describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulator', () => {
+// a whole tournament against the emulator: seconds, past Vitest's 5 s default
+describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulator', { timeout: 60_000 }, () => {
   // the emulator's test kit is installed only where this runs: its types can't be imported
   type Db = ReturnType<typeof import('firebase/firestore').getFirestore>
   type Env = {
