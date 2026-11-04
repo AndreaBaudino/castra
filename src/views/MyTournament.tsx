@@ -6,7 +6,7 @@ import { type Deck, checkDeck, isValid } from '../lib/decks'
 import { useBanlist } from '../lib/banlist'
 import { CheckBox } from './DeckDetail'
 import { NOTIFY_URL } from '../config'
-import { pushBlock, savePush } from '../lib/push'
+import { pushBlock, turnOnPush } from '../lib/push'
 import type { Match as Played } from '../lib/matches'
 import { useLiveDoc } from '../lib/firebase'
 import { readStored, writeStored } from '../lib/storage'
@@ -172,10 +172,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   // right after registering: when the phone's permission makes sense
   const askNotify = async () => {
     if (!NOTIFY_URL || tourNotify || !user || pushBlock()) return
-    if (!(await dialog.confirm(t('push.tourAsk'), { ok: t('push.enable') }))) return
-    if ((await Notification.requestPermission()) !== 'granted') return
-    setTourNotify(true)
-    await savePush(user.uid).catch(() => setTourNotify(false))
+    if (await dialog.confirm(t('push.tourAsk'), { ok: t('push.enable') })) await turnOnPush(user.uid, setTourNotify)
   }
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true)

@@ -26,6 +26,13 @@ export async function savePush(uid: string) {
   writeStored(SAVED, { uid, token })
 }
 
+/** The phone's permission, then the kind turned on (`set`) and this device saved: it goes back off if saving fails. */
+export async function turnOnPush(uid: string, set: (on: boolean) => void) {
+  if ((await Notification.requestPermission()) !== 'granted') return
+  set(true)
+  await savePush(uid).catch(() => set(false))
+}
+
 /** Signing out: this device stops getting the account's notifications. */
 export async function dropPush(uid: string) {
   const saved = readStored<{ uid: string; token: string } | null>(SAVED, null)

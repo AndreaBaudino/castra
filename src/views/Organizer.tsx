@@ -57,7 +57,8 @@ import {
   useUnfiled,
 } from '../lib/tournaments'
 import { Icon, Sheet } from '../components/ui'
-import { TOURNAMENT_GUIDE_URL } from '../config'
+import { NOTIFY_URL, TOURNAMENT_GUIDE_URL } from '../config'
+import { pushBlock, turnOnPush } from '../lib/push'
 import { useDialog } from '../components/Dialog'
 import { SubPageShell } from './Circuit'
 import { Toggle } from './Account'
@@ -323,9 +324,13 @@ export function TournamentAdmin({
   dataset,
   onBack,
   openLive,
+  tourNotify,
+  setTourNotify,
 }: {
   id: string
   openLive: () => void
+  tourNotify: boolean // the tournament notifications are on: the registration requests reach this TO
+  setTourNotify: (on: boolean) => void
   claims: Map<string, Claim>
   user: AppUser | null
   organizer: Organizer | null
@@ -481,6 +486,15 @@ export function TournamentAdmin({
             </div>
           )}
           {tour.status === 'open' && <p className="muted small no-margin">{t('run.codeHint')}</p>}
+          {/* the requests reach the TO only with the notifications on: a TO never registers, so never gets asked */}
+          {tour.status === 'open' && NOTIFY_URL && !tourNotify && !pushBlock() && (
+            <div className="notice">
+              {t('run.notifyAsk')}{' '}
+              <button className="btn ghost small" onClick={() => turnOnPush(user.uid, setTourNotify)}>
+                {t('push.enable')}
+              </button>
+            </div>
+          )}
           <button className="link" onClick={openLive}>
             {t('run.livePage')}
           </button>
