@@ -261,7 +261,8 @@ describe('pairings', () => {
   })
 })
 
-describe('whole tournaments', () => {
+// hundreds of simulated tournaments: seconds on a slow machine, past Vitest's 5 s default
+describe('whole tournaments', { timeout: 60_000 }, () => {
   // random tournaments of every size, with draws, drops and late entries: what must always hold
   const SCORES: Score[] = [[2, 0, 0], [2, 1, 0], [0, 2, 0], [1, 2, 0], [1, 1, 0], [1, 0, 0], [0, 0, 0], [2, 0, 1]]
   type Run = { entrants: Entrant[]; matches: Match[]; rounds: number }
