@@ -287,6 +287,14 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await finishTournament(id)
     state.ctx = { db: env.unauthenticatedContext().firestore(), fs }
     expect(await loadList(id, 'mia')).toBe(MOX)
+    // a player's phone reads only their own matches (useTournament with `me`): the same ones as in the whole list
+    s = await read(id)
+    const own = await fs.getDocs(
+      fs.query(fs.collection(env.authenticatedContext('kim').firestore(), 'tournaments', id, 'matches'), fs.or(fs.where('p1', '==', 'mia'), fs.where('p2', '==', 'mia'))),
+    )
+    const ids = (ms: TableMatch[]) => ms.map((m) => `r${m.round}t${m.table}`).sort()
+    expect(own.docs.map((d) => d.id).sort()).toEqual(ids(s.matches.filter((m) => m.p1 === 'mia' || m.p2 === 'mia')))
+    expect(own.size).toBeGreaterThan(1)
     // the log: every change with who made it, for the TOs only
     const log = async () => (await fs.getDocs(fs.collection(env.authenticatedContext('gina').firestore(), 'tournaments', id, 'log'))).docs.map((d) => d.data())
     const lines = await log()

@@ -38,9 +38,11 @@ export function useLiveDoc<T>(path: string | null) {
 
 /**
  * A Firestore collection kept up to date, as [id, data] pairs; `loaded` once the server confirmed it. `where` keeps
- * only the documents whose field compares so with the value.
+ * only the documents whose field compares so with the value, or (a list) that match any of the conditions: a change
+ * to the other documents isn't sent, nor paid for.
  */
-export function useLiveCollection<T>(name: string | null, where?: [string, '==' | '>=', string | boolean]) {
+type Cond = [string, '==' | '>=', string | boolean]
+export function useLiveCollection<T>(name: string | null, where?: Cond | Cond[]) {
   const [docs, setDocs] = useState<[string, T][]>([])
   const [loaded, setLoaded] = useState(false) // confirmed by the server, not just the offline cache
   useEffect(() => {
@@ -50,8 +52,13 @@ export function useLiveCollection<T>(name: string | null, where?: [string, '==' 
     fb().then(({ db, fs }) => {
       if (cancelled) return
       const col = fs.collection(db, name)
+      const conds = (where && (Array.isArray(where[0]) ? where : [where])) as Cond[] | undefined
       unsub = fs.onSnapshot(
-        where ? fs.query(col, fs.where(...where)) : col,
+        !conds
+          ? col
+          : conds.length > 1
+            ? fs.query(col, fs.or(...conds.map((c) => fs.where(...c))))
+            : fs.query(col, fs.where(...conds[0])),
         { includeMetadataChanges: true },
         (snap) => {
           setDocs(snap.docs.map((d) => [d.id, d.data() as T]))
@@ -64,6 +71,6 @@ export function useLiveCollection<T>(name: string | null, where?: [string, '==' 
       cancelled = true
       unsub()
     }
-  }, [name, where?.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, JSON.stringify(where)]) // eslint-disable-line react-hooks/exhaustive-deps
   return { docs, loaded }
 }

@@ -298,10 +298,13 @@ export async function findByCode(code: string): Promise<string | null> {
 }
 
 /** A tournament with its players and matches, live. */
-export function useTournament(id: string | null) {
+export function useTournament(id: string | null, me?: string | null) {
   const t = useLiveDoc<Tournament>(id && `tournaments/${id}`)
   const players = useLiveCollection<Player>(id && `tournaments/${id}/players`).docs
-  const docs = useLiveCollection<TableMatch>(id && `tournaments/${id}/matches`).docs
+  // a player's phone: only their own matches while it's played, so each result reaches the two at that table and not
+  // every phone at the tournament (Firestore reads); all of them once it's over, for the final standings
+  const mine: [string, '==', string][] | undefined = me && t?.status !== 'done' ? [['p1', '==', me], ['p2', '==', me]] : undefined
+  const docs = useLiveCollection<TableMatch>(id && `tournaments/${id}/matches`, mine).docs
   const matches = useMemo(() => docs.map(([, m]) => m).sort((a, b) => a.round - b.round || a.table - b.table), [docs])
   return { t, players, matches }
 }

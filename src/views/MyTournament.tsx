@@ -124,7 +124,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   const dialog = useDialog()
   // the whole tournament only when the player is in it (or typed its code): one document read for each of the others
   const entered = useLiveDoc<Player>(me && `tournaments/${id}/players/${me}`) != null
-  const { t: tour, players, matches } = useTournament(typed || entered ? id : null)
+  const { t: tour, players, matches } = useTournament(typed || entered ? id : null, me)
   const penalties = useMyPenalties(entered ? id : null, user?.uid ?? null)
   const [joining, setJoining] = useState(false)
   const [result, setResult] = useState<TableMatch | null>(null)

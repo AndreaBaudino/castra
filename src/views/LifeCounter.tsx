@@ -375,7 +375,7 @@ export default function LifeCounter({
   // a tournament match (opened from the home) follows the live round: its clock runs on its own, with the minutes
   // the TO added to the table, and the result goes to the tournament
   const tg = game.tour
-  const live = useTournament(tg?.id ?? null)
+  const live = useTournament(tg?.id ?? null, tg?.me)
   const tm = tg && live.matches.find((x) => x.round === tg.round && (x.p1 === tg.me || x.p2 === tg.me))
   const flip = tm?.p2 === tg?.me
   const started = tg && live.t?.round === tg.round ? live.t.started : null
