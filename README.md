@@ -188,6 +188,9 @@ niente e l'interruttore non compare. Setup una tantum:
    Autorizza (chiede solo di collegarsi a servizi esterni), copia l'URL che finisce con `/exec` e mettilo in
    `NOTIFY_URL` in `src/config.ts`.
 
+Per controllare il setup senza un torneo: nell'editor dello script scegli la funzione `checkSetup` e premi **Esegui**;
+il log dice se la chiave funziona, se Firestore risponde e se l'account di servizio può mandare notifiche.
+
 Per aggiornare lo script dopo una modifica: incolla il codice nuovo, poi **Gestisci deployment → modifica → Nuova
 versione**, così l'URL resta lo stesso.
 

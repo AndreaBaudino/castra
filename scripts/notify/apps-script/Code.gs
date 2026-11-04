@@ -145,6 +145,23 @@ function send(out, id) {
   return UrlFetchApp.fetchAll(requests).filter((r) => r.getResponseCode() === 200).length
 }
 
+/**
+ * Run it from the editor (Run → checkSetup) to check the setup without a tournament: the key in SERVICE_ACCOUNT gives
+ * an access token, Firestore answers, and Firebase Messaging accepts this service account (a dry run, nothing sent).
+ */
+function checkSetup() {
+  console.log('Chiave: ok. Firestore: ' + list('tournaments').length + ' tornei in app.')
+  const res = UrlFetchApp.fetch('https://fcm.googleapis.com/v1/projects/' + PROJECT + '/messages:send', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + access() },
+    muteHttpExceptions: true,
+    payload: JSON.stringify({ validate_only: true, message: { token: 'prova', data: { title: 'prova' } } }),
+  })
+  // a made-up device is refused (400): what counts is being let in at all (403: the role is missing)
+  console.log(res.getResponseCode() === 403 ? 'Messaging: manca il ruolo Amministratore API Firebase Cloud Messaging.' : 'Messaging: ok.')
+}
+
 // ---------- Firestore, as the service account ----------
 
 function get(path) {
