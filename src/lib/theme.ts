@@ -25,6 +25,16 @@ export const currentTheme = (t: Theme): Theme => ({
   highlight: t.highlight.toLowerCase() === '#d4a64a' ? DEFAULT_THEME.highlight : t.highlight,
 })
 
+/** The text on an accent background: dark ink, or white when the accent is too dark to read ink on (WCAG contrast). */
+export function inkOn(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  const l = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return (l + 0.05) / 0.0535 >= 1.05 / (l + 0.05) ? '#0b0b0c' : '#ffffff'
+}
+
 const FONT: Record<Theme['scale'], string> = { S: '14px', M: '15px', L: '16.5px' }
 
 export function applyTheme(t: Theme) {
@@ -35,6 +45,7 @@ export function applyTheme(t: Theme) {
   const set = (name: string, v: string, def: string) =>
     v.toLowerCase() === def ? root.style.removeProperty(name) : root.style.setProperty(name, v)
   set('--red', t.accent, DEFAULT_THEME.accent)
+  set('--on-accent', inkOn(t.accent), inkOn(DEFAULT_THEME.accent))
   // the logo crest keeps its brighter red by default and follows a custom accent
   set('--crest', t.accent, DEFAULT_THEME.accent)
   tintFavicon(t.accent)

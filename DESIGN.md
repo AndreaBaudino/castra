@@ -85,7 +85,8 @@ colori fissi. Questo file e `index.css` vanno tenuti allineati.
 
 L'ember del chiaro è più scuro nei testi perché `#F65A1A` su bianco non si legge abbastanza. Colore principale e di
 risalto si possono cambiare dalla Grafica: `applyTheme` (`src/lib/theme.ts`) sovrascrive `--red` e `--gold` solo se
-diversi dal predefinito. I temi salvati prima di Forge (rosso `#b8322a`, oro `#d4a64a`) contano come predefiniti
+diversi dal predefinito. Il testo sopra l'ember (`--on-accent`) segue il colore principale: resta scuro sui colori
+chiari e diventa bianco su quelli scuri, scegliendo quello con più contrasto (`inkOn`). I temi salvati prima di Forge (rosso `#b8322a`, oro `#d4a64a`) contano come predefiniti
 (`currentTheme`).
 
 ## Colori di stato
