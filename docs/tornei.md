@@ -252,6 +252,9 @@ Registro del torneo (dopo la fase 4):
 ```
 tournaments/{tid}/log/{auto}     at (ora del server), by (account), kind (cosa è successo), round?, table?, player?,
                                  from?, to?          (lo leggono solo i TO; nessuno lo modifica o lo cancella)
+                                 + infraction?, text?, uid? per le penalità (warning, gameLoss, matchLoss, dq), le
+                                 note e i deck check: le scrivono i TO; con uid (l'account del giocatore) le legge
+                                 anche lui
   /players/{playerKey}           + invalid (il mazzo di Castra non passava il controllo all'iscrizione)
 ```
 

@@ -9,7 +9,12 @@ import { type Score, suggestedRounds, validScore, winnerOf } from '../lib/swiss'
 import { cardSuggestions, closest } from '../lib/aliases'
 import type { Claim } from '../lib/claims'
 import {
+  type Infraction,
   type LogEntry,
+  type Penalty,
+  INFRACTIONS,
+  PENALTIES,
+  addPenalty,
   type Player,
   type TableMatch,
   type Tournament,
@@ -55,6 +60,7 @@ import { Icon, Sheet } from '../components/ui'
 import { TOURNAMENT_GUIDE_URL } from '../config'
 import { useDialog } from '../components/Dialog'
 import { SubPageShell } from './Circuit'
+import { Toggle } from './Account'
 import { MatchList, RankingList } from './Live'
 
 // The tournament organizers' pages (docs/tornei.md): the card on the home, the TO area (#to) with the tournaments to
@@ -339,6 +345,7 @@ export function TournamentAdmin({
   // the decklists, read once it's over: copying needs them at hand (a phone allows it only right after the tap)
   const lists = useLists(id, players, tour?.status === 'done')
   const { organizers } = useOrganizers()
+  const log = useLog(tour ? id : null, tour?.at ?? '')
 
   if (!organizer || !user)
     return (
@@ -357,6 +364,8 @@ export function TournamentAdmin({
   const nameOf = (k: string | null) => (k ? (names.get(k)?.name ?? k) : t('meta.bye'))
   // who did it: a TO, a player of the tournament, otherwise an admin
   const whoOf = (uid: string) => organizers.get(uid)?.name ?? players.find(([, p]) => p.uid === uid)?.[1].name ?? t('log.admin')
+  const penalties = new Map<string, number>()
+  for (const e of log) if (e.player && isPenalty(e)) penalties.set(e.player, (penalties.get(e.player) ?? 0) + 1)
   const current = matches.filter((m) => m.round === tour.round)
   const missing = current.filter((m) => m.p2 && !m.score).length
   const toConfirm = current.filter(unconfirmed).length
@@ -714,6 +723,7 @@ export function TournamentAdmin({
                       <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>
                         {p.commander ?? t('run.noCommander')}
                         {p.invalid && <span className="bad-text"> · {t('run.badDeck')}</span>}
+                        {penalties.has(k) && <span className="bad-text"> · {t('run.penalties', { n: penalties.get(k)! })}</span>}
                       </span>
                     </div>
                     <Icon name="chevron" size={16} />
@@ -740,7 +750,7 @@ export function TournamentAdmin({
           </section>
         )}
 
-        <LogCard id={id} since={tour.at} nameOf={nameOf} whoOf={whoOf} />
+        <LogCard log={log} nameOf={nameOf} whoOf={whoOf} />
 
         <button
           className="btn danger"
@@ -765,7 +775,7 @@ export function TournamentAdmin({
         cut={!!result && result.round > tour.rounds && tour.status !== 'swiss'}
         nameOf={nameOf}
         onClose={() => setResult(null)}
-        log={{ since: tour.at, whoOf }}
+        log={{ entries: log, whoOf, tour }}
       />
       <PlayerSheet
         id={id}
@@ -774,6 +784,10 @@ export function TournamentAdmin({
         keyOf={player}
         player={player ? (names.get(player) ?? null) : null}
         onClose={() => setPlayer(null)}
+        log={log}
+        match={current.find((m) => m.p1 === player || m.p2 === player)}
+        nameOf={nameOf}
+        whoOf={whoOf}
       />
       <AddPlayerSheet
         open={adding}
@@ -812,11 +826,13 @@ export function ResultSheet({
   me?: string
   initial?: Score // the games counted on the life counter
   onSaved?: () => void
-  log?: { since: string; whoOf: (uid: string) => string } // the TO: the table's changes
+  log?: { entries: LogEntry[]; whoOf: (uid: string) => string; tour: Tournament } // the TO: the table's changes
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
-  const lines = useLog(match && log ? id : null, log?.since ?? '').filter((e) => e.round === match?.round && e.table === match?.table)
+  const lines = (log?.entries ?? []).filter((e) => e.round === match?.round && e.table === match?.table)
+  const [check, setCheck] = useState(false)
+  useEffect(() => setCheck(false), [match?.round, match?.table])
   const [s, setS] = useState<Score>([0, 0, 0])
   const [busy, setBusy] = useState(false)
   const flip = !!me && match?.p2 === me
@@ -883,6 +899,12 @@ export function ResultSheet({
               </button>
             </div>
           )}
+          {log && !check && match.p2 && (
+            <button className="btn ghost" onClick={() => setCheck(true)}>
+              {t('pen.deckCheck')}
+            </button>
+          )}
+          {log && check && <PenaltyForm id={id} tour={log.tour} match={match} log={log.entries} onDone={onClose} />}
           {log && lines.length > 0 && <LogLines log={lines} nameOf={nameOf} whoOf={log.whoOf} />}
         </div>
       )}
@@ -890,14 +912,12 @@ export function ResultSheet({
   )
 }
 
-/** The tournament's log, read only once opened: who changed what, newest first. */
-function LogCard({ id, since, nameOf, whoOf }: { id: string; since: string; nameOf: (k: string | null) => string; whoOf: (uid: string) => string }) {
+/** The tournament's log: who changed what, newest first. */
+function LogCard({ log, nameOf, whoOf }: { log: LogEntry[]; nameOf: (k: string | null) => string; whoOf: (uid: string) => string }) {
   const { t } = useI18n()
-  const [open, setOpen] = useState(false)
-  const log = useLog(open ? id : null, since)
   return (
     <section className="card">
-      <details onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <details>
         <summary>{t('log.title')}</summary>
         <p className="muted small">{t('log.hint')}</p>
         {log.length ? <LogLines log={log} nameOf={nameOf} whoOf={whoOf} /> : <p className="muted small no-margin">{t('log.empty')}</p>}
@@ -921,6 +941,8 @@ function LogLines({ log, nameOf, whoOf }: { log: LogEntry[]; nameOf: (k: string 
             from: e.from ?? '',
             to: e.to ?? '',
           })}
+          {e.infraction && ` · ${t(`inf.${e.infraction}`)}`}
+          {e.text && <span className="muted"> · {e.text}</span>}
         </li>
       ))}
     </ul>
@@ -966,6 +988,10 @@ function PlayerSheet({
   keyOf,
   player,
   onClose,
+  log,
+  match,
+  nameOf,
+  whoOf,
 }: {
   id: string
   user: AppUser
@@ -973,15 +999,22 @@ function PlayerSheet({
   keyOf: string | null
   player: Player | null
   onClose: () => void
+  log: LogEntry[]
+  match?: TableMatch // in the round being played
+  nameOf: (k: string | null) => string
+  whoOf: (uid: string) => string
 }) {
   const { t } = useI18n()
   const dialog = useDialog()
   const [cmd, setCmd] = useState('')
   const [list, setList] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [pen, setPen] = useState(false)
+  const notes = log.filter((e) => e.player === keyOf && (isPenalty(e) || e.kind === 'note'))
   useEffect(() => {
     setCmd(player?.commander ?? '')
   }, [player?.commander, keyOf])
+  useEffect(() => setPen(false), [keyOf])
   useEffect(() => {
     setList(null)
     if (keyOf && player?.list) loadList(id, keyOf).then(setList, () => {})
@@ -1006,6 +1039,14 @@ function PlayerSheet({
             <a className="link" href={list} target="_blank" rel="noreferrer">
               {t('run.openList')}
             </a>
+          )}
+          {notes.length > 0 && <LogLines log={notes} nameOf={nameOf} whoOf={whoOf} />}
+          {pen ? (
+            <PenaltyForm id={id} tour={tour} player={[k, player]} match={match} log={log} onDone={onClose} />
+          ) : (
+            <button className="btn ghost" onClick={() => setPen(true)}>
+              {t('pen.add')}
+            </button>
           )}
           <CommanderInput value={cmd} onChange={setCmd} />
           <button
@@ -1045,6 +1086,112 @@ function PlayerSheet({
         </div>
       )}
     </Sheet>
+  )
+}
+
+const isPenalty = (e: LogEntry) => (PENALTIES as readonly string[]).includes(e.kind) && e.kind !== 'note'
+
+/**
+ * A penalty or a note on a player, or a deck check at a table (no player): a line of the log. A match loss (and a
+ * disqualification) can also give the match being played to the opponent, 2-0; a disqualification drops the player.
+ */
+function PenaltyForm({
+  id,
+  tour,
+  player,
+  match,
+  log,
+  onDone,
+}: {
+  id: string
+  tour: Tournament
+  player?: [string, Player]
+  match?: TableMatch
+  log: LogEntry[]
+  onDone: () => void
+}) {
+  const { t } = useI18n()
+  const dialog = useDialog()
+  const [k, p] = player ?? []
+  const [kind, setKind] = useState<Penalty>(p ? 'warning' : 'deckCheck')
+  const [inf, setInf] = useState<Infraction | ''>('')
+  const [round, setRound] = useState(match?.round ?? tour.round)
+  const [text, setText] = useState('')
+  const [apply, setApply] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const loses = (kind === 'matchLoss' || kind === 'dq') && !!match?.p2 && round === match.round
+  // a second warning for the same infraction may become a game loss: the TO decides
+  const before = kind === 'warning' && inf ? log.filter((e) => e.player === k && e.kind === 'warning' && e.infraction === inf).length : 0
+  const save = async () => {
+    setBusy(true)
+    try {
+      await addPenalty(id, {
+        kind,
+        round,
+        player: k,
+        table: k ? undefined : match?.table,
+        infraction: inf || undefined,
+        text: text.trim() || undefined,
+        uid: kind === 'note' ? undefined : p?.uid,
+      })
+      if (loses && apply) await setScore(id, match!, match!.p1 === k ? [0, 2, 0] : [2, 0, 0])
+      if (kind === 'dq' && tour.status === 'swiss' && p!.drop == null) await setDrop(id, k!, tour.round)
+      onDone()
+    } catch {
+      await dialog.alert(t('admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="form">
+      {p ? (
+        <div className="chips wrap">
+          {PENALTIES.map((x) => (
+            <button key={x} className={`chip ${kind === x ? 'on' : ''}`} onClick={() => setKind(x)}>
+              {t(`pen.${x}`)}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <strong>{t('pen.deckCheckAt', { n: match?.table ?? '' })}</strong>
+      )}
+      {p && kind !== 'note' && (
+        <label>
+          <span>{t('pen.infraction')}</span>
+          <select value={inf} onChange={(e) => setInf(e.target.value as Infraction | '')}>
+            <option value="">{t('pen.noInfraction')}</option>
+            {INFRACTIONS.map((x) => (
+              <option key={x} value={x}>
+                {t(`inf.${x}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {p && tour.round > 0 && (
+        <label>
+          <span>{t('pen.round')}</span>
+          <select value={round} onChange={(e) => setRound(+e.target.value)}>
+            {Array.from({ length: tour.round + 1 }, (_, i) => tour.round - i).map((r) => (
+              <option key={r} value={r}>
+                {r ? t('run.roundN', { n: r }) : t('pen.beforeStart')}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <label>
+        <span>{t(p ? 'pen.text' : 'pen.outcome')}</span>
+        <input value={text} maxLength={300} onChange={(e) => setText(e.target.value)} />
+      </label>
+      {before > 0 && <p className="bad-text small no-margin">{t('pen.again', { n: before })}</p>}
+      {loses && <Toggle label={t('pen.apply', { r: match!.round })} on={apply} set={setApply} />}
+      {kind === 'dq' && tour.status === 'swiss' && <p className="muted small no-margin">{t('pen.dqDrop', { r: tour.round })}</p>}
+      <button className="btn primary" disabled={busy} onClick={save}>
+        {t('pen.save')}
+      </button>
+    </div>
   )
 }
 

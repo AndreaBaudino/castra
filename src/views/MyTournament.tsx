@@ -11,6 +11,7 @@ import { readStored, writeStored } from '../lib/storage'
 import { freshTimer } from '../lib/timer'
 import { placeLabel } from './Circuit'
 import {
+  type Penalty,
   type Player,
   type TableMatch,
   type Tournament,
@@ -31,6 +32,7 @@ import {
   tournamentTitle,
   unconfirmed,
   useNow,
+  useMyPenalties,
   useTournament,
   useTournaments,
 } from '../lib/tournaments'
@@ -123,6 +125,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   // the whole tournament only when the player is in it (or typed its code): one document read for each of the others
   const entered = useLiveDoc<Player>(me && `tournaments/${id}/players/${me}`) != null
   const { t: tour, players, matches } = useTournament(typed || entered ? id : null)
+  const penalties = useMyPenalties(entered ? id : null, user?.uid ?? null)
   const [joining, setJoining] = useState(false)
   const [result, setResult] = useState<TableMatch | null>(null)
   const [busy, setBusy] = useState(false)
@@ -337,6 +340,18 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
             <p className="small no-margin good-text">{t('join.result', { s: sideScore(current.score, flip) })}</p>
           )}
         </>
+      )}
+      {penalties.length > 0 && (
+        <div>
+          <p className="bad-text small no-margin">{t('join.penalties')}</p>
+          {penalties.map((e, i) => (
+            <p key={i} className="muted small no-margin">
+              {t(`pen.${e.kind as Penalty}`)} · {e.round ? t('run.roundN', { n: e.round }) : t('pen.beforeStart')}
+              {e.infraction && ` · ${t(`inf.${e.infraction}`)}`}
+              {e.text && ` · ${e.text}`}
+            </p>
+          ))}
+        </div>
       )}
       {live}
       {verified && tour.status === 'swiss' && mine?.drop == null && (

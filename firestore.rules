@@ -287,11 +287,12 @@ service cloud.firestore {
           allow delete: if managed() || (holds(key) && !tour().get('filed', false));
         }
       }
-      // the log: a line for each change, written with it, signed and timed by the server. Its TOs read it; a player
-      // writes only the lines of their own actions; nobody changes or deletes a line (an admin, from the console)
+      // the log: a line for each change, written with it, signed and timed by the server. Its TOs read it, a player
+      // the penalties given to their account; a player writes only the lines of their own actions; nobody changes or
+      // deletes a line (an admin, from the console)
       match /log/{lid} {
-        allow read: if managed();
-        allow create: if request.resource.data.keys().hasOnly(['at', 'by', 'kind', 'round', 'table', 'player', 'from', 'to'])
+        allow read: if managed() || (request.auth != null && resource.data.get('uid', null) == request.auth.uid);
+        allow create: if request.resource.data.keys().hasOnly(['at', 'by', 'kind', 'round', 'table', 'player', 'from', 'to', 'infraction', 'text', 'uid'])
           && request.resource.data.by == request.auth.uid
           && request.resource.data.at == request.time
           && round(request.resource.data, 'round')
@@ -299,12 +300,15 @@ service cloud.firestore {
             || (request.resource.data.table is int && request.resource.data.table >= 0 && request.resource.data.table <= 300))
           && optional(request.resource.data, 'player', 200)
           && optional(request.resource.data, 'from', 300) && optional(request.resource.data, 'to', 300)
+          && optional(request.resource.data, 'infraction', 40) && optional(request.resource.data, 'text', 300)
+          && optional(request.resource.data, 'uid', 128)
           && (managed()
             || (request.resource.data.kind in ['join', 'commander', 'leave', 'report', 'confirm', 'drop']
-              && holds(request.resource.data.get('player', ''))))
+              && holds(request.resource.data.get('player', ''))
+              && request.resource.data.get('uid', null) == null))
           && request.resource.data.kind in ['join', 'commander', 'leave', 'report', 'confirm', 'drop', 'undrop', 'add',
             'remove', 'accept', 'score', 'extra', 'pair', 'repair', 'cut', 'done', 'filed', 'unfiled', 'publish',
-            'unpublish', 'cancel'];
+            'unpublish', 'cancel', 'warning', 'gameLoss', 'matchLoss', 'dq', 'note', 'deckCheck'];
       }
       // a Bo3 result, games won by p1, by p2 and drawn: as src/lib/swiss.ts validScore
       function score(d) {

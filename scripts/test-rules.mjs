@@ -5,7 +5,7 @@
 
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { readFileSync } from 'node:fs'
-import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
 
 const env = await initializeTestEnvironment({
   projectId: 'demo-castra',
@@ -309,6 +309,15 @@ await denied('a player reads the log', getDoc(doc(kim, first.path)))
 await denied('a spectator reads the log', getDoc(doc(guest, first.path)))
 await denied('changing a line', updateDoc(doc(gina, first.path), { to: '0-2' }))
 await denied('deleting a line, even the TO', deleteDoc(doc(gina, first.path)))
+// penalties: given by the TO, seen by the player's account too
+const penalty = (more = {}) => line('gina', { kind: 'warning', table: null, from: null, to: null, player: 'mia', infraction: 'tardiness', text: 'In ritardo di 5 minuti', uid: 'kim', ...more })
+await allowed('a penalty, by the TO', addDoc(logs(gina), penalty()))
+await denied('a penalty with a note too long', addDoc(logs(gina), penalty({ text: 'x'.repeat(301) })))
+await denied('a penalty, by a player', addDoc(logs(kim), line('kim', { kind: 'warning', player: 'mia' })))
+await denied('a line of your own, readable by another account', addDoc(logs(kim), line('kim', { kind: 'report', player: 'mia', uid: 'lea' })))
+const mine = (db, uid) => getDocs(query(logs(db), where('uid', '==', uid)))
+await allowed('the player reads their penalties', mine(kim, 'kim'))
+await denied("a player reads someone else's penalties", mine(lea, 'kim'))
 
 // results entered by the players: one reports, the other confirms
 const t2 = (db) => doc(db, 'tournaments', STAGE, 'matches', 'r1t2')

@@ -97,7 +97,7 @@ function ThemeEditor({ theme, setTheme }: { theme: Theme; setTheme: (fn: (t: The
   )
 }
 
-function Toggle({ label, hint, on, set }: { label: string; hint?: string; on: boolean; set: (v: boolean) => void }) {
+export function Toggle({ label, hint, on, set }: { label: string; hint?: string; on: boolean; set: (v: boolean) => void }) {
   return (
     <button className="toggle-row" role="switch" aria-checked={on} onClick={() => set(!on)}>
       <span className="toggle-text">

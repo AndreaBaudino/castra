@@ -7,6 +7,7 @@ import {
   type Player,
   type TableMatch,
   type Tournament,
+  addPenalty,
   confirmPlayer,
   confirmScore,
   createTournament,
@@ -294,6 +295,12 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     expect(lines.filter((e) => e.kind === 'pair').length).toBeGreaterThan(1)
     expect(lines.every((e) => e.at && e.by)).toBe(true)
     await expect(fs.getDocs(fs.collection(env.authenticatedContext('kim').firestore(), 'tournaments', id, 'log'))).rejects.toThrow()
+    // a penalty: the TO's line, which the player reads from their account
+    as('gina')
+    await addPenalty(id, { kind: 'gameLoss', round: 2, player: 'mia', infraction: 'decklist', uid: 'kim' })
+    await addPenalty(id, { kind: 'note', round: 2, player: 'mia', text: 'only for the TOs' })
+    const seen = await fs.getDocs(fs.query(fs.collection(env.authenticatedContext('kim').firestore(), 'tournaments', id, 'log'), fs.where('uid', '==', 'kim')))
+    expect(seen.docs.map((d) => d.data().kind)).toEqual(['gameLoss'])
     as('gina')
     s = await read(id)
     await deleteTournament(id, s.players, s.matches)

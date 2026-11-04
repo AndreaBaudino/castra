@@ -77,6 +77,14 @@ export type LogKind =
   | 'join' | 'commander' | 'leave' | 'report' | 'confirm' | 'drop' // also the players
   | 'undrop' | 'add' | 'remove' | 'accept' | 'score' | 'extra' | 'pair' | 'repair' | 'cut' | 'done'
   | 'filed' | 'unfiled' | 'publish' | 'unpublish' | 'cancel'
+  | Penalty
+
+/** What a TO writes down about a player (or a table, the deck check), in the log. */
+export const PENALTIES = ['warning', 'gameLoss', 'matchLoss', 'dq', 'note'] as const
+export type Penalty = (typeof PENALTIES)[number] | 'deckCheck'
+// the most common ones in the tournament rules; the details go in the text
+export const INFRACTIONS = ['tardiness', 'decklist', 'extraCards', 'rules', 'gameState', 'slowPlay', 'conduct', 'other'] as const
+export type Infraction = (typeof INFRACTIONS)[number]
 
 /** A line of the tournament's log, log/{auto}: only its TOs read it, nobody changes it. */
 export interface LogEntry {
@@ -88,6 +96,9 @@ export interface LogEntry {
   player?: string // the player it's about
   from?: string
   to?: string
+  infraction?: Infraction
+  text?: string
+  uid?: string // the player's account, on a penalty: they see it too
 }
 
 /** A result one player entered and the other hasn't confirmed yet. */
@@ -482,6 +493,17 @@ export async function confirmPlayer(user: AppUser, id: string, key: string, veri
     batch.update(fs.doc(db, 'tournaments', id, 'players', key), { pending: fs.deleteField() })
     if (verify) batch.update(fs.doc(db, 'claims', key), { verified: true, verifiedBy: user.uid, verifiedIn: id })
   })
+}
+
+/** A penalty, a note or a deck check, by a TO. */
+export async function addPenalty(id: string, e: Omit<LogEntry, 'at' | 'by'>) {
+  await logged(id, e, () => {})
+}
+
+/** The penalties the player got at this tournament (the TO's notes carry no account), oldest first. */
+export function useMyPenalties(id: string | null, uid: string | null) {
+  const { docs } = useLiveCollection<LogEntry>(id && uid && `tournaments/${id}/log`, ['uid', '==', uid ?? ''])
+  return useMemo(() => docs.map(([, e]) => e).sort((a, b) => (a.at?.toMillis() ?? Infinity) - (b.at?.toMillis() ?? Infinity)), [docs])
 }
 
 /** The tournament's log, newest first, for its TOs: only the lines of this run of it (`since`: when it started). */

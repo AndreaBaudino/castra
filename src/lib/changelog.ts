@@ -8,6 +8,17 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-04',
+    it: [
+      'Area TO: penalità e deck check. Dal foglio di un iscritto, "Penalità o nota" registra warning, game loss, match loss, squalifica o una nota, con l\'infrazione, il turno e un testo. Se ha già un warning per la stessa infrazione l\'app lo fa notare. Il match loss può dare il match del turno all\'avversario (2-0) e la squalifica toglie anche il giocatore dal torneo. Dal foglio di un tavolo, "Deck check" ne registra uno con l\'esito. Tutto finisce nel Registro, e nell\'elenco degli iscritti compare quante penalità ha ciascuno',
+      'Tornei in app: le penalità che ricevi compaiono nella card del torneo in Home, con turno, infrazione e nota del TO. Le vedi solo tu e i TO',
+    ],
+    en: [
+      'TO area: penalties and deck checks. From a player\'s sheet, "Penalty or note" records a warning, game loss, match loss, disqualification or a note, with the infraction, the round and a text. If they already have a warning for the same infraction the app points it out. A match loss can give the round\'s match to the opponent (2-0), and a disqualification also takes the player out of the tournament. From a table\'s sheet, "Deck check" records one with its outcome. It all goes into the Log, and the list of players shows how many penalties each has',
+      'Tournaments in the app: the penalties you get show on the tournament card on the home, with the round, the infraction and the TO\'s note. Only you and the TOs see them',
+    ],
+  },
+  {
     date: '2026-11-03',
     it: [
       'Area TO: il registro del torneo. In fondo alla gestione, "Registro" elenca ogni modifica con chi l\'ha fatta e quando: risultati segnati, confermati o corretti (con il prima e il dopo), drop, iscritti aggiunti, tolti o confermati, cambi di comandante, abbinamenti rifatti, minuti aggiunti, top cut, chiusura e pubblicazione. Nel foglio del risultato di un tavolo ci sono le modifiche di quel tavolo. Lo vedono solo i TO e nessuno lo può cambiare',
