@@ -198,7 +198,7 @@ export default function Decks({
         <h1>{t('decks.title')}</h1>
         {/* with no decks, the button in the middle of the page is enough */}
         {decks.length > 0 && (
-          <button className="btn small primary" onClick={() => setImportOpen(true)}>
+          <button className="btn small tonal" onClick={() => setImportOpen(true)}>
             <Icon name="plus" size={16} /> {t('decks.new')}
           </button>
         )}

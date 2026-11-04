@@ -1,17 +1,40 @@
+@font-face {
+  font-family: 'Inter';
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/inter.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('./assets/fonts/space-grotesk.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 500 600;
+  font-display: swap;
+  src: url('./assets/fonts/jetbrains-mono.woff2') format('woff2');
+}
+
 :root {
-  --bg: #14110f;
-  --surface: #1e1a17;
-  --surface-2: #29231f;
-  --line: #3a322c;
-  --text: #f3ece4;
-  --muted: #a8998b;
-  --gold: #d4a64a;
-  --red: #b8322a;
-  --red-strong: #d8453b;
-  --good: #4fb37a;
-  --bad: #e0675c;
-  --mid: #d9c39b;
-  --radius: 14px;
+  --bg: #0b0b0c;
+  --surface: #131315;
+  --surface-2: #1b1b1e;
+  --line: #26262a;
+  --line-strong: #2f2f34;
+  --text: #f2f2f3;
+  --muted: #8b8b92;
+  --gold: #f65a1a;
+  --red: #f65a1a;
+  --red-strong: #ff7a38;
+  --on-accent: #0b0b0c;
+  --crest: #ef4136;
+  --good: #4fb477;
+  --bad: #e2403a;
+  --mid: #d9a441;
+  --stale: #e3b341;
+  --radius: 4px;
   --tabbar-h: 62px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
@@ -29,8 +52,8 @@
   --pie-6: #008300;
   --pie-7: #9085e9;
   --pie-8: #e66767;
-  --pie-rest: #6f655d;
-  --pie-rest-2: #5a524b;
+  --pie-rest: #4a4a50;
+  --pie-rest-2: #3a3a40;
 
   --W: #f4ecd2;
   --U: #4f8fd6;
@@ -41,7 +64,9 @@
   --C: #b9b2aa;
 
   color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 15px;
   line-height: 1.4;
   -webkit-text-size-adjust: 100%;
@@ -51,16 +76,18 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
     --B-ring: rgba(0, 0, 0, 0.35);
-    --bg: #f6f1ea;
-    --surface: #fffdfa;
-    --surface-2: #efe7dc;
-    --line: #e1d6c7;
-    --text: #221b16;
-    --muted: #7a6b5e;
-    --gold: #a87a1e;
-    --good: #23824d;
-    --bad: #c2392f;
-    --mid: #8a7350;
+    --bg: #f4f4f1;
+    --surface: #ffffff;
+    --surface-2: #eeeeea;
+    --line: #e2e2dd;
+  --line-strong: #d3d3cd;
+    --text: #17171a;
+    --muted: #67676e;
+    --gold: #c2410c;
+    --good: #1f8a4c;
+    --bad: #c62e28;
+    --mid: #8a6100;
+  --stale: #a87b00;
     --B: #2f2833;
     --cmp-a: #a8781c;
     --cmp-b: #2f6fb8;
@@ -72,24 +99,26 @@
     --pie-6: #008300;
     --pie-7: #6250d6;
     --pie-8: #e34948;
-    --pie-rest: #b5aa9e;
-    --pie-rest-2: #cbc1b5;
+    --pie-rest: #b4b4ae;
+    --pie-rest-2: #cfcfc9;
     color-scheme: light;
   }
 }
 
 :root[data-theme='light'] {
   --B-ring: rgba(0, 0, 0, 0.35);
-  --bg: #f6f1ea;
-  --surface: #fffdfa;
-  --surface-2: #efe7dc;
-  --line: #e1d6c7;
-  --text: #221b16;
-  --muted: #7a6b5e;
-  --gold: #a87a1e;
-  --good: #23824d;
-  --bad: #c2392f;
-  --mid: #8a7350;
+  --bg: #f4f4f1;
+  --surface: #ffffff;
+  --surface-2: #eeeeea;
+  --line: #e2e2dd;
+  --line-strong: #d3d3cd;
+  --text: #17171a;
+  --muted: #67676e;
+  --gold: #c2410c;
+  --good: #1f8a4c;
+  --bad: #c62e28;
+  --mid: #8a6100;
+  --stale: #a87b00;
   --B: #2f2833;
   --cmp-a: #a8781c;
   --cmp-b: #2f6fb8;
@@ -101,8 +130,8 @@
   --pie-6: #008300;
   --pie-7: #6250d6;
   --pie-8: #e34948;
-  --pie-rest: #b5aa9e;
-  --pie-rest-2: #cbc1b5;
+  --pie-rest: #b4b4ae;
+  --pie-rest-2: #cfcfc9;
   color-scheme: light;
 }
 
@@ -130,6 +159,7 @@ button {
   padding: 0;
 }
 h1 {
+  font-family: var(--font-display);
   font-size: 1.6rem;
   margin: 0;
   letter-spacing: -0.01em;
@@ -177,14 +207,19 @@ h1 {
   min-height: 44px;
 }
 .brand-kicker {
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  font-size: 0.7rem;
-  font-weight: 700;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+/* no kicker above a title: the line goes under it */
+div:has(> .brand-kicker + h1),
+div:has(> .brand-kicker + .sidenav-name),
+div:has(> .brand-kicker + .tp-title) {
+  display: flex;
+  flex-direction: column-reverse;
 }
 .brand h1 {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-weight: 700;
 }
 .brand-mark {
@@ -203,7 +238,7 @@ h1 {
   fill: var(--bg);
 }
 .logo-crest {
-  fill: var(--crest, var(--red-strong));
+  fill: var(--crest);
 }
 
 .tabbar {
@@ -229,7 +264,10 @@ h1 {
   font-weight: 600;
 }
 .tabbar button.on {
-  color: var(--gold);
+  color: var(--text);
+}
+.tabbar button.on:not(.center) {
+  box-shadow: inset 0 2px 0 var(--gold);
 }
 /* the game button sits raised in the middle of the bar */
 .tabbar button.center {
@@ -244,16 +282,15 @@ h1 {
   display: grid;
   place-items: center;
   background: var(--red);
-  color: #fff;
+  color: var(--on-accent);
   border: 4px solid var(--bg);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
   transition: transform 0.15s;
 }
 .tabbar button.center:active .fab {
   transform: scale(0.94);
 }
 .tabbar button.center.on .fab {
-  box-shadow: 0 0 0 2px var(--gold), 0 4px 14px rgb(0 0 0 / 0.3);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 40%, transparent);
 }
 
 /* ---------- primitives ---------- */
@@ -285,9 +322,14 @@ h1 {
   gap: 6px;
   min-height: 44px;
   padding: 0 16px;
-  border-radius: 12px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
   font-weight: 600;
-  background: var(--surface-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: transparent;
   border: 1px solid var(--line);
 }
 .btn.small {
@@ -298,7 +340,12 @@ h1 {
 .btn.primary {
   background: var(--red);
   border-color: var(--red);
-  color: #fff;
+  color: var(--on-accent);
+}
+.btn.tonal {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  border-color: color-mix(in srgb, var(--red) 45%, transparent);
+  color: var(--gold);
 }
 .btn.ghost {
   background: transparent;
@@ -314,7 +361,7 @@ h1 {
 .icon-btn {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   display: grid;
   place-items: center;
   color: var(--text);
@@ -334,7 +381,7 @@ h1 {
   border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
   color: var(--text);
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 0.8rem;
 }
 .notice.warn {
@@ -343,22 +390,25 @@ h1 {
 }
 .seg {
   display: inline-flex;
-  background: var(--surface-2);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 .seg button {
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
 }
+.seg button + button {
+  border-left: 1px solid var(--line);
+}
 .seg button.on {
-  background: var(--surface);
+  background: var(--line-strong);
   color: var(--text);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 .search {
   display: flex;
@@ -366,7 +416,7 @@ h1 {
   gap: 8px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 0 12px;
   color: var(--muted);
 }
@@ -388,21 +438,21 @@ h1 {
 .chip {
   flex: none;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--line);
   font-size: 0.8rem;
   font-weight: 600;
 }
 .chip.on {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: #1b150f;
+  background: var(--line-strong);
+  border-color: var(--line-strong);
+  color: var(--text);
 }
 .tag {
   font-size: 0.68rem;
   padding: 1px 6px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: var(--surface-2);
   color: var(--muted);
 }
@@ -465,16 +515,15 @@ h1 {
   gap: 14px;
   padding: 16px;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--red) 0%, color-mix(in srgb, var(--red) 62%, black) 100%);
-  color: #fff;
+  background: var(--red);
+  color: var(--on-accent);
   text-align: left;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--red) 25%, transparent);
 }
 .hero-icon {
   width: 46px;
   height: 46px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius);
+  background: rgb(0 0 0 / 0.14);
   display: grid;
   place-items: center;
 }
@@ -484,6 +533,7 @@ h1 {
   flex-direction: column;
 }
 .hero-text strong {
+  font-family: var(--font-display);
   font-size: 1.1rem;
 }
 .hero-text span {
@@ -503,11 +553,12 @@ h1 {
 }
 .stats3 > div {
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 8px 10px;
 }
 .stat-num {
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 1.25rem;
   font-variant-numeric: tabular-nums;
 }
@@ -568,7 +619,7 @@ h1 {
 .min-games select {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 4px 6px;
 }
 .meta-list {
@@ -629,7 +680,7 @@ h1 {
 .share-bar span {
   display: block;
   height: 100%;
-  background: var(--gold);
+  background: var(--muted);
   opacity: 0.7;
 }
 .meta-val {
@@ -707,7 +758,7 @@ button.kv.clickable b {
   position: relative;
   height: 10px;
   background: var(--line);
-  border-radius: 5px;
+  border-radius: var(--radius);
   margin: 6px 0 2px;
 }
 .ci-range {
@@ -715,7 +766,7 @@ button.kv.clickable b {
   top: 0;
   bottom: 0;
   background: color-mix(in srgb, var(--gold) 45%, transparent);
-  border-radius: 5px;
+  border-radius: var(--radius);
 }
 .ci-mid {
   position: absolute;
@@ -821,7 +872,7 @@ button.kv.clickable b {
 .deck-hero-shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 35%, rgba(20, 17, 15, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 35%, rgba(11, 11, 12, 0.92) 100%);
 }
 .deck-hero-top,
 .deck-hero-body {
@@ -842,7 +893,7 @@ button.kv.clickable b {
   align-items: flex-start;
   font-size: 0.85rem;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .check svg {
   flex: none;
@@ -935,7 +986,7 @@ button.kv.clickable b {
   flex-direction: column;
   gap: 8px;
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 12px;
 }
 .odds {
@@ -1092,7 +1143,7 @@ button.kv.clickable b {
 .qty-ctrl button {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--surface-2);
   display: grid;
   place-items: center;
@@ -1102,7 +1153,7 @@ button.kv.clickable b {
   margin: 0;
   padding: 4px;
   background: var(--surface-2);
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--line);
 }
 .ac-list button {
@@ -1112,7 +1163,7 @@ button.kv.clickable b {
   width: 100%;
   text-align: left;
   padding: 9px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: var(--text);
 }
 .ac-head {
@@ -1156,7 +1207,7 @@ button.kv.clickable b {
   background: var(--text);
   color: var(--bg);
   padding: 8px 16px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-weight: 600;
   font-size: 0.85rem;
   z-index: 40;
@@ -1180,7 +1231,7 @@ button.kv.clickable b {
 .form textarea {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   font-size: 16px; /* prevents iOS zoom */
   color: var(--text);
@@ -1188,7 +1239,7 @@ button.kv.clickable b {
   resize: vertical;
 }
 .form textarea {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
 }
 .sheet-backdrop {
@@ -1207,7 +1258,7 @@ button.kv.clickable b {
   max-height: 92dvh;
   overflow-y: auto;
   background: var(--surface);
-  border-radius: 20px 20px 0 0;
+  border-radius: 8px 8px 0 0;
   /* no top padding: the sticky head covers the top edge, so scrolled content never shows above it */
   padding: 0 16px calc(var(--safe-b) + 20px);
   animation: up 0.2s ease;
@@ -1247,7 +1298,7 @@ button.kv.clickable b {
   z-index: 15; /* below the tab bar, so the raised game button shows */
   display: grid;
   grid-template-rows: 1fr auto 1fr;
-  background: #0d0b0a;
+  background: #0b0b0c;
   color: #fff;
   user-select: none;
   -webkit-user-select: none;
@@ -1259,16 +1310,16 @@ button.kv.clickable b {
   display: flex;
   flex-direction: column;
   margin: 6px;
-  border-radius: 22px;
+  border-radius: var(--radius);
   overflow: hidden;
   transition: background 0.3s;
 }
 .player.p0 {
   transform: rotate(180deg);
-  background: linear-gradient(160deg, var(--p0), color-mix(in srgb, var(--p0) 50%, black));
+  background: var(--p0);
 }
 .player.p1 {
-  background: linear-gradient(160deg, var(--p1), color-mix(in srgb, var(--p1) 50%, black));
+  background: var(--p1);
 }
 .player.dead {
   filter: grayscale(0.85) brightness(0.7);
@@ -1355,9 +1406,9 @@ button.kv.clickable b {
   font-size: 0.8rem;
 }
 .game-end-btn {
-  border-radius: 999px;
+  border-radius: var(--radius);
   padding: 0 22px;
-  background: #f3ede6;
+  background: #f2f2f3;
   color: #1b150f;
 }
 .game-end-skip {
@@ -1378,7 +1429,7 @@ button.kv.clickable b {
   align-items: center;
   justify-content: space-between;
   background: rgba(0, 0, 0, 0.25);
-  border-radius: 12px;
+  border-radius: var(--radius);
   height: 48px;
 }
 .counter.lethal {
@@ -1417,7 +1468,7 @@ button.kv.clickable b {
 .bar-btn {
   width: 44px;
   height: 36px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: #221d1a;
   color: #e9e0d6;
   display: grid;
@@ -1478,8 +1529,8 @@ button.kv.clickable b {
 }
 .reset-card {
   width: min(88vw, 340px);
-  background: #1e1a17;
-  border-radius: 20px;
+  background: #131315;
+  border-radius: var(--radius);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -1488,22 +1539,22 @@ button.kv.clickable b {
 }
 .reset-card .seg {
   align-self: center;
-  background: #29231f;
+  background: #1b1b1e;
 }
 .reset-card .seg button.on {
-  background: #3a322c;
+  background: #26262a;
   color: #fff;
 }
 .reset-card .btn.ghost {
-  border-color: #3a322c;
+  border-color: #26262a;
 }
 /* the game menu is always dark: its gold and chips stay those of the dark theme, whatever the app's theme */
 .reset-card {
-  --gold: #d4a64a;
+  --gold: #f65a1a;
 }
 .reset-card .chip:not(.on) {
   background: transparent;
-  border-color: #3a322c;
+  border-color: #26262a;
   color: #fff;
 }
 
@@ -1525,7 +1576,7 @@ button.kv.clickable b {
   min-width: 104px;
   height: 44px;
   padding: 0 14px;
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: #221d1a;
   color: #e9e0d6;
   display: flex;
@@ -1552,13 +1603,13 @@ button.kv.clickable b {
 .timer-pill.running {
   background: #2c2418;
   color: var(--gold);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #d4a64a 55%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #f65a1a 55%, transparent);
 }
 .timer-pill.paused .timer-time {
   opacity: 0.75;
 }
 .timer-pill.turns {
-  background: #d4a64a;
+  background: #f65a1a;
   color: #1b150f;
 }
 .bar-btn.attn {
@@ -1603,7 +1654,7 @@ button.kv.clickable b {
   justify-content: center;
   text-align: center;
   padding: 9px 4px;
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .tokens {
   display: flex;
@@ -1617,7 +1668,7 @@ button.kv.clickable b {
   gap: 6px;
   height: 30px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1648,7 +1699,7 @@ button.kv.clickable b {
   align-items: center;
   justify-content: center;
   padding: 7px 2px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 0.7rem;
 }
 .dg-chips .chip:disabled {
@@ -1696,7 +1747,7 @@ button.kv.clickable b {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #a8998b;
+  color: #8b8b92;
   margin-top: 4px;
 }
 .reset-card {
@@ -1727,8 +1778,8 @@ button.kv.clickable b {
 .stepper-ctrl button {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: #29231f;
+  border-radius: var(--radius);
+  background: #1b1b1e;
   font-size: 1.1rem;
 }
 .btn-pair {
@@ -1796,7 +1847,7 @@ button.kv.clickable b {
 .form select {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   font-size: 16px;
   color: var(--text);
@@ -1844,7 +1895,7 @@ button.kv.clickable b {
 }
 .res {
   height: 52px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--line);
   background: var(--surface-2);
   font-weight: 700;
@@ -1890,7 +1941,7 @@ button.kv.clickable b {
   padding: 0 5px;
   font-variant-numeric: tabular-nums;
   height: 26px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: grid;
   place-items: center;
   color: #fff;
@@ -2037,7 +2088,7 @@ button.kv.clickable b {
   align-items: center;
   gap: 10px;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--surface-2);
 }
 .tp-brand {
@@ -2052,18 +2103,18 @@ button.kv.clickable b {
   fill: var(--surface-2);
 }
 .tp-title {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.3rem;
   line-height: 1.1;
 }
 .tp-btn {
   background: var(--red);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 700;
   font-size: 0.8rem;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 .tp-link {
   color: var(--gold);
@@ -2074,13 +2125,13 @@ button.kv.clickable b {
 .tp-p {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 .tp-p.p0 {
-  background: linear-gradient(160deg, var(--p0), color-mix(in srgb, var(--p0) 50%, black));
+  background: var(--p0);
 }
 .tp-p.p1 {
-  background: linear-gradient(160deg, var(--p1), color-mix(in srgb, var(--p1) 50%, black));
+  background: var(--p1);
 }
 .link:disabled {
   opacity: 0.5;
@@ -2153,7 +2204,7 @@ button.kv.clickable b {
   font-weight: 800;
   font-size: 0.75rem;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius);
 }
 .card-grid {
   display: grid;
@@ -2224,12 +2275,12 @@ button.kv.clickable b {
   top: auto;
   min-width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   display: grid;
   place-items: center;
   font-weight: 800;
   background: var(--red);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 .qty-badge.added {
@@ -2263,7 +2314,7 @@ button.kv.clickable b {
   gap: 10px;
   width: 100%;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--surface-2);
   text-align: left;
   font-size: 0.88rem;
@@ -2296,7 +2347,7 @@ button.kv.clickable b {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .cover-opt.on img {
   box-shadow: 0 0 0 3px var(--gold);
@@ -2324,7 +2375,7 @@ textarea {
 .select-pill {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius);
   padding: 6px 10px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -2461,7 +2512,7 @@ textarea {
   min-width: 34px;
   height: 26px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: grid;
   place-items: center;
   font-size: 0.78rem;
@@ -2532,7 +2583,7 @@ textarea {
   height: 34px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--surface-2);
   color: var(--text);
   font: inherit;
@@ -2682,7 +2733,7 @@ textarea {
   background: var(--good);
 }
 .live-dot.stale {
-  background: #e3b341;
+  background: var(--stale);
 }
 .live-dot.none {
   background: var(--bad);
@@ -2757,7 +2808,7 @@ textarea {
 .month-bar {
   height: 10px;
   background: var(--surface-2);
-  border-radius: 5px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 .month-bar span {
@@ -2970,7 +3021,7 @@ textarea {
   align-items: center;
   gap: 3px;
   padding: 1px 8px 1px 5px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--good);
@@ -3005,7 +3056,7 @@ textarea {
   width: min(100%, 380px);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius);
   padding: 18px 18px 14px;
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.4);
   display: flex;
@@ -3016,7 +3067,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--gold);
@@ -3024,7 +3075,7 @@ textarea {
 .dialog-head img {
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .dialog p {
   margin: 0;
@@ -3135,12 +3186,12 @@ textarea {
   transition: transform 0.15s, background 0.15s;
 }
 .switch.on {
-  background: color-mix(in srgb, var(--gold) 35%, var(--surface-2));
+  background: var(--gold);
   border-color: var(--gold);
 }
 .switch.on::after {
   transform: translateX(18px);
-  background: var(--gold);
+  background: var(--on-accent);
 }
 .stat-num.good {
   color: var(--good);
@@ -3265,7 +3316,7 @@ textarea {
 }
 .fb-kinds .chip {
   padding: 10px 4px;
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .fb-about {
   display: flex;
@@ -3273,7 +3324,7 @@ textarea {
   gap: 8px;
   padding: 4px 4px 4px 10px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--surface-2);
   font-size: 0.85rem;
 }
@@ -3327,9 +3378,9 @@ textarea {
   height: 18px;
   padding: 0 5px;
   margin-left: 4px;
-  border-radius: 9px;
+  border-radius: var(--radius);
   background: var(--red);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.68rem;
 }
 .tag.bug {
@@ -3394,7 +3445,7 @@ textarea {
 }
 .sync-line.saving .sync-dot,
 .sync-line.offline .sync-dot {
-  background: #e3b341;
+  background: var(--stale);
 }
 .sync-line.error .sync-dot {
   background: var(--bad);
@@ -3570,7 +3621,7 @@ textarea {
   flex-direction: column;
   gap: 1px;
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 8px 10px;
 }
 .play-draw b {
@@ -3620,7 +3671,7 @@ textarea {
 .hand-grid .card-img.drawn {
   outline: 2px solid var(--gold);
   outline-offset: 1px;
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .hand-zoom {
   position: fixed;
@@ -3633,7 +3684,7 @@ textarea {
 }
 .hand-zoom img {
   width: min(88vw, 380px);
-  border-radius: 14px;
+  border-radius: var(--radius);
 }
 .tag.ban-tag {
   background: color-mix(in srgb, var(--bad) 22%, transparent);
@@ -3666,7 +3717,7 @@ textarea {
 .app-banner img {
   width: 36px;
   height: 36px;
-  border-radius: 9px;
+  border-radius: var(--radius);
   flex: none;
 }
 .app-banner .icon-btn {
@@ -3780,7 +3831,7 @@ a.btn {
 }
 .errata-block {
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 12px;
 }
 .errata-block .oracle-text {
@@ -3902,7 +3953,7 @@ mark.diff-new {
 .signature-art {
   width: 56px;
   height: 42px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   flex: none;
   background: var(--surface-2) center top / cover no-repeat;
 }
@@ -3958,7 +4009,7 @@ mark.diff-new {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--line);
   font-size: 0.75rem;
@@ -3974,7 +4025,7 @@ mark.diff-new {
   display: flex;
   gap: 2px;
   height: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
   margin: 4px 0 10px;
 }
@@ -4008,7 +4059,7 @@ mark.diff-new {
 .art-pick {
   position: relative;
   aspect-ratio: 4 / 3;
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
   background: var(--surface-2) center / cover no-repeat;
   display: flex;
@@ -4133,7 +4184,7 @@ mark.diff-new {
   flex: 1 0 100px;
   max-width: 160px;
   height: 78px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
   background: var(--surface-2) center top / cover no-repeat;
   padding: 0;
@@ -4160,7 +4211,7 @@ mark.diff-new {
   left: 4px;
   min-width: 20px;
   height: 20px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   display: grid;
   place-items: center;
   font-size: 0.7rem;
@@ -4266,7 +4317,7 @@ mark.diff-new {
   align-items: center;
   gap: 7px;
   padding: 4px 6px;
-  border-radius: 7px;
+  border-radius: var(--radius);
   font-size: 0.8rem;
   text-align: left;
 }
@@ -4347,12 +4398,11 @@ mark.diff-new {
     padding: 0 6px;
   }
   .sidenav .brand-kicker {
-    font-size: 0.6rem;
-    letter-spacing: 0.16em;
+    font-size: 0.7rem;
     white-space: nowrap;
   }
   .sidenav-name {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-display);
     font-weight: 700;
     font-size: 1.5rem;
     line-height: 1.1;
@@ -4364,7 +4414,7 @@ mark.diff-new {
   .sidenav .hero-icon {
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     flex: none;
   }
   .sidenav .hero-text strong {
@@ -4387,7 +4437,7 @@ mark.diff-new {
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     color: var(--muted);
     font-weight: 600;
     text-align: left;
@@ -4404,7 +4454,7 @@ mark.diff-new {
   .sidenav-account {
     padding: 8px 10px;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius);
     color: var(--text);
     font-size: 0.9rem;
   }
@@ -4441,7 +4491,7 @@ mark.diff-new {
   }
   .sheet {
     max-height: 88vh;
-    border-radius: 20px;
+    border-radius: var(--radius);
     animation: fade 0.15s ease;
   }
 
@@ -4560,7 +4610,7 @@ mark.diff-new {
     flex: none;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius);
     color: var(--muted);
   }
   .icon-btn.more-btn:hover {
@@ -4716,7 +4766,7 @@ mark.diff-new {
   }
   .to-tables .event-row {
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius);
     background: var(--surface);
   }
 }
@@ -4758,7 +4808,7 @@ mark.diff-new {
     display: flex;
     flex-direction: column;
     background: var(--surface-2);
-    border-radius: 10px;
+    border-radius: var(--radius);
     padding: 8px 10px;
   }
   .account-cols {

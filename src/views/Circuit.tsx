@@ -847,7 +847,7 @@ export function LiveStatus({ circuit, status }: { circuit: Circuit | null; statu
   )
 }
 
-function LiveDot({ live, title }: { live: Live; title?: string }) {
+export function LiveDot({ live, title }: { live: Live; title?: string }) {
   return <span className={`live-dot ${live}`} title={title} aria-hidden={!title} />
 }
 
@@ -883,7 +883,7 @@ export function CircuitCard({
           <LiveDot live={live} title={t(live === 'live' ? 'circuit.dotLive' : 'circuit.dotStale')} />
         </span>
         {!p || !poty ? (
-          <button className="btn small primary" onClick={findMe}>
+          <button className="btn small" onClick={findMe}>
             <Icon name="userCheck" size={14} /> {t('circuit.findMe')}
           </button>
         ) : (
@@ -912,7 +912,7 @@ export function CircuitCard({
       {!p || !poty ? (
         <div className="empty-inline">
           <p className="muted small">{t('circuit.linkPrompt')}</p>
-          <button className="btn small primary" onClick={findMe}>
+          <button className="btn small" onClick={findMe}>
             <Icon name="userCheck" size={16} /> {t('circuit.findMe')}
           </button>
         </div>

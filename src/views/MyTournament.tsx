@@ -241,20 +241,20 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
             </div>
           </>
         ) : !user ? (
-          <button className="btn primary" onClick={login}>
+          <button className="btn tonal" onClick={login}>
             {t('join.login')}
           </button>
         ) : !me ? (
           <>
             <p className="muted small no-margin">{t('join.linkFirst')}</p>
-            <button className="btn primary" onClick={linkPlayer}>
+            <button className="btn tonal" onClick={linkPlayer}>
               {t('join.link')}
             </button>
           </>
         ) : (
           <>
             {!verified && <p className="muted small no-margin">{t('join.notVerified')}</p>}
-            <button className="btn primary" onClick={() => setJoining(true)}>
+            <button className="btn tonal" onClick={() => setJoining(true)}>
               {t(verified ? 'join.register' : 'join.request')}
             </button>
           </>
@@ -313,7 +313,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
                 <button className="btn ghost" onClick={play}>
                   {t('join.play')}
                 </button>
-                <button className="btn primary" disabled={busy} onClick={() => setResult(current)}>
+                <button className="btn tonal" disabled={busy} onClick={() => setResult(current)}>
                   {t('join.report')}
                 </button>
               </div>
@@ -340,7 +340,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
                   <button className="btn ghost" disabled={busy} onClick={() => setResult(current)}>
                     {t('join.wrong')}
                   </button>
-                  <button className="btn primary" disabled={busy} onClick={() => act(() => confirmScore(id, current, me!))}>
+                  <button className="btn tonal" disabled={busy} onClick={() => act(() => confirmScore(id, current, me!))}>
                     {t('join.confirm')}
                   </button>
                 </div>

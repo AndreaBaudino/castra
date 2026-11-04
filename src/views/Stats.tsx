@@ -199,7 +199,7 @@ export default function Stats({
         <div className="head-left">
           <h1>{t('stats.title')}</h1>
         </div>
-        <button className="btn small primary" onClick={() => setAdding(true)}>
+        <button className="btn small tonal" onClick={() => setAdding(true)}>
           <Icon name="plus" size={16} /> {t('stats.add')}
         </button>
       </header>

@@ -28,8 +28,8 @@ export default defineConfig({
         short_name: 'Castra',
         description: 'Meta, life counter e mazzi per Centurion Commander',
         lang: 'it',
-        theme_color: '#14110f',
-        background_color: '#14110f',
+        theme_color: '#0b0b0c',
+        background_color: '#0b0b0c',
         display: 'standalone',
         orientation: 'portrait',
         start_url: base,
@@ -42,6 +42,8 @@ export default defineConfig({
       },
       workbox: {
         importScripts: ['push-sw.js'], // push notifications
+        // the fonts too: the app (the life counter at a tournament) must look the same offline
+        globPatterns: ['**/*.{js,css,html,woff2}'],
         // the guides in public/ (castra.pdf…) are files, not app pages: the browser must fetch them
         navigateFallbackDenylist: [/\.pdf$/],
         runtimeCaching: [

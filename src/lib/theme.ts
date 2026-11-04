@@ -9,14 +9,21 @@ export interface Theme {
 
 export const DEFAULT_THEME: Theme = {
   mode: 'auto',
-  accent: '#b8322a',
-  highlight: '#d4a64a',
+  accent: '#f65a1a',
+  highlight: '#f65a1a',
   p0: '#7d1f1a',
   p1: '#23405f',
   scale: 'M',
 }
 
-export const SWATCHES = ['#b8322a', '#d4a64a', '#7d1f1a', '#23405f', '#2f6b4f', '#5b3c88', '#1f6f8b', '#c2571a', '#8a8f98', '#a33d6c']
+export const SWATCHES = ['#f65a1a', '#d4a64a', '#7d1f1a', '#23405f', '#2f6b4f', '#5b3c88', '#1f6f8b', '#c2571a', '#8a8f98', '#a33d6c']
+
+/** Themes saved before the Forge colours (Nov 2026) hold the old defaults: they still mean "the default". */
+export const currentTheme = (t: Theme): Theme => ({
+  ...t,
+  accent: t.accent.toLowerCase() === '#b8322a' ? DEFAULT_THEME.accent : t.accent,
+  highlight: t.highlight.toLowerCase() === '#d4a64a' ? DEFAULT_THEME.highlight : t.highlight,
+})
 
 const FONT: Record<Theme['scale'], string> = { S: '14px', M: '15px', L: '16.5px' }
 

@@ -10,6 +10,8 @@
 - Messaggi di commit in italiano, come quelli già presenti: titolo "Zona: cosa cambia" (es. `Area admin, Nomi: …`,
   `Home: …`), riga vuota, poi un paragrafo che spiega il comportamento nuovo dal punto di vista di chi usa l'app.
 - Le novità visibili agli utenti vanno anche in `src/lib/changelog.ts` (italiano e inglese).
+- Lo stile segue `DESIGN.md` (tema Forge adattato a Castra: colori, caratteri inclusi nell'app, angoli, livelli dei
+  pulsanti, colori di stato, tema chiaro, vista da computer): leggilo prima di toccare `index.css` e tienilo aggiornato.
 - L'app nasce per il telefono: le modifiche pensate per il computer stanno dentro `@media (min-width: 1024px)` in
   `src/index.css` (stesso valore di `src/lib/wide.ts`) e non devono cambiare il layout mobile.
 

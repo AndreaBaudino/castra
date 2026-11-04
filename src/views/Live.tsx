@@ -21,7 +21,7 @@ import {
 } from '../lib/tournaments'
 import { Icon, ShareButton } from '../components/ui'
 import { useWide } from '../lib/wide'
-import { SubPageShell, placeLabel } from './Circuit'
+import { LiveDot, SubPageShell, placeLabel } from './Circuit'
 
 // The tournaments run in the app, for whoever follows them (docs/tornei.md): the link on the home, the list of the ones
 // being played (#live) and one tournament (#live/<id>) with its pairings, standings and a search for a player. The TO
@@ -101,13 +101,18 @@ const today = () => new Date().toLocaleDateString('sv') // the local day, as YYY
 /** On the home, when a tournament is being played: to follow it (one) or pick one (more). */
 export function LiveLink({ open }: { open: (id?: string) => void }) {
   const { t } = useI18n()
-  const live = useTournaments().tournaments.filter(([, x]) => playing(x))
-  if (!live.length) return null
+  const { tournaments, loaded } = useTournaments()
+  const live = tournaments.filter(([, x]) => playing(x))
+  // once read, a red dot says there's none rather than the row disappearing
+  if (!loaded) return null
   return (
     <button className="card home-row" onClick={() => open(live.length === 1 ? live[0][0] : undefined)}>
-      <span className="title-live">{t('live.title')}</span>
+      <span className="title-live">
+        {t('live.title')}
+        <LiveDot live={live.length ? 'live' : 'none'} />
+      </span>
       <span className="home-row-link">
-        <span className="muted small">{t('live.follow', { n: live.length })}</span>
+        <span className="muted small">{live.length ? t('live.follow', { n: live.length }) : t('live.nobody')}</span>
         <Icon name="chevron" size={16} />
       </span>
     </button>

@@ -110,7 +110,7 @@ export default function Home({
 
       {welcome ? (
         <section className="card welcome">
-          <div className="brand-kicker">{t('home.welcome')}</div>
+          <div className="card-title">{t('home.welcome')}</div>
           {(
             [
               ['meta', 'trophy', 'home.welcomeMeta'],

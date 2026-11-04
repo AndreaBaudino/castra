@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
 import { syncPaused, useCollectionSync, useDocFieldSync } from './lib/sync'
 import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
 import { pushBlock, savePush } from './lib/push'
 import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
-import { DEFAULT_THEME, type Theme, applyTheme } from './lib/theme'
+import { DEFAULT_THEME, type Theme, applyTheme, currentTheme } from './lib/theme'
 import { type Deck, newId, newerDeck } from './lib/decks'
 import type { Match } from './lib/matches'
 import { resetPickedYear, useMeta, usePickedYear } from './lib/meta'
@@ -57,7 +57,8 @@ export default function App() {
   const [decks, setDecks] = useStoredState<Deck[]>('cc.decks', [])
   const [matches, setMatches] = useStoredState<Match[]>('cc.matches', [])
   const [importOpen, setImportOpen] = useState(false)
-  const [theme, setTheme] = useStoredState<Theme>('cc.theme', DEFAULT_THEME)
+  const [savedTheme, setTheme] = useStoredState<Theme>('cc.theme', DEFAULT_THEME)
+  const theme = useMemo(() => currentTheme(savedTheme), [savedTheme])
   const [prefs, setPrefs] = useStoredState<Prefs>(PREFS_KEY, readPrefs())
   const [timerSettings, setTimerSettings] = useStoredState<TimerSettings>('cc.timerSettings', DEFAULT_TIMER_SETTINGS)
   const { dataset, data: meta, status, refresh } = useMeta()
@@ -89,7 +90,7 @@ export default function App() {
 
   useCollectionSync(uid, 'decks', decks, setDecks, newerDeck)
   useCollectionSync(uid, 'matches', matches, setMatches)
-  useDocFieldSync(uid, 'theme', theme, setTheme)
+  useDocFieldSync(uid, 'theme', savedTheme, setTheme)
   useDocFieldSync(uid, 'prefs', prefs, (p) => setPrefs({ ...DEFAULT_PREFS, ...p }))
   useDocFieldSync(uid, 'timerSettings', timerSettings, (s) => setTimerSettings({ ...DEFAULT_TIMER_SETTINGS, ...s }))
   useDocFieldSync(uid, 'lang', lang, setLang)
