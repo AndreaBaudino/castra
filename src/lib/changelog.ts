@@ -8,6 +8,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-05',
+    it: [
+      'Tornei in app: finché le iscrizioni sono aperte, la card del torneo in Home mostra anche il giorno in cui si gioca, utile quando ti iscrivi giorni prima',
+    ],
+    en: [
+      'Tournaments in the app: while registration is open, the tournament card on the home also shows the day it is played, useful when you register days before',
+    ],
+  },
+  {
     date: '2026-11-04',
     it: [
       'Area TO: ti arriva una notifica a ogni iscrizione fatta dall\'app a un torneo che organizzi, non solo per le richieste da confermare (per chi è già verificato ti dice solo che si è iscritto), e la ricevono tutti i TO della tappa, non solo chi ha aperto il torneo. Serve avere "Tornei" acceso nelle notifiche',

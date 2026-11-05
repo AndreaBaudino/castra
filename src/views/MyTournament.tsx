@@ -218,6 +218,10 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
     return (
       <section className="card my-tour">
         {title}
+        {/* registration can open days before: the day it's played */}
+        <p className="muted small no-margin">
+          {new Date(`${tour.date}T12:00`).toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' })}
+        </p>
         {mine ? (
           <>
             <p className={`small no-margin ${mine.pending ? 'muted' : 'good-text'}`}>{t(mine.pending ? 'join.pending' : 'join.in')}</p>
