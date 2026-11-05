@@ -63,6 +63,8 @@ import { useDialog } from '../components/Dialog'
 import { SubPageShell } from './Circuit'
 import { Toggle } from './Account'
 import { MatchList, RankingList } from './Live'
+import { JoinSheet } from './MyTournament'
+import type { Deck } from '../lib/decks'
 
 // The tournament organizers' pages (docs/tornei.md): the card on the home, the TO area (#to) with the tournaments to
 // run, and one tournament run from the phone (#to/<id>): registration, rounds, results, top cut, the rows for the sheet.
@@ -326,8 +328,10 @@ export function TournamentAdmin({
   openLive,
   tourNotify,
   setTourNotify,
+  decks,
 }: {
   id: string
+  decks: Deck[] // the TO's own, to register with one
   openLive: () => void
   tourNotify: boolean // the tournament notifications are on: the registration requests reach this TO
   setTourNotify: (on: boolean) => void
@@ -345,6 +349,7 @@ export function TournamentAdmin({
   const [result, setResult] = useState<TableMatch | null>(null)
   const [player, setPlayer] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+  const [joining, setJoining] = useState(false)
   const [busy, setBusy] = useState(false)
   const rows = useMemo(() => (tour ? ranking(tour, players, matches) : []), [tour, players, matches])
   // the decklists, read once it's over: copying needs them at hand (a phone allows it only right after the tap)
@@ -486,6 +491,12 @@ export function TournamentAdmin({
             </div>
           )}
           {tour.status === 'open' && <p className="muted small no-margin">{t('run.codeHint')}</p>}
+          {/* a TO who plays too: with one of their decks, for their stats, as the players do from the home */}
+          {tour.status === 'open' && (
+            <button className="btn ghost" onClick={() => setJoining(true)}>
+              {t(names.has(organizer.player) ? 'run.myEntry' : 'run.joinToo')}
+            </button>
+          )}
           {/* the requests reach the TO only with the notifications on: a TO never registers, so never gets asked */}
           {tour.status === 'open' && NOTIFY_URL && !tourNotify && !pushBlock() && (
             <div className="notice">
@@ -802,6 +813,18 @@ export function TournamentAdmin({
         match={current.find((m) => m.p1 === player || m.p2 === player)}
         nameOf={nameOf}
         whoOf={whoOf}
+      />
+      <JoinSheet
+        open={joining}
+        onClose={() => setJoining(false)}
+        id={id}
+        user={user}
+        me={organizer.player}
+        name={organizer.name}
+        verified // a TO is a verified player
+        decks={decks}
+        mine={names.get(organizer.player)}
+        onJoined={() => {}}
       />
       <AddPlayerSheet
         open={adding}

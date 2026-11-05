@@ -487,6 +487,7 @@ export default function App() {
               openLive={() => openLive(decodeURIComponent(route.deck!))}
               tourNotify={prefs.notifyTournaments}
               setTourNotify={(on) => setPrefs((p) => ({ ...p, notifyTournaments: on }))}
+              decks={decks}
             />
           ) : (
             <OrganizerArea user={user} organizer={organizer} dataset={dataset} onBack={() => go('home')} openTournament={openRun} />

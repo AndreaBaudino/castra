@@ -385,7 +385,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
 }
 
 /** Registering, or changing the registration: a deck of the app (its commander), the commander, the decklist. */
-function JoinSheet({
+export function JoinSheet({
   open,
   onClose,
   id,

@@ -11,9 +11,11 @@ export const CHANGELOG: Release[] = [
     date: '2026-11-05',
     it: [
       'Tornei in app: finché le iscrizioni sono aperte, la card del torneo in Home mostra anche il giorno in cui si gioca, utile quando ti iscrivi giorni prima',
+      'Area TO: "Iscriviti anche tu" nella pagina del torneo, per il TO che gioca. Si sceglie uno dei propri mazzi come fanno i giocatori dalla Home, così il torneo finisce nelle proprie statistiche; poi il pulsante diventa "La tua iscrizione" per cambiarla',
     ],
     en: [
       'Tournaments in the app: while registration is open, the tournament card on the home also shows the day it is played, useful when you register days before',
+      'TO area: "Register yourself too" on the tournament page, for a TO who plays. Pick one of your decks as the players do from the home, so the tournament goes into your stats; then the button becomes "Your registration", to change it',
     ],
   },
   {
