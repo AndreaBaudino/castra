@@ -23,6 +23,7 @@ import {
   createTournament,
   deleteTournament,
   finishTournament,
+  hasCommander,
   joinLink,
   loadList,
   newCode,
@@ -382,7 +383,7 @@ export function TournamentAdmin({
   const pending = players.filter(([, p]) => p.pending)
   const entered = players.filter(([, p]) => !p.pending)
   const active = entered.filter(([, p]) => p.drop == null)
-  const noCommander = entered.filter(([, p]) => !p.commander).length
+  const noCommander = entered.filter(([, p]) => !hasCommander(p)).length
   const listed = entered.filter(([, p]) => p.list).length
   const linked = entered.filter(([, p]) => p.deck).length
   const playing = tour.status === 'swiss' || tour.status === 'cut'
@@ -749,9 +750,9 @@ export function TournamentAdmin({
                         {p.drop != null && <span className="muted small"> · {t('run.dropped')}</span>}
                         {p.joined && <span className="muted small"> · {t('run.lateFrom', { n: p.joined })}</span>}
                       </span>
-                      <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>
+                      <span className={`ellipsis small ${hasCommander(p) ? 'muted' : 'bad-text'}`}>
                         {/* secret until round 1, even to the TOs */}
-                        {!p.commander ? t('run.noCommander') : tour.status === 'open' ? t('run.commanderIn') : p.commander}
+                        {!hasCommander(p) ? t('run.noCommander') : tour.status === 'open' ? t('run.commanderIn') : p.commander}
                         {p.invalid && <span className="bad-text"> · {t('run.badDeck')}</span>}
                         {penalties.has(k) && <span className="bad-text"> · {t('run.penalties', { n: penalties.get(k)! })}</span>}
                       </span>
@@ -1105,11 +1106,11 @@ function PlayerSheet({
               {t('pen.add')}
             </button>
           )}
-          <CommanderInput value={cmd} onChange={setCmd} hint={tour.status === 'open' && player.commander ? t('run.commanderHidden') : undefined} />
+          <CommanderInput value={cmd} onChange={setCmd} hint={tour.status === 'open' && hasCommander(player) ? t('run.commanderHidden') : undefined} />
           <button
             className="btn primary"
             disabled={busy || !cmd.trim() || cmd.trim() === player.commander}
-            onClick={() => run(() => savePlayer(user, id, k, { name: player.name, commander: cmd.trim(), joined: player.joined }, player))}
+            onClick={() => run(() => savePlayer(user, id, k, { name: player.name, commander: cmd.trim(), joined: player.joined }, tour.status === 'open', player))}
           >
             {t('run.saveCommander')}
           </button>
@@ -1303,7 +1304,7 @@ function AddPlayerSheet({
     setBusy(true)
     try {
       // after the start, a late entry: from the next round, the ones before lost 0-2
-      await savePlayer(user, id, picked ?? key, { name, commander: cmd.trim() || null, joined: tour.status === 'open' ? undefined : tour.round + 1 })
+      await savePlayer(user, id, picked ?? key, { name, commander: cmd.trim() || null, joined: tour.status === 'open' ? undefined : tour.round + 1 }, tour.status === 'open')
       onClose()
     } catch {
       await dialog.alert(t('admin.error'))

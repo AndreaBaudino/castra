@@ -52,7 +52,8 @@ export interface Tournament {
 /** A player at a tournament: players/{player key}. */
 export interface Player {
   name: string
-  commander: string | null // asked before the first round
+  commander: string | null // asked before the first round; secret until then (in players/{key}/private/deck)
+  secret?: boolean // the commander given and kept secret, until round 1 brings it here
   joined?: number // a late entry: the first round played
   drop?: number // the last round played
   uid?: string // the account that registered (or confirmed) from the app
@@ -62,6 +63,15 @@ export interface Player {
   list?: boolean // they gave their decklist (the link is in players/{key}/private/deck)
   at: string
   by: string
+}
+
+/** Whether the player gave their commander: maybe still secret. */
+export const hasCommander = (p: Player) => !!p.commander || !!p.secret
+
+/** What players/{key}/private/deck keeps: the decklist link and, until round 1, the commander. */
+export interface Private {
+  link?: string
+  commander?: string
 }
 
 /** A match: matches/r{round}t{table}, the bye at table 0. */
@@ -364,14 +374,21 @@ export async function setTournament(id: string, patch: Partial<Pick<Tournament, 
   await fs.updateDoc(fs.doc(db, 'tournaments', id), patch)
 }
 
-/** Adds a player (a late one from the round they join), or changes their commander (`old`: as they were). */
-export async function savePlayer(user: AppUser, id: string, key: string, p: Pick<Player, 'name' | 'commander' | 'joined'>, old?: Player) {
+/**
+ * Adds a player (a late one from the round they join), or changes their commander (`old`: as they were). While
+ * registration is `open` the commander goes in the private document: secret until round 1.
+ */
+export async function savePlayer(user: AppUser, id: string, key: string, p: Pick<Player, 'name' | 'commander' | 'joined'>, open: boolean, old?: Player) {
+  const hide = open && !!p.commander
   // Firestore takes no undefined fields
-  const data = { name: p.name, commander: p.commander, ...(p.joined ? { joined: p.joined } : {}), at: now(), by: user.uid }
+  const data = { name: p.name, commander: hide ? null : p.commander, secret: hide, ...(p.joined ? { joined: p.joined } : {}), at: now(), by: user.uid }
   const e = old
     ? { kind: 'commander' as const, player: key, from: old.commander ?? '—', to: p.commander ?? '—' }
     : { kind: 'add' as const, player: key, round: p.joined, to: p.commander ?? undefined }
-  await logged(id, e, ({ db, fs }, b) => b.set(fs.doc(db, 'tournaments', id, 'players', key), data, { merge: true }))
+  await logged(id, e, ({ db, fs }, b) => {
+    if (hide) b.set(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'), { commander: p.commander }, { merge: true })
+    b.set(fs.doc(db, 'tournaments', id, 'players', key), data, { merge: true })
+  })
 }
 
 /** Takes a player off (the TO), or the player leaves before round 1 (`self`): their decklist goes with them. */
@@ -422,12 +439,17 @@ async function writeRound(
   patch: Partial<Tournament>,
   kind: LogKind,
   gone: string[] = [],
+  reveal: string[] = [],
 ) {
   const f = await fb()
   const { db, fs } = f
   const ref = fs.doc(db, 'tournaments', id)
+  const secretOf = (key: string) => fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck')
   await fs.runTransaction(db, async (tx) => {
     if ((await tx.get(ref)).data()?.round !== seen) throw new Error('stale')
+    // round 1: the secret commanders, read before any write (a transaction's rule)
+    const secrets = await Promise.all(reveal.map(async (key) => [key, ((await tx.get(secretOf(key))).data() as Private | undefined)?.commander ?? null] as const))
+    for (const [key, commander] of secrets) tx.update(fs.doc(db, 'tournaments', id, 'players', key), { commander, secret: fs.deleteField() })
     for (const m of old) if (m.round === round) tx.delete(fs.doc(db, 'tournaments', id, 'matches', matchId(m.round, m.table)))
     for (const key of gone) {
       tx.delete(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
@@ -463,7 +485,9 @@ export async function pairSwiss(id: string, t: Tournament, players: [string, Pla
   // round 1 closes registration: the code stops working and the requests not confirmed are turned down
   const first = t.status === 'open'
   const gone = first ? players.filter(([, p]) => p.pending).map(([k]) => k) : []
-  await writeRound(id, t.round, round, pairRound(entrantsOf(players), matches, round), matches, { status: 'swiss', ...(first ? { code: null } : {}) }, again ? 'repair' : 'pair', gone)
+  // and brings the commanders out of secret, in the same go
+  const reveal = first ? players.filter(([, p]) => !p.pending && p.secret).map(([k]) => k) : []
+  await writeRound(id, t.round, round, pairRound(entrantsOf(players), matches, round), matches, { status: 'swiss', ...(first ? { code: null } : {}) }, again ? 'repair' : 'pair', gone, reveal)
 }
 
 /** The first round of the top cut, from the Swiss standings: the Swiss rounds end with the one just played. */
@@ -553,8 +577,10 @@ export async function joinTournament(
 ) {
   const { db, fs } = await fb()
   const ref = fs.doc(db, 'tournaments', id, 'players', key)
-  const mine = { commander: p.commander, deck: p.deck, invalid: p.invalid, uid: user.uid, at: now(), by: user.uid }
+  // the commander in the private document, secret until round 1
+  const mine = { commander: null, secret: true, deck: p.deck, invalid: p.invalid, uid: user.uid, at: now(), by: user.uid }
   await logged(id, { kind: existing ? 'commander' : 'join', player: key, to: p.commander }, (_, b) => {
+    b.set(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'), { commander: p.commander }, { merge: true })
     if (existing) b.update(ref, mine)
     else b.set(ref, { name: p.name, ...mine, ...(p.verified ? {} : { pending: true }) })
   })
@@ -564,17 +590,18 @@ export async function joinTournament(
 /** The decklist link (null: none), private until the tournament is over. */
 export async function saveList(id: string, key: string, link: string | null) {
   const { db, fs } = await fb()
-  const ref = fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck')
-  if (link) await fs.setDoc(ref, { link })
-  else await fs.deleteDoc(ref)
+  // the same document keeps the secret commander
+  await fs.setDoc(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'), { link: link ?? fs.deleteField() }, { merge: true })
   await fs.updateDoc(fs.doc(db, 'tournaments', id, 'players', key), { list: !!link })
 }
 
-export async function loadList(id: string, key: string) {
+/** The player's private document: their decklist and, until round 1, their commander. */
+export async function loadPrivate(id: string, key: string) {
   const { db, fs } = await fb()
-  const snap = await fs.getDoc(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))
-  return (snap.data()?.link as string | undefined) ?? null
+  return ((await fs.getDoc(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))).data() as Private | undefined) ?? {}
 }
+
+export const loadList = async (id: string, key: string) => (await loadPrivate(id, key)).link ?? null
 
 /** Every decklist given, by player: for the TOs, and for everyone once the tournament is over. */
 export async function loadLists(id: string, players: [string, Player][]) {

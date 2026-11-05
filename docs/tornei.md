@@ -79,7 +79,10 @@ scrivere codice. I mockup delle schermate sono su
 - **Il comandante è segreto fino al turno 1**: a iscrizioni aperte l'app lo mostra solo al giocatore che l'ha
   inserito; il TO vede solo se c'è o manca (anche nel registro). Durante il torneo lo vedono i TO e, al tavolo e nei
   propri turni, gli avversari; chi segue il torneo vede classifica e abbinamenti senza comandanti. A torneo concluso
-  è pubblico. È nascosto solo nell'app: il documento del giocatore resta leggibile da Firestore.
+  è pubblico. Fino al turno 1 è nascosto anche nei dati: sta nel documento privato del giocatore
+  (`private/deck`, che leggono solo lui e i TO), e in quello pubblico c'è solo `secret: true`. La transazione che avvia
+  il turno 1 lo copia nel documento pubblico; le regole rifiutano un comandante in chiaro prima di allora. Dal turno 1
+  lo nasconde solo l'app: chi segue il torneo non lo vede, ma i dati lo contengono.
 - Durante il torneo la lista la vedono solo il giocatore e i TO; **a torneo concluso diventa pubblica** (le regole
   Firestore la aprono da sole quando il torneo risulta concluso) e il link va nella colonna "Link lista" del foglio,
   quindi compare anche nel meta.
@@ -250,7 +253,9 @@ tournaments/{tid}                + code (6 caratteri, null dal turno 1: iscrizio
                                    ha scritto nel foglio: tab, first, rows, players, commanders)
   /players/{playerKey}           + uid (l'account che si è iscritto), pending (in attesa del TO), deck (mazzo in
                                    Castra), list (ha dato la decklist)
-  /players/{playerKey}/private/deck  link: la decklist Moxfield (la leggono il giocatore e i TO, tutti a torneo concluso)
+  /players/{playerKey}/private/deck  link: la decklist Moxfield; commander: il comandante finché è segreto (li leggono
+                                   il giocatore e i TO, tutti a torneo concluso)
+  /players/{playerKey}           + secret (comandante dato, nel documento privato fino al turno 1)
   /matches/…                     + reportedBy (chi ha segnato il risultato), confirmed (l'avversario l'ha confermato);
                                    senza reportedBy il risultato è del TO
 ```

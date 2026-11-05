@@ -15,6 +15,7 @@ import { placeLabel } from './Circuit'
 import {
   type Penalty,
   type Player,
+  type Private,
   type TableMatch,
   type Tournament,
   clockLabel,
@@ -22,7 +23,7 @@ import {
   findByCode,
   isListLink,
   joinTournament,
-  loadList,
+  loadPrivate,
   personalMatches,
   ranking,
   removePlayer,
@@ -134,6 +135,8 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   const [result, setResult] = useState<TableMatch | null>(null)
   const [busy, setBusy] = useState(false)
   const mine = me ? players.find(([k]) => k === me)?.[1] : undefined
+  // their commander, secret until round 1: only they (and the TOs) read it
+  const secret = useLiveDoc<Private>(mine?.secret && me ? `tournaments/${id}/players/${me}/private/deck` : null)
   const chosen = decks.find((d) => d.id === mine?.deck) // the deck of the app they registered with
   // once in, the card stays as one of the player's: the code would turn invalid at round 1
   useEffect(() => {
@@ -227,7 +230,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
           <>
             <p className={`small no-margin ${mine.pending ? 'muted' : 'good-text'}`}>{t(mine.pending ? 'join.pending' : 'join.in')}</p>
             <p className="small no-margin">
-              {mine.commander ?? t('run.noCommander')}
+              {mine.commander ?? secret?.commander ?? t('run.noCommander')}
               <span className="muted"> · {t(mine.list ? 'join.listIn' : 'join.noList')}</span>
             </p>
             {chosen && (
@@ -427,11 +430,13 @@ export function JoinSheet({
     setCmd(mine?.commander ?? '')
     setLink('')
     setSaved('')
-    if (mine?.list)
-      loadList(id, me).then(
-        (l) => {
-          setLink(l ?? '')
-          setSaved(l ?? '')
+    // the decklist, and the commander while it's secret
+    if (mine?.list || mine?.secret)
+      loadPrivate(id, me).then(
+        (p) => {
+          if (p.commander && !mine?.commander) setCmd(p.commander)
+          setLink(p.link ?? '')
+          setSaved(p.link ?? '')
         },
         () => {},
       )

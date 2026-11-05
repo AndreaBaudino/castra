@@ -16,6 +16,7 @@ import {
   finishTournament,
   joinTournament,
   loadList,
+  loadPrivate,
   nextCutRound,
   pairSwiss,
   removePlayer,
@@ -102,17 +103,21 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await setTournament(id, { rounds: 3, cut: 2 })
 
     // seven players: a bye every round; a guest whose commander comes later
-    for (const p of ['a', 'b', 'c', 'd', 'e', 'f']) await savePlayer(gina, id, p, { name: p.toUpperCase(), commander: 'Kinnan, Bonder Prodigy' })
-    await savePlayer(gina, id, 'g', { name: 'G', commander: null })
-    await savePlayer(gina, id, 'g', { name: 'G', commander: 'Spider-Man 2099' })
+    for (const p of ['a', 'b', 'c', 'd', 'e', 'f']) await savePlayer(gina, id, p, { name: p.toUpperCase(), commander: 'Kinnan, Bonder Prodigy' }, true)
+    await savePlayer(gina, id, 'g', { name: 'G', commander: null }, true)
+    await savePlayer(gina, id, 'g', { name: 'G', commander: 'Spider-Man 2099' }, true)
     let s = await read(id)
     expect(s.t).toMatchObject({ status: 'open', round: 0, rounds: 3, cut: 2, started: null })
-    expect(s.players.find(([k]) => k === 'g')![1].commander).toBe('Spider-Man 2099')
+    // the commanders are secret until round 1: what everyone reads says only that they were given
+    expect(s.players.find(([k]) => k === 'g')![1]).toMatchObject({ commander: null, secret: true })
+    expect(await loadPrivate(id, 'g')).toEqual({ commander: 'Spider-Man 2099' })
 
-    // round 1: three tables and the bye, the clock started at the server's time
+    // round 1: three tables and the bye, the clock started at the server's time; the commanders come out
     await pairSwiss(id, s.t, s.players, s.matches)
     s = await read(id)
     expect(s.t).toMatchObject({ status: 'swiss', round: 1 })
+    expect(s.players.find(([k]) => k === 'g')![1].commander).toBe('Spider-Man 2099')
+    expect(s.players.every(([, p]) => p.commander && !p.secret)).toBe(true)
     expect(s.t.started).not.toBeNull()
     expect(round(s.matches, 1).map((m) => m.table)).toEqual([0, 1, 2, 3])
     expect(round(s.matches, 1)[0].p2).toBeNull()
@@ -129,7 +134,7 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await report(id, s.matches)
 
     // before round 2: a late entry, and a drop
-    await savePlayer(gina, id, 'h', { name: 'H', commander: 'Atraxa, Grand Unifier', joined: 2 })
+    await savePlayer(gina, id, 'h', { name: 'H', commander: 'Atraxa, Grand Unifier', joined: 2 }, false)
     await setDrop(id, 'a', 1)
     s = await read(id)
     await pairSwiss(id, s.t, s.players, s.matches)
@@ -232,7 +237,13 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await joinTournament(user('pam'), id, 'pat', { name: 'Pat', commander: 'Kraum / Tymna', deck: null, invalid: false, verified: false }, false)
     s = await read(id)
     const nina = s.players.find(([k]) => k === 'nina')![1]
-    expect(nina).toMatchObject({ pending: true, uid: 'lea', commander: 'Spider-Man 2099' })
+    expect(nina).toMatchObject({ pending: true, uid: 'lea', commander: null, secret: true })
+    // her commander only she and the TOs read, until round 1
+    as('lea')
+    expect(await loadPrivate(id, 'nina')).toEqual({ commander: 'Spider-Man 2099' })
+    as('kim')
+    await expect(loadPrivate(id, 'nina')).rejects.toThrow()
+    expect(await loadPrivate(id, 'mia')).toEqual({ commander: 'Kinnan, Bonder Prodigy', link: MOX }) // the decklist kept it
     expect(s.players.find(([k]) => k === 'mia')![1]).toMatchObject({ uid: 'kim', deck: 'd1', list: true })
     expect(s.players.find(([k]) => k === 'mia')![1].pending).toBeUndefined()
 
@@ -251,6 +262,7 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     s = await read(id)
     expect(s.t.code).toBeNull()
     expect(s.players.map(([k]) => k).sort()).toEqual(['mia', 'nina'])
+    expect(s.players.find(([k]) => k === 'nina')![1]).toMatchObject({ commander: 'Spider-Man 2099' })
     expect((await claim('pat')).verified).toBeUndefined()
     as('kim')
     expect(await findByCode(code)).toBeNull()

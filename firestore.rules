@@ -231,36 +231,46 @@ service cloud.firestore {
         return d.get(field, null) == null || (d[field] is int && d[field] >= 0 && d[field] <= 30);
       }
       match /players/{key} {
+        // the commanders are secret until round 1: while registration is open each one is in the player's private
+        // document, and here only `secret` says it was given. The write that starts round 1 brings them here
+        function revealed(d) {
+          return d.get('commander', null) == null
+            || getAfter(/databases/$(database)/documents/tournaments/$(tid)).data.status != 'open'
+            || (resource != null && d.commander == resource.data.get('commander', null)); // given before this rule
+        }
         allow read: if true;
         allow create, update: if managed()
           && key.size() <= 200
-          && request.resource.data.keys().hasOnly(['name', 'commander', 'joined', 'drop', 'uid', 'pending', 'deck', 'invalid', 'list', 'at', 'by'])
+          && request.resource.data.keys().hasOnly(['name', 'commander', 'secret', 'joined', 'drop', 'uid', 'pending', 'deck', 'invalid', 'list', 'at', 'by'])
           && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
           && (request.resource.data.get('commander', null) == null
             || (request.resource.data.commander is string && request.resource.data.commander.size() <= 300))
+          && revealed(request.resource.data)
+          && request.resource.data.get('secret', false) is bool
           && round(request.resource.data, 'joined') && round(request.resource.data, 'drop')
           && request.resource.data.at is string && request.resource.data.by is string;
         allow delete: if managed();
 
         // the player, with the code, while registration is open: in at once with a verified claim, otherwise waiting
-        // for a TO to confirm; always with a commander
+        // for a TO to confirm; always with a commander, written in the same go in the private document
         function entry(d) {
           return d.uid == request.auth.uid && d.by == request.auth.uid
-            && text(d, 'commander', 1, 300)
+            && d.get('commander', null) == null && d.get('secret', false) == true
+            && text(getAfter(/databases/$(database)/documents/tournaments/$(tid)/players/$(key)/private/deck).data, 'commander', 1, 300)
             && (d.get('deck', null) == null || text(d, 'deck', 1, 100))
             && d.get('invalid', false) is bool
             && stamp(d.get('at', null));
         }
         allow create: if holds(key)
           && tour().status == 'open' && tour().get('code', null) != null
-          && request.resource.data.keys().hasOnly(['name', 'commander', 'uid', 'pending', 'deck', 'invalid', 'at', 'by'])
+          && request.resource.data.keys().hasOnly(['name', 'commander', 'secret', 'uid', 'pending', 'deck', 'invalid', 'at', 'by'])
           && text(request.resource.data, 'name', 1, 200)
           && entry(request.resource.data)
           && request.resource.data.get('pending', false) == !verified(key);
         // their commander and deck until round 1 (also when the TO added them)
         allow update: if holds(key)
           && tour().status == 'open'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commander', 'deck', 'invalid', 'uid', 'at', 'by'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commander', 'secret', 'deck', 'invalid', 'uid', 'at', 'by'])
           && entry(request.resource.data);
         // whether they gave their decklist, until it's in the sheet
         allow update: if holds(key)
@@ -275,15 +285,18 @@ service cloud.firestore {
           && request.resource.data.drop == tour().round;
         allow delete: if holds(key) && tour().status == 'open';
 
-        // the decklist (a Moxfield link): the player and the TOs see it, everyone once the tournament is over
+        // the decklist (a Moxfield link) and, until round 1, the commander: the player and the TOs see them, everyone
+        // once the tournament is over
         match /private/{doc} {
           allow read: if managed() || holds(key) || tour().status == 'done';
           allow create, update: if (managed() || holds(key))
             && doc == 'deck'
             && !tour().get('filed', false)
-            && request.resource.data.keys().hasOnly(['link'])
-            && text(request.resource.data, 'link', 1, 300)
-            && request.resource.data.link.matches('https://(www[.])?moxfield[.]com/decks/[-_A-Za-z0-9]+/?');
+            && request.resource.data.keys().hasOnly(['link', 'commander'])
+            && (request.resource.data.get('link', null) == null
+              || (text(request.resource.data, 'link', 1, 300)
+                && request.resource.data.link.matches('https://(www[.])?moxfield[.]com/decks/[-_A-Za-z0-9]+/?')))
+            && optional(request.resource.data, 'commander', 300);
           allow delete: if managed() || (holds(key) && !tour().get('filed', false));
         }
       }
