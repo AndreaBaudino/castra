@@ -65,8 +65,8 @@ export function MatchList({
   )
 }
 
-/** The standings (or the final order), with each one's commander, record, opponents' match-win % and decklist. */
-export function RankingList({ rows, onPick, lists }: { rows: RankRow[]; onPick?: (id: string) => void; lists?: Map<string, string> }) {
+/** The standings (or the final order), with each one's commander (`secret`: not yet), record, opponents' match-win % and decklist. */
+export function RankingList({ rows, onPick, lists, secret }: { rows: RankRow[]; onPick?: (id: string) => void; lists?: Map<string, string>; secret?: boolean }) {
   const { t, lang } = useI18n()
   return (
     <ul className="card-list">
@@ -79,7 +79,8 @@ export function RankingList({ rows, onPick, lists }: { rows: RankRow[]; onPick?:
               {r.dropped && <span className="muted small"> · {t('run.dropped')}</span>}
             </span>
             <span className="ellipsis muted small">
-              {r.commander ?? t('run.noCommander')} · {r.wins}-{r.losses}
+              {!secret && `${r.commander ?? t('run.noCommander')} · `}
+              {r.wins}-{r.losses}
               {r.draws ? `-${r.draws}` : ''} · OMW {Math.round(r.omwp * 100)}%
             </span>
           </div>
@@ -214,7 +215,7 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
   const standings = (
     <section className="card">
       <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
-      <RankingList rows={rows} lists={lists} />
+      <RankingList rows={rows} lists={lists} secret={tour.status !== 'done'} />
     </section>
   )
 
@@ -255,9 +256,11 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
                 <p className="muted small no-margin">
                   {r.dropped
                     ? t('run.dropped')
-                    : !m || tour.status === 'done'
+                    : tour.status === 'done'
                       ? (r.commander ?? '')
-                      : !opp
+                      : !m
+                        ? ''
+                        : !opp
                         ? t('meta.bye')
                         : t('live.table', { n: m.table, p: nameOf(opp), s: scoreText(m) })}
                 </p>
@@ -310,7 +313,6 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
                   <li key={k} className="event-row">
                     <div className="event-main">
                       <span className="ellipsis">{p.name}</span>
-                      <span className="ellipsis muted small">{p.commander ?? ''}</span>
                     </div>
                   </li>
                 ))}

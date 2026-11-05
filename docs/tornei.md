@@ -73,8 +73,13 @@ scrivere codice. I mockup delle schermate sono su
   il torneo concluso (nei due giorni in cui la Home lo mostra), con id fissi (`torneo~r<turno>`), così non si
   duplicano tra telefoni o visite. Senza un mazzo di Castra il nome del mazzo è il comandante.
 - **La decklist è facoltativa**: per ora è un **link Moxfield**. Moxfield blocca la lettura delle liste da altre app
-  (risponde 403), quindi dal link non si ricava il comandante. Il TO vede quanti l'hanno caricata (es. "Decklist
-  8/11"), senza blocchi. Si può aggiungere fino alla pubblicazione sul foglio.
+  (risponde 403), quindi dal link non si ricava il comandante. Il TO vede quanti l'hanno caricata ("Moxfield 8/11")
+  e, per ogni iscritto, l'icona della lista (verde o rossa) e quella del mazzo se ha collegato un mazzo di Castra
+  ("Castra 8/11"), senza blocchi. Si può aggiungere fino alla pubblicazione sul foglio.
+- **Il comandante è segreto fino al turno 1**: a iscrizioni aperte l'app lo mostra solo al giocatore che l'ha
+  inserito; il TO vede solo se c'è o manca (anche nel registro). Durante il torneo lo vedono i TO e, al tavolo e nei
+  propri turni, gli avversari; chi segue il torneo vede classifica e abbinamenti senza comandanti. A torneo concluso
+  è pubblico. È nascosto solo nell'app: il documento del giocatore resta leggibile da Firestore.
 - Durante il torneo la lista la vedono solo il giocatore e i TO; **a torneo concluso diventa pubblica** (le regole
   Firestore la aprono da sole quando il torneo risulta concluso) e il link va nella colonna "Link lista" del foglio,
   quindi compare anche nel meta.

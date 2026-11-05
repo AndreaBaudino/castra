@@ -698,7 +698,7 @@ export function TournamentAdmin({
                       <div className="event-main">
                         <span className="ellipsis">{p.name}</span>
                         <span className="ellipsis muted small">
-                          {c?.name ?? t('admin.noName')} · {p.commander}
+                          {c?.name ?? t('admin.noName')} · {t('run.commanderIn')}
                           {p.invalid && <span className="bad-text"> · {t('run.badDeck')}</span>}
                         </span>
                       </div>
@@ -750,7 +750,8 @@ export function TournamentAdmin({
                         {p.joined && <span className="muted small"> · {t('run.lateFrom', { n: p.joined })}</span>}
                       </span>
                       <span className={`ellipsis small ${p.commander ? 'muted' : 'bad-text'}`}>
-                        {p.commander ?? t('run.noCommander')}
+                        {/* secret until round 1, even to the TOs */}
+                        {!p.commander ? t('run.noCommander') : tour.status === 'open' ? t('run.commanderIn') : p.commander}
                         {p.invalid && <span className="bad-text"> · {t('run.badDeck')}</span>}
                         {penalties.has(k) && <span className="bad-text"> · {t('run.penalties', { n: penalties.get(k)! })}</span>}
                       </span>
@@ -788,7 +789,7 @@ export function TournamentAdmin({
           </section>
         )}
 
-        <LogCard log={log} nameOf={nameOf} whoOf={whoOf} />
+        <LogCard log={log} nameOf={nameOf} whoOf={whoOf} secret={tour.status === 'open'} />
 
         <button
           className="btn danger"
@@ -963,20 +964,20 @@ export function ResultSheet({
 }
 
 /** The tournament's log: who changed what, newest first. */
-function LogCard({ log, nameOf, whoOf }: { log: LogEntry[]; nameOf: (k: string | null) => string; whoOf: (uid: string) => string }) {
+function LogCard({ log, nameOf, whoOf, secret }: { log: LogEntry[]; nameOf: (k: string | null) => string; whoOf: (uid: string) => string; secret: boolean }) {
   const { t } = useI18n()
   return (
     <section className="card">
       <details>
         <summary>{t('log.title')}</summary>
         <p className="muted small">{t('log.hint')}</p>
-        {log.length ? <LogLines log={log} nameOf={nameOf} whoOf={whoOf} /> : <p className="muted small no-margin">{t('log.empty')}</p>}
+        {log.length ? <LogLines log={log} nameOf={nameOf} whoOf={whoOf} secret={secret} /> : <p className="muted small no-margin">{t('log.empty')}</p>}
       </details>
     </section>
   )
 }
 
-function LogLines({ log, nameOf, whoOf }: { log: LogEntry[]; nameOf: (k: string | null) => string; whoOf: (uid: string) => string }) {
+function LogLines({ log, nameOf, whoOf, secret }: { log: LogEntry[]; nameOf: (k: string | null) => string; whoOf: (uid: string) => string; secret?: boolean }) {
   const { t, lang } = useI18n()
   return (
     <ul className="card-list log">
@@ -984,7 +985,8 @@ function LogLines({ log, nameOf, whoOf }: { log: LogEntry[]; nameOf: (k: string 
         <li key={i}>
           <span className="muted">{e.at ? new Date(e.at.toMillis()).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }) : '…'}</span>{' '}
           <b>{whoOf(e.by)}</b>{' '}
-          {t(e.kind === 'add' && e.round ? 'log.addLate' : e.kind === 'commander' && e.from ? 'log.commanderFrom' : `log.${e.kind}`, {
+          {/* the commanders are secret until round 1 */}
+          {t(secret && (e.kind === 'join' || e.kind === 'commander') ? `log.${e.kind}Hidden` : e.kind === 'add' && e.round ? 'log.addLate' : e.kind === 'commander' && e.from ? 'log.commanderFrom' : `log.${e.kind}`, {
             p: nameOf(e.player ?? null),
             r: e.round ?? '',
             n: e.table ?? '',
@@ -1013,13 +1015,13 @@ function useCommanders(q: string) {
   return cards
 }
 
-export function CommanderInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function CommanderInput({ value, onChange, hint }: { value: string; onChange: (v: string) => void; hint?: string }) {
   const { t } = useI18n()
   const cards = useCommanders(value)
   return (
     <label>
       <span>{t('run.commander')}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} list="to-commanders" autoComplete="off" />
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={hint} list="to-commanders" autoComplete="off" />
       <datalist id="to-commanders">
         {cards.map((n) => (
           <option key={n} value={n} />
@@ -1062,8 +1064,8 @@ function PlayerSheet({
   const [pen, setPen] = useState(false)
   const notes = log.filter((e) => e.player === keyOf && (isPenalty(e) || e.kind === 'note'))
   useEffect(() => {
-    setCmd(player?.commander ?? '')
-  }, [player?.commander, keyOf])
+    setCmd(tour.status === 'open' ? '' : (player?.commander ?? '')) // secret until round 1
+  }, [player?.commander, keyOf, tour.status])
   useEffect(() => setPen(false), [keyOf])
   useEffect(() => {
     setList(null)
@@ -1103,7 +1105,7 @@ function PlayerSheet({
               {t('pen.add')}
             </button>
           )}
-          <CommanderInput value={cmd} onChange={setCmd} />
+          <CommanderInput value={cmd} onChange={setCmd} hint={tour.status === 'open' && player.commander ? t('run.commanderHidden') : undefined} />
           <button
             className="btn primary"
             disabled={busy || !cmd.trim() || cmd.trim() === player.commander}
