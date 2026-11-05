@@ -1335,21 +1335,39 @@ button.kv.clickable b {
 .player > :not(.player-art) {
   position: relative;
 }
-/* the shortcut to the background, on the edge next to the bar, between the two tap halves */
-.player > .art-btn {
+/* the shortcut to the background, on the edge next to the bar: dark and outlined to read on any art or colour */
+.player > .art-btns {
   position: absolute;
-  top: 0;
+  top: 8px;
   left: 50%;
   z-index: 1;
   transform: translateX(-50%);
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 36px;
-  color: rgba(255, 255, 255, 0.45);
+  display: flex;
+  gap: 6px;
 }
-.art-btn:active {
+.art-btns button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   color: #fff;
+  font: 700 0.72rem/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.art-btns .x {
+  width: 34px;
+  padding: 0;
+}
+.art-btns button:active {
+  background: rgba(0, 0, 0, 0.65);
 }
 .player:has(.player-art) .life-num {
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);

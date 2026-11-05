@@ -169,7 +169,8 @@ titolo, in `--muted`.
 - Nel mazzo aperto l'immagine in alto sfuma nel fondo della pagina.
 - Nel life counter l'illustrazione scelta per un giocatore (`.player-art`) parte dal lato verso la barra centrale e sfuma
   nel colore del giocatore prima dei contatori, che restano sul colore pieno. Le vite hanno un'ombra leggera per leggersi
-  sull'immagine (l'unica eccezione alla regola "niente ombre").
+  sull'immagine (l'unica eccezione alla regola "niente ombre"). Sul bordo verso la barra, i pulsanti "Sfondo" e X
+  (`.art-btns`) sono neri semitrasparenti con bordo bianco al 28% e testo bianco, per leggersi su immagine e colore.
 
 ## Telefono e computer
 

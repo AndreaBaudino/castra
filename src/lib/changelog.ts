@@ -10,7 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-05',
     it: [
-      'Partita: in ogni pannello, sul bordo vicino alla barra, una piccola icona apre subito la scelta dello sfondo di quel giocatore: la tua per il tuo, quella in alto per l\'avversario. Resta anche in Impostazioni → Sfondi',
+      'Partita: in ogni pannello, sul bordo vicino alla barra, il pulsante "Sfondo" apre subito la scelta dello sfondo di quel giocatore: il tuo in basso, quello dell\'avversario in alto. Quando c\'è un\'illustrazione, la X accanto la toglie e torna il colore del giocatore. Gli sfondi restano anche in Impostazioni → Sfondi',
       'Partita: nel menu Impostazioni (l\'ingranaggio) "Nuova partita" e "Azzera timer" sono subito sotto "Registra risultato", in un pulsante diviso a metà, invece che in fondo al menu. Il pulsante Chiudi in fondo lascia il posto a una freccia accanto al titolo (o tocca fuori dal menu)',
       'Partita: dietro le vite di ogni giocatore può esserci l\'illustrazione di una carta, che sfuma nel colore del giocatore prima dei contatori. Si sceglie da Impostazioni → Sfondi: una carta qualsiasi cercata per nome, anche in un\'altra illustrazione, e per te anche il comandante di uno dei tuoi mazzi. Il tuo sfondo resta per le prossime partite, quello dell\'avversario anche quando ricominci, finché non registri il risultato. Al tuo tavolo di un torneo gli sfondi sono messi da soli: i comandanti tuo e dell\'avversario',
       'Circuito, Mazzi, giocatori: i colori dei comandanti, i costi delle carte nella lista del mazzo e l\'analisi dei colori usano i simboli di mana di Magic al posto dei pallini',
@@ -19,7 +19,7 @@ export const CHANGELOG: Release[] = [
       'Area TO: "Iscriviti anche tu" nella pagina del torneo, per il TO che gioca. Si sceglie uno dei propri mazzi come fanno i giocatori dalla Home, così il torneo finisce nelle proprie statistiche; poi il pulsante diventa "La tua iscrizione" per cambiarla',
     ],
     en: [
-      'Game: on each panel, at the edge next to the bar, a small icon opens that player\'s background right away: yours for yours, the one at the top for the opponent. It is still in Settings → Backgrounds too',
+      'Game: on each panel, at the edge next to the bar, the "Background" button opens that player\'s background right away: yours at the bottom, the opponent\'s at the top. When there is an artwork, the X next to it removes it and the player\'s colour comes back. The backgrounds are still in Settings → Backgrounds too',
       'Game: in the Settings menu (the gear) "New game" and "Reset timer" are right below "Record result", in a button split in half, instead of at the bottom of the menu. The Close button at the bottom gives way to an arrow next to the title (or tap outside the menu)',
       'Game: behind each player\'s life total there can be a card\'s art, fading into the player\'s colour before the counters. Pick it in Settings → Backgrounds: any card searched by name, in another artwork too, and for you also the commander of one of your decks. Your background stays for your next games, the opponent\'s also when you start over, until you record the result. At your tournament table the backgrounds are set on their own: your commander and your opponent\'s',
       'Circuit, Decks, players: commander colours, card costs in the deck list and the colour analysis use Magic mana symbols instead of dots',
