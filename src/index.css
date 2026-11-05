@@ -1802,6 +1802,19 @@ button.kv.clickable b {
 .reset-card > strong {
   text-align: center;
 }
+/* the game menu's title, centred, with a back arrow on its left */
+.menu-head {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  margin: -10px -10px 0;
+}
+.menu-head .icon-btn {
+  color: #fff;
+}
+.menu-head strong {
+  text-align: center;
+}
 .stepper {
   display: flex;
   align-items: center;
@@ -1830,6 +1843,26 @@ button.kv.clickable b {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+/* one button cut in two (the game menu's new game and timer reset); a single half fills it */
+.btn-split {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid #26262a;
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex: none; /* in the menu's scrolling column it would shrink to nothing */
+}
+.btn-split .btn {
+  border: 0;
+  border-radius: 0;
+  padding: 0 6px;
+  letter-spacing: 0.02em; /* "Nuova partita · 25" fits half a phone's menu */
+  white-space: normal;
+}
+.btn-split .btn + .btn {
+  border-left: 1px solid #26262a;
 }
 .life-sheet-host {
   color: var(--text);

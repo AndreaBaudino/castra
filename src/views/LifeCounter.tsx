@@ -684,7 +684,12 @@ export default function LifeCounter({
       {menu && (
         <div className="roll-overlay dim" onClick={() => setMenu(false)}>
           <div className="reset-card" onClick={(e) => e.stopPropagation()}>
-            <strong>{t('game.settings')}</strong>
+            <div className="menu-head">
+              <button className="icon-btn" onClick={() => setMenu(false)} aria-label={t('dg.back')}>
+                <Icon name="back" />
+              </button>
+              <strong>{t('game.settings')}</strong>
+            </div>
             {tg ? (
               <>
                 {tm && (
@@ -725,6 +730,21 @@ export default function LifeCounter({
                 <Icon name="meta" size={16} /> {t('game.record')}
               </button>
             )}
+            <div className="btn-split">
+              <button
+                className="btn ghost"
+                onClick={async () => {
+                  if (!isGameInProgress(game) || (await dialog.confirm(t('life.resetConfirm')))) reset()
+                }}
+              >
+                {t('life.reset')} · {game.startLife}
+              </button>
+              {!tg && (
+                <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
+                  {t('timer.resetTimer')}
+                </button>
+              )}
+            </div>
 
             {!tg && (
               <>
@@ -798,14 +818,7 @@ export default function LifeCounter({
                 ))}
               </div>
             </div>
-            {!tg && (
-              <>
-                <div className="muted small">{t('timer.hint')}</div>
-                <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
-                  {t('timer.resetTimer')}
-                </button>
-              </>
-            )}
+            {!tg && <div className="muted small">{t('timer.hint')}</div>}
 
             <div className="menu-section">{t('life.startLife')}</div>
             <div className="seg">
@@ -815,14 +828,6 @@ export default function LifeCounter({
                 </button>
               ))}
             </div>
-            <button
-              className="btn ghost"
-              onClick={async () => {
-                if (!isGameInProgress(game) || (await dialog.confirm(t('life.resetConfirm')))) reset()
-              }}
-            >
-              <Icon name="refresh" size={16} /> {t('life.reset')} · {game.startLife}
-            </button>
             <button className="btn ghost" onClick={() => setMenu(false)}>
               {t('life.close')}
             </button>
