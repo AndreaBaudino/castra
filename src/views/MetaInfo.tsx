@@ -7,6 +7,7 @@ import { Icon, Sheet } from '../components/ui'
 
 const META = ['source', 'updates', 'share', 'winrate', 'byes', 'missing', 'interval', 'minGames', 'filters'] as const
 const CIRCUIT = ['points', 'poty', 'invited', 'zone', 'levels', 'wld'] as const
+const CARDS = ['source', 'valid', 'entries', 'extended', 'share', 'lists'] as const
 
 function InfoButton({ title, items, label }: { title: string; items: [string, string][]; label?: string }) {
   const [open, setOpen] = useState(false)
@@ -33,6 +34,11 @@ function InfoButton({ title, items, label }: { title: string; items: [string, st
 export function MetaInfoButton() {
   const { t } = useI18n()
   return <InfoButton title={t('metaInfo.title')} items={META.map((s) => [t(`metaInfo.${s}.title`), t(`metaInfo.${s}`)])} />
+}
+
+export function CardsInfoButton() {
+  const { t } = useI18n()
+  return <InfoButton title={t('cardsInfo.title')} items={CARDS.map((s) => [t(`cardsInfo.${s}.title`), t(`cardsInfo.${s}`)])} />
 }
 
 /** `spots`: the players who go to the POTY by ranking. With `withLabel`, a "how it works" link instead of an icon. */

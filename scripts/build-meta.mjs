@@ -136,14 +136,17 @@ function readTable(ws, where) {
   return { date, players, rows }
 }
 
-// ---------- commanders: Scryfall names and color identity ----------
+// ---------- commanders and the lists' cards: Scryfall names, color identity and front face type ----------
 
 const WUBRG = 'WUBRG'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const HEADERS = { 'User-Agent': 'castra-meta/1.0', Accept: 'application/json' }
 
+const typeOf = (c) => (c.type_line ?? c.card_faces?.[0]?.type_line ?? '').split(' // ')[0]
+
 async function resolveCards(names) {
-  const missing = [...new Set(names.map((n) => n.toLowerCase()))].filter((n) => !(n in cards))
+  // a card cached before types were kept is read again, once
+  const missing = [...new Set(names.map((n) => n.toLowerCase()))].filter((n) => !cards[n]?.type)
   for (let i = 0; i < missing.length; i += 75) {
     const chunk = missing.slice(i, i + 75)
     const res = await fetch('https://api.scryfall.com/cards/collection', {
@@ -155,16 +158,16 @@ async function resolveCards(names) {
     const data = await res.json()
     for (const c of data.data) {
       const key = chunk.find((n) => n === c.name.toLowerCase() || n === c.name.split(' // ')[0].toLowerCase())
-      if (key) cards[key] = { name: c.name, colors: c.color_identity.join('') }
+      if (key) cards[key] = { name: c.name, colors: c.color_identity.join(''), type: typeOf(c) }
     }
     await sleep(120)
   }
   // still unknown: Scryfall's fuzzy search fixes small typos
-  for (const n of missing.filter((n) => !(n in cards))) {
+  for (const n of missing.filter((n) => !cards[n]?.type)) {
     const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(n)}`, { headers: HEADERS })
     if (res.ok) {
       const c = await res.json()
-      cards[n] = { name: c.name, colors: c.color_identity.join(''), fuzzy: true }
+      cards[n] = { name: c.name, colors: c.color_identity.join(''), type: typeOf(c), fuzzy: true }
     }
     await sleep(120)
   }
@@ -403,7 +406,8 @@ const kept = prev.filter((y) => !yearList.includes(y.year))
 for (const y of kept) warn(String(y.year), 'nessun foglio letto: restano i dati già pubblicati')
 const years = [...rebuilt, ...kept].sort((a, b) => b.year - a.year)
 writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
-// the lists' cards for the app, with their color identity (null: not found on Scryfall): fixed like the archive
+// the lists' cards for the app: [name, color identity (null: not found on Scryfall), 1 for a land (front face)],
+// fixed like the archive
 const names = [...new Set(listCards.map((n) => listCard(n)?.name ?? n))].sort()
 const cardIndex = new Map(names.map((n, i) => [n, i]))
 for (const n of names) if (!listCard(n)) warn('liste dei mazzi', `carta non trovata su Scryfall: ${n}`)
@@ -412,8 +416,9 @@ writeFileSync(
   JSON.stringify({
     v: 1,
     year: listYear,
-    cards: names.map((n) => [n, listCard(n)?.colors ?? null]),
-    lists: archive.lists.map((l) => [l.commander, l.cards.map((x) => cardIndex.get(listCard(cardName(x))?.name ?? cardName(x)))]),
+    cards: names.map((n) => [n, listCard(n)?.colors ?? null, /\bLand\b/.test(listCard(n)?.type ?? '') ? 1 : 0]),
+    // a set: two names of one card ("A-Teferi") count once
+    lists: archive.lists.map((l) => [l.commander, [...new Set(l.cards.map((x) => cardIndex.get(listCard(cardName(x))?.name ?? cardName(x))))]]),
   }),
 )
 writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).sort()), null, 1) + '\n')

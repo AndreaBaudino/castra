@@ -71,8 +71,12 @@ lista.
 - Il build del meta (`scripts/build-meta.mjs`) aggiunge a ogni iscrizione del 2026 con una lista due campi in fondo:
   `[…, indice della lista nell'archivio, 1 se presa per estensione]`. Le versioni vecchie dell'app li ignorano.
 - `public/decklists.json`, pubblicato con l'app e letto solo dalle pagine delle carte: le carte con la loro identità
-  di colore (da Scryfall, una volta sola, salvata in `scripts/meta/cards.json`) e, per ogni lista dell'archivio nello
-  stesso ordine, il comandante e le sue carte. Fisso come l'archivio: cambia solo se cambia l'archivio.
+  di colore e se sono terre (dalla faccia frontale; da Scryfall, una volta sola, salvate in `scripts/meta/cards.json`)
+  e, per ogni lista dell'archivio nello stesso ordine, il comandante e le sue carte. Fisso come l'archivio.
+- La pagina: Circuito → **Carte** (`src/views/MetaCards.tsx`, conti in `src/lib/decklists.ts`), per ora solo per gli
+  admin. Stessi filtri del Meta, più colori della carta (il bianco: le carte con il bianco; incolore: le carte
+  incolori), "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
+  giocare). Toccando una carta si apre la sua scheda (`#meta/x~<carta>`), accanto alla lista sul computer.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
 
@@ -90,8 +94,8 @@ lista.
 - Test automatici (`scripts/meta/decklists.test.mjs`) sui casi reali, ridotti: un link di un altro comandante senza
   una lista propria non dà carte (Bresciani); i collegamenti diretti; l'estensione con la lista più recente, anche con
   un link rotto e per un torneo dopo il 5/11, e tra tappe conta il numero; un'iscrizione del 2027 non prende liste
-  del 2026; una lista portata due volte conta due. Da aggiungere con la pagina: la percentuale generale ignora i mazzi
-  che non possono giocare la carta.
+  del 2026; una lista portata due volte conta due. `src/lib/decklists.test.ts`: la percentuale conta per presenza e
+  solo i mazzi che possono giocare la carta, i filtri, nessun dato per un altro anno.
 - Controllati sul meta pubblicato il 5/11: Bresciani con Oloro senza lista (2 iscrizioni); Waltz con Atraxa, 12
   iscrizioni, tutte con la sua lista Atraxa (3 dirette, 9 estese); la Tivit di Arzenton, 4 dirette e 2 estese; la
   Phelia di Misuri, 10 dirette e 5 estese.

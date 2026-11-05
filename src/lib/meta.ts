@@ -41,6 +41,8 @@ export interface MetaEntry {
   d: number
   bye: boolean // a bye ticked in the sheet: one of the wins, left out of the winrate
   list: string | null
+  deckList?: number // the circuit's deck list it was given (src/lib/decklists.ts, docs/liste-mazzi.md)
+  deckListGuessed?: boolean // given by extension: the player's latest list for that commander
 }
 
 /** One match between two commanders: only the tournaments run in the app know who played whom. */
@@ -206,7 +208,8 @@ export function aggregate(ds: MetaDataset, f: MetaFilter, colors = ''): MetaData
 // ---------- the data file ----------
 
 type RawTournament = { id: string; k: TournamentKind; s: Season; n: string; lg?: string; st?: number; d?: string; p: number; c?: string }
-type RawEntry = [number, string | null, number, number, number | null, number | null, number | null, 0 | 1, string | null]
+// …plus [deck list, 1 when given by extension] for the entries with a deck list
+type RawEntry = [number, string | null, number, number, number | null, number | null, number | null, 0 | 1, string | null, number?, (0 | 1)?]
 interface RawMeta {
   v: number
   year: number
@@ -238,7 +241,7 @@ function fromRaw(raw: RawMeta, years: number[]): MetaDataset {
       circuit: t.c,
     })),
     commanders: raw.c.map((c, id) => ({ id, name: c.n, colors: c.c })),
-    entries: raw.e.map(([t, player, cmd, place, w, l, d, bye, list]) => ({
+    entries: raw.e.map(([t, player, cmd, place, w, l, d, bye, list, deckList, guessed]) => ({
       t,
       player,
       key: player ? playerKey(player) : null,
@@ -249,6 +252,7 @@ function fromRaw(raw: RawMeta, years: number[]): MetaDataset {
       d: d ?? 0,
       bye: !!bye,
       list,
+      ...(deckList != null ? { deckList, deckListGuessed: !!guessed } : {}),
     })),
     pairings: (raw.m ?? []).map(([t, a, b, r]) => ({ t, a, b, r })),
   }

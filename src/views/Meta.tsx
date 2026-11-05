@@ -9,6 +9,9 @@ import { CircuitInfoButton, MetaInfoButton } from './MetaInfo'
 import { POTY_SPOTS } from '../config'
 import { symbolUrl } from '../lib/scryfall'
 import { MetaPie } from '../components/MetaPie'
+import { useAuth } from '../lib/auth'
+import { useIsAdmin } from '../lib/admin'
+import MetaCards from './MetaCards'
 
 type Status = 'idle' | 'loading' | 'error'
 
@@ -164,7 +167,9 @@ export default function Meta({
   openEvent,
   openLeague,
   openCommander,
+  openCard,
   current,
+  currentCard,
 }: {
   banner?: React.ReactNode
   dataset: MetaDataset | null
@@ -180,10 +185,16 @@ export default function Meta({
   openEvent: (id: string) => void
   openLeague: (season: string, name: string) => void
   openCommander: (name: string) => void
+  openCard: (name: string) => void
   current?: string // the commander open beside the list, on a desktop
+  currentCard?: string // …or the card
 }) {
   const { t, lang } = useI18n()
-  const [mode, setMode] = useStoredState<'decks' | 'circuit'>(META_MODE_KEY, 'decks')
+  const [stored, setMode] = useStoredState<'decks' | 'cards' | 'circuit'>(META_MODE_KEY, 'decks')
+  // the cards are for the admins only, for now
+  const admin = useIsAdmin(useAuth().user?.uid ?? null)
+  const modes = admin ? (['decks', 'cards', 'circuit'] as const) : (['decks', 'circuit'] as const)
+  const mode = stored === 'cards' && !admin ? 'decks' : stored
   const [filter, setFilter] = useStoredState<MetaFilter>(META_FILTER_KEY, ALL)
   const [q, setQ] = useState('')
   const [colors, setColors] = useState('') // WUBRG order, as the dataset's
@@ -224,10 +235,10 @@ export default function Meta({
       </header>
 
       <div className="mode-tabs" role="tablist">
-        {(['decks', 'circuit'] as const).map((m) => (
+        {modes.map((m) => (
           <button key={m} role="tab" aria-selected={mode === m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>
-            <Icon name={m === 'decks' ? 'pie' : 'trophy'} size={20} />
-            {t(m === 'decks' ? 'circuit.modeDecks' : 'circuit.modeCircuit')}
+            <Icon name={m === 'decks' ? 'pie' : m === 'cards' ? 'cards' : 'trophy'} size={20} />
+            {t(m === 'decks' ? 'circuit.modeDecks' : m === 'cards' ? 'circuit.modeCards' : 'circuit.modeCircuit')}
           </button>
         ))}
       </div>
@@ -273,6 +284,12 @@ export default function Meta({
         </>
       ) : !dataset || !meta ? (
         <div className={`notice ${status === 'error' ? 'warn' : ''}`}>{t(status === 'error' ? 'meta.error' : 'meta.loading')}</div>
+      ) : mode === 'cards' ? (
+        <>
+          {status === 'error' && <div className="notice warn">{t('meta.offline')}</div>}
+          <MetaFilters dataset={dataset} filter={filter} setFilter={setFilter} />
+          <MetaCards dataset={dataset} filter={filter} openCard={openCard} current={currentCard} />
+        </>
       ) : (
         <>
           {status === 'error' && <div className="notice warn">{t('meta.offline')}</div>}

@@ -34,7 +34,7 @@
   `src/lib/appsScript.test.ts` (lo script che scrive i tornei nei fogli, su fogli finti in memoria),
   `src/lib/notifyScript.test.ts` (lo script delle notifiche dei tornei, su un Firestore finto), `src/lib/theme.test.ts`
   (il testo sopra il colore principale), `scripts/meta/decklists.test.mjs` (quale lista del circuito va a ogni
-  iscrizione); girano anche nel
+  iscrizione), `src/lib/decklists.test.ts` (quanto è giocata una carta); girano anche nel
   deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
   il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.
@@ -93,6 +93,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - `organizers.ts` (TO e zone, `canRun`), `swiss.ts` (motore dei tornei: abbinamenti svizzeri, classifica con gli
   spareggi MTR, top cut; funzioni pure), `tournaments.ts` (tornei su Firestore: `useTournaments`, `useTournament`,
   creazione, iscritti, turni, risultati, top cut). Progetto in `docs/tornei.md`.
+- `decklists.ts`: le liste dei mazzi del circuito (`public/decklists.json`) e `cardStats`, per la scheda Carte del
+  Circuito (`views/MetaCards.tsx`, per ora solo admin); regole in `docs/liste-mazzi.md`.
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
   `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate
@@ -102,7 +104,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - Route nell'hash: `#tab` o `#tab/sottopagina`. Tab: `home`, `meta` (si chiama "Circuito" in UI), `game`, `stats`,
   `decks`, `account`, `cards`, `to` (area TO; `to/<id>` un torneo gestito in app), `live` (tornei in corso; `live/<id>` uno, da spettatore).
 - Sottopagine del Circuito con prefisso: `p~giocatore`, `e~evento`, `l~stagione~lega`, `c~a~b` (confronto),
-  `k~comandante`, `t~torneo`; si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
+  `k~comandante`, `t~torneo`, `x~carta` (dalla scheda Carte, solo admin); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
 - La cronologia è costruita apposta perché il tasto "indietro" del telefono funzioni: home → pagina principale →
   sottopagine impilate → foglio/dialogo aperto. Fogli e dialoghi usano `useBackCloses(open, onClose, layer)`:
   ogni nuovo pannello modale deve usarlo (o usare `Sheet` / `useDialog()`), mai `window.confirm`/`alert`.

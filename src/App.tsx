@@ -233,6 +233,7 @@ export default function App() {
   const openCompare = (a: string, b: string) => go('meta', `c~${encodeURIComponent(a)}~${encodeURIComponent(b)}`, true)
   const openCommander = (name: string) => go('meta', `k~${encodeURIComponent(name)}`, true)
   const openTournament = (id: string) => go('meta', `t~${encodeURIComponent(id)}`, true)
+  const openMetaCard = (name: string) => go('meta', `x~${encodeURIComponent(name)}`, true)
   // to: the TO area; to/<id>: a tournament run in the app
   const openRun = (id: string) => go('to', encodeURIComponent(id), true)
   // live: the tournaments being played; live/<id>: one, for whoever follows it
@@ -259,7 +260,8 @@ export default function App() {
     findMe()
   }
   // meta/p~<player key>, meta/e~<event id>, meta/l~<season>~<league>, meta/c~<player a>~<player b>,
-  // meta/k~<commander>, meta/t~<tournament id> (an event or a league stage of the deck meta)
+  // meta/k~<commander>, meta/t~<tournament id> (an event or a league stage of the deck meta), meta/x~<card> (from the
+  // circuit's cards)
   const [metaSub, ...metaArgs] = route.tab === 'meta' && route.deck ? route.deck.split('~').map(decodeURIComponent) : []
   // a circuit event with its sheet opens as a tournament of the meta: same players, plus decks and records
   const circuitEvent = metaSub === 'e' ? shown.data?.events.find((e) => e.id === metaArgs[0]) : undefined
@@ -268,6 +270,8 @@ export default function App() {
   const metaList = (
     <Meta
       current={metaSub === 'k' ? metaArgs[0] : undefined}
+      currentCard={metaSub === 'x' ? metaArgs[0] : undefined}
+      openCard={openMetaCard}
       banner={noticeCard}
       dataset={dataset}
       status={status}
@@ -429,6 +433,8 @@ export default function App() {
                 openDeck={(id) => go('decks', id)}
                 openCommander={openCommander}
               />
+            ) : metaSub === 'x' ? (
+              <CardPage name={metaArgs[0]} metaDecks={meta.decks} onBack={() => history.back()} openCommander={openCommander} />
             ) : metaSub === 't' || (metaSub === 'e' && eventTournament) ? (
               <TournamentPage
                 dataset={dataset}
