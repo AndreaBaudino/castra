@@ -304,6 +304,23 @@ service cloud.firestore {
       // the penalties given to their account; a player writes only the lines of their own actions; nobody changes or
       // deletes a line (an admin, from the console)
       match /log/{lid} {
+        // a player's line tells what their write leaves (the line comes with the change, src/lib/tournaments.ts
+        // logged): a line about something that isn't so is refused
+        function told(d) {
+          return (d.kind in ['report', 'confirm'] && d.get('round', null) is int && d.get('table', null) is int
+              && result(d, getAfter(/databases/$(database)/documents/tournaments/$(tid)/matches/$('r' + string(d.round) + 't' + string(d.table))).data))
+            || (d.kind == 'drop' && d.get('round', null) is int
+              && getAfter(/databases/$(database)/documents/tournaments/$(tid)/players/$(d.player)).data.get('drop', null) == d.round)
+            || (d.kind in ['join', 'commander']
+              && getAfter(/databases/$(database)/documents/tournaments/$(tid)/players/$(d.player)/private/deck).data.get('commander', null) == d.get('to', null))
+            || (d.kind == 'leave' && !existsAfter(/databases/$(database)/documents/tournaments/$(tid)/players/$(d.player)));
+        }
+        // their table's result: entered by them and waiting, or confirmed by them on the opponent's word
+        function result(d, m) {
+          return d.player in [m.p1, m.p2]
+            && (d.kind == 'report' ? m.get('reportedBy', null) == d.player && m.get('confirmed', null) == false
+              : m.get('confirmed', null) == true && m.get('reportedBy', null) != d.player);
+        }
         allow read: if managed() || (request.auth != null && resource.data.get('uid', null) == request.auth.uid);
         allow create: if request.resource.data.keys().hasOnly(['at', 'by', 'kind', 'round', 'table', 'player', 'from', 'to', 'infraction', 'text', 'uid'])
           && request.resource.data.by == request.auth.uid
@@ -318,7 +335,8 @@ service cloud.firestore {
           && (managed()
             || (request.resource.data.kind in ['join', 'commander', 'leave', 'report', 'confirm', 'drop']
               && holds(request.resource.data.get('player', ''))
-              && request.resource.data.get('uid', null) == null))
+              && request.resource.data.get('uid', null) == null
+              && told(request.resource.data)))
           && request.resource.data.kind in ['join', 'commander', 'leave', 'report', 'confirm', 'drop', 'undrop', 'add',
             'remove', 'accept', 'score', 'extra', 'pair', 'repair', 'cut', 'done', 'filed', 'unfiled', 'publish',
             'unpublish', 'cancel', 'warning', 'gameLoss', 'matchLoss', 'dq', 'note', 'deckCheck'];

@@ -277,7 +277,10 @@ tournaments/{tid}/log/{auto}     at (ora del server), by (account), kind (cosa �
 Ogni funzione di `tournaments.ts` che cambia il torneo scrive la sua riga nella stessa operazione, quindi o vanno a buon
 fine entrambe o nessuna. Il giocatore scrive solo le righe delle proprie azioni (iscrizione, risultato, conferma, drop).
 È l'app a scrivere il registro: le regole ne garantiscono autore e ora, non che ogni modifica ne abbia una (basta per
-errori e telefoni diversi; se servisse, le regole potrebbero imporlo sulle correzioni dei risultati). Annullando il
+errori e telefoni diversi; se servisse, le regole potrebbero imporlo sulle correzioni dei risultati). Le righe dei
+giocatori devono dire il vero: le regole confrontano la riga con lo stato che la scrittura lascia (il risultato segnato
+da lui e in attesa, o confermato da lui; il drop a quel turno; il comandante nel documento privato; l'iscrizione tolta),
+quindi una riga su qualcosa che non è successo viene rifiutata. Annullando il
 torneo il registro resta, con chi l'ha annullato; un torneo ripartito sullo stesso foglio mostra solo le righe sue.
 
 Ogni regola nuova ha il suo caso in `scripts/test-rules.mjs`, e `src/lib/tournaments.emulator.test.ts` fa girare un

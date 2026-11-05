@@ -312,7 +312,21 @@ await allowed('everyone sees the matches', getDoc(doc(guest, 'tournaments', STAG
 const logs = (db) => collection(db, 'tournaments', STAGE, 'log')
 const line = (by, more = {}) => ({ kind: 'score', round: 1, table: 1, from: '—', to: '2-1', at: serverTimestamp(), by, ...more })
 await allowed('a line of the log, by the TO', addDoc(logs(gina), line('gina')))
-await allowed('a line about your own result', addDoc(logs(kim), line('kim', { kind: 'report', player: 'mia' })))
+// a player's line comes with the change it tells (src/lib/tournaments.ts logged), and must tell what that leaves
+const told = (db, change, more) => {
+  const b = writeBatch(db)
+  change(b)
+  b.set(doc(logs(db)), line('kim', more))
+  return b.commit()
+}
+await allowed(
+  'a line about your own result, with it',
+  told(kim, (b) => b.update(doc(kim, 'tournaments', STAGE, 'matches', 'r1t2'), { score: [2, 1, 0], reportedBy: 'mia', confirmed: false }), { kind: 'report', player: 'mia', table: 2 }),
+)
+await denied('a line about a table you do not play', addDoc(logs(kim), line('kim', { kind: 'report', player: 'mia' })))
+await denied('a line confirming a result nobody confirmed', addDoc(logs(kim), line('kim', { kind: 'confirm', player: 'mia', table: 2 })))
+await denied('a line about a drop that did not happen', addDoc(logs(kim), line('kim', { kind: 'drop', player: 'mia' })))
+await denied('a line about leaving, still registered', addDoc(logs(kim), line('kim', { kind: 'leave', player: 'mia', round: null, table: null })))
 await denied('a line in the name of another account', addDoc(logs(gina), line('carol')))
 await denied('a line with a time of the phone', addDoc(logs(gina), line('gina', { at: AT })))
 await denied('a line of a kind the log does not know', addDoc(logs(gina), line('gina', { kind: 'cheat' })))
