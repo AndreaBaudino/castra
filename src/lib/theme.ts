@@ -5,6 +5,7 @@ export interface Theme {
   p0: string // life counter, top player
   p1: string // life counter, bottom player
   scale: 'S' | 'M' | 'L'
+  forge?: boolean // already moved to the Forge colours: from then on the old defaults are real choices
 }
 
 export const DEFAULT_THEME: Theme = {
@@ -18,12 +19,17 @@ export const DEFAULT_THEME: Theme = {
 
 export const SWATCHES = ['#f65a1a', '#d4a64a', '#7d1f1a', '#23405f', '#2f6b4f', '#5b3c88', '#1f6f8b', '#c2571a', '#8a8f98', '#a33d6c']
 
-/** Themes saved before the Forge colours (Nov 2026) hold the old defaults: they still mean "the default". */
-export const currentTheme = (t: Theme): Theme => ({
-  ...t,
-  accent: t.accent.toLowerCase() === '#b8322a' ? DEFAULT_THEME.accent : t.accent,
-  highlight: t.highlight.toLowerCase() === '#d4a64a' ? DEFAULT_THEME.highlight : t.highlight,
-})
+/** Themes saved before the Forge colours (Nov 2026) hold the old defaults: they still mean "the default". Only once,
+ *  or the gold swatch (the old highlight) could never be picked again. */
+export const currentTheme = (t: Theme): Theme =>
+  t.forge
+    ? t
+    : {
+        ...t,
+        accent: t.accent.toLowerCase() === '#b8322a' ? DEFAULT_THEME.accent : t.accent,
+        highlight: t.highlight.toLowerCase() === '#d4a64a' ? DEFAULT_THEME.highlight : t.highlight,
+        forge: true,
+      }
 
 /** The text on an accent background: dark ink, or white when the accent is too dark to read ink on (WCAG contrast). */
 export function inkOn(hex: string) {

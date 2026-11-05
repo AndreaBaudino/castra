@@ -368,7 +368,7 @@ export default function App() {
         {route.tab === 'account' && (
           <Account
             theme={theme}
-            setTheme={setTheme}
+            setTheme={(fn) => setTheme((x) => fn(currentTheme(x)))}
             prefs={prefs}
             setPrefs={setPrefs}
             setTimerSettings={setTimerSettings}
