@@ -741,7 +741,7 @@ export default function LifeCounter({
               </button>
               {!tg && (
                 <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
-                  {t('timer.resetTimer')}
+                  <Icon name="alarm" size={16} /> {t('timer.resetTimer')}
                 </button>
               )}
             </div>

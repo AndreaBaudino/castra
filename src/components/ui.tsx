@@ -143,6 +143,12 @@ const paths: Record<string, ReactNode> = {
   ),
   logout: <path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h11" />,
   undo: <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
+  alarm: (
+    <>
+      <circle cx="12" cy="13" r="7.5" />
+      <path d="M12 9v4l2.5 2M4 4.5 6.5 2.5M20 4.5l-2.5-2M7 19.5 5.5 21.5M17 19.5l1.5 2" />
+    </>
+  ),
   history: (
     <>
       <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3.5 8.5" />
