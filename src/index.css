@@ -1802,6 +1802,10 @@ button.kv.clickable b {
 .reset-card > strong {
   text-align: center;
 }
+/* a long menu scrolls: without this its rows would shrink instead, the boxed ones (overflow: hidden) to nothing */
+.reset-card > * {
+  flex-shrink: 0;
+}
 /* the game menu's title, centred, with a back arrow on its left */
 .menu-head {
   display: grid;
@@ -1852,7 +1856,6 @@ button.kv.clickable b {
   border: 1px solid #26262a;
   border-radius: var(--radius);
   overflow: hidden;
-  flex: none; /* in the menu's scrolling column it would shrink to nothing */
 }
 .btn-split .btn {
   border: 0;
