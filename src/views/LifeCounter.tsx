@@ -69,7 +69,7 @@ export interface GameState {
   initiative?: 0 | 1
   dungeons?: [DungeonRun, DungeonRun]
   tour?: TourGame
-  art?: CardArt // the opponent's, for this game only: the phone owner's is kept apart (cc.lifeArt)
+  art?: CardArt // the opponent's, until the result is recorded: the phone owner's is kept apart (cc.lifeArt)
 }
 
 const outside: DungeonRun = { d: 'undercity', path: [], done: 0 }
@@ -507,9 +507,14 @@ export default function LifeCounter({
     return { ...g, extras: on.includes(x) ? on.filter((y) => y !== x) : EXTRAS.filter((y) => y === x || on.includes(y)) }
   })
 
-  // a new game of a tournament match stays in the match, with its clock
+  // a new game of a tournament match stays in the match, with its clock; otherwise it keeps the opponent's art, which
+  // goes once the result is recorded (the next game is likely against someone else)
   const reset = (startLife = game.startLife, games?: Score) => {
-    setGame((g) => (g.tour ? { ...fresh(startLife), timer: g.timer, tour: { ...g.tour, games: games ?? g.tour.games } } : fresh(startLife)))
+    setGame((g) =>
+      g.tour
+        ? { ...fresh(startLife), timer: g.timer, tour: { ...g.tour, games: games ?? g.tour.games } }
+        : { ...fresh(startLife), art: g.art },
+    )
     setMenu(false)
   }
 
@@ -839,6 +844,7 @@ export default function LifeCounter({
             onSaveMatch(m)
             setRecording(false)
             reset()
+            setGame((g) => ({ ...g, art: undefined }))
             setBanner(t('match.saved'))
           }}
         />

@@ -50,7 +50,8 @@ export function ArtSheet({
     return () => ctrl.abort()
   }, [value?.name]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const covers = decks.flatMap((d) => {
+  // the decks are the phone owner's: no use for the opponent
+  const covers = !mine ? [] : decks.flatMap((d) => {
     const art = deckCover(d)
     return art ? [{ name: d.name, art }] : []
   })
