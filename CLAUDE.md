@@ -33,7 +33,8 @@
   `src/lib/swiss.test.ts` (abbinamenti, classifica e top cut dei tornei, anche su tornei simulati),
   `src/lib/appsScript.test.ts` (lo script che scrive i tornei nei fogli, su fogli finti in memoria),
   `src/lib/notifyScript.test.ts` (lo script delle notifiche dei tornei, su un Firestore finto), `src/lib/theme.test.ts`
-  (il testo sopra il colore principale); girano anche nel
+  (il testo sopra il colore principale), `scripts/meta/decklists.test.mjs` (quale lista del circuito va a ogni
+  iscrizione); girano anche nel
   deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
   il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.

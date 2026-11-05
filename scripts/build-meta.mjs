@@ -14,6 +14,7 @@ import ExcelJS from 'exceljs'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { aliasLookup, commanderKey, loadAliases, playerKey } from './meta/aliases.mjs'
 import { firestoreDocs } from './meta/firestore.mjs'
+import { assignLists, cardName } from './meta/decklists.mjs'
 import { pairingsOf } from './meta/pairings.mjs'
 
 const dir = new URL('./meta/', import.meta.url)
@@ -290,6 +291,14 @@ for (const src of sources.tournaments) {
   }
 }
 
+// the circuit's deck lists (docs/liste-mazzi.md): a fixed archive, for the year it was taken in
+const archive = readJson(new URL('decklists.json', dir))
+const listYear = +archive.taken.slice(0, 4)
+const listCards = archive.lists.flatMap((l) => l.cards.map(cardName))
+// by the front face, as Scryfall doesn't find double-faced cards by both names
+const listCard = (n) => cards[frontFace(n).toLowerCase()]
+await resolveCards(listCards.map(frontFace))
+
 await resolveCards(tables.flatMap(({ rows, ctx }) => rows.flatMap((r) => (r.commander ? splitPartners(r.commander, ctx, false).map(frontFace) : []))))
 
 // who played whom: only the tournaments run in the app know it (docs/tornei.md), once their results are in the sheet.
@@ -337,6 +346,16 @@ function build(tables) {
 }
 const yearList = [...new Set(tables.map((x) => x.year))].sort((a, b) => b - a)
 const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.year === year)) }))
+// each entry of the lists' year with a list gets two more fields: [..., list index, 1 when taken by extension]
+let listReport = null
+for (const y of built.filter((y) => y.year === listYear)) {
+  const { lists, orphans } = assignLists(archive, y.year, y.t, y.c, y.e, playerKey)
+  lists.forEach((x, i) => x && y.e[i].push(...x))
+  const direct = lists.filter((x) => x && !x[1]).length
+  const extended = lists.filter((x) => x?.[1]).length
+  listReport = { year: listYear, direct, extended, none: y.e.length - direct - extended, orphans: orphans.length }
+  for (const o of orphans) warn('liste dei mazzi', `iscrizione non più trovata con il suo comandante: ${o}`)
+}
 // players missing from their year's circuit leaderboard: usually a typo, fixed with an alias. The leaderboard sheet of
 // each year is on Firestore (circuits/{year}, set from the app's admin area); 2026's is also in src/config.ts.
 async function circuitSheets() {
@@ -384,6 +403,19 @@ const kept = prev.filter((y) => !yearList.includes(y.year))
 for (const y of kept) warn(String(y.year), 'nessun foglio letto: restano i dati già pubblicati')
 const years = [...rebuilt, ...kept].sort((a, b) => b.year - a.year)
 writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
+// the lists' cards for the app, with their color identity (null: not found on Scryfall): fixed like the archive
+const names = [...new Set(listCards.map((n) => listCard(n)?.name ?? n))].sort()
+const cardIndex = new Map(names.map((n, i) => [n, i]))
+for (const n of names) if (!listCard(n)) warn('liste dei mazzi', `carta non trovata su Scryfall: ${n}`)
+writeFileSync(
+  new URL('public/decklists.json', root),
+  JSON.stringify({
+    v: 1,
+    year: listYear,
+    cards: names.map((n) => [n, listCard(n)?.colors ?? null]),
+    lists: archive.lists.map((l) => [l.commander, l.cards.map((x) => cardIndex.get(listCard(cardName(x))?.name ?? cardName(x)))]),
+  }),
+)
 writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).sort()), null, 1) + '\n')
 
 // for the update's report (scripts/meta-status.mjs)
@@ -393,12 +425,14 @@ const aliasUse = Object.fromEntries(Object.entries(usage).map(([id, u]) => [id, 
 if (existsSync(new URL('.meta-cache/', root)))
   writeFileSync(
     new URL('.meta-cache/report.json', root),
-    JSON.stringify({ warnings, read, years: summary, issues: issueList, aliases: aliasUse, aliasOrigin: aliases.origin }),
+    JSON.stringify({ warnings, read, years: summary, decklists: listReport, issues: issueList, aliases: aliasUse, aliasOrigin: aliases.origin }),
   )
 
 for (const y of years) console.log(`${y.year}: ${y.t.length} tornei, ${y.e.length} presenze, ${y.c.length} comandanti, ${y.m?.length ?? 0} match in app`)
 const unused = aliases.list.filter((a) => !usage[a.id]).length
 console.log(`Correzioni (${aliases.origin === 'firestore' ? 'Firestore' : 'aliases.json'}): ${aliases.list.length}, ${unused} non usate`)
+if (listReport)
+  console.log(`Liste dei mazzi ${listReport.year}: ${listReport.direct} iscrizioni dirette, ${listReport.extended} estese, ${listReport.none} senza lista, ${listReport.orphans} orfane`)
 if (issueList.length)
   console.log(`\nNomi da correggere (${issueList.length}):\n- ${issueList.map((x) => `${x.kind === 'player' ? 'giocatore' : 'comandante'} "${x.name}"${x.guess ? ` (forse ${x.guess})` : ''}: ${x.where.slice(0, 3).join(', ')}`).join('\n- ')}`)
 if (warnings.length) console.log(`\nDa controllare (${warnings.length}):\n- ${warnings.join('\n- ')}`)

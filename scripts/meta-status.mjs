@@ -41,5 +41,7 @@ console.log(
     issues: ok ? (built?.issues ?? []) : [],
     aliases: ok ? (built?.aliases ?? {}) : {},
     aliasOrigin: ok ? (built?.aliasOrigin ?? null) : null,
+    // the deck lists given to the entries (docs/liste-mazzi.md)
+    decklists: ok ? (built?.decklists ?? null) : null,
   }),
 )

@@ -981,6 +981,10 @@ const it = {
   'sources.ok': 'Ultimo aggiornamento riuscito: {d}',
   'sources.failed': 'Ultimo aggiornamento non riuscito: {d}. Il meta pubblicato è rimasto quello di prima.',
   'sources.yearSummary': '{y}: {t} tornei, {e} presenze',
+  'sources.decklists':
+    'Liste dei mazzi {year}: {direct} presenze con il link, {extended} con la lista dello stesso giocatore, {none} senza lista, {n} collegamenti orfani',
+  'sources.decklists.one':
+    'Liste dei mazzi {year}: {direct} presenze con il link, {extended} con la lista dello stesso giocatore, {none} senza lista, 1 collegamento orfano',
   'sources.fromFile': 'L\'aggiornamento ha usato l\'elenco nel codice (sources.json): importalo qui sotto per gestirlo dall\'app.',
   'sources.showWarnings': 'Mostra {n} avvisi da controllare',
   'sources.showWarnings.one': 'Mostra 1 avviso da controllare',
@@ -2300,6 +2304,10 @@ const en: Record<Key, string> = {
   'sources.ok': 'Last update succeeded: {d}',
   'sources.failed': 'Last update failed: {d}. The published meta stayed as it was.',
   'sources.yearSummary': '{y}: {t} tournaments, {e} entries',
+  'sources.decklists':
+    'Deck lists {year}: {direct} entries with the link, {extended} with the same player\'s list, {none} without a list, {n} orphan links',
+  'sources.decklists.one':
+    'Deck lists {year}: {direct} entries with the link, {extended} with the same player\'s list, {none} without a list, 1 orphan link',
   'sources.fromFile': 'The update used the list in the code (sources.json): import it below to manage it from the app.',
   'sources.showWarnings': 'Show {n} warnings to check',
   'sources.showWarnings.one': 'Show 1 warning to check',

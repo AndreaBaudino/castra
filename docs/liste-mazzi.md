@@ -32,16 +32,21 @@ Dal 2027 nessuna iscrizione prende una lista di questo archivio.
    647 iscrizioni.
 2. **Estensione**: l'iscrizione non ha una lista diretta, ma lo stesso giocatore ha una lista valida per lo **stesso
    comandante** → prende quella. Vale per le iscrizioni senza link, con un link Moxfield vuoto o rotto, con un link
-   ManaBox o altro. Oggi 635 iscrizioni in più (620 senza link, 14 Moxfield vuoti o rotti, 1 ManaBox).
+   ManaBox o altro. Oggi 637 iscrizioni in più. Il giocatore è lo stesso a meno di maiuscole e accenti, come nel
+   resto dell'app (`playerKey`): "Daniele degli Agostini" e "Daniele Degli Agostini" sono una persona sola.
    - Più liste valide dello stesso giocatore per quel comandante (oggi 75 iscrizioni, 20 coppie giocatore +
      comandante): vale la **più recente**, cioè quella con l'iscrizione collegata più recente.
    - "Più recente" segue la data del torneo. Tra tappe della stessa lega conta il **numero della tappa**: una tappa
      senza data (oggi `s1-sanremo-3` e `s2-orbassano-4`) viene subito dopo la tappa precedente della sua lega.
-3. **Nessuna lista**: stesso link ma comandante diverso (es. Waltz con Atraxa a Cogoleto il 30/01, Bresciani con
-   Oloro ad Albisola il 20/09), oppure nessuna lista valida di quel giocatore per quel comandante. L'iscrizione resta
-   nel meta con il comandante del foglio e i suoi risultati, senza carte.
+3. **Nessuna lista**: nessuna lista valida di quel giocatore per quel comandante (es. Bresciani con Oloro ad
+   Albisola il 20/09, iscritto con il link della Tivit di Arzenton). L'iscrizione resta nel meta con il comandante del
+   foglio e i suoi risultati, senza carte.
 
-Copertura del 2026 al 5/11: **1282 iscrizioni su 2243 (57%)**, **5265 partite su 9099 (58%)**; 961 iscrizioni senza
+Un link di un altro comandante non toglie l'estensione: Waltz con Atraxa a Cogoleto il 30/01 (`s1-genova-3`) è
+iscritto con il link della sua Jeska/Yoshimaru, ma ha anche una lista Atraxa valida e prende quella. La lista Jeska
+non conta mai per Atraxa.
+
+Copertura del 2026 al 5/11: **1284 iscrizioni su 2243 (57%)**, **5276 partite su 9099 (58%)**; 959 iscrizioni senza
 lista.
 
 ## 4. Come si conta
@@ -59,7 +64,19 @@ lista.
 - Sempre visibile: su quante iscrizioni si basa il dato (es. "su 19 iscrizioni Phelia con lista, di 25").
 - Filtri (stagione, tipo di torneo, lega, torneo, giocatore): entrano le iscrizioni che cadono nel filtro.
 
-## 5. Limiti noti
+## 5. Dove stanno i dati
+
+- `scripts/meta/decklists.mjs` (`assignLists`) applica le regole del punto 3; `scripts/meta/decklists.test.mjs` le
+  prova sui casi qui sotto.
+- Il build del meta (`scripts/build-meta.mjs`) aggiunge a ogni iscrizione del 2026 con una lista due campi in fondo:
+  `[…, indice della lista nell'archivio, 1 se presa per estensione]`. Le versioni vecchie dell'app li ignorano.
+- `public/decklists.json`, pubblicato con l'app e letto solo dalle pagine delle carte: le carte con la loro identità
+  di colore (da Scryfall, una volta sola, salvata in `scripts/meta/cards.json`) e, per ogni lista dell'archivio nello
+  stesso ordine, il comandante e le sue carte. Fisso come l'archivio: cambia solo se cambia l'archivio.
+- Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
+  orfani sono anche negli avvisi, uno per uno.
+
+## 6. Limiti noti
 
 - Le liste sono quelle del 5/11/2026, non del giorno del torneo: chi ha cambiato carte sullo stesso link dopo il
   torneo vale con la versione di quel giorno.
@@ -68,12 +85,16 @@ lista.
 - Il collegamento usa id del torneo e nome del giocatore (dopo le correzioni dei nomi). Se un foglio cambia data o un
   nome viene corretto, il collegamento resta orfano: il build lo deve segnalare nello stato dell'area admin.
 
-## 6. Validazione
+## 7. Validazione
 
-- Test automatici sui casi reali: Waltz con Atraxa e Bresciani con Oloro senza lista; la Tivit di Arzenton con 4
-  iscrizioni; la Phelia di Misuri che conta 10; con più liste vince la più recente, e tra tappe conta il numero;
-  un'iscrizione del 2027 non prende liste del 2026; la percentuale generale ignora i mazzi che non possono giocare la
-  carta.
+- Test automatici (`scripts/meta/decklists.test.mjs`) sui casi reali, ridotti: un link di un altro comandante senza
+  una lista propria non dà carte (Bresciani); i collegamenti diretti; l'estensione con la lista più recente, anche con
+  un link rotto e per un torneo dopo il 5/11, e tra tappe conta il numero; un'iscrizione del 2027 non prende liste
+  del 2026; una lista portata due volte conta due. Da aggiungere con la pagina: la percentuale generale ignora i mazzi
+  che non possono giocare la carta.
+- Controllati sul meta pubblicato il 5/11: Bresciani con Oloro senza lista (2 iscrizioni); Waltz con Atraxa, 12
+  iscrizioni, tutte con la sua lista Atraxa (3 dirette, 9 estese); la Tivit di Arzenton, 4 dirette e 2 estese; la
+  Phelia di Misuri, 10 dirette e 5 estese.
 - Il build stampa i totali (dirette, estese, senza lista, orfani): al primo giro devono tornare con quelli qui sopra
-  (647, 635, 1282, 961), a parità di fogli.
+  (647, 637, 1284, 959), a parità di fogli.
 - Area admin: copertura e collegamenti orfani nello stato dell'ultimo aggiornamento.
