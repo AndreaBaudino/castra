@@ -33,6 +33,12 @@ righe del foglio. Finiscono nel meta come abbinamenti tra comandanti, mostrati n
    (per i giocatori, quando quel nome altrove potrebbe essere di un altro); si applicano una volta sola, senza
    catene. Finché la raccolta è vuota vale `scripts/meta/aliases.json`, che l'area admin importa con un tocco.
 
+Le liste dei mazzi (le carte) sono in `scripts/meta/decklists.json`, un archivio fisso: lette una volta da Moxfield
+il 5/11/2026 e mai più aggiornate. Ogni lista ha il comandante che aveva su Moxfield e le iscrizioni dei fogli
+(torneo e giocatore) con quel link e quel comandante: le carte contano una volta sola, solo per quel comandante.
+Le iscrizioni con lo stesso link ma un altro comandante, e quelle dei tornei successivi, non sono collegate. Il file
+non si rigenera: un'estrazione nuova può solo aggiungere liste per iscrizioni che non ne hanno una.
+
 Per aggiungere un torneo: Area admin → Tornei → Aggiungi torneo, con il link al foglio (Google Sheets o Excel su Drive,
 leggibile dall'account Google dell'Apps Script qui sotto). Per un livello 1 nuovo si può lasciare vuoto il link e
 toccare **Crea il foglio dal modello**: lo script copia il modello del livello 1 (`TEMPLATE_L1` in `Code.gs`, di

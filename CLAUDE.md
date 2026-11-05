@@ -111,6 +111,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   `scripts/build-meta.mjs` → ramo `meta-data` (`meta.json`, `meta-<anno>.json`, `status.json`, `sources.json`), ogni
   notte da `.github/workflows/meta.yml`. `main` non viene toccato. Elenco fogli e correzioni nomi su Firestore
   (`sources`, `aliases`), con `scripts/meta/sources.json` / `aliases.json` come riserva.
+  Le liste dei mazzi del circuito sono in `scripts/meta/decklists.json`: archivio fisso letto una volta da Moxfield
+  (lista → comandante, carte e iscrizioni `[id del torneo, giocatore]`), da non rigenerare né sovrascrivere.
 - **Errata**: `.github/workflows/cards.yml` ogni lunedì da MTGJSON → `scripts/build-errata.mjs` → ramo `cards-data`.
 - **Circuito**: Google Sheet pubblico letto dal browser in CSV, per scheda (gid).
 - **Banlist**: pubblicata dall'area admin su `config/banlist`, letta da ogni app all'avvio.
