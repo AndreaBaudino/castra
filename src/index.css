@@ -58,7 +58,6 @@
   --W: #f4ecd2;
   --U: #4f8fd6;
   --B: #4a3f4f;
-  --B-ring: rgba(255, 255, 255, 0.55); /* black mana pips stand out on the dark theme */
   --R: #d9533e;
   --G: #3f9a5b;
   --C: #b9b2aa;
@@ -75,7 +74,6 @@
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-    --B-ring: rgba(0, 0, 0, 0.35);
     --bg: #f4f4f1;
     --surface: #ffffff;
     --surface-2: #eeeeea;
@@ -106,7 +104,6 @@
 }
 
 :root[data-theme='light'] {
-  --B-ring: rgba(0, 0, 0, 0.35);
   --bg: #f4f4f1;
   --surface: #ffffff;
   --surface-2: #eeeeea;
@@ -482,20 +479,15 @@ div:has(> .brand-kicker + .tp-title) {
 .pips {
   display: inline-flex;
   gap: 2px;
-}
-.pip {
-  display: inline-block;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.35);
   flex: none;
 }
+/* flat colour fills for bars; the symbols themselves are Scryfall's SVGs */
 .pip-W { background: var(--W); }
 .pip-U { background: var(--U); }
-.pip-B { background: var(--B); border-color: var(--B-ring); }
+.pip-B { background: var(--B); }
 .pip-R { background: var(--R); }
 .pip-G { background: var(--G); }
 .pip-C { background: var(--C); }
-.pip-N { background: var(--C); color: #1b150f; }
 /* meta colour filter: the off mana symbols fade, the on ones get a ring */
 .color-pick {
   display: flex;
@@ -1141,23 +1133,6 @@ button.kv.clickable b {
   align-self: center;
   gap: 2px;
   flex: none;
-}
-.mana-sym {
-  box-sizing: border-box;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* the digit sits in the middle of the circle, not on the row's text line */
-  line-height: 1;
-  padding-top: 1px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: #1b150f;
-  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 .qty-ctrl {
   display: flex;

@@ -20,7 +20,7 @@ import {
 } from '../lib/decks'
 import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
 import { type Match, fmtRecord, record } from '../lib/matches'
-import { fetchCollection, fetchPrints, requestKey, searchCards } from '../lib/scryfall'
+import { fetchCollection, fetchPrints, requestKey, searchCards, symbolUrl } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
 import { useDialog } from '../components/Dialog'
@@ -49,18 +49,11 @@ const GROUP_KEY: Record<Group, TKey> = {
 const VIEW_KEY: Record<DeckView, TKey> = { list: 'deck.view.list', pile: 'deck.view.pile', grid: 'deck.view.grid' }
 
 function ManaCost({ cost }: { cost: string }) {
-  const symbols = cost.match(/\{[^}]+\}/g) ?? []
   return (
     <span className="mana">
-      {symbols.slice(0, 7).map((s, i) => {
-        const v = s.slice(1, -1).replace('/', '')
-        const cls = /^[WUBRGC]$/.test(v) ? `pip-${v}` : 'pip-N'
-        return (
-          <span key={i} className={`mana-sym ${cls}`}>
-            {/^[WUBRGC]$/.test(v) ? '' : v.length > 2 ? '•' : v}
-          </span>
-        )
-      })}
+      {(cost.match(/\{[^}]+\}/g) ?? []).slice(0, 7).map((sym, i) => (
+        <img key={i} src={symbolUrl(sym)} alt={sym} width={16} height={16} />
+      ))}
     </span>
   )
 }

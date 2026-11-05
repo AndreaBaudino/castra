@@ -105,7 +105,7 @@ nessun torneo. La riga "Tornei in corso" in Home c'è sempre, con il pallino ver
 ## Colori che sono dati (eccezioni)
 
 Forge vuole un solo colore saturo. Restano però, perché sono informazioni e non decorazione:
-- i simboli di mana (`--W`, `--U`, `--B`, `--R`, `--G`, `--C`), con il bordo chiaro sul nero (`--B-ring`);
+- i colori del mana (`--W`, `--U`, `--B`, `--R`, `--G`, `--C`), per le barre: i simboli veri e propri sono le SVG di Scryfall;
 - i colori della torta del meta (`--pie-1`…`--pie-8`, scelti per restare distinguibili anche ai daltonici) e le due
   serie del confronto (`--cmp-a`, `--cmp-b`);
 - i colori dei giocatori nel life counter (`--p0`, `--p1`), scelti nella Grafica: pannelli pieni, senza sfumature;

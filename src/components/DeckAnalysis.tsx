@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { type Deck, type DeckCard, GROUP_ORDER, type Group, groupOf } from '../lib/decks'
 import { COLORS, CURVE_MAX, colorsOf, curveOf, onCurve, summaryOf } from '../lib/analysis'
-import { pct } from './ui'
+import { Pips, pct } from './ui'
 
 // The deck page's analysis: summary numbers, a mana curve split into permanents and spells (tap a bar for its
 // cards and the chance of casting one on curve), and coloured symbols against the lands that make them.
@@ -140,7 +140,7 @@ export function DeckAnalysis({
               const s = colors.stats.find((x) => x.color === k)!
               return (
                 <div key={k} className="color-stat">
-                  <span className={`pip pip-${k}`} style={{ width: 18, height: 18 }} />
+                  <Pips colors={k} size={14} />
                   <div className="color-bars">
                     <div className="color-line">
                       <span className="muted small">{t('analysis.symbols')}</span>
