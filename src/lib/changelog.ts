@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-05',
     it: [
+      'Mazzi: ogni lista si può condividere. Con il pulsante Condividi in alto nella pagina del mazzo scegli Privata (come finora: chi apre il link trova una lista privata), Non listata (chi ha il link la apre, anche senza account) o Pubblica (in più compare in "Liste pubbliche" nella tua pagina del Circuito, se il tuo giocatore è verificato). Sopra il nome del mazzo c\'è chi l\'ha fatto, che porta alla sua pagina del Circuito; le liste degli altri si aprono in sola lettura',
       'Impostazioni → Grafica: il cerchio giallo del colore di risalto si può di nuovo scegliere (prima tornava subito arancione)',
       'Tornei in app: il comandante resta segreto fino al turno 1. A iscrizioni aperte lo vedi solo tu; il TO vede solo se l\'hai inserito e chi segue il torneo solo i nomi degli iscritti. Durante il torneo lo vedono il TO e i tuoi avversari, al tavolo e nei tuoi turni, ma non la classifica e gli abbinamenti di chi segue il torneo. A torneo finito tutto torna pubblico',
       'Tornei in app: nell\'elenco degli iscritti dell\'area TO ogni riga ha l\'icona della decklist Moxfield, verde se c\'è e rossa se manca, e l\'icona del mazzo se il giocatore ha collegato un mazzo Castra; in alto la legenda con i conteggi (Moxfield 2/3 · Castra 2/3). Anche la card del torneo in Home mostra il mazzo Castra collegato, le cui statistiche registreranno le partite',
@@ -22,6 +23,7 @@ export const CHANGELOG: Release[] = [
       'Area TO: "Iscriviti anche tu" nella pagina del torneo, per il TO che gioca. Si sceglie uno dei propri mazzi come fanno i giocatori dalla Home, così il torneo finisce nelle proprie statistiche; poi il pulsante diventa "La tua iscrizione" per cambiarla',
     ],
     en: [
+      'Decks: every list can be shared. With the Share button at the top of the deck page pick Private (as so far: whoever opens the link finds a private list), Unlisted (whoever has the link opens it, even without an account) or Public (it also shows in "Public lists" on your Circuit page, if your player is verified). Above the deck name there is who made it, leading to their Circuit page; other people\'s lists open read only',
       'Settings → Look: the gold circle of the highlight color can be picked again (it used to jump straight back to orange)',
       'Tournaments in the app: the commander stays secret until round 1. While registration is open only you see it; the TO only sees whether you gave it and whoever follows the tournament only the names of those registered. During the tournament the TO and your opponents see it, at the table and in your rounds, but not the standings and pairings for whoever follows the tournament. Once it is over everything is public again',
       'Tournaments in the app: in the TO area\'s list of registered players each row has the Moxfield decklist icon, green when given and red when missing, and the deck icon when the player linked a Castra deck; at the top the legend with the counts (Moxfield 2/3 · Castra 2/3). The tournament card on the home also shows the linked Castra deck, whose stats will record the games',

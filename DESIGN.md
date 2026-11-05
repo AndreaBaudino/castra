@@ -166,7 +166,9 @@ titolo, in `--muted`.
 - Nella lista dei mazzi l'immagine del comandante sta a sinistra e **sfuma verso destra** (`.deck-art`, maschera
   lineare); nome e dati sono a destra con un alone del colore della card.
 - In Home le tessere (Top del meta, I miei mazzi) hanno l'immagine piena con una sfumatura verso il basso.
-- Nel mazzo aperto l'immagine in alto sfuma nel fondo della pagina.
+- Nel mazzo aperto l'immagine in alto sfuma nel fondo della pagina. Sopra il nome c'è l'autore (`.deck-author`): avatar
+  tondo da 24 px (foto del giocatore verificato o iniziale su `--gold`), nome e, per il proprietario, l'etichetta con la
+  visibilità (`.tag`).
 - Nel life counter l'illustrazione scelta per un giocatore (`.player-art`) parte dal lato verso la barra centrale e sfuma
   nel colore del giocatore prima dei contatori, che restano sul colore pieno. Le vite hanno un'ombra leggera per leggersi
   sull'immagine (l'unica eccezione alla regola "niente ombre"). Sul bordo verso la barra, i pulsanti "Sfondo" e X

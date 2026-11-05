@@ -3,7 +3,8 @@ import { DECK_SIZE } from '../config'
 import { useI18n } from '../i18n'
 import { useLongPress } from '../lib/longPress'
 import { useBanlist } from '../lib/banlist'
-import { type Deck, type DeckCard, checkDeck, deckCover, isValid, newId, parseDecklist, sortColors } from '../lib/decks'
+import { type Deck, type DeckCard, checkDeck, deckCover, isValid, newId, parseDecklist, safeDeck, sortColors } from '../lib/decks'
+import { useLiveCollection } from '../lib/firebase'
 import { type MetaDeck, findMetaDeck, normName, winrate } from '../lib/meta'
 import { fetchCollection, requestKey } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
@@ -57,6 +58,26 @@ export function DeckTile({
       </div>
       {m ? <span className={`wr small-wr ${wrClass(winrate(m))}`}>{pct(winrate(m), 0)}</span> : <Icon name="chevron" size={16} />}
     </button>
+  )
+}
+
+/** The decks an account made public, on the circuit page of the player it claimed. */
+export function PublicDecks({ uid, onOpen }: { uid: string; onOpen: (id: string) => void }) {
+  const { t } = useI18n()
+  const { docs } = useLiveCollection<Deck>(`users/${uid}/decks`, ['visibility', '==', 'public'])
+  if (!docs.length) return null
+  return (
+    <section className="group">
+      <div className="group-title">{t('decks.public')}</div>
+      <div className="deck-list">
+        {docs
+          .map(([, d]) => safeDeck(d))
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .map((d) => (
+            <DeckTile key={d.id} deck={d} metaDecks={[]} onClick={() => onOpen(d.id)} />
+          ))}
+      </div>
+    </section>
   )
 }
 

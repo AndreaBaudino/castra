@@ -41,6 +41,12 @@ service cloud.firestore {
       match /{collection}/{docId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+      // a deck its owner shared (src/lib/decks.ts Visibility): whoever has the link opens an unlisted or public one,
+      // even without signing in, and a missing one reads as missing; only the public ones can be listed
+      match /decks/{deckId} {
+        allow get: if resource == null || resource.data.get('visibility', 'private') in ['unlisted', 'public'];
+        allow list: if resource.data.get('visibility', 'private') == 'public';
+      }
     }
 
     // circuit players claimed by an account ("this is me"): everyone can see who is linked (and verified),
