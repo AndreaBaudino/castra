@@ -402,7 +402,7 @@ const it = {
   'timer.extraStart': 'Inizia il tempo extra',
   'timer.turnsStart': 'Iniziano i turni extra',
   'timer.hint': 'Tocca per avviare/fermare. Nei turni extra: tocca per avanzare, tieni premuto per tornare indietro.',
-  'game.settings': 'Impostazioni partita',
+  'game.settings': 'Impostazioni',
   'game.record': 'Registra risultato',
 
   'match.title': 'Registra partita',
@@ -1700,7 +1700,7 @@ const en: Record<Key, string> = {
   'timer.extraStart': 'Extra time begins',
   'timer.turnsStart': 'Extra turns begin',
   'timer.hint': 'Tap to start/stop. During extra turns: tap to advance, long-press to go back.',
-  'game.settings': 'Game settings',
+  'game.settings': 'Settings',
   'game.record': 'Record result',
 
   'match.title': 'Record game',
