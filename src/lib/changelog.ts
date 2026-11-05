@@ -10,7 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-05',
     it: [
-      'Partita: in Impostazioni partita "Nuova partita" e "Azzera timer" sono subito sotto "Registra risultato", in un pulsante diviso a metà, invece che in fondo al menu. Accanto al titolo c\'è una freccia per tornare alla partita',
+      'Partita: in Impostazioni partita "Nuova partita" e "Azzera timer" sono subito sotto "Registra risultato", in un pulsante diviso a metà, invece che in fondo al menu. Il pulsante Chiudi in fondo lascia il posto a una freccia accanto al titolo (o tocca fuori dal menu)',
       'Partita: dietro le vite di ogni giocatore può esserci l\'illustrazione di una carta, che sfuma nel colore del giocatore prima dei contatori. Si sceglie da Impostazioni partita → Sfondi: una carta qualsiasi cercata per nome, anche in un\'altra illustrazione, e per te anche il comandante di uno dei tuoi mazzi. Il tuo sfondo resta per le prossime partite, quello dell\'avversario anche quando ricominci, finché non registri il risultato. Al tuo tavolo di un torneo gli sfondi sono messi da soli: i comandanti tuo e dell\'avversario',
       'Circuito, Mazzi, giocatori: i colori dei comandanti, i costi delle carte nella lista del mazzo e l\'analisi dei colori usano i simboli di mana di Magic al posto dei pallini',
       'Circuito, Mazzi: sotto la ricerca puoi filtrare per colori. Tocca uno o più simboli di mana per vedere solo i comandanti con esattamente quei colori (verde e blu: Kinnan sì, Titania e Atraxa no); anche riepilogo e torta si riferiscono solo a loro',
@@ -18,7 +18,7 @@ export const CHANGELOG: Release[] = [
       'Area TO: "Iscriviti anche tu" nella pagina del torneo, per il TO che gioca. Si sceglie uno dei propri mazzi come fanno i giocatori dalla Home, così il torneo finisce nelle proprie statistiche; poi il pulsante diventa "La tua iscrizione" per cambiarla',
     ],
     en: [
-      'Game: in Game settings "New game" and "Reset timer" are right below "Record result", in a button split in half, instead of at the bottom of the menu. Next to the title there\'s an arrow to go back to the game',
+      'Game: in Game settings "New game" and "Reset timer" are right below "Record result", in a button split in half, instead of at the bottom of the menu. The Close button at the bottom gives way to an arrow next to the title (or tap outside the menu)',
       'Game: behind each player\'s life total there can be a card\'s art, fading into the player\'s colour before the counters. Pick it in Game settings → Backgrounds: any card searched by name, in another artwork too, and for you also the commander of one of your decks. Your background stays for your next games, the opponent\'s also when you start over, until you record the result. At your tournament table the backgrounds are set on their own: your commander and your opponent\'s',
       'Circuit, Decks, players: commander colours, card costs in the deck list and the colour analysis use Magic mana symbols instead of dots',
       'Circuit, Decks: below the search you can filter by colours. Tap one or more mana symbols to see only the commanders with exactly those colours (green and blue: Kinnan yes, Titania and Atraxa no); the summary and pie refer only to them too',

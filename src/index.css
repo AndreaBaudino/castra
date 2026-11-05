@@ -1806,7 +1806,7 @@ button.kv.clickable b {
 .reset-card > * {
   flex-shrink: 0;
 }
-/* the game menu's title, centred, with a back arrow on its left */
+/* the game menu's title, centred, with the arrow that closes it on its left (a word there would crowd the title) */
 .menu-head {
   display: grid;
   grid-template-columns: 40px 1fr 40px;

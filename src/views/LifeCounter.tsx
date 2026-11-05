@@ -685,7 +685,7 @@ export default function LifeCounter({
         <div className="roll-overlay dim" onClick={() => setMenu(false)}>
           <div className="reset-card" onClick={(e) => e.stopPropagation()}>
             <div className="menu-head">
-              <button className="icon-btn" onClick={() => setMenu(false)} aria-label={t('dg.back')}>
+              <button className="icon-btn" onClick={() => setMenu(false)} aria-label={t('life.close')}>
                 <Icon name="back" />
               </button>
               <strong>{t('game.settings')}</strong>
@@ -828,9 +828,6 @@ export default function LifeCounter({
                 </button>
               ))}
             </div>
-            <button className="btn ghost" onClick={() => setMenu(false)}>
-              {t('life.close')}
-            </button>
           </div>
         </div>
       )}
