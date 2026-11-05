@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildCircuit, parseEventName, playerKey, potyStatus } from './circuit'
 import { type Deck, type DeckCard, checkDeck, logChange, newerDeck, parseDecklist } from './decks'
-import { parseCsv } from './meta'
+import { type MetaDataset, ALL, aggregate, parseCsv } from './meta'
 import { DUNGEONS } from './dungeons'
 import { readStored, writeStored } from './storage'
 import { matchesCsv } from './backup'
@@ -227,5 +227,19 @@ describe('checkDeck', () => {
   it('counts a commander also in the 99 as two copies, never the sideboard', () => {
     expect(dupes([['Atraxa, Grand Unifier', 1, 'commander'], ['Atraxa, Grand Unifier', 1]])).toEqual(['Atraxa, Grand Unifier'])
     expect(dupes([['Sol Ring', 1], ['Sol Ring', 1, 'side']])).toEqual([])
+  })
+})
+
+describe('meta colour filter', () => {
+  const cmds = [['Kinnan, Bonder Prodigy', 'UG'], ['Titania, Protector of Argoth', 'G'], ['Atraxa, Grand Unifier', 'WUBG']]
+  const ds = {
+    tournaments: [{ index: 0, kind: 'major', season: 'S1', players: 8 }],
+    commanders: cmds.map(([name, colors], id) => ({ id, name, colors })),
+    entries: [0, 0, 1, 2].map((cmd) => ({ t: 0, cmd, key: null, w: null, l: 0, d: 0, bye: false })),
+  } as unknown as MetaDataset
+  it('keeps only the commanders with exactly the chosen colours, shares among them', () => {
+    expect(aggregate(ds, ALL, 'UG').decks.map((d) => [d.name, d.share])).toEqual([['Kinnan, Bonder Prodigy', 1]])
+    expect(aggregate(ds, ALL, 'G').entries).toBe(1)
+    expect(aggregate(ds, ALL).decks).toHaveLength(3)
   })
 })

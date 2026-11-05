@@ -496,6 +496,29 @@ div:has(> .brand-kicker + .tp-title) {
 .pip-G { background: var(--G); }
 .pip-C { background: var(--C); }
 .pip-N { background: var(--C); color: #1b150f; }
+/* meta colour filter: the off pips fade, the on ones get a ring */
+.color-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.color-pick > span {
+  margin-right: 2px;
+}
+.color-pick button {
+  display: flex;
+  padding: 4px;
+}
+.color-pick .pip {
+  width: 26px;
+  height: 26px;
+  opacity: 0.45;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+.color-pick button.on .pip {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold);
+}
 
 .wr {
   font-variant-numeric: tabular-nums;

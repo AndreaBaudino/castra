@@ -12,6 +12,8 @@ import { MetaPie } from '../components/MetaPie'
 type Status = 'idle' | 'loading' | 'error'
 
 export const META_MODE_KEY = 'cc.metaMode'
+const WUBRG = ['W', 'U', 'B', 'R', 'G'] as const
+
 /** The meta filter (season, kind of tournament, league): shared by the list and the commander pages. */
 export const META_FILTER_KEY = 'cc.meta.filter'
 
@@ -183,10 +185,11 @@ export default function Meta({
   const [mode, setMode] = useStoredState<'decks' | 'circuit'>(META_MODE_KEY, 'decks')
   const [filter, setFilter] = useStoredState<MetaFilter>(META_FILTER_KEY, ALL)
   const [q, setQ] = useState('')
+  const [colors, setColors] = useState('') // WUBRG order, as the dataset's
   const [sort, setSort] = useStoredState<Sort>('cc.meta.sort', 'share')
   const [minGames, setMinGames] = useStoredState('cc.meta.minGames', 20)
 
-  const meta = useMemo(() => (dataset ? aggregate(dataset, filter) : null), [dataset, filter])
+  const meta = useMemo(() => (dataset ? aggregate(dataset, filter, colors) : null), [dataset, filter, colors])
   const summary = useMemo(() => metaSummary(meta?.decks ?? [], minGames), [meta, minGames])
   const aboveMin = meta?.decks.filter((d) => d.share >= PIE_MIN).length ?? 0
   // decks matching the search, before the min games threshold: tells "nothing found" from "all below the threshold"
@@ -318,6 +321,24 @@ export default function Meta({
           <div className="search">
             <Icon name="search" size={18} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('meta.search')} />
+          </div>
+
+          <div className="color-pick">
+            <span className="muted small">{t('meta.colors')}</span>
+            {WUBRG.map((c) => {
+              const on = colors.includes(c)
+              return (
+                <button
+                  key={c}
+                  className={on ? 'on' : ''}
+                  aria-pressed={on}
+                  aria-label={t(`meta.color.${c}`)}
+                  onClick={() => setColors(WUBRG.filter((x) => (x === c ? !on : colors.includes(x))).join(''))}
+                >
+                  <span className={`pip pip-${c}`} />
+                </button>
+              )
+            })}
           </div>
 
           <div className="filters">

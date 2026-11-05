@@ -177,8 +177,9 @@ export function matchupsOf(ds: MetaDataset, f: MetaFilter, cmd: number) {
   return [...by].map(([id, r]) => ({ id, ...r })).sort((a, b) => b.games - a.games || winrate(b) - winrate(a))
 }
 
-export function aggregate(ds: MetaDataset, f: MetaFilter): MetaData {
-  const rows = entriesOf(ds, f)
+/** `colors` (WUBRG order) keeps only the commanders with exactly that identity: shares are among them. */
+export function aggregate(ds: MetaDataset, f: MetaFilter, colors = ''): MetaData {
+  const rows = entriesOf(ds, f).filter((e) => !colors || ds.commanders[e.cmd]?.colors === colors)
   const byCmd = new Map<number, MetaEntry[]>()
   for (const e of rows) if (e.cmd >= 0) byCmd.set(e.cmd, [...(byCmd.get(e.cmd) ?? []), e])
   const total = [...byCmd.values()].reduce((s, l) => s + l.length, 0)
