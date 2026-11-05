@@ -307,6 +307,14 @@ div:has(> .brand-kicker + .tp-title) {
   font-weight: 700;
   font-size: 0.95rem;
 }
+.icon-legend svg {
+  vertical-align: -2px;
+  margin-right: 3px;
+}
+/* an icon on a row: no line box below it */
+.row-icon {
+  display: flex;
+}
 .link {
   color: var(--gold);
   font-size: 0.8rem;

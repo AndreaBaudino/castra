@@ -134,6 +134,7 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   const [result, setResult] = useState<TableMatch | null>(null)
   const [busy, setBusy] = useState(false)
   const mine = me ? players.find(([k]) => k === me)?.[1] : undefined
+  const chosen = decks.find((d) => d.id === mine?.deck) // the deck of the app they registered with
   // once in, the card stays as one of the player's: the code would turn invalid at round 1
   useEffect(() => {
     if (typed && entered) close()
@@ -229,6 +230,11 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
               {mine.commander ?? t('run.noCommander')}
               <span className="muted"> · {t(mine.list ? 'join.listIn' : 'join.noList')}</span>
             </p>
+            {chosen && (
+              <p className="small no-margin">
+                <span className="good-text">✓</span> <span className="muted">{t('join.castraDeck', { d: chosen.name })}</span>
+              </p>
+            )}
             <div className="btn-pair">
               <button className="btn ghost" disabled={busy} onClick={() => setJoining(true)}>
                 {t('join.edit')}

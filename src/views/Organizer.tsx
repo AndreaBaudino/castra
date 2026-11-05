@@ -384,6 +384,7 @@ export function TournamentAdmin({
   const active = entered.filter(([, p]) => p.drop == null)
   const noCommander = entered.filter(([, p]) => !p.commander).length
   const listed = entered.filter(([, p]) => p.list).length
+  const linked = entered.filter(([, p]) => p.deck).length
   const playing = tour.status === 'swiss' || tour.status === 'cut'
   const lastSwiss = tour.status === 'swiss' && tour.round >= tour.rounds
   const cutDone = tour.status === 'cut' && !missing && current.every((m) => !m.p2 || (m.score && winnerOf(m.score)))
@@ -729,8 +730,11 @@ export function TournamentAdmin({
           <section className="card">
             <div className="card-title">
               {t('run.registered')}
-              <span className="muted small">
-                {t('run.players', { n: entered.length })} · {t('run.lists', { n: listed, of: entered.length })}
+              {/* the legend of the icons on each row */}
+              <span className="muted small icon-legend">
+                {t('run.players', { n: entered.length })} · <Icon name="list" size={14} />
+                {t('run.lists', { n: listed, of: entered.length })} · <Icon name="decks" size={14} />
+                {t('run.castra', { n: linked, of: entered.length })}
               </span>
             </div>
             {noCommander > 0 && <p className="bad-text small no-margin">{t('run.missingCommanders', { n: noCommander })}</p>}
@@ -751,6 +755,15 @@ export function TournamentAdmin({
                         {penalties.has(k) && <span className="bad-text"> · {t('run.penalties', { n: penalties.get(k)! })}</span>}
                       </span>
                     </div>
+                    {/* the Moxfield decklist always (missing in red), the deck of the app only when linked */}
+                    <span className={`row-icon ${p.list ? 'good-text' : 'bad-text'}`} title={t(p.list ? 'join.listIn' : 'join.noList')}>
+                      <Icon name="list" size={16} />
+                    </span>
+                    {p.deck && (
+                      <span className="row-icon" title={t('run.castraLinked')}>
+                        <Icon name="decks" size={16} />
+                      </span>
+                    )}
                     <Icon name="chevron" size={16} />
                   </li>
                 ))}
@@ -1072,6 +1085,11 @@ function PlayerSheet({
     <Sheet open={!!player} onClose={onClose} title={player?.name}>
       {player && (
         <div className="form">
+          {player.deck && (
+            <p className="small no-margin">
+              <span className="good-text">✓</span> {t('run.castraLinked')}
+            </p>
+          )}
           {list && (
             <a className="link" href={list} target="_blank" rel="noreferrer">
               {t('run.openList')}
