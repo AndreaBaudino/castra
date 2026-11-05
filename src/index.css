@@ -1858,7 +1858,6 @@ button.kv.clickable b {
   border: 0;
   border-radius: 0;
   padding: 0 6px;
-  letter-spacing: 0.02em; /* "Nuova partita · 25" fits half a phone's menu */
   white-space: normal;
 }
 .btn-split .btn + .btn {

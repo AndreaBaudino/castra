@@ -737,7 +737,7 @@ export default function LifeCounter({
                   if (!isGameInProgress(game) || (await dialog.confirm(t('life.resetConfirm')))) reset()
                 }}
               >
-                {t('life.reset')} · {game.startLife}
+                <Icon name="refresh" size={16} /> {t('life.reset')}
               </button>
               {!tg && (
                 <button className="btn ghost" onClick={() => setTimer(() => freshTimer())}>
