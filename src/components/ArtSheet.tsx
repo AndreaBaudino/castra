@@ -4,7 +4,7 @@ import { type CardInfo, type Deck, deckCover } from '../lib/decks'
 import { fetchArts, searchCards } from '../lib/scryfall'
 import { Icon } from './ui'
 
-/** A card's art behind a player's life total: its name shows on the panel. */
+/** A card's art behind a player's life total, with the card's name for the game menu. */
 export interface CardArt {
   name: string
   art: string

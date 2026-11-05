@@ -1335,17 +1335,7 @@ button.kv.clickable b {
 .player > :not(.player-art) {
   position: relative;
 }
-.player-art + .player-art-name {
-  position: absolute;
-  top: 8px;
-  left: 12px;
-  right: 12px;
-  text-align: center;
-  font-size: 0.72rem;
-  font-weight: 600;
-  pointer-events: none;
-}
-.player:has(.player-art) :is(.life-num, .player-art-name) {
+.player:has(.player-art) .life-num {
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
 }
 .art-row {

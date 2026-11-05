@@ -168,8 +168,8 @@ titolo, in `--muted`.
 - In Home le tessere (Top del meta, I miei mazzi) hanno l'immagine piena con una sfumatura verso il basso.
 - Nel mazzo aperto l'immagine in alto sfuma nel fondo della pagina.
 - Nel life counter l'illustrazione scelta per un giocatore (`.player-art`) parte dal lato verso la barra centrale e sfuma
-  nel colore del giocatore prima dei contatori, che restano sul colore pieno. Sopra c'è il nome della carta; vite e nome
-  hanno un'ombra leggera per leggersi sull'immagine (l'unica eccezione alla regola "niente ombre").
+  nel colore del giocatore prima dei contatori, che restano sul colore pieno. Le vite hanno un'ombra leggera per leggersi
+  sull'immagine (l'unica eccezione alla regola "niente ombre").
 
 ## Telefono e computer
 

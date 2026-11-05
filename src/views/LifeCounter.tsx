@@ -234,12 +234,7 @@ function PlayerPanel({
 
   return (
     <section className={`player p${idx} ${isDead(p) ? 'dead' : ''}`}>
-      {art && (
-        <>
-          <div className="player-art" style={{ backgroundImage: `url("${art.art}")` }} />
-          <div className="player-art-name ellipsis">{art.name}</div>
-        </>
-      )}
+      {art && <div className="player-art" style={{ backgroundImage: `url("${art.art}")` }} />}
       <div className="life-zone">
         <button className="life-tap minus" {...minus} aria-label="-1">
           <span>−</span>
