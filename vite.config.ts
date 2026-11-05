@@ -48,8 +48,9 @@ export default defineConfig({
         navigateFallbackDenylist: [/\.pdf$/],
         runtimeCaching: [
           {
-            // card images and mana symbols: cache-first, they never change
-            urlPattern: /^https:\/\/(cards|svgs)\.scryfall\.io\/.*/,
+            // card images and mana symbols: cache-first, they never change (the art of a commander by name too, as on
+            // the life counter at a tournament table, so it's still there without a connection)
+            urlPattern: /^https:\/\/((cards|svgs)\.scryfall\.io\/|api\.scryfall\.com\/cards\/named\?.*format=image)/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'scryfall-images',

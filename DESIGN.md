@@ -108,7 +108,8 @@ Forge vuole un solo colore saturo. Restano però, perché sono informazioni e no
 - i colori del mana (`--W`, `--U`, `--B`, `--R`, `--G`, `--C`), per le barre: i simboli veri e propri sono le SVG di Scryfall;
 - i colori della torta del meta (`--pie-1`…`--pie-8`, scelti per restare distinguibili anche ai daltonici) e le due
   serie del confronto (`--cmp-a`, `--cmp-b`);
-- i colori dei giocatori nel life counter (`--p0`, `--p1`), scelti nella Grafica: pannelli pieni, senza sfumature;
+- i colori dei giocatori nel life counter (`--p0`, `--p1`), scelti nella Grafica: pannelli pieni, senza sfumature (se non
+  c'è l'illustrazione di una carta, vedi sotto);
 - la cresta rossa dell'elmo (`--crest`).
 
 Le barre che misurano un dato (quota del meta) sono grigie (`--muted`), non ember.
@@ -166,6 +167,9 @@ titolo, in `--muted`.
   lineare); nome e dati sono a destra con un alone del colore della card.
 - In Home le tessere (Top del meta, I miei mazzi) hanno l'immagine piena con una sfumatura verso il basso.
 - Nel mazzo aperto l'immagine in alto sfuma nel fondo della pagina.
+- Nel life counter l'illustrazione scelta per un giocatore (`.player-art`) parte dal lato verso la barra centrale e sfuma
+  nel colore del giocatore prima dei contatori, che restano sul colore pieno. Sopra c'è il nome della carta; vite e nome
+  hanno un'ombra leggera per leggersi sull'immagine (l'unica eccezione alla regola "niente ombre").
 
 ## Telefono e computer
 

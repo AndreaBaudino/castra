@@ -1323,6 +1323,61 @@ button.kv.clickable b {
 .player.dead {
   filter: grayscale(0.85) brightness(0.7);
 }
+/* a card's art behind the life total: it fades into the player's colour before the counters, which stay readable */
+.player-art {
+  position: absolute;
+  inset: 0 0 22%;
+  background: center 30% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(#000 35%, transparent);
+  mask-image: linear-gradient(#000 35%, transparent);
+  pointer-events: none;
+}
+.player > :not(.player-art) {
+  position: relative;
+}
+.player-art + .player-art-name {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+.player:has(.player-art) :is(.life-num, .player-art-name) {
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+}
+.art-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.art-row > :first-child {
+  width: 56px;
+  height: 40px;
+  flex: none;
+  border-radius: 2px;
+  object-fit: cover;
+}
+.art-row > .p0 {
+  background: var(--p0);
+}
+.art-row > .p1 {
+  background: var(--p1);
+}
+/* the game menu's search stays dark like the menu */
+.reset-card .search {
+  background: #1b1b1e;
+  border-color: #26262a;
+  color: #8b8b92;
+}
+.reset-card .search input {
+  color: #fff;
+}
 .life-zone {
   flex: 1;
   position: relative;

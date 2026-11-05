@@ -122,6 +122,9 @@ export const searchCards = (q: string, signal?: AbortSignal) =>
 /** All printings of a card, newest first. */
 export const fetchPrints = (name: string) => search(`!"${front(name)}"`, '&unique=prints&order=released&dir=desc')
 
+/** A card's different illustrations, one printing each. */
+export const fetchArts = (name: string, signal?: AbortSignal) => search(`!"${front(name)}"`, '&unique=art', signal)
+
 // ---------- one card in full: Oracle text, Italian text, rulings ----------
 
 interface ScryFace {

@@ -24,6 +24,8 @@ import { DUNGEONS, type DungeonRun, lastRoom } from '../lib/dungeons'
 import { ROUND_MINUTES, sideScore, unconfirmed, useTournament } from '../lib/tournaments'
 import type { Score } from '../lib/swiss'
 import { ResultSheet } from './Organizer'
+import { artUrl } from './MetaPages'
+import { ArtSheet, type CardArt } from '../components/ArtSheet'
 
 export interface PlayerState {
   life: number
@@ -67,6 +69,7 @@ export interface GameState {
   initiative?: 0 | 1
   dungeons?: [DungeonRun, DungeonRun]
   tour?: TourGame
+  art?: CardArt // the opponent's, for this game only: the phone owner's is kept apart (cc.lifeArt)
 }
 
 const outside: DungeonRun = { d: 'undercity', path: [], done: 0 }
@@ -169,6 +172,7 @@ function PlayerPanel({
   take,
   dungeon,
   openDungeon,
+  art,
 }: {
   idx: 0 | 1
   p: PlayerState
@@ -179,6 +183,7 @@ function PlayerPanel({
   take: (k: 'monarch' | 'initiative') => void
   dungeon?: string // where the player is, when dungeons are on
   openDungeon: () => void
+  art?: CardArt
 }) {
   const { t } = useI18n()
   const [delta, setDelta] = useState(0)
@@ -229,6 +234,12 @@ function PlayerPanel({
 
   return (
     <section className={`player p${idx} ${isDead(p) ? 'dead' : ''}`}>
+      {art && (
+        <>
+          <div className="player-art" style={{ backgroundImage: `url("${art.art}")` }} />
+          <div className="player-art-name ellipsis">{art.name}</div>
+        </>
+      )}
       <div className="life-zone">
         <button className="life-tap minus" {...minus} aria-label="-1">
           <span>−</span>
@@ -369,6 +380,9 @@ export default function LifeCounter({
   const [recording, setRecording] = useState(false)
   const [reporting, setReporting] = useState(false) // a tournament match's result
   const [roll, setRoll] = useState<Roll | null>(null)
+  const [mine, setMine] = useStoredState<CardArt | null>('cc.lifeArt', null)
+  const [artFor, setArtFor] = useState<0 | 1 | null>(null)
+  useBackCloses(artFor !== null, () => setArtFor(null))
   const [banner, setBanner] = useState('')
   const [, tick] = useState(0)
   const stored = game.timer ?? freshTimer()
@@ -378,6 +392,12 @@ export default function LifeCounter({
   const live = useTournament(tg?.id ?? null, tg?.me)
   const tm = tg && live.matches.find((x) => x.round === tg.round && (x.p1 === tg.me || x.p2 === tg.me))
   const flip = tm?.p2 === tg?.me
+  // at a tournament table the two players' commanders; otherwise the opponent's for this game and the owner's own
+  const cmdArt = (k: string | null): CardArt | undefined => {
+    const c = k && live.players.find(([p]) => p === k)?.[1].commander
+    return c ? { name: c, art: artUrl(c) } : undefined
+  }
+  const arts = tm ? [cmdArt(flip ? tm.p1 : tm.p2), cmdArt(tg!.me)] : [game.art, mine ?? undefined]
   const started = tg && live.t?.round === tg.round ? live.t.started : null
   const clock = tg ? { ...settings, mainMin: ROUND_MINUTES } : settings
   const round = started && { ...stored, elapsedMs: 0, runningSince: started.toMillis(), addedMs: (tm?.extra ?? 0) * 60_000 }
@@ -511,7 +531,7 @@ export default function LifeCounter({
 
   return (
     <div className="life-root">
-      <PlayerPanel idx={0} p={game.players[0]} update={update(0)} {...tokens(0)} />
+      <PlayerPanel idx={0} p={game.players[0]} update={update(0)} {...tokens(0)} art={arts[0]} />
 
       <div className="life-bar">
         <button className="bar-btn" onClick={() => setRoll({ kind: 'dice', values: [d20(), d20()] })} aria-label={t('life.dice')}>
@@ -542,6 +562,7 @@ export default function LifeCounter({
         p={game.players[1]}
         update={update(1)}
         {...tokens(1)}
+        art={arts[1]}
         end={
           someoneDead && (
             <div className="game-end">
@@ -598,6 +619,15 @@ export default function LifeCounter({
       )}
 
       <CardLookupSheet open={lookup} onClose={() => setLookup(false)} />
+      {artFor !== null && (
+        <ArtSheet
+          mine={artFor === 1}
+          value={arts[artFor]}
+          decks={decks}
+          onPick={(a) => (artFor ? setMine(a ?? null) : setGame((g) => ({ ...g, art: a })))}
+          onClose={() => setArtFor(null)}
+        />
+      )}
       {dungeonFor !== null && (
         <DungeonSheet
           who={dungeonFor}
@@ -694,6 +724,31 @@ export default function LifeCounter({
               >
                 <Icon name="meta" size={16} /> {t('game.record')}
               </button>
+            )}
+
+            {!tg && (
+              <>
+                <div className="menu-section">{t('life.art')}</div>
+                {([1, 0] as const).map((i) => (
+                  <div key={i} className="art-row">
+                    {arts[i] ? <img src={arts[i].art} alt="" /> : <span className={`p${i}`} />}
+                    <span className="grow ellipsis">
+                      <span className="muted small">{t(i ? 'life.artMe' : 'life.artOpponent')}</span>
+                      <br />
+                      {arts[i]?.name ?? t('life.artColor')}
+                    </span>
+                    <button
+                      className="btn small ghost"
+                      onClick={() => {
+                        setMenu(false)
+                        setArtFor(i)
+                      }}
+                    >
+                      {t('life.artChange')}
+                    </button>
+                  </div>
+                ))}
+              </>
             )}
 
             <div className="menu-section">{t('life.extras')}</div>

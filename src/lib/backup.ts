@@ -66,7 +66,7 @@ export interface Backup {
   settings: Record<string, unknown> // localStorage values by key: theme, prefs, timer, followed players
 }
 
-export const BACKUP_SETTINGS = ['cc.theme', 'cc.prefs', 'cc.timerSettings', 'cc.circuit.follow', 'cc.lang']
+export const BACKUP_SETTINGS = ['cc.theme', 'cc.prefs', 'cc.timerSettings', 'cc.circuit.follow', 'cc.lang', 'cc.lifeArt']
 
 export function makeBackup(decks: Deck[], matches: Match[]): Backup {
   const settings: Record<string, unknown> = {}

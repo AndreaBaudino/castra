@@ -10,12 +10,14 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-05',
     it: [
+      'Partita: dietro le vite di ogni giocatore può esserci l\'illustrazione di una carta, che sfuma nel colore del giocatore prima dei contatori. Si sceglie da Impostazioni partita → Sfondi: il comandante di uno dei tuoi mazzi, una carta qualsiasi cercata per nome, anche in un\'altra illustrazione. Il tuo sfondo resta per le prossime partite, quello dell\'avversario vale per la partita in corso. Al tuo tavolo di un torneo gli sfondi sono messi da soli: i comandanti tuo e dell\'avversario',
       'Circuito, Mazzi, giocatori: i colori dei comandanti, i costi delle carte nella lista del mazzo e l\'analisi dei colori usano i simboli di mana di Magic al posto dei pallini',
       'Circuito, Mazzi: sotto la ricerca puoi filtrare per colori. Tocca uno o più simboli di mana per vedere solo i comandanti con esattamente quei colori (verde e blu: Kinnan sì, Titania e Atraxa no); anche riepilogo e torta si riferiscono solo a loro',
       'Tornei in app: finché le iscrizioni sono aperte, la card del torneo in Home mostra anche il giorno in cui si gioca, utile quando ti iscrivi giorni prima',
       'Area TO: "Iscriviti anche tu" nella pagina del torneo, per il TO che gioca. Si sceglie uno dei propri mazzi come fanno i giocatori dalla Home, così il torneo finisce nelle proprie statistiche; poi il pulsante diventa "La tua iscrizione" per cambiarla',
     ],
     en: [
+      'Game: behind each player\'s life total there can be a card\'s art, fading into the player\'s colour before the counters. Pick it in Game settings → Backgrounds: the commander of one of your decks or any card searched by name, in another artwork too. Your background stays for your next games, the opponent\'s is for the current game. At your tournament table the backgrounds are set on their own: your commander and your opponent\'s',
       'Circuit, Decks, players: commander colours, card costs in the deck list and the colour analysis use Magic mana symbols instead of dots',
       'Circuit, Decks: below the search you can filter by colours. Tap one or more mana symbols to see only the commanders with exactly those colours (green and blue: Kinnan yes, Titania and Atraxa no); the summary and pie refer only to them too',
       'Tournaments in the app: while registration is open, the tournament card on the home also shows the day it is played, useful when you register days before',
