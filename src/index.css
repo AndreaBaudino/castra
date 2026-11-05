@@ -496,7 +496,7 @@ div:has(> .brand-kicker + .tp-title) {
 .pip-G { background: var(--G); }
 .pip-C { background: var(--C); }
 .pip-N { background: var(--C); color: #1b150f; }
-/* meta colour filter: the off pips fade, the on ones get a ring */
+/* meta colour filter: the off mana symbols fade, the on ones get a ring */
 .color-pick {
   display: flex;
   align-items: center;
@@ -509,13 +509,14 @@ div:has(> .brand-kicker + .tp-title) {
   display: flex;
   padding: 4px;
 }
-.color-pick .pip {
+.color-pick img {
   width: 26px;
   height: 26px;
+  border-radius: 50%;
   opacity: 0.45;
   transition: opacity 0.15s, box-shadow 0.15s;
 }
-.color-pick button.on .pip {
+.color-pick button.on img {
   opacity: 1;
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold);
 }

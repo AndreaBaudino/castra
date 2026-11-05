@@ -7,6 +7,7 @@ import { useStoredState } from '../lib/storage'
 import { CircuitPanel, type CircuitPrefs, LiveStatus } from './Circuit'
 import { CircuitInfoButton, MetaInfoButton } from './MetaInfo'
 import { POTY_SPOTS } from '../config'
+import { symbolUrl } from '../lib/scryfall'
 import { MetaPie } from '../components/MetaPie'
 
 type Status = 'idle' | 'loading' | 'error'
@@ -335,7 +336,7 @@ export default function Meta({
                   aria-label={t(`meta.color.${c}`)}
                   onClick={() => setColors(WUBRG.filter((x) => (x === c ? !on : colors.includes(x))).join(''))}
                 >
-                  <span className={`pip pip-${c}`} />
+                  <img src={symbolUrl(c)} alt="" />
                 </button>
               )
             })}

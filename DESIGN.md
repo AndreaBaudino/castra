@@ -148,7 +148,7 @@ Si tengono i componenti esistenti e si cambia solo lo stile.
 Una schermata ha al massimo un elemento pieno ember per gruppo.
 
 **Selettori** (`.seg`, `.chip`): un gruppo con bordo sottile; la scelta attiva su `--line-strong` con testo `--text`.
-I colori del filtro del meta (`.color-pick`) sono pallini di mana: spenti al 45%, accesi pieni con un anello ember.
+I colori del filtro del meta (`.color-pick`) sono i simboli di mana di Magic (le SVG di Scryfall, come nella ricerca carte): spenti al 45%, accesi pieni con un anello ember.
 
 **Schede e barra in basso**: la voce attiva ha il testo `--text` e una riga ember da 2px. Il tasto Partita è tondo, ember,
 sporgente.

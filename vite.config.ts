@@ -48,8 +48,8 @@ export default defineConfig({
         navigateFallbackDenylist: [/\.pdf$/],
         runtimeCaching: [
           {
-            // card images: cache-first, they never change
-            urlPattern: /^https:\/\/cards\.scryfall\.io\/.*/,
+            // card images and mana symbols: cache-first, they never change
+            urlPattern: /^https:\/\/(cards|svgs)\.scryfall\.io\/.*/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'scryfall-images',
