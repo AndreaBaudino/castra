@@ -8,6 +8,7 @@ import {
   type DeckCheck,
   type DeckView,
   type Group,
+  type Visibility,
   GROUP_ORDER,
   cardKey,
   checkDeck,
@@ -17,6 +18,7 @@ import {
   isValid,
   sortColors,
   logChange,
+  loadShared,
 } from '../lib/decks'
 import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
 import { type Match, fmtRecord, record } from '../lib/matches'
@@ -29,6 +31,7 @@ import { SampleHand } from '../components/SampleHand'
 import { DeckAnalysis } from '../components/DeckAnalysis'
 import { summaryOf } from '../lib/analysis'
 import { CardDetails } from './Cards'
+import { useAuth } from '../lib/auth'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
 
@@ -47,6 +50,14 @@ const GROUP_KEY: Record<Group, TKey> = {
 }
 
 const VIEW_KEY: Record<DeckView, TKey> = { list: 'deck.view.list', pile: 'deck.view.pile', grid: 'deck.view.grid' }
+const VISIBILITIES: Visibility[] = ['private', 'unlisted', 'public']
+
+/** Who made the deck: the account's name, and its picture and circuit page when it claimed a player. */
+export interface Author {
+  name: string
+  photo?: string | null
+  open?: () => void
+}
 
 function ManaCost({ cost }: { cost: string }) {
   return (
@@ -200,19 +211,25 @@ export default function DeckDetail({
   onDuplicate,
   onBack,
   openCommander,
+  author,
+  readOnly,
 }: {
   deck: Deck
   metaDecks: MetaDeck[]
   matches: Match[]
-  onChange: (d: Deck) => void
+  onChange: (d: Deck) => void // someone else's deck: only on this screen (the view, the cards' missing data)
   onDelete: () => void
   onDuplicate: () => void
   onBack: () => void
   openCommander: (name: string) => void
+  author?: Author
+  readOnly?: boolean // someone else's deck, opened from its link
 }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
-  const [editing, setEditing] = useState(!deck.cards.length) // a deck made from scratch opens ready to fill
+  const { user } = useAuth()
+  const [editing, setEditing] = useState(!readOnly && !deck.cards.length) // a deck made from scratch opens ready to fill
+  const [sharing, setSharing] = useState(false)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [choosingPrint, setChoosingPrint] = useState(false)
   const [reading, setReading] = useState(false) // the card's Oracle text, errata and rulings, in place of its actions
@@ -329,16 +346,28 @@ export default function DeckDetail({
           <button className="icon-btn on-image" onClick={onBack} aria-label={t('deck.back')}>
             <Icon name="back" />
           </button>
-          <div className="hero-actions">
-            <button className="icon-btn on-image" onClick={() => setChoosingCover(true)} aria-label={t('deck.chooseCover')}>
-              <Icon name="image" />
-            </button>
-            <button className="icon-btn on-image" onClick={() => setEditing((e) => !e)}>
-              {editing ? <span className="small strong">{t('deck.done')}</span> : <Icon name="edit" />}
-            </button>
-          </div>
+          {!readOnly && (
+            <div className="hero-actions">
+              <button className="icon-btn on-image" onClick={() => setSharing(true)} aria-label={t('deck.share')}>
+                <Icon name="share" />
+              </button>
+              <button className="icon-btn on-image" onClick={() => setChoosingCover(true)} aria-label={t('deck.chooseCover')}>
+                <Icon name="image" />
+              </button>
+              <button className="icon-btn on-image" onClick={() => setEditing((e) => !e)}>
+                {editing ? <span className="small strong">{t('deck.done')}</span> : <Icon name="edit" />}
+              </button>
+            </div>
+          )}
         </div>
         <div className="deck-hero-body">
+          {author && (
+            <button className="deck-author" disabled={!author.open} onClick={author.open}>
+              {author.photo ? <img src={author.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{author.name.charAt(0).toUpperCase()}</span>}
+              <span className="ellipsis">{author.name}</span>
+              {!readOnly && <span className="tag">{t(`deck.vis.${deck.visibility ?? 'private'}`)}</span>}
+            </button>
+          )}
           <h1 className="ellipsis">{deck.name}</h1>
           <div className="sub-line">
             <Pips colors={sortColors(check.identity)} size={12} />
@@ -538,7 +567,7 @@ export default function DeckDetail({
             <div className="card-preview">
               {selected.info?.image && <img src={selected.info.image} alt={selected.name} loading="lazy" />}
               <div className="muted small">{selected.info?.typeLine}</div>
-              <button className="edition-row" onClick={() => setChoosingPrint(true)}>
+              <button className="edition-row" disabled={readOnly} onClick={() => setChoosingPrint(true)}>
                 <span className="muted small">{t('deck.edition')}</span>
                 <span className="grow ellipsis">
                   {selected.info?.setName ?? selected.set?.toUpperCase() ?? '—'}
@@ -550,9 +579,9 @@ export default function DeckDetail({
                     </span>
                   )}
                 </span>
-                <span className="link">{t('deck.change')}</span>
+                {!readOnly && <span className="link">{t('deck.change')}</span>}
               </button>
-              <div className="qty-line">
+              {!readOnly && <div className="qty-line">
                 <span>{t('deck.qty')}</span>
                 <span className="stepper-ctrl">
                   <button onClick={() => (selected.qty > 1 ? changeQty(selected, -1) : remove(selected))} aria-label="-">
@@ -563,12 +592,12 @@ export default function DeckDetail({
                     +
                   </button>
                 </span>
-              </div>
+              </div>}
               <div className="btn-row">
                 <button className="btn ghost" onClick={() => setReading(true)}>
                   <Icon name="search" size={16} /> {t('cards.textAndRulings')}
                 </button>
-                {selected.section !== 'commander' ? (
+                {readOnly ? null : selected.section !== 'commander' ? (
                   <button className="btn ghost" onClick={() => moveTo(selected, 'commander')}>
                     <Icon name="crown" size={16} /> {t('deck.setCommander')}
                   </button>
@@ -577,7 +606,7 @@ export default function DeckDetail({
                     {t('deck.unsetCommander')}
                   </button>
                 )}
-                {selected.section === 'side' ? (
+                {readOnly ? null : selected.section === 'side' ? (
                   <button className="btn ghost" onClick={() => moveTo(selected, 'main')}>
                     <Icon name="swap" size={16} /> {t('deck.toMain')}
                   </button>
@@ -586,7 +615,7 @@ export default function DeckDetail({
                     <Icon name="swap" size={16} /> {t('deck.toSideboard')}
                   </button>
                 )}
-                {selected.info?.art && (
+                {!readOnly && selected.info?.art && (
                   <button
                     className="btn ghost"
                     disabled={deck.cover === selected.name}
@@ -598,9 +627,11 @@ export default function DeckDetail({
                     <Icon name="image" size={16} /> {deck.cover === selected.name ? t('deck.isCover') : t('deck.setCover')}
                   </button>
                 )}
-                <button className="btn danger" onClick={() => remove(selected)}>
-                  <Icon name="trash" size={16} /> {t('deck.remove')}
-                </button>
+                {!readOnly && (
+                  <button className="btn danger" onClick={() => remove(selected)}>
+                    <Icon name="trash" size={16} /> {t('deck.remove')}
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -627,8 +658,92 @@ export default function DeckDetail({
         </div>
       </Sheet>
 
+      <Sheet open={sharing} onClose={() => setSharing(false)} title={t('deck.share')}>
+        {/* a deck shared before signing in would never reach the cloud */}
+        {!user ? (
+          <p className="muted small no-margin">{t('deck.shareLogin')}</p>
+        ) : (
+          <div className="form">
+            <div className="seg">
+              {VISIBILITIES.map((v) => (
+                <button key={v} className={(deck.visibility ?? 'private') === v ? 'on' : ''} onClick={() => save({ visibility: v, author: user.name ?? undefined })}>
+                  {t(`deck.vis.${v}`)}
+                </button>
+              ))}
+            </div>
+            <p className="muted small no-margin">{t(`deck.vis.${deck.visibility ?? 'private'}.hint`)}</p>
+            {(deck.visibility ?? 'private') !== 'private' && (
+              <button
+                className="btn primary"
+                onClick={async () => {
+                  const url = `${location.origin}${location.pathname}#decks/${user.uid}~${deck.id}`
+                  if (navigator.share) return navigator.share({ title: deck.name, url }).catch(() => {}) // closed: nothing to do
+                  try {
+                    await navigator.clipboard.writeText(url)
+                    flash(t('share.copied'))
+                  } catch {
+                    /* clipboard blocked */
+                  }
+                }}
+              >
+                <Icon name="share" size={16} /> {t('deck.shareLink')}
+              </button>
+            )}
+          </div>
+        )}
+      </Sheet>
+
       {toast && <div className="toast">{toast}</div>}
     </div>
+  )
+}
+
+/** Someone else's deck opened from its link: read only, or "private" when its owner didn't share it. */
+export function SharedDeck({
+  uid,
+  id,
+  authorOf,
+  ...rest
+}: {
+  uid: string
+  id: string
+  authorOf: (uid: string, name?: string) => Author | undefined
+  metaDecks: MetaDeck[]
+  onBack: () => void
+  openCommander: (name: string) => void
+}) {
+  const { t } = useI18n()
+  const [deck, setDeck] = useState<Deck | null | 'private' | undefined>()
+  useEffect(() => {
+    loadShared(uid, id).then(setDeck, (e) => setDeck(e?.code === 'permission-denied' ? 'private' : null))
+  }, [uid, id])
+  if (typeof deck !== 'object' || !deck)
+    return (
+      <div className="page">
+        <header className="page-head">
+          <button className="icon-btn" onClick={rest.onBack} aria-label={t('deck.back')}>
+            <Icon name="back" />
+          </button>
+        </header>
+        {deck !== undefined && (
+          <div className="empty-state">
+            <Icon name={deck ? 'shield' : 'decks'} size={40} />
+            <p>{t(deck ? 'deck.private' : 'deck.missing')}</p>
+          </div>
+        )}
+      </div>
+    )
+  return (
+    <DeckDetail
+      {...rest}
+      deck={deck}
+      matches={[]}
+      onChange={setDeck}
+      onDelete={() => {}}
+      onDuplicate={() => {}}
+      author={authorOf(uid, deck.author)}
+      readOnly
+    />
   )
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildCircuit, parseEventName, playerKey, potyStatus } from './circuit'
-import { type Deck, type DeckCard, checkDeck, logChange, newerDeck, parseDecklist } from './decks'
+import { type Deck, type DeckCard, checkDeck, logChange, newerDeck, parseDecklist, safeDeck } from './decks'
 import { type MetaDataset, ALL, aggregate, parseCsv } from './meta'
 import { DUNGEONS } from './dungeons'
 import { readStored, writeStored } from './storage'
@@ -241,5 +241,19 @@ describe('meta colour filter', () => {
     expect(aggregate(ds, ALL, 'UG').decks.map((d) => [d.name, d.share])).toEqual([['Kinnan, Bonder Prodigy', 1]])
     expect(aggregate(ds, ALL, 'G').entries).toBe(1)
     expect(aggregate(ds, ALL).decks).toHaveLength(3)
+  })
+})
+
+describe('safeDeck', () => {
+  it("keeps only Scryfall's pictures in someone else's deck", () => {
+    const info = (image: string) => ({ id: '1', name: 'X', typeLine: '', manaCost: '', cmc: 0, colorIdentity: [], image, art: image })
+    const d = {
+      cards: [
+        { name: 'A', qty: 1, section: 'main', info: info('https://cards.scryfall.io/normal/front/a/b/ab.jpg?1562') },
+        { name: 'B', qty: 1, section: 'main', info: info('https://spy.example/pixel.png') },
+        { name: 'C', qty: 1, section: 'main', info: info('https://cards.scryfall.io/x), url(https://spy.example/p') },
+      ],
+    } as unknown as Deck
+    expect(safeDeck(d).cards.map((c) => c.info?.art)).toEqual(['https://cards.scryfall.io/normal/front/a/b/ab.jpg?1562', undefined, undefined])
   })
 })

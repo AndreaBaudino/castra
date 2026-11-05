@@ -431,4 +431,17 @@ await allowed('saving your device for notifications', setDoc(doc(dave, 'users', 
 await denied("saving a device in someone else's account", setDoc(doc(dave, 'users', 'alice', 'devices', 'tok'), { at: 'x' }))
 await denied('reading what the notifications saw', getDoc(doc(carol, 'notify', 'state')))
 
+// decks: private unless the owner shares them (src/lib/decks.ts Visibility)
+const deck = (id, visibility) => setDoc(doc(dave, 'users', 'dave', 'decks', id), { id, name: id, ...(visibility && { visibility }) })
+await allowed('saving your decks', Promise.all([deck('old'), deck('priv', 'private'), deck('unl', 'unlisted'), deck('pub', 'public')]))
+await denied("reading someone else's deck saved before sharing existed", getDoc(doc(guest, 'users', 'dave', 'decks', 'old')))
+await denied("reading someone else's private deck", getDoc(doc(alice, 'users', 'dave', 'decks', 'priv')))
+await allowed('opening an unlisted deck from its link, signed out', getDoc(doc(guest, 'users', 'dave', 'decks', 'unl')))
+await allowed('opening a public deck from its link', getDoc(doc(alice, 'users', 'dave', 'decks', 'pub')))
+await allowed('a deck that no longer exists reads as missing', getDoc(doc(guest, 'users', 'dave', 'decks', 'gone')))
+await allowed("listing someone's public decks", getDocs(query(collection(guest, 'users', 'dave', 'decks'), where('visibility', '==', 'public'))))
+await denied("listing someone's unlisted decks", getDocs(query(collection(guest, 'users', 'dave', 'decks'), where('visibility', '==', 'unlisted'))))
+await denied("listing all of someone's decks", getDocs(collection(alice, 'users', 'dave', 'decks')))
+await denied("changing someone else's public deck", setDoc(doc(alice, 'users', 'dave', 'decks', 'pub'), { id: 'pub', name: 'x', visibility: 'public' }))
+
 await env.cleanup()

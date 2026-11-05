@@ -14,6 +14,7 @@ import type { MetaDataset } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 import { CircuitInfoButton } from './MetaInfo'
 import { POTY_SPOTS } from '../config'
+import { PublicDecks } from './Decks'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
@@ -337,6 +338,7 @@ export function PlayerPage({
   openCompare,
   openCommander,
   openTournament,
+  openDeck,
 }: {
   circuit: Circuit
   dataset: MetaDataset | null
@@ -347,6 +349,7 @@ export function PlayerPage({
   openCompare: (a: string, b: string) => void
   openCommander: (name: string) => void
   openTournament: (id: string) => void
+  openDeck: (uid: string, id: string) => void
 }) {
   const { t, lang } = useI18n()
   const p = circuit.players.find((x) => x.key === playerKey)
@@ -498,6 +501,7 @@ export function PlayerPage({
 
       <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} player={p} openTournament={openTournament} openEvent={openEvent} />
       {dataset && <PlayerLists dataset={dataset} entries={mine} />}
+      {claim && <PublicDecks uid={claim.uid} onOpen={(id) => openDeck(claim.uid, id)} />}
     </SubPageShell>
   )
 }

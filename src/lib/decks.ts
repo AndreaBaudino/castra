@@ -1,5 +1,6 @@
 import { DECK_SIZE } from '../config'
 import { type BanCheck, banCheck, banCount } from './banlist'
+import { fb } from './firebase'
 
 export type Section = 'commander' | 'main' | 'side'
 
@@ -29,6 +30,8 @@ export interface DeckCard {
 }
 
 export type DeckView = 'list' | 'pile' | 'grid'
+// unlisted: whoever has the link opens it; public: also listed on the owner's circuit page
+export type Visibility = 'private' | 'unlisted' | 'public'
 
 export interface Deck {
   id: string
@@ -39,6 +42,8 @@ export interface Deck {
   view?: DeckView // default 'list'
   cover?: string // name of the card whose art is the deck's splash; default: commander
   history?: DeckChange[] // newest first
+  visibility?: Visibility // missing = private: only the owner reads it
+  author?: string // the owner's account name, written when the visibility changes
   createdAt: string
   updatedAt: string
 }
@@ -260,6 +265,20 @@ export const newId = () => Math.random().toString(36).slice(2, 10) + Date.now().
 export function deckCover(deck: Deck): string | undefined {
   const chosen = deck.cover ? deck.cards.find((c) => c.name === deck.cover)?.info?.art : undefined
   return chosen ?? deck.cards.find((c) => c.section === 'commander')?.info?.art
+}
+
+// someone else's deck shows only Scryfall's pictures: any other address would load (and track the viewer) from anywhere
+const scry = (u?: string) => (u && /^https:\/\/cards\.scryfall\.io\/[-_./A-Za-z0-9=?]*$/.test(u) ? u : undefined)
+export const safeDeck = (d: Deck): Deck => ({
+  ...d,
+  cards: d.cards.map((c) => (c.info ? { ...c, info: { ...c.info, image: scry(c.info.image), art: scry(c.info.art) } } : c)),
+})
+
+/** Someone else's shared deck (users/{uid}/decks/{id}): null when it doesn't exist; a private one is refused. */
+export async function loadShared(uid: string, id: string) {
+  const { db, fs } = await fb()
+  const snap = await fs.getDoc(fs.doc(db, 'users', uid, 'decks', id))
+  return snap.exists() ? safeDeck(snap.data() as Deck) : null
 }
 
 export const cardKey = (c: Pick<DeckCard, 'name' | 'section'>) => `${c.section}|${c.name}`

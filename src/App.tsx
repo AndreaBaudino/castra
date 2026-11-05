@@ -23,7 +23,7 @@ import { CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPa
 import { ComparePage, LeaguePage } from './views/CircuitMore'
 import { CardPage, CardsSearchPage } from './views/Cards'
 import Decks from './views/Decks'
-import DeckDetail from './views/DeckDetail'
+import DeckDetail, { type Author, SharedDeck } from './views/DeckDetail'
 import Stats from './views/Stats'
 import Account, { isAccountSection } from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
@@ -199,7 +199,16 @@ export default function App() {
     />
   )
 
-  const openDeck = route.deck ? decks.find((d) => d.id === route.deck) : undefined
+  // decks/<id>: one of mine; decks/<owner uid>~<id>: a shared deck, from its link (mine too, when I open my own link)
+  const [deckOwner, deckId] = route.tab === 'decks' && route.deck?.includes('~') ? route.deck.split('~') : [uid, route.deck]
+  const openDeck = deckId && deckOwner === uid ? decks.find((d) => d.id === deckId) : undefined
+  const openShared = (owner: string, id: string) => go('decks', `${owner}~${id}`, true)
+  // the account name written in the deck, the picture and circuit page of the player the account claimed
+  const authorOf = (owner: string, name?: string): Author | undefined => {
+    const [key, c] = [...claims].find(([, c]) => c.uid === owner) ?? []
+    const n = name || c?.name
+    return n ? { name: n, photo: c?.photo, open: key ? () => openCurrentPlayer(key) : undefined } : undefined
+  }
   // "this is me": a shared claim, so a player can belong to one account only
   const linkPlayer = async (key: string | null) => {
     if (!user) {
@@ -443,6 +452,7 @@ export default function App() {
                   openCompare={openCompare}
                   openCommander={openCommander}
                   openTournament={openTournament}
+                  openDeck={openShared}
                 />
               ) : metaSub === 'e' ? (
                 <EventPage circuit={shown.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
@@ -515,9 +525,20 @@ export default function App() {
               importOpen={importOpen}
               setImportOpen={setImportOpen}
             />,
-            openDeck && (
+            deckOwner && deckId && deckOwner !== uid ? (
+              <SharedDeck
+                key={route.deck}
+                uid={deckOwner}
+                id={deckId}
+                authorOf={authorOf}
+                metaDecks={meta.decks}
+                onBack={() => history.back()}
+                openCommander={openCommander}
+              />
+            ) : openDeck && (
               <DeckDetail
                 key={openDeck.id}
+                author={uid ? authorOf(uid, openDeck.author || user?.name || undefined) : undefined}
                 deck={openDeck}
                 metaDecks={meta.decks}
                 matches={matches}

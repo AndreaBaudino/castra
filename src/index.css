@@ -911,6 +911,26 @@ button.kv.clickable b {
   flex-direction: column;
   gap: 4px;
 }
+/* who made the deck, above its name; their circuit page when they claimed a player */
+.deck-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  font-size: 0.9rem;
+}
+.deck-author > img,
+.deck-author > .avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex: none;
+  font-size: 0.75rem;
+}
+.deck-author:disabled,
+.edition-row:disabled {
+  cursor: default;
+}
 .check {
   display: flex;
   gap: 8px;
