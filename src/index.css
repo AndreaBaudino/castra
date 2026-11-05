@@ -1335,6 +1335,22 @@ button.kv.clickable b {
 .player > :not(.player-art) {
   position: relative;
 }
+/* the shortcut to the background, on the edge next to the bar, between the two tap halves */
+.player > .art-btn {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 36px;
+  color: rgba(255, 255, 255, 0.45);
+}
+.art-btn:active {
+  color: #fff;
+}
 .player:has(.player-art) .life-num {
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
 }

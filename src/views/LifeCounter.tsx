@@ -173,6 +173,7 @@ function PlayerPanel({
   dungeon,
   openDungeon,
   art,
+  onArt,
 }: {
   idx: 0 | 1
   p: PlayerState
@@ -184,6 +185,7 @@ function PlayerPanel({
   dungeon?: string // where the player is, when dungeons are on
   openDungeon: () => void
   art?: CardArt
+  onArt?: () => void // the shortcut to this player's background, outside tournaments
 }) {
   const { t } = useI18n()
   const [delta, setDelta] = useState(0)
@@ -235,6 +237,11 @@ function PlayerPanel({
   return (
     <section className={`player p${idx} ${isDead(p) ? 'dead' : ''}`}>
       {art && <div className="player-art" style={{ backgroundImage: `url("${art.art}")` }} />}
+      {onArt && (
+        <button className="art-btn" onClick={onArt} aria-label={t(idx ? 'life.artMine' : 'life.artOpp')}>
+          <Icon name="image" size={16} />
+        </button>
+      )}
       <div className="life-zone">
         <button className="life-tap minus" {...minus} aria-label="-1">
           <span>−</span>
@@ -531,7 +538,7 @@ export default function LifeCounter({
 
   return (
     <div className="life-root">
-      <PlayerPanel idx={0} p={game.players[0]} update={update(0)} {...tokens(0)} art={arts[0]} />
+      <PlayerPanel idx={0} p={game.players[0]} update={update(0)} {...tokens(0)} art={arts[0]} onArt={tg ? undefined : () => setArtFor(0)} />
 
       <div className="life-bar">
         <button className="bar-btn" onClick={() => setRoll({ kind: 'dice', values: [d20(), d20()] })} aria-label={t('life.dice')}>
@@ -563,6 +570,7 @@ export default function LifeCounter({
         update={update(1)}
         {...tokens(1)}
         art={arts[1]}
+        onArt={tg ? undefined : () => setArtFor(1)}
         end={
           someoneDead && (
             <div className="game-end">
