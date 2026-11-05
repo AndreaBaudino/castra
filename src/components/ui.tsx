@@ -1,13 +1,15 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
+import { symbolUrl } from '../lib/scryfall'
 
 export function Pips({ colors, size = 12 }: { colors: string | string[]; size?: number }) {
   const list = typeof colors === 'string' ? colors.split('') : colors
-  if (!list.length) return <span className="pip pip-C" style={{ width: size, height: size }} />
+  // mana symbols have inner detail: a few px more than the old flat dots keeps them readable
+  const px = size + 4
   return (
     <span className="pips">
-      {list.map((c, i) => (
-        <span key={i} className={`pip pip-${c}`} style={{ width: size, height: size }} />
+      {(list.length ? list : ['C']).map((c, i) => (
+        <img key={i} src={symbolUrl(c)} alt="" width={px} height={px} />
       ))}
     </span>
   )
