@@ -237,7 +237,7 @@ export default function Meta({
       <div className="mode-tabs" role="tablist">
         {modes.map((m) => (
           <button key={m} role="tab" aria-selected={mode === m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>
-            <Icon name={m === 'decks' ? 'pie' : m === 'cards' ? 'cards' : 'trophy'} size={20} />
+            <Icon name={m === 'decks' ? 'pie' : m === 'cards' ? 'cardStats' : 'trophy'} size={20} />
             {t(m === 'decks' ? 'circuit.modeDecks' : m === 'cards' ? 'circuit.modeCards' : 'circuit.modeCircuit')}
           </button>
         ))}

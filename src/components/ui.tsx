@@ -162,6 +162,13 @@ const paths: Record<string, ReactNode> = {
     </>
   ),
   pie: <path d="M12 3a9 9 0 1 0 9 9h-9zM15 2.5A9 9 0 0 1 21.5 9H15z" />,
+  // a card and how much it's played: the Circuit's Cards tab
+  cardStats: (
+    <>
+      <rect x="4" y="2.5" width="16" height="19" rx="2" />
+      <path d="M8 17v-3M12 17V9M16 17v-5" />
+    </>
+  ),
   trophy: <path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4" />,
   shield: <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" />,
   gear: (
