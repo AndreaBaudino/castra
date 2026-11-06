@@ -76,8 +76,11 @@ lista.
   il comandante, le sue carte, quante terre e quante carte modali ha (contando le copie) e le carte con più di una
   copia. Fisso come l'archivio.
 - La pagina: Circuito → **Carte** (`src/views/MetaCards.tsx`, conti in `src/lib/decklists.ts`), per ora solo per gli
-  admin. Stessi filtri del Meta, più colori della carta (il bianco: le carte con il bianco; incolore: le carte
-  incolori), "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
+  admin. Stessi filtri del Meta, più colori della carta (`colorMatch`): un colore mostra solo le carte di quel
+  colore; più colori, le carte di ognuno e le multicolore fatte solo di quei colori (bianco e blu: bianche, blu e
+  bianco-blu, non bianco-blu-nero); il tasto multicolore (disco dorato, come in Arena) tiene solo le multicolore tra
+  queste, e con un colore solo tutte le multicolore con quel colore, da solo tutte le multicolore; l'incolore, da
+  solo, le carte incolori, "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
   giocare; con un filtro attivo, se nessuna carta ci arriva, si vedono tutte con un avviso). Toccando una carta si apre la sua scheda (`#meta/x~<carta>`), accanto alla lista sul computer.
 - Nella scheda di ogni carta (dalla scheda Carte o dalla ricerca carte), per ora solo per gli admin, la sezione
   **Nel circuito** (`CircuitUse`, conti in `cardUse`): con i filtri del Circuito, scritti sotto il titolo, la

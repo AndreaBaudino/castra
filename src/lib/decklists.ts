@@ -289,3 +289,16 @@ export function deckOfList(dl: Decklists, list: number, name: string): Deck {
     updatedAt: now,
   }
 }
+
+/** The Cards tab's color filter (picked: WUBRG, plus M for multicolored, or C alone). C: the colorless cards. Colors:
+ * the cards of those colors only, each alone or together. M: only the multicolored ones among them; with one color,
+ * every multicolored card having it; alone, every multicolored card. */
+export function colorMatch(card: string, picked: string) {
+  if (picked === 'C') return !card
+  const multi = picked.includes('M')
+  const cs = picked.replace('M', '')
+  if (multi && card.length < 2) return false
+  if (!cs) return true
+  if (multi && cs.length === 1) return card.includes(cs)
+  return !!card && [...card].every((x) => cs.includes(x))
+}

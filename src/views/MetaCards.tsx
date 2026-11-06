@@ -3,7 +3,7 @@ import { useIsAdmin } from '../lib/admin'
 import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
-import { cardStats, cardUse, type CommanderUse, deckOfList, deckVsMeta, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
+import { cardStats, cardUse, colorMatch, type CommanderUse, deckOfList, deckVsMeta, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
 import { type MetaDataset, type MetaEntry, type MetaFilter, isFiltered, nickName, normName, shortName } from '../lib/meta'
 import type { Deck } from '../lib/decks'
 import { fetchCollection, requestKey, symbolUrl } from '../lib/scryfall'
@@ -12,9 +12,25 @@ import { CardsInfoButton, DeckMetaInfoButton, PlayerCardsInfoButton, TypicalInfo
 
 // The circuit's most played cards, from the tournaments' deck lists (docs/liste-mazzi.md): the Circuit's "Cards" tab.
 
-const COLORS = ['W', 'U', 'B', 'R', 'G', 'C'] as const
+const COLORS = ['W', 'U', 'B', 'R', 'G', 'C', 'M'] as const
 const MIN_OPTIONS = [0, 10, 20, 40]
 const SHOW = 5
+
+// multicolored, as Arena draws it: a gold disc with a ring (a fixed symbol, like the mana symbols' images)
+const MultiIcon = () => (
+  <svg viewBox="0 0 26 26" aria-hidden="true">
+    <defs>
+      <radialGradient id="multi-gold" cx="40%" cy="35%" r="70%">
+        <stop offset="0" stopColor="#F3D98A" />
+        <stop offset="0.6" stopColor="#C99A3B" />
+        <stop offset="1" stopColor="#8A6420" />
+      </radialGradient>
+    </defs>
+    <circle cx="13" cy="13" r="13" fill="url(#multi-gold)" />
+    <circle cx="13" cy="13" r="7.5" fill="none" stroke="#5C3F0E" strokeWidth="2.2" />
+    <circle cx="13" cy="13" r="7.5" fill="none" stroke="#F7E3A6" strokeWidth="0.8" opacity="0.7" />
+  </svg>
+)
 
 export default function MetaCards({
   dataset,
@@ -30,7 +46,7 @@ export default function MetaCards({
   const { t } = useI18n()
   const dl = useDecklists()
   const [q, setQ] = useState('')
-  const [colors, setColors] = useState('') // WUBRG order; C alone: colorless cards
+  const [colors, setColors] = useState('') // WUBRG order, M last for multicolored; C alone: colorless cards
   const [lands, setLands] = useStoredState('cc.meta.cardLands', false)
   const [min, setMin] = useStoredState('cc.meta.cardMin', 20)
   const stats = useMemo(() => (dl ? cardStats(dataset, filter, dl) : null), [dataset, filter, dl])
@@ -40,7 +56,7 @@ export default function MetaCards({
       (c) =>
         (lands || !c.land) &&
         (!nq || normName(c.name).includes(nq)) &&
-        (colors === 'C' ? !c.colors : [...colors].every((x) => c.colors.includes(x))),
+        colorMatch(c.colors, colors),
     )
     const kept = found.filter((c) => c.of >= min)
     // few lists in the filters (a small league): rather all the cards than none
@@ -86,11 +102,11 @@ export default function MetaCards({
         <span className="muted small">{t('meta.colors')}</span>
         {COLORS.map((c) => {
           const on = colors.includes(c)
-          // colorless and the colors exclude each other
+          // colorless excludes the colors and multicolored
           const next = c === 'C' ? (on ? '' : 'C') : COLORS.filter((x) => x !== 'C' && (x === c ? !on : colors.includes(x))).join('')
           return (
             <button key={c} className={on ? 'on' : ''} aria-pressed={on} aria-label={t(`meta.color.${c}`)} onClick={() => setColors(next)}>
-              <img src={symbolUrl(c)} alt="" />
+              {c === 'M' ? <MultiIcon /> : <img src={symbolUrl(c)} alt="" />}
             </button>
           )
         })}

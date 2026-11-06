@@ -509,14 +509,16 @@ div:has(> .brand-kicker + .tp-title) {
   display: flex;
   padding: 4px;
 }
-.color-pick img {
+.color-pick img,
+.color-pick svg {
   width: 26px;
   height: 26px;
   border-radius: 50%;
   opacity: 0.45;
   transition: opacity 0.15s, box-shadow 0.15s;
 }
-.color-pick button.on img {
+.color-pick button.on img,
+.color-pick button.on svg {
   opacity: 1;
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold);
 }

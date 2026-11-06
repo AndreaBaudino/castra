@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardStats, cardUse, type Decklists, deckOfList, deckVsMeta, playerCards, typicalList } from './decklists'
+import { cardStats, cardUse, colorMatch, type Decklists, deckOfList, deckVsMeta, playerCards, typicalList } from './decklists'
 import type { Deck, DeckCard } from './decks'
 import { ALL, type MetaDataset, type MetaEntry } from './meta'
 
@@ -247,5 +247,23 @@ describe('deckOfList', () => {
       ['Island', 30, 'main'],
       ['Brainstorm', 1, 'main'],
     ])
+  })
+})
+
+describe('colorMatch', () => {
+  const cards = ['W', 'U', 'WU', 'RW', 'WUB', '']
+  const shown = (picked: string) => cards.filter((c) => colorMatch(c, picked))
+
+  it('shows only the picked colors, each alone or together', () => {
+    expect(shown('')).toEqual(cards)
+    expect(shown('W')).toEqual(['W'])
+    expect(shown('WU')).toEqual(['W', 'U', 'WU'])
+    expect(shown('C')).toEqual([''])
+  })
+
+  it('with multicolored, only the multicolored ones', () => {
+    expect(shown('M')).toEqual(['WU', 'RW', 'WUB'])
+    expect(shown('WM')).toEqual(['WU', 'RW', 'WUB']) // one color: every multicolored card with it
+    expect(shown('WUM')).toEqual(['WU']) // two: only those two
   })
 })
