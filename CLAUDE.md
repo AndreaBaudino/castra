@@ -94,7 +94,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   spareggi MTR, top cut; funzioni pure), `tournaments.ts` (tornei su Firestore: `useTournaments`, `useTournament`,
   creazione, iscritti, turni, risultati, top cut). Progetto in `docs/tornei.md`.
 - `decklists.ts`: le liste dei mazzi del circuito (`public/decklists.json`): `cardStats` (scheda Carte del Circuito),
-  `cardUse` (scheda della carta), `typicalList` (le carte più giocate nella pagina del comandante); viste in
+  `cardUse` (scheda della carta), `typicalList` (le carte più giocate nella pagina del comandante), `playerCards` (le carte di un giocatore); viste in
   `views/MetaCards.tsx`, per ora solo admin; regole in `docs/liste-mazzi.md`.
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),

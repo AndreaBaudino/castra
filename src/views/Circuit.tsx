@@ -13,6 +13,7 @@ import { useDialog } from '../components/Dialog'
 import type { MetaDataset } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 import { CircuitInfoButton } from './MetaInfo'
+import { PlayerCards } from './MetaCards'
 import { POTY_SPOTS } from '../config'
 import { PublicDecks } from './Decks'
 
@@ -339,6 +340,7 @@ export function PlayerPage({
   openCommander,
   openTournament,
   openDeck,
+  openCard,
 }: {
   circuit: Circuit
   dataset: MetaDataset | null
@@ -350,6 +352,7 @@ export function PlayerPage({
   openCommander: (name: string) => void
   openTournament: (id: string) => void
   openDeck: (uid: string, id: string) => void
+  openCard: (name: string) => void
 }) {
   const { t, lang } = useI18n()
   const p = circuit.players.find((x) => x.key === playerKey)
@@ -373,6 +376,7 @@ export function PlayerPage({
         <div className="notice">{t('meta.notInCircuit')}</div>
         <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />
         <PlayerColors dataset={dataset} entries={mine} />
+        <PlayerCards dataset={dataset} playerKey={playerKey} openCard={openCard} />
         <PlayerLists dataset={dataset} entries={mine} />
         <PlayerBadges dataset={dataset} entries={mine} />
         <SignatureDeck signature={auto} openCommander={openCommander} />
@@ -477,6 +481,7 @@ export function PlayerPage({
 
       {dataset && mine.length > 0 && <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />}
       {dataset && <PlayerColors dataset={dataset} entries={mine} />}
+      {dataset && <PlayerCards dataset={dataset} playerKey={playerKey} openCard={openCard} />}
 
       {p.events.length > 0 && (
         <section className="card">

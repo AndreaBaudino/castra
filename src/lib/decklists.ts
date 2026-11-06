@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { type MetaDataset, type MetaFilter, entriesOf } from './meta'
+import { type MetaDataset, type MetaEntry, type MetaFilter, entriesOf } from './meta'
 
 // The circuit's deck lists (public/decklists.json, built by scripts/build-meta.mjs from a fixed archive read once from
 // Moxfield): the cards of each list, which the build gives to the meta's entries (MetaEntry.deckList) by the rules of
@@ -181,5 +181,45 @@ export function typicalList(ds: MetaDataset, f: MetaFilter, dl: Decklists, cmd: 
     tech,
     choices: choices(tech),
     picked: unusual.filter((c) => c.share < 0.7).map((c) => ({ ...c, rest: rest(c.id) })),
+  }
+}
+
+export interface PlayerCard {
+  id: number
+  name: string
+  decks: number // the player's entries whose list plays it
+  of: number // the player's entries with a list whose commander can play it
+  share: number
+  rest: number // share among the other players' entries that can play it
+}
+
+/** A player's favourite cards (docs/liste-mazzi.md): in at least 2 of their lists and 60% of their entries that can
+ * play them, and at least 30 points above the rest of the circuit. The biggest gap first. Only with 2+ lists. */
+export function playerCards(ds: MetaDataset, dl: Decklists, key: string) {
+  const all = (ds.year === dl.year ? ds.entries : []).filter((e) => e.deckList != null && e.cmd >= 0)
+  const mine = all.filter((e) => e.key === key)
+  const others = all.filter((e) => e.key !== key)
+  const lists = new Map<number, Set<number>>()
+  for (const e of mine) for (const c of dl.lists[e.deckList!][1]) lists.set(c, (lists.get(c) ?? new Set()).add(e.deckList!))
+  const shareOf = (rows: MetaEntry[], id: number) => {
+    const can = rows.filter((e) => within(ds.commanders[e.cmd].colors, dl.cards[id][1] ?? ''))
+    return [can.filter((e) => dl.lists[e.deckList!][1].includes(id)).length, can.length]
+  }
+  const cards: PlayerCard[] = []
+  for (const [id, l] of lists) {
+    const kind = dl.cards[id][2]
+    if (l.size < 2 || (kind !== 0 && kind !== 3)) continue // lands are the deck's colors, not a taste
+    const [decks, of] = shareOf(mine, id)
+    if (!of || decks / of < 0.6) continue
+    const [n, m] = shareOf(others, id)
+    const rest = m ? n / m : 0
+    if (decks / of - rest >= 0.3) cards.push({ id, name: dl.cards[id][0], decks, of, share: decks / of, rest })
+  }
+  return {
+    entries: mine.length,
+    total: (ds.year === dl.year ? ds.entries : []).filter((e) => e.key === key).length,
+    lists: new Set(mine.map((e) => e.deckList)).size,
+    commanders: new Set(mine.map((e) => e.cmd)).size,
+    cards: cards.sort((a, b) => b.share - b.rest - (a.share - a.rest) || a.name.localeCompare(b.name)),
   }
 }

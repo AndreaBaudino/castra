@@ -3,11 +3,11 @@ import { useIsAdmin } from '../lib/admin'
 import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
-import { cardStats, cardUse, type CommanderUse, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
+import { cardStats, cardUse, type CommanderUse, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
 import { type MetaDataset, type MetaFilter, isFiltered, normName, shortName } from '../lib/meta'
 import { symbolUrl } from '../lib/scryfall'
 import { useStoredState } from '../lib/storage'
-import { CardsInfoButton, TypicalInfoButton } from './MetaInfo'
+import { CardsInfoButton, PlayerCardsInfoButton, TypicalInfoButton } from './MetaInfo'
 
 // The circuit's most played cards, from the tournaments' deck lists (docs/liste-mazzi.md): the Circuit's "Cards" tab.
 
@@ -368,6 +368,76 @@ export function TypicalList({
           {group('tech', t(x.tech > 0.2 ? 'typical.techNote30' : 'typical.techNote'), x.choices)}
           {group('picked', t('typical.pickedNote'), x.picked, true)}
         </div>
+      )}
+    </>
+  )
+}
+
+/** A player's favourite cards, in their page: the whole year, for the admins only for now. Only with 2+ lists. */
+export function PlayerCards({
+  dataset,
+  playerKey,
+  openCard,
+}: {
+  dataset: MetaDataset
+  playerKey: string
+  openCard: (name: string) => void
+}) {
+  const { t } = useI18n()
+  const admin = useIsAdmin(useAuth().user?.uid ?? null)
+  const dl = useDecklists()
+  const [all, setAll] = useState(false)
+  const x = useMemo(() => (admin && dl ? playerCards(dataset, dl, playerKey) : null), [admin, dataset, dl, playerKey])
+  if (!x || x.lists < 2) return null
+  return (
+    <>
+      <section className="card">
+        <div className="card-title">
+          <span className="title-live">
+            {t('playerCards.title')}
+            <PlayerCardsInfoButton />
+          </span>
+        </div>
+        <div className="kv">
+          <span>{t('typical.entries')}</span>
+          <b>{t('typical.of', { n: x.entries, of: x.total })}</b>
+        </div>
+        <div className="kv">
+          <span>{t('typical.lists')}</span>
+          <b>{x.lists}</b>
+        </div>
+        <div className="kv">
+          <span>{t('playerCards.commanders')}</span>
+          <b>{x.commanders}</b>
+        </div>
+        {!x.cards.length && <span className="muted small">{t('playerCards.none')}</span>}
+      </section>
+      {x.cards.length > 0 && (
+        <section className="group">
+          <div className="group-title">
+            {t('playerCards.fav')} · {t('typical.nCards', { n: x.cards.length })}
+          </div>
+          <p className="muted small group-note">{t('playerCards.favNote')}</p>
+          <ul className="card-list">
+            {(all ? x.cards : x.cards.slice(0, SHOW)).map((c) => (
+              <li key={c.id} className="event-row" onClick={() => openCard(c.name)}>
+                <div className="event-main">
+                  <span className="ellipsis">{c.name}</span>
+                  <span className="muted small">{t('playerCards.row', { n: c.decks, of: c.of })}</span>
+                </div>
+                <div className="meta-val">
+                  <b>{pct(c.share, 0)}</b>
+                  <span className="muted">{t('playerCards.rest', { p: pct(c.rest, 0) })}</span>
+                </div>
+              </li>
+            ))}
+            {x.cards.length > SHOW && (
+              <li className="event-row more" onClick={() => setAll(!all)}>
+                {all ? t('meta.showLess') : t('typical.allCards', { n: x.cards.length })}
+              </li>
+            )}
+          </ul>
+        </section>
       )}
     </>
   )

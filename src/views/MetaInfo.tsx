@@ -8,6 +8,7 @@ import { Icon, Sheet } from '../components/ui'
 const META = ['source', 'updates', 'share', 'winrate', 'byes', 'missing', 'interval', 'minGames', 'filters'] as const
 const CIRCUIT = ['points', 'poty', 'invited', 'zone', 'levels', 'wld'] as const
 const CARDS = ['source', 'valid', 'entries', 'extended', 'share', 'lists'] as const
+const PLAYER = ['playerInfo.fav', 'cardsInfo.source', 'cardsInfo.entries', 'cardsInfo.extended'] as const
 const TYPICAL = ['typicalInfo.groups', 'typicalInfo.tech', 'typicalInfo.lands', 'typicalInfo.modal', 'cardsInfo.source', 'cardsInfo.entries', 'cardsInfo.extended'] as const
 
 function InfoButton({ title, items, label }: { title: string; items: [string, string][]; label?: string }) {
@@ -45,6 +46,11 @@ export function CardsInfoButton() {
 export function TypicalInfoButton() {
   const { t } = useI18n()
   return <InfoButton title={t('typicalInfo.title')} items={TYPICAL.map((s) => [t(`${s}.title`), t(s)])} />
+}
+
+export function PlayerCardsInfoButton() {
+  const { t } = useI18n()
+  return <InfoButton title={t('playerInfo.title')} items={PLAYER.map((s) => [t(`${s}.title`), t(s)])} />
 }
 
 /** `spots`: the players who go to the POTY by ranking. With `withLabel`, a "how it works" link instead of an icon. */

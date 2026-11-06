@@ -103,6 +103,11 @@ lista.
     le terre in media e, al posto dei gruppi (sarebbe tutto "must have"), l'elenco delle carte della lista senza
     percentuali, con un avviso che dice di chi è e che non è "cosa si gioca di solito". Senza liste la
     sezione non compare.
+- Nella scheda di ogni giocatore, per ora solo per gli admin, **Le sue carte** (`PlayerCards`, conti in `playerCards`),
+  su tutto l'anno e solo per chi ha almeno 2 liste diverse: presenze con una lista, liste e comandanti, e **Le sue
+  preferite**, cioè le carte (non terre) in almeno 2 sue liste e in almeno il 60% delle sue presenze che possono
+  giocarle, giocate almeno 30 punti percentuali più che dagli altri giocatori (sulle loro presenze che possono
+  giocarle). Prima la differenza più grande; toccando una carta si apre la sua scheda.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
 

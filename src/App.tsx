@@ -460,6 +460,7 @@ export default function App() {
                   openCommander={openCommander}
                   openTournament={openTournament}
                   openDeck={openShared}
+                  openCard={openMetaCard}
                 />
               ) : metaSub === 'e' ? (
                 <EventPage circuit={shown.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />

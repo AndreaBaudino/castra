@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardStats, cardUse, type Decklists, typicalList } from './decklists'
+import { cardStats, cardUse, type Decklists, playerCards, typicalList } from './decklists'
 import { ALL, type MetaDataset, type MetaEntry } from './meta'
 
 // The play rate of the circuit's cards (docs/liste-mazzi.md): per entry, among the decks that can play the card.
@@ -147,5 +147,50 @@ describe('typicalList', () => {
 
   it('has nothing for another year', () => {
     expect(typicalList({ ...data, year: 2027 }, ALL, dl2, 0).entries).toBe(0)
+  })
+})
+
+describe('playerCards', () => {
+  const cards: Decklists['cards'] = [
+    ['Swords to Plowshares', 'W', 0],
+    ['Gilded Drake', 'U', 0],
+    ['Brainstorm', 'U', 0],
+    ['Meekstone', '', 0],
+    ['Flooded Strand', '', 2],
+    ['Solo', '', 0],
+  ]
+  const lists: Decklists['lists'] = [
+    ['A', [0, 1, 2, 3, 4], 36, 0], // Ana's two lists
+    ['B', [1, 2, 3, 4, 5], 36, 0],
+    ['A', [0, 2], 36, 0], // the others
+    ['B', [2], 36, 0],
+  ]
+  const ana = (t: number, cmd: number, l?: number) => ({ ...entry(t, cmd, l), player: 'Ana', key: 'ana' })
+  const data: MetaDataset = {
+    ...ds,
+    commanders: [
+      { id: 0, name: 'A', colors: 'WU' },
+      { id: 1, name: 'B', colors: 'U' },
+    ],
+    entries: [ana(0, 0, 0), ana(1, 0, 0), ana(1, 1, 1), ana(0, 1), entry(0, 0, 2), entry(1, 1, 3), entry(1, 1, 3)],
+  }
+  const dl2: Decklists = { v: 2, year: 2026, cards, lists }
+  const x = playerCards(data, dl2, 'ana')
+
+  it('tells what it rests on', () => {
+    expect(x).toMatchObject({ entries: 3, total: 4, lists: 2, commanders: 2 })
+  })
+
+  it('takes the cards of 2+ lists played far more than the rest of the circuit, never lands', () => {
+    // Gilded Drake and Meekstone: all of hers, none of the others'. Brainstorm: everybody plays it. Swords: one list.
+    // Solo: one list. Flooded Strand: a land.
+    expect(x.cards.map((c) => [c.name, c.decks, c.of, c.rest])).toEqual([
+      ['Gilded Drake', 3, 3, 0],
+      ['Meekstone', 3, 3, 0],
+    ])
+  })
+
+  it('has nothing for another year', () => {
+    expect(playerCards({ ...data, year: 2027 }, dl2, 'ana')).toMatchObject({ entries: 0, cards: [] })
   })
 })
