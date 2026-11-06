@@ -251,8 +251,19 @@ export function CircuitUse({
   )
 }
 
-/** A commander's typical list, in its page: with the page's filters, for the admins only for now. Nothing without lists. */
-export function TypicalList({ dataset, filter, cmd }: { dataset: MetaDataset; filter: MetaFilter; cmd: number }) {
+/** A commander's typical list, in its page: with the page's filters, for the admins only for now. Nothing without lists.
+ * A card opens its page. */
+export function TypicalList({
+  dataset,
+  filter,
+  cmd,
+  openCard,
+}: {
+  dataset: MetaDataset
+  filter: MetaFilter
+  cmd: number
+  openCard: (name: string) => void
+}) {
   const { t, lang } = useI18n()
   const admin = useIsAdmin(useAuth().user?.uid ?? null)
   const dl = useDecklists()
@@ -285,7 +296,7 @@ export function TypicalList({ dataset, filter, cmd }: { dataset: MetaDataset; fi
         <p className="muted small group-note">{note}</p>
         <ul className="card-list">
           {(open[key] ? list : list.slice(0, SHOW)).map((c) => (
-            <li key={c.id} className="event-row">
+            <li key={c.id} className="event-row" onClick={() => openCard(c.name)}>
               <div className="event-main">
                 <span className="ellipsis">{c.name}</span>
                 <span className="muted small">

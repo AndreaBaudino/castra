@@ -432,6 +432,7 @@ export default function App() {
                 openTournament={openTournament}
                 openDeck={(id) => go('decks', id)}
                 openCommander={openCommander}
+                openCard={openMetaCard}
               />
             ) : metaSub === 'x' ? (
               <CardPage name={metaArgs[0]} metaDecks={meta.decks} dataset={dataset} onBack={() => history.back()} openCommander={openCommander} />

@@ -68,6 +68,7 @@ export function CommanderPage({
   openTournament,
   openDeck,
   openCommander,
+  openCard,
 }: {
   dataset: MetaDataset | null
   name: string
@@ -77,6 +78,7 @@ export function CommanderPage({
   openTournament: (id: string) => void
   openDeck: (id: string) => void
   openCommander: (name: string) => void
+  openCard: (name: string) => void
 }) {
   const { t, lang } = useI18n()
   const [filter, setFilter] = useStoredState<MetaFilter>(META_FILTER_KEY, ALL)
@@ -236,7 +238,7 @@ export function CommanderPage({
             </section>
           )}
 
-          <TypicalList dataset={dataset} filter={filter} cmd={cmd.id} />
+          <TypicalList dataset={dataset} filter={filter} cmd={cmd.id} openCard={openCard} />
 
           {mine.length > 0 && (
             <ul className="card-list">

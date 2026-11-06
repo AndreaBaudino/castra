@@ -96,6 +96,7 @@ lista.
   - **carte modali**: le carte modali a due facce con una terra sul retro (Sink into Stupor // Soporific Springs; non
     quelle che si trasformano, come Legion's Landing, che non si giocano come terra). Contano nelle terre in media e
     restano nei gruppi delle carte, con il nome intero;
+  - toccando una carta (o una terra) si apre la sua scheda, con "Nel circuito";
   - con una sola lista, al posto dei gruppi, un avviso con chi l'ha portata e in quante presenze; senza liste la
     sezione non compare.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
