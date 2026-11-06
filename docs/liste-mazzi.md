@@ -82,7 +82,7 @@ lista.
   **Nel circuito** (`CircuitUse`, conti in `cardUse`): con i filtri del Circuito, scritti sotto il titolo, la
   percentuale, le presenze e le liste; "Chi la gioca" (i comandanti, 5 e poi tutti) e "Potrebbero giocarla, ma no"
   (fino a 3 comandanti con quei colori e più presenze che non la giocano mai).
-- Nella pagina di ogni comandante, per ora solo per gli admin, la **lista tipica** (`TypicalList`, conti in
+- Nella pagina di ogni comandante, per ora solo per gli admin, la sezione **Le carte più giocate** (nel codice "lista tipica") (`TypicalList`, conti in
   `typicalList`), con i filtri della pagina e i conti per presenza del punto 4, su quelle del comandante con una lista:
   - in alto le presenze con una lista (su quelle del comandante), le liste diverse e le **terre in media**, con la più
     bassa e la più alta: terre + carte modali, e quante sono le une e le altre;
@@ -121,7 +121,7 @@ lista.
   una lista propria non dà carte (Bresciani); i collegamenti diretti; l'estensione con la lista più recente, anche con
   un link rotto e per un torneo dopo il 5/11, e tra tappe conta il numero; un'iscrizione del 2027 non prende liste
   del 2026; una lista portata due volte conta due. `src/lib/decklists.test.ts`: la percentuale conta per presenza e
-  solo i mazzi che possono giocare la carta, i filtri, nessun dato per un altro anno; la lista tipica (gruppi, soglia
+  solo i mazzi che possono giocare la carta, i filtri, nessun dato per un altro anno; le carte più giocate del comandante (gruppi, soglia
   delle tech al 30%, terre particolari, media delle terre con le carte modali, una lista sola).
 - Controllati sul meta pubblicato il 5/11: Bresciani con Oloro senza lista (2 iscrizioni); Waltz con Atraxa, 12
   iscrizioni, tutte con la sua lista Atraxa (3 dirette, 9 estese); la Tivit di Arzenton, 4 dirette e 2 estese; la
