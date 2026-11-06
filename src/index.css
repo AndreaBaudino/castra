@@ -328,7 +328,6 @@ div:has(> .brand-kicker + .tp-title) {
   min-height: 44px;
   padding: 0 16px;
   border-radius: var(--radius);
-  font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -401,7 +400,6 @@ div:has(> .brand-kicker + .tp-title) {
 }
 .seg button {
   padding: 8px 10px;
-  font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1416,7 +1414,9 @@ button.kv.clickable b {
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   color: #fff;
-  font: 700 0.72rem/1 var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }

@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-06',
     it: [
+      'Grafica: pulsanti e selettori usano lo stesso carattere dei testi, più facile da leggere; timer, codici e punteggi restano a larghezza fissa',
       'Circuito → Carte: una scheda nuova, accanto a Meta e Classifiche, con le carte più giocate nel circuito 2026, contate dalle liste Moxfield dei fogli dei tornei (lette una volta il 5/11/2026). La percentuale conta solo i mazzi che possono giocare la carta. Ci sono i filtri del Meta e in più colori (un colore mostra solo le sue carte, più colori anche le multicolore di quei colori, il tasto dorato solo le multicolore), "Senza terre" e il numero minimo di mazzi. Il pulsante (i) spiega come si contano le carte; tocca una carta per aprirne la scheda',
       'Carte: nella scheda di ogni carta, "Nel circuito" dice quanto è giocata, da quali comandanti e quali potrebbero giocarla ma non lo fanno, e quanto è giocata nei top 8 di Livello 1 e 2, tra i vincitori delle tappe di lega e in ogni stagione',
       'Circuito, comandanti: "Le carte più giocate" divide le carte delle liste di quel comandante in must have, quasi sempre, tech choices e terre particolari, con la media delle terre. In "Liste Moxfield" il pulsante Duplica mazzo crea in Mazzi un mazzo con quella lista',
@@ -17,6 +18,7 @@ export const CHANGELOG: Release[] = [
       'Mazzi: "Contro il meta" confronta il tuo mazzo con le carte più giocate con il suo comandante: quante must have hai, quelle che ti mancano, le terre rispetto alla media e le tue pet card',
     ],
     en: [
+      'Look: buttons and selectors use the same typeface as the text, easier to read; timer, codes and scores keep fixed-width digits',
       'Circuit → Cards: a new tab, next to Meta and Rankings, with the most played cards in the 2026 circuit, counted from the Moxfield lists in the tournament sheets (read once on 5 November 2026). The percentage only counts the decks that can play the card. It has the Meta filters plus colours (one colour shows only its cards, more colours also their multicoloured cards, the gold button only multicoloured cards), "No lands" and a minimum number of decks. The (i) button explains how cards are counted; tap a card to open its page',
       'Cards: on each card\'s page, "In the circuit" tells how much it is played, by which commanders and which could play it but don\'t, and how much it is played in the Level 1 and 2 top 8s, among the league stage winners and in each season',
       'Circuit, commanders: "The most played cards" splits the cards in that commander\'s lists into must have, almost always, tech choices and unusual lands, with the average lands. In "Moxfield lists" the Duplicate deck button makes a deck in Decks with that list',

@@ -48,7 +48,7 @@ rounded:
   sheet: "8px"     # fogli e dialoghi
   full: "999px / 50%" # solo interruttori, pallini, simboli di mana, avatar, tasto Partita
 components:
-  button-primary: { background: "--red", text: "--on-accent", font: "mono, maiuscolo", height: "44px", class: ".btn.primary" }
+  button-primary: { background: "--red", text: "--on-accent", font: "Inter, maiuscolo", height: "44px", class: ".btn.primary" }
   button-tonal: { background: "--red al 12%", border: "--red al 45%", text: "--gold", class: ".btn.tonal" }
   button-secondary: { background: "transparent", border: "--line", text: "--text", class: ".btn" }
   selector: { border: "1px --line", selected: "--line-strong + --text", class: ".seg, .chip" }
@@ -118,8 +118,8 @@ Le barre che misurano un dato (quota del meta) sono grigie (`--muted`), non embe
 
 - **Space Grotesk** (`--font-display`): titoli delle pagine, nome "Castra", numeri grandi (vite, riepiloghi, `.stat-num`).
   Prende il posto di Georgia.
-- **Inter** (font del `:root`): testi, nomi, campi.
-- **JetBrains Mono** (`--font-mono`): testo dei pulsanti e dei selettori (maiuscolo), tag, timer, codici, punteggi.
+- **Inter** (font del `:root`): testi, nomi, campi, e il testo dei pulsanti e dei selettori (maiuscolo, spaziato).
+- **JetBrains Mono** (`--font-mono`): tag, timer, codici, punteggi.
 
 I caratteri sono **dentro l'app** (`src/assets/fonts`, solo il sottoinsieme latino, circa 100 KB in tutto) e il service
 worker li salva (`globPatterns` in `vite.config.ts`): senza rete, per esempio al life counter durante un torneo, l'app
