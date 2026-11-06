@@ -3,11 +3,11 @@ import { useIsAdmin } from '../lib/admin'
 import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
-import { cardStats, cardUse, type CommanderUse, useDecklists } from '../lib/decklists'
+import { cardStats, cardUse, type CommanderUse, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
 import { type MetaDataset, type MetaFilter, normName, shortName } from '../lib/meta'
 import { symbolUrl } from '../lib/scryfall'
 import { useStoredState } from '../lib/storage'
-import { CardsInfoButton } from './MetaInfo'
+import { CardsInfoButton, TypicalInfoButton } from './MetaInfo'
 
 // The circuit's most played cards, from the tournaments' deck lists (docs/liste-mazzi.md): the Circuit's "Cards" tab.
 
@@ -247,6 +247,94 @@ export function CircuitUse({
           <ul className="card-list">{use.skipping.slice(0, 3).map(row)}</ul>
         </section>
       )}
+    </>
+  )
+}
+
+/** A commander's typical list, in its page: with the page's filters, for the admins only for now. Nothing without lists. */
+export function TypicalList({ dataset, filter, cmd }: { dataset: MetaDataset; filter: MetaFilter; cmd: number }) {
+  const { t, lang } = useI18n()
+  const admin = useIsAdmin(useAuth().user?.uid ?? null)
+  const dl = useDecklists()
+  const [open, setOpen] = useState<Record<string, boolean>>({})
+  const x = useMemo(() => (admin && dl ? typicalList(dataset, filter, dl, cmd) : null), [admin, dataset, filter, dl, cmd])
+  if (!x?.entries) return null
+  const num = (n: number) => n.toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  const title = (
+    <div className="card-title">
+      <span className="title-live">
+        {t('typical.title')}
+        <TypicalInfoButton />
+      </span>
+    </div>
+  )
+  if (x.lists < 2)
+    return (
+      <section className="card">
+        {title}
+        <p className="no-margin">{t('typical.single')}</p>
+        <p className="muted small no-margin">{t('typical.singleBy', { p: x.players.join(', '), n: x.entries })}</p>
+      </section>
+    )
+  const group = (key: 'must' | 'often' | 'tech' | 'picked', note: string, list: TypicalCard[], lands = false) =>
+    list.length > 0 && (
+      <section className="group">
+        <div className="group-title">
+          {t(`typical.${key}`)} · {t(lands ? 'typical.nLands' : 'typical.nCards', { n: list.length })}
+        </div>
+        <p className="muted small group-note">{note}</p>
+        <ul className="card-list">
+          {(open[key] ? list : list.slice(0, SHOW)).map((c) => (
+            <li key={c.id} className="event-row">
+              <div className="event-main">
+                <span className="ellipsis">{c.name}</span>
+                <span className="muted small">
+                  {t(lands ? 'typical.of' : 'typical.row', { n: c.decks, of: x.entries })} · {t('cardsMeta.nLists', { n: c.lists })}
+                  {c.rest != null && ` · ${t('typical.rest', { p: pct(c.rest, 0) })}`}
+                </span>
+              </div>
+              <b>{pct(c.share, 0)}</b>
+            </li>
+          ))}
+          {list.length > SHOW && (
+            <li className="event-row more" onClick={() => setOpen({ ...open, [key]: !open[key] })}>
+              {open[key] ? t('meta.showLess') : t(lands ? 'typical.allLands' : 'typical.allCards', { n: list.length })}
+            </li>
+          )}
+        </ul>
+      </section>
+    )
+  return (
+    <>
+      <section className="card">
+        {title}
+        <div className="kv">
+          <span>{t('typical.entries')}</span>
+          <b>{t('typical.of', { n: x.entries, of: x.total })}</b>
+        </div>
+        <div className="kv">
+          <span>{t('typical.lists')}</span>
+          <b>{x.lists}</b>
+        </div>
+        <div className="kv">
+          <span>{t('typical.lands')}</span>
+          <b>
+            {num(x.lands + x.modal)} <span className="muted">({t('typical.range', { lo: x.lo, hi: x.hi })})</span>
+          </b>
+        </div>
+        {x.modal > 0 && (
+          <>
+            <span className="muted small">{t('typical.split', { l: num(x.lands), m: num(x.modal) })}</span>
+            <span className="muted small">{t('typical.modalNote')}</span>
+          </>
+        )}
+      </section>
+      <div className="typical-cols">
+        {group('must', t('typical.mustNote'), x.must)}
+        {group('often', t('typical.oftenNote'), x.often)}
+        {group('tech', t(x.tech > 0.2 ? 'typical.techNote30' : 'typical.techNote'), x.choices)}
+        {group('picked', t('typical.pickedNote'), x.picked, true)}
+      </div>
     </>
   )
 }

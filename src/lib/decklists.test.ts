@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardStats, cardUse, type Decklists } from './decklists'
+import { cardStats, cardUse, type Decklists, typicalList } from './decklists'
 import { ALL, type MetaDataset, type MetaEntry } from './meta'
 
 // The play rate of the circuit's cards (docs/liste-mazzi.md): per entry, among the decks that can play the card.
@@ -31,7 +31,7 @@ const ds: MetaDataset = {
   pairings: [],
 }
 const dl: Decklists = {
-  v: 1,
+  v: 2,
   year: 2026,
   cards: [
     ['Swords to Plowshares', 'W', 0],
@@ -39,8 +39,8 @@ const dl: Decklists = {
     ['Counterspell', 'U', 0],
   ],
   lists: [
-    ['Phelia', [0, 1]],
-    ['Vohar', [1, 2]],
+    ['Phelia', [0, 1], 36, 0],
+    ['Vohar', [1, 2], 37, 0],
   ],
 }
 
@@ -80,5 +80,70 @@ describe('cardUse', () => {
     const u = cardUse(ds, ALL, dl, 'Counterspell', 'U')
     expect(u.playing.map((c) => c.name)).toEqual(['Vohar'])
     expect(cardUse(ds, ALL, dl, 'Brainstorm', 'U')).toMatchObject({ decks: 0, of: 1, skipping: [{ name: 'Vohar', of: 1 }] })
+  })
+})
+
+describe('typicalList', () => {
+  const names = (list: { name: string }[]) => list.map((c) => c.name)
+  const cards: Decklists['cards'] = [
+    ['Swords to Plowshares', 'W', 0],
+    ['Sol Ring', '', 0],
+    ['Ocelot Pride', 'W', 0],
+    ['Seam Rip', 'W', 0],
+    ['Maze of Ith', '', 1],
+    ['Plains', 'W', 2],
+    ['Command Tower', '', 1],
+    ["Emeria's Call // Emeria, Shattered Skyclave", 'W', 3],
+    ['Counterspell', 'U', 0],
+    ['Tangle Wire', '', 0],
+  ]
+  const lists: Decklists['lists'] = [
+    ['Phelia', [0, 1, 2, 4, 5, 6, 7, 8], 35, 1],
+    ['Phelia', [0, 1, 2, 4, 5, 6, 7], 36, 0],
+    ['Phelia', [0, 1, 3, 5, 6, 7], 37, 0],
+    ['Phelia', [0, 1, 3, 5, 6, 7, 9], 38, 1],
+    ['Vohar', [1, 6, 8], 36, 0],
+  ]
+  // Phelia: list 0 brought 5 times, list 1 three times, lists 2 and 3 once, one entry without a list
+  const phelia = [0, 0, 0, 0, 0, 1, 1, 1, 2, 3].map((l) => entry(0, 0, l))
+  const vohar = [{ ...entry(0, 1, 4), player: 'Luca', key: 'luca' }, { ...entry(1, 1, 4), player: 'Luca', key: 'luca' }]
+  const data: MetaDataset = { ...ds, entries: [...phelia, entry(1, 0), ...vohar, entry(1, 1)] }
+  const dl2: Decklists = { v: 2, year: 2026, cards, lists }
+  const x = typicalList(data, ALL, dl2, 0)
+
+  it('counts per entry, out of the entries with a list', () => {
+    expect(x).toMatchObject({ entries: 10, total: 11, lists: 4 })
+    expect(x.must[0]).toMatchObject({ name: "Emeria's Call // Emeria, Shattered Skyclave", decks: 10, lists: 4, share: 1 })
+  })
+
+  it('splits the cards by share, modal cards with them, never a card the commander cannot play', () => {
+    expect(names(x.must)).toEqual(["Emeria's Call // Emeria, Shattered Skyclave", 'Sol Ring', 'Swords to Plowshares'])
+    expect(names(x.often)).toEqual(['Ocelot Pride'])
+    expect([...names(x.must), ...names(x.often), ...names(x.choices)]).not.toContain('Counterspell')
+  })
+
+  it('takes the choices of at least 2 lists, up to 30% when under 20% they are fewer than 5', () => {
+    // Seam Rip: 2 of 10 in 2 lists; Tangle Wire: 1 of 10, in one list only
+    expect(x.tech).toBe(0.3)
+    expect(names(x.choices)).toEqual(['Seam Rip'])
+  })
+
+  it('picks the lands that are neither staples nor played by most of the circuit', () => {
+    // Plains is a staple, Command Tower is in every other list
+    expect(x.picked).toEqual([expect.objectContaining({ name: 'Maze of Ith', decks: 8, lists: 2, rest: 0 })])
+  })
+
+  it('averages the lands per entry, modal cards apart', () => {
+    expect(x.lands).toBeCloseTo(35.8)
+    expect(x.modal).toBeCloseTo(0.6)
+    expect([x.lo, x.hi]).toEqual([36, 39])
+  })
+
+  it('tells who brought the only list', () => {
+    expect(typicalList(data, ALL, dl2, 1)).toMatchObject({ entries: 2, total: 3, lists: 1, players: ['Luca'] })
+  })
+
+  it('has nothing for another year', () => {
+    expect(typicalList({ ...data, year: 2027 }, ALL, dl2, 0).entries).toBe(0)
   })
 })

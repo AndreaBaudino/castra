@@ -8,8 +8,10 @@ import { type MetaDataset, type MetaFilter, entriesOf } from './meta'
 export interface Decklists {
   v: number
   year: number // the only year with lists
-  cards: [name: string, colors: string | null, land: 0 | 1][] // colors: color identity, null if unknown
-  lists: [commander: string, cards: number[]][]
+  // colors: color identity, null if unknown. Kind, by the front face: 0 not a land, 1 a land, 2 a staple land (basic,
+  // fetch, making 2 to 4 colors), 3 a modal card with a land on the back
+  cards: [name: string, colors: string | null, kind: 0 | 1 | 2 | 3][]
+  lists: [commander: string, cards: number[], lands: number, modal: number][] // lands and modal cards: with copies
 }
 
 let loading: Promise<Decklists | null> | null = null
@@ -102,14 +104,82 @@ export function cardStats(ds: MetaDataset, f: MetaFilter, dl: Decklists) {
     }
   }
   const cards: CardStat[] = [...decks].map(([id, n]) => {
-    const [name, colors, land] = dl.cards[id]
+    const [name, colors, kind] = dl.cards[id]
     const of = [...byIdentity].reduce((s, [identity, k]) => s + (within(identity, colors ?? '') ? k : 0), 0)
-    return { id, name, colors: colors ?? '', land: !!land, decks: n, of, lists: lists.get(id)!.size, share: n / of }
+    return { id, name, colors: colors ?? '', land: kind === 1 || kind === 2, decks: n, of, lists: lists.get(id)!.size, share: n / of }
   })
   return {
     cards: cards.sort((a, b) => b.share - a.share || b.decks - a.decks),
     entries: rows.length,
     total: all.length,
     lists: new Set(rows.map((e) => e.deckList)).size,
+  }
+}
+
+export interface TypicalCard {
+  id: number
+  name: string
+  decks: number // the commander's entries whose list plays it
+  lists: number
+  share: number // of the commander's entries with a list
+  rest?: number // lands: share among the other commanders' entries that can play it
+}
+
+/** A commander's typical list (docs/liste-mazzi.md), counted per entry as in cardStats: the cards in nearly every list,
+ * the choices of a few lists, the lands picked on purpose, and the average land count. */
+export function typicalList(ds: MetaDataset, f: MetaFilter, dl: Decklists, cmd: number) {
+  const shown = ds.year === dl.year ? entriesOf(ds, f) : []
+  const all = shown.filter((e) => e.deckList != null && e.cmd >= 0)
+  const rows = all.filter((e) => e.cmd === cmd)
+  const identity = ds.commanders[cmd].colors
+  const decks = new Map<number, number>()
+  const lists = new Map<number, Set<number>>()
+  let lands = 0
+  let modal = 0
+  let lo = Infinity
+  let hi = 0
+  for (const e of rows) {
+    const [, cards, l, m] = dl.lists[e.deckList!]
+    lands += l
+    modal += m
+    lo = Math.min(lo, l + m)
+    hi = Math.max(hi, l + m)
+    for (const c of cards) {
+      if (!within(identity, dl.cards[c][1] ?? '')) continue
+      decks.set(c, (decks.get(c) ?? 0) + 1)
+      lists.set(c, (lists.get(c) ?? new Set()).add(e.deckList!))
+    }
+  }
+  const n = rows.length
+  const cards: (TypicalCard & { kind: number })[] = [...decks]
+    .map(([id, d]) => ({ id, name: dl.cards[id][0], kind: dl.cards[id][2], decks: d, lists: lists.get(id)!.size, share: d / n }))
+    .sort((a, b) => b.share - a.share || a.name.localeCompare(b.name))
+  // modal cards are spells too: they stay with the cards (and count among the lands above)
+  const spells = cards.filter((c) => c.kind === 0 || c.kind === 3)
+  const choices = (max: number) => spells.filter((c) => c.share <= max && c.lists >= 2)
+  const tech = choices(0.2).length >= 5 ? 0.2 : 0.3
+  const others = all.filter((e) => e.cmd !== cmd)
+  const rest = (id: number) => {
+    const can = others.filter((e) => within(ds.commanders[e.cmd].colors, dl.cards[id][1] ?? ''))
+    return can.length ? can.filter((e) => dl.lists[e.deckList!][1].includes(id)).length / can.length : 0
+  }
+  return {
+    entries: n,
+    total: shown.filter((e) => e.cmd === cmd).length,
+    lists: new Set(rows.map((e) => e.deckList)).size,
+    players: [...new Set(rows.map((e) => e.player).filter(Boolean))] as string[],
+    lands: n ? lands / n : 0,
+    modal: n ? modal / n : 0,
+    lo,
+    hi,
+    must: spells.filter((c) => c.share >= 0.95),
+    often: spells.filter((c) => c.share >= 0.8 && c.share < 0.95),
+    tech,
+    choices: choices(tech),
+    // not the format's staples (basics, fetches, duals…) nor what most of the circuit plays anyway
+    picked: cards
+      .filter((c) => c.kind === 1 && c.lists >= 2)
+      .map((c) => ({ ...c, rest: rest(c.id) }))
+      .filter((c) => c.rest < 0.5),
   }
 }

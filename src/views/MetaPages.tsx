@@ -22,6 +22,7 @@ import { ReportButton } from '../components/Feedback'
 import { META_FILTER_KEY, MetaFilters } from './Meta'
 import { MetaPie } from '../components/MetaPie'
 import { MetaInfoButton } from './MetaInfo'
+import { TypicalList } from './MetaCards'
 import { type CircuitPrefs, MissingPage, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
 import type { Circuit, CircuitEvent, Player } from '../lib/circuit'
 import { commanderNames } from './Decks'
@@ -234,6 +235,8 @@ export function CommanderPage({
               <ShareChart months={view.months} />
             </section>
           )}
+
+          <TypicalList dataset={dataset} filter={filter} cmd={cmd.id} />
 
           {mine.length > 0 && (
             <ul className="card-list">

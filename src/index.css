@@ -1117,6 +1117,9 @@ button.kv.clickable b {
 .group-note {
   margin: 6px 2px 0;
 }
+.group-title + .group-note {
+  margin: -2px 2px 8px;
+}
 .card-list {
   list-style: none;
   margin: 0;
@@ -4497,6 +4500,7 @@ mark.diff-new {
 .stats-filters,
 .stats-cols,
 .stats-side,
+.typical-cols,
 .to-cols,
 .to-side,
 .home-tours {
@@ -4729,6 +4733,12 @@ mark.diff-new {
   }
   .stats-summary:not(:has(.play-draw)) .stats3 {
     grid-column: 1 / -1;
+  }
+  .typical-cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
   }
   .stats-cols {
     display: grid;

@@ -93,8 +93,9 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - `organizers.ts` (TO e zone, `canRun`), `swiss.ts` (motore dei tornei: abbinamenti svizzeri, classifica con gli
   spareggi MTR, top cut; funzioni pure), `tournaments.ts` (tornei su Firestore: `useTournaments`, `useTournament`,
   creazione, iscritti, turni, risultati, top cut). Progetto in `docs/tornei.md`.
-- `decklists.ts`: le liste dei mazzi del circuito (`public/decklists.json`) e `cardStats`, per la scheda Carte del
-  Circuito (`views/MetaCards.tsx`, per ora solo admin); regole in `docs/liste-mazzi.md`.
+- `decklists.ts`: le liste dei mazzi del circuito (`public/decklists.json`): `cardStats` (scheda Carte del Circuito),
+  `cardUse` (scheda della carta), `typicalList` (lista tipica nella pagina del comandante); viste in
+  `views/MetaCards.tsx`, per ora solo admin; regole in `docs/liste-mazzi.md`.
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
   `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate

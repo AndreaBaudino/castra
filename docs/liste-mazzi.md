@@ -70,9 +70,10 @@ lista.
   prova sui casi qui sotto.
 - Il build del meta (`scripts/build-meta.mjs`) aggiunge a ogni iscrizione del 2026 con una lista due campi in fondo:
   `[…, indice della lista nell'archivio, 1 se presa per estensione]`. Le versioni vecchie dell'app li ignorano.
-- `public/decklists.json`, pubblicato con l'app e letto solo dalle pagine delle carte: le carte con la loro identità
-  di colore e se sono terre (dalla faccia frontale; da Scryfall, una volta sola, salvate in `scripts/meta/cards.json`)
-  e, per ogni lista dell'archivio nello stesso ordine, il comandante e le sue carte. Fisso come l'archivio.
+- `public/decklists.json`, pubblicato con l'app e letto solo dalle pagine delle carte e dei comandanti: le carte con
+  la loro identità di colore e il tipo (dalla faccia frontale: non terra, terra, terra staple, carta modale; da
+  Scryfall, una volta sola, salvati in `scripts/meta/cards.json`) e, per ogni lista dell'archivio nello stesso ordine,
+  il comandante, le sue carte, quante terre e quante carte modali ha (contando le copie). Fisso come l'archivio.
 - La pagina: Circuito → **Carte** (`src/views/MetaCards.tsx`, conti in `src/lib/decklists.ts`), per ora solo per gli
   admin. Stessi filtri del Meta, più colori della carta (il bianco: le carte con il bianco; incolore: le carte
   incolori), "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
@@ -81,6 +82,22 @@ lista.
   **Nel circuito** (`CircuitUse`, conti in `cardUse`): con i filtri del Circuito, scritti sotto il titolo, la
   percentuale, le presenze e le liste; "Chi la gioca" (i comandanti, 5 e poi tutti) e "Potrebbero giocarla, ma no"
   (fino a 3 comandanti con quei colori e più presenze che non la giocano mai).
+- Nella pagina di ogni comandante, per ora solo per gli admin, la **lista tipica** (`TypicalList`, conti in
+  `typicalList`), con i filtri della pagina e i conti per presenza del punto 4, su quelle del comandante con una lista:
+  - in alto le presenze con una lista (su quelle del comandante), le liste diverse e le **terre in media**, con la più
+    bassa e la più alta: terre + carte modali, e quante sono le une e le altre;
+  - **Must have**: le carte (non terre) in almeno il 95% delle presenze. **Quasi sempre**: tra l'80% e il 95%.
+    **Tech choices**: al massimo il 20%, in almeno 2 liste diverse; se sono meno di 5, la soglia sale al 30%.
+    Ordinate dalla percentuale più alta, a parità per nome; 5 per gruppo e poi tutte;
+  - **Terre particolari**: le terre in almeno 2 liste diverse, tolte le staples del formato (base, fetch, cioè
+    "sacrifica: cerca nel grimorio", e le terre che producono da 2 a 4 colori: dual, shock, triome…) e quelle giocate
+    da almeno la metà delle presenze degli altri comandanti che possono giocarle (accanto, la loro percentuale "nel
+    resto del circuito");
+  - **carte modali**: le carte modali a due facce con una terra sul retro (Sink into Stupor // Soporific Springs; non
+    quelle che si trasformano, come Legion's Landing, che non si giocano come terra). Contano nelle terre in media e
+    restano nei gruppi delle carte, con il nome intero;
+  - con una sola lista, al posto dei gruppi, un avviso con chi l'ha portata e in quante presenze; senza liste la
+    sezione non compare.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
 
@@ -99,7 +116,8 @@ lista.
   una lista propria non dà carte (Bresciani); i collegamenti diretti; l'estensione con la lista più recente, anche con
   un link rotto e per un torneo dopo il 5/11, e tra tappe conta il numero; un'iscrizione del 2027 non prende liste
   del 2026; una lista portata due volte conta due. `src/lib/decklists.test.ts`: la percentuale conta per presenza e
-  solo i mazzi che possono giocare la carta, i filtri, nessun dato per un altro anno.
+  solo i mazzi che possono giocare la carta, i filtri, nessun dato per un altro anno; la lista tipica (gruppi, soglia
+  delle tech al 30%, terre particolari, media delle terre con le carte modali, una lista sola).
 - Controllati sul meta pubblicato il 5/11: Bresciani con Oloro senza lista (2 iscrizioni); Waltz con Atraxa, 12
   iscrizioni, tutte con la sua lista Atraxa (3 dirette, 9 estese); la Tivit di Arzenton, 4 dirette e 2 estese; la
   Phelia di Misuri, 10 dirette e 5 estese.

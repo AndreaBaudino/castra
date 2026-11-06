@@ -143,10 +143,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const HEADERS = { 'User-Agent': 'castra-meta/1.0', Accept: 'application/json' }
 
 const typeOf = (c) => (c.type_line ?? c.card_faces?.[0]?.type_line ?? '').split(' // ')[0]
+const FETCH = /sacrifice [^:.]*: search your library for/i
+// what the lists' typical land base needs (docs/liste-mazzi.md): the colors a land makes, fetch lands, and the modal
+// cards that are a land on the back
+const cardOf = (c) => ({
+  name: c.name,
+  colors: c.color_identity.join(''),
+  type: typeOf(c),
+  mana: (c.produced_mana ?? []).filter((m) => m !== 'C').join(''),
+  ...(FETCH.test(c.oracle_text ?? c.card_faces?.[0]?.oracle_text ?? '') ? { fetch: true } : {}),
+  ...(c.layout === 'modal_dfc' && /\bLand\b/.test(c.card_faces[1].type_line) ? { modal: true } : {}),
+})
 
 async function resolveCards(names) {
-  // a card cached before types were kept is read again, once
-  const missing = [...new Set(names.map((n) => n.toLowerCase()))].filter((n) => !cards[n]?.type)
+  // a card cached before types (then made mana) were kept is read again, once
+  const missing = [...new Set(names.map((n) => n.toLowerCase()))].filter((n) => cards[n]?.mana == null)
   for (let i = 0; i < missing.length; i += 75) {
     const chunk = missing.slice(i, i + 75)
     const res = await fetch('https://api.scryfall.com/cards/collection', {
@@ -158,16 +169,16 @@ async function resolveCards(names) {
     const data = await res.json()
     for (const c of data.data) {
       const key = chunk.find((n) => n === c.name.toLowerCase() || n === c.name.split(' // ')[0].toLowerCase())
-      if (key) cards[key] = { name: c.name, colors: c.color_identity.join(''), type: typeOf(c) }
+      if (key) cards[key] = cardOf(c)
     }
     await sleep(120)
   }
   // still unknown: Scryfall's fuzzy search fixes small typos
-  for (const n of missing.filter((n) => !cards[n]?.type)) {
+  for (const n of missing.filter((n) => cards[n]?.mana == null)) {
     const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(n)}`, { headers: HEADERS })
     if (res.ok) {
       const c = await res.json()
-      cards[n] = { name: c.name, colors: c.color_identity.join(''), type: typeOf(c), fuzzy: true }
+      cards[n] = { ...cardOf(c), fuzzy: true }
     }
     await sleep(120)
   }
@@ -406,19 +417,32 @@ const kept = prev.filter((y) => !yearList.includes(y.year))
 for (const y of kept) warn(String(y.year), 'nessun foglio letto: restano i dati già pubblicati')
 const years = [...rebuilt, ...kept].sort((a, b) => b.year - a.year)
 writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
-// the lists' cards for the app: [name, color identity (null: not found on Scryfall), 1 for a land (front face)],
-// fixed like the archive
+// the lists' cards for the app, fixed like the archive: [name, color identity (null: not found on Scryfall), kind].
+// Kind, by the front face: 0 not a land, 1 a land, 2 a staple land (basic, fetch, or making 2 to 4 colors), 3 a modal
+// card with a land on the back. Each list: [commander, its cards, lands, modal cards], the last two counting copies.
 const names = [...new Set(listCards.map((n) => listCard(n)?.name ?? n))].sort()
 const cardIndex = new Map(names.map((n, i) => [n, i]))
 for (const n of names) if (!listCard(n)) warn('liste dei mazzi', `carta non trovata su Scryfall: ${n}`)
+function kindOf(c) {
+  if (!/\bLand\b/.test(c?.type ?? '')) return c?.modal ? 3 : 0
+  const m = c.mana?.length ?? 0
+  return /\bBasic\b/.test(c.type) || c.fetch || (m >= 2 && m <= 4) ? 2 : 1
+}
+const copies = (l, kinds) =>
+  l.cards.reduce((s, x) => s + (kinds.includes(kindOf(listCard(cardName(x)))) ? +(/^\d+/.exec(x)?.[0] ?? 1) : 0), 0)
 writeFileSync(
   new URL('public/decklists.json', root),
   JSON.stringify({
-    v: 1,
+    v: 2,
     year: listYear,
-    cards: names.map((n) => [n, listCard(n)?.colors ?? null, /\bLand\b/.test(listCard(n)?.type ?? '') ? 1 : 0]),
-    // a set: two names of one card ("A-Teferi") count once
-    lists: archive.lists.map((l) => [l.commander, [...new Set(l.cards.map((x) => cardIndex.get(listCard(cardName(x))?.name ?? cardName(x))))]]),
+    cards: names.map((n) => [n, listCard(n)?.colors ?? null, kindOf(listCard(n))]),
+    lists: archive.lists.map((l) => [
+      l.commander,
+      // a set: two names of one card ("A-Teferi") count once
+      [...new Set(l.cards.map((x) => cardIndex.get(listCard(cardName(x))?.name ?? cardName(x))))],
+      copies(l, [1, 2]),
+      copies(l, [3]),
+    ]),
   }),
 )
 writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).sort()), null, 1) + '\n')
