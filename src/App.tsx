@@ -560,7 +560,10 @@ export default function App() {
                 }}
                 onDuplicate={() => {
                   const now = new Date().toISOString()
-                  const copy = { ...openDeck, id: newId(), name: t('deck.copyName', { name: openDeck.name }), history: [], createdAt: now, updatedAt: now }
+                  // a variant to try starts private, whatever the original's sharing
+                  const { author: _, ...rest } = openDeck
+                  const name = t('deck.copyName', { name: openDeck.name })
+                  const copy: Deck = { ...rest, id: newId(), name, history: [], visibility: 'private', createdAt: now, updatedAt: now }
                   setDecks((ds) => [copy, ...ds])
                   go('decks', copy.id)
                 }}
