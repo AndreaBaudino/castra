@@ -179,6 +179,28 @@ export function CircuitUse({
   ]
     .filter(Boolean)
     .join(' · ')
+  type Part = { decks: number; of: number }
+  const parts = {
+    top: (
+      [
+        ['cardsMeta.top8', use.top8],
+        ['cardsMeta.out8', use.out8],
+        ['cardsMeta.winners', use.winners],
+      ] as const
+    ).filter(([, p]) => p.of > 0),
+    seasons: [
+      ['cardsMeta.s1', use.s1],
+      ['cardsMeta.s2', use.s2],
+    ] as const,
+  }
+  const share = (k: (typeof parts.top)[number][0] | 'cardsMeta.s1' | 'cardsMeta.s2', p: Part) => (
+    <div key={k} className="kv">
+      <span>{t(k)}</span>
+      <b>
+        {pct(p.decks / p.of, 0)} <span className="muted small">{t('cardsMeta.part', { n: p.decks, of: p.of })}</span>
+      </b>
+    </div>
+  )
   const row = (c: CommanderUse) => (
     <li key={c.name} className="event-row" onClick={() => openCommander(c.name)}>
       <div className="event-main">
@@ -228,6 +250,12 @@ export function CircuitUse({
               <div className="stat-label">{t('cardsMeta.lists')}</div>
             </div>
           </div>
+        )}
+        {use.decks > 0 && (
+          <>
+            {parts.top.map(([k, p]) => share(k, p))}
+            {!filter.season && use.s1.of > 0 && use.s2.of > 0 && parts.seasons.map(([k, p]) => share(k, p))}
+          </>
         )}
       </section>
 

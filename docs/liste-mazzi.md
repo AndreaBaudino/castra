@@ -82,7 +82,9 @@ lista.
 - Nella scheda di ogni carta (dalla scheda Carte o dalla ricerca carte), per ora solo per gli admin, la sezione
   **Nel circuito** (`CircuitUse`, conti in `cardUse`): con i filtri del Circuito, scritti sotto il titolo, la
   percentuale, le presenze e le liste; "Chi la gioca" (i comandanti, 5 e poi tutti) e "Potrebbero giocarla, ma no"
-  (fino a 3 comandanti con quei colori e più presenze che non la giocano mai).
+  (fino a 3 comandanti con quei colori e più presenze che non la giocano mai). Sotto le cifre, con gli stessi filtri e
+  sempre sui mazzi che possono giocarla: nei top 8 di Livello 1 e 2, fuori dai top 8, tra i vincitori delle tappe di
+  lega (le righe senza presenze non compaiono), e Stagione 1 contro Stagione 2 (solo senza il filtro della stagione).
 - Nella pagina di ogni comandante, per ora solo per gli admin, la sezione **Le carte più giocate** (nel codice "lista tipica") (`TypicalList`, conti in
   `typicalList`), con i filtri della pagina e i conti per presenza del punto 4, su quelle del comandante con una lista:
   - in alto le presenze con una lista (su quelle del comandante), le liste diverse e le **terre in media**, con la più

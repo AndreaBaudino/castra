@@ -57,7 +57,8 @@ export interface CommanderUse {
 }
 
 /** One card in the circuit, counted as in cardStats, by commander: those playing it (the most first) and those that
- * could and never do (the most entries first). `colors`: the card's color identity, for a card in no list. */
+ * could and never do (the most entries first); also in the Level 1 and 2 top 8s, outside them, among the league
+ * stages' winners, and by season. `colors`: the card's color identity, for a card in no list. */
 export function cardUse(ds: MetaDataset, f: MetaFilter, dl: Decklists, name: string, colors: string) {
   const id = dl.cards.findIndex((c) => c[0] === name)
   const identity = id >= 0 ? (dl.cards[id][1] ?? '') : colors
@@ -76,6 +77,13 @@ export function cardUse(ds: MetaDataset, f: MetaFilter, dl: Decklists, name: str
     }
     by.set(e.cmd, x)
   }
+  // the same share in a part of those entries: top cuts and seasons
+  const part = (keep: (e: MetaEntry) => boolean) => {
+    const r = rows.filter(keep)
+    return { decks: id >= 0 ? r.filter((e) => dl.lists[e.deckList!][1].includes(id)).length : 0, of: r.length }
+  }
+  const tour = (e: MetaEntry) => ds.tournaments[e.t]
+  const event = (e: MetaEntry) => tour(e).kind === 'l1' || tour(e).kind === 'l2'
   const cmds: CommanderUse[] = [...by].map(([c, x]) => ({ ...ds.commanders[c], decks: x.decks, of: x.of, players: x.players.size }))
   const decks = cmds.reduce((s, c) => s + c.decks, 0)
   return {
@@ -85,6 +93,11 @@ export function cardUse(ds: MetaDataset, f: MetaFilter, dl: Decklists, name: str
     lists: lists.size,
     playing: cmds.filter((c) => c.decks).sort((a, b) => b.decks - a.decks || b.of - a.of),
     skipping: cmds.filter((c) => !c.decks).sort((a, b) => b.of - a.of),
+    top8: part((e) => event(e) && e.place <= 8),
+    out8: part((e) => event(e) && e.place > 8),
+    winners: part((e) => tour(e).kind === 'league' && e.place === 1),
+    s1: part((e) => tour(e).season === 's1'),
+    s2: part((e) => tour(e).season === 's2'),
   }
 }
 

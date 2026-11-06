@@ -77,6 +77,15 @@ describe('cardUse', () => {
     ])
   })
 
+  it('splits it by top cut and season', () => {
+    // every entry is first in a Level 1: all in the top 8s
+    const u = cardUse(ds, ALL, dl, 'Swords to Plowshares', 'W')
+    expect(u).toMatchObject({ top8: { decks: 2, of: 2 }, out8: { decks: 0, of: 0 }, winners: { of: 0 } })
+    expect(u).toMatchObject({ s1: { decks: 1, of: 1 }, s2: { decks: 1, of: 1 } })
+    const late = { ...ds, entries: ds.entries.map((e) => ({ ...e, place: 9 })) }
+    expect(cardUse(late, ALL, dl, 'Sol Ring', '')).toMatchObject({ top8: { of: 0 }, out8: { decks: 3, of: 3 } })
+  })
+
   it('names the commanders that could play it and never do', () => {
     const u = cardUse(ds, ALL, dl, 'Counterspell', 'U')
     expect(u.playing.map((c) => c.name)).toEqual(['Vohar'])
