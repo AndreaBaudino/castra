@@ -163,6 +163,10 @@ export function typicalList(ds: MetaDataset, f: MetaFilter, dl: Decklists, cmd: 
     const can = others.filter((e) => within(ds.commanders[e.cmd].colors, dl.cards[id][1] ?? ''))
     return can.length ? can.filter((e) => dl.lists[e.deckList!][1].includes(id)).length / can.length : 0
   }
+  // not the format's staples (basics, fetches, duals…) nor what most of the circuit plays anyway; those in nearly every
+  // list are must haves (by the cards' thresholds), and from 70% they're not unusual
+  const unusual = cards.filter((c) => c.kind === 1 && c.lists >= 2 && rest(c.id) < 0.5)
+  const byShare = (a: TypicalCard, b: TypicalCard) => b.share - a.share || a.name.localeCompare(b.name)
   return {
     entries: n,
     total: shown.filter((e) => e.cmd === cmd).length,
@@ -172,14 +176,10 @@ export function typicalList(ds: MetaDataset, f: MetaFilter, dl: Decklists, cmd: 
     modal: n ? modal / n : 0,
     lo,
     hi,
-    must: spells.filter((c) => c.share >= 0.95),
-    often: spells.filter((c) => c.share >= 0.8 && c.share < 0.95),
+    must: [...spells, ...unusual].filter((c) => c.share >= 0.95).sort(byShare),
+    often: [...spells, ...unusual].filter((c) => c.share >= 0.8 && c.share < 0.95).sort(byShare),
     tech,
     choices: choices(tech),
-    // not the format's staples (basics, fetches, duals…) nor what most of the circuit plays anyway
-    picked: cards
-      .filter((c) => c.kind === 1 && c.lists >= 2)
-      .map((c) => ({ ...c, rest: rest(c.id) }))
-      .filter((c) => c.rest < 0.5),
+    picked: unusual.filter((c) => c.share < 0.7).map((c) => ({ ...c, rest: rest(c.id) })),
   }
 }

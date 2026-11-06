@@ -86,13 +86,14 @@ lista.
   `typicalList`), con i filtri della pagina e i conti per presenza del punto 4, su quelle del comandante con una lista:
   - in alto le presenze con una lista (su quelle del comandante), le liste diverse e le **terre in media**, con la più
     bassa e la più alta: terre + carte modali, e quante sono le une e le altre;
-  - **Must have**: le carte (non terre) in almeno il 95% delle presenze. **Quasi sempre**: tra l'80% e il 95%.
+  - **Must have**: le carte (non terre, più le terre particolari, vedi sotto) in almeno il 95% delle presenze. **Quasi sempre**: tra l'80% e il 95%.
     **Tech choices**: al massimo il 20%, in almeno 2 liste diverse; se sono meno di 5, la soglia sale al 30%.
     Ordinate dalla percentuale più alta, a parità per nome; 5 per gruppo e poi tutte;
   - **Terre particolari**: le terre in almeno 2 liste diverse, tolte le staples del formato (base, fetch, cioè
     "sacrifica: cerca nel grimorio", e le terre che producono da 2 a 4 colori: dual, shock, triome…) e quelle giocate
     da almeno la metà delle presenze degli altri comandanti che possono giocarle (accanto, la loro percentuale "nel
-    resto del circuito");
+    resto del circuito"), e solo sotto il 70% delle presenze del comandante: una terra che c'è in quasi tutte le liste
+    non è particolare, e dall'80% in su va tra le must have o le quasi sempre, con le soglie delle carte;
   - **carte modali**: le carte modali a due facce con una terra sul retro (Sink into Stupor // Soporific Springs; non
     quelle che si trasformano, come Legion's Landing, che non si giocano come terra). Contano nelle terre in media e
     restano nei gruppi delle carte, con il nome intero;

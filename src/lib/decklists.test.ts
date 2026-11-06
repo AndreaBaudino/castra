@@ -96,12 +96,13 @@ describe('typicalList', () => {
     ["Emeria's Call // Emeria, Shattered Skyclave", 'W', 3],
     ['Counterspell', 'U', 0],
     ['Tangle Wire', '', 0],
+    ['Dust Bowl', '', 1],
   ]
   const lists: Decklists['lists'] = [
     ['Phelia', [0, 1, 2, 4, 5, 6, 7, 8], 35, 1],
     ['Phelia', [0, 1, 2, 4, 5, 6, 7], 36, 0],
-    ['Phelia', [0, 1, 3, 5, 6, 7], 37, 0],
-    ['Phelia', [0, 1, 3, 5, 6, 7, 9], 38, 1],
+    ['Phelia', [0, 1, 3, 5, 6, 7, 10], 37, 0],
+    ['Phelia', [0, 1, 3, 5, 6, 7, 9, 10], 38, 1],
     ['Vohar', [1, 6, 8], 36, 0],
   ]
   // Phelia: list 0 brought 5 times, list 1 three times, lists 2 and 3 once, one entry without a list
@@ -118,7 +119,8 @@ describe('typicalList', () => {
 
   it('splits the cards by share, modal cards with them, never a card the commander cannot play', () => {
     expect(names(x.must)).toEqual(["Emeria's Call // Emeria, Shattered Skyclave", 'Sol Ring', 'Swords to Plowshares'])
-    expect(names(x.often)).toEqual(['Ocelot Pride'])
+    // Maze of Ith, 8 of 10: a land in nearly every list is no unusual land
+    expect(names(x.often)).toEqual(['Maze of Ith', 'Ocelot Pride'])
     expect([...names(x.must), ...names(x.often), ...names(x.choices)]).not.toContain('Counterspell')
   })
 
@@ -128,9 +130,9 @@ describe('typicalList', () => {
     expect(names(x.choices)).toEqual(['Seam Rip'])
   })
 
-  it('picks the lands that are neither staples nor played by most of the circuit', () => {
+  it('picks the lands that are neither staples, nor played by most of the circuit, nor in nearly every list', () => {
     // Plains is a staple, Command Tower is in every other list
-    expect(x.picked).toEqual([expect.objectContaining({ name: 'Maze of Ith', decks: 8, lists: 2, rest: 0 })])
+    expect(x.picked).toEqual([expect.objectContaining({ name: 'Dust Bowl', decks: 2, lists: 2, rest: 0 })])
   })
 
   it('averages the lands per entry, modal cards apart', () => {
