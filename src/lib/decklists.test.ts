@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { cardStats, cardUse, type Decklists, playerCards, typicalList } from './decklists'
+import { cardStats, cardUse, type Decklists, deckVsMeta, playerCards, typicalList } from './decklists'
+import type { Deck, DeckCard } from './decks'
 import { ALL, type MetaDataset, type MetaEntry } from './meta'
 
 // The play rate of the circuit's cards (docs/liste-mazzi.md): per entry, among the decks that can play the card.
@@ -192,5 +193,36 @@ describe('playerCards', () => {
 
   it('has nothing for another year', () => {
     expect(playerCards({ ...data, year: 2027 }, dl2, 'ana')).toMatchObject({ entries: 0, cards: [] })
+  })
+})
+
+describe('deckVsMeta', () => {
+  const cards: Decklists['cards'] = [
+    ['Swords to Plowshares', 'W', 0],
+    ['Ocelot Pride', 'W', 0],
+    ['Seam Rip', 'W', 0],
+    ['Plains', 'W', 2],
+    ["Emeria's Call // Emeria, Shattered Skyclave", 'W', 3],
+  ]
+  const lists: Decklists['lists'] = [
+    ['Phelia', [0, 1, 3], 36, 0],
+    ['Phelia', [0, 1, 2, 3, 4], 35, 1],
+  ]
+  const data: MetaDataset = { ...ds, entries: [entry(0, 0, 0), entry(1, 0, 0), entry(1, 0, 1), entry(0, 1, 0)] }
+  const dl2: Decklists = { v: 2, year: 2026, cards, lists }
+  const card = (name: string, qty = 1, typeLine = 'Creature'): DeckCard => ({ name, qty, section: 'main', info: { typeLine } as DeckCard['info'] })
+  const deck = (cs: DeckCard[]): Deck => ({ id: 'd', name: 'D', tags: [], notes: '', cards: [{ name: 'Phelia', qty: 1, section: 'commander' }, ...cs], createdAt: '', updatedAt: '' })
+
+  it('tells the must haves it lacks, its lands and its own cards', () => {
+    const x = deckVsMeta(data, dl2, 0, deck([card('Swords to Plowshares'), card('Plains', 30, 'Basic Land — Plains'), card("Emeria's Call"), card('Armageddon')]))
+    expect(x).toMatchObject({ entries: 3, lists: 2, have: 1, of: 2, lands: 31 })
+    expect(x!.avgLands).toBeCloseTo(36)
+    expect(x!.missing.map((c) => c.name)).toEqual(['Ocelot Pride'])
+    // Emeria's Call: in 1 of 3 entries, so not a pet card; Armageddon: in none
+    expect(x!.pets).toEqual([{ name: 'Armageddon', decks: 0, share: 0 }])
+  })
+
+  it('has nothing with fewer than 2 lists', () => {
+    expect(deckVsMeta({ ...data, entries: [entry(0, 0, 0)] }, dl2, 0, deck([]))).toBeNull()
   })
 })

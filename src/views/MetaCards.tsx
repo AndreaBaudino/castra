@@ -3,11 +3,12 @@ import { useIsAdmin } from '../lib/admin'
 import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
-import { cardStats, cardUse, type CommanderUse, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
+import { cardStats, cardUse, type CommanderUse, deckVsMeta, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
 import { type MetaDataset, type MetaFilter, isFiltered, normName, shortName } from '../lib/meta'
+import type { Deck } from '../lib/decks'
 import { symbolUrl } from '../lib/scryfall'
 import { useStoredState } from '../lib/storage'
-import { CardsInfoButton, PlayerCardsInfoButton, TypicalInfoButton } from './MetaInfo'
+import { CardsInfoButton, DeckMetaInfoButton, PlayerCardsInfoButton, TypicalInfoButton } from './MetaInfo'
 
 // The circuit's most played cards, from the tournaments' deck lists (docs/liste-mazzi.md): the Circuit's "Cards" tab.
 
@@ -437,6 +438,95 @@ export function PlayerCards({
               </li>
             )}
           </ul>
+        </section>
+      )}
+    </>
+  )
+}
+
+/** One of the user's decks against its commander's most played cards, in the deck's page: for the admins only for now.
+ * Nothing when the commander has fewer than 2 lists. */
+export function DeckVsMeta({
+  dataset,
+  deck,
+  cmd,
+  openCommander,
+  openCard,
+}: {
+  dataset: MetaDataset
+  deck: Deck
+  cmd: number
+  openCommander: (name: string) => void
+  openCard?: (name: string) => void
+}) {
+  const { t, lang } = useI18n()
+  const admin = useIsAdmin(useAuth().user?.uid ?? null)
+  const dl = useDecklists()
+  const [open, setOpen] = useState(false)
+  const x = useMemo(() => (admin && dl ? deckVsMeta(dataset, dl, cmd, deck) : null), [admin, dataset, dl, cmd, deck])
+  if (!x) return null
+  const c = dataset.commanders[cmd]
+  // "Phelia" for "Phelia, Exuberant Shepherd", as people call it
+  const nick = shortName(c.name).replace(/,[^/]*/g, '')
+  const row = (name: string, decks: number, share: number) => (
+    <li key={name} className="event-row" onClick={() => openCard?.(name)}>
+      <div className="event-main">
+        <span className="ellipsis">{name}</span>
+        <span className="muted small">{decks ? t('typical.row', { n: decks, of: x.entries }) : t('deckMeta.nowhere')}</span>
+      </div>
+      <b>{pct(share, 0)}</b>
+    </li>
+  )
+  return (
+    <>
+      <section className="card">
+        <div className="card-title">
+          <span className="title-live">
+            {t('deckMeta.title')}
+            <DeckMetaInfoButton />
+          </span>
+        </div>
+        <span className="muted small">{t('deckMeta.vs', { c: nick, n: x.entries, l: x.lists })}</span>
+        <div className="kv">
+          <span>{t('deckMeta.top')}</span>
+          <b>{t('typical.of', { n: x.have, of: x.of })}</b>
+        </div>
+        <div className="kv">
+          <span>{t('deckMeta.lands')}</span>
+          <b>
+            {x.lands}{' '}
+            <span className="muted small">
+              ({t('deckMeta.landsCircuit', { n: x.avgLands.toLocaleString(lang, { maximumFractionDigits: 1 }) })})
+            </span>
+          </b>
+        </div>
+        <button className="link" onClick={() => openCommander(c.name)}>
+          {t('deckMeta.open', { c: nick })}
+        </button>
+      </section>
+      {x.missing.length > 0 && (
+        <section className="group">
+          <div className="group-title">
+            {t('deckMeta.missing')} · {t('typical.nCards', { n: x.missing.length })}
+          </div>
+          <p className="muted small group-note">{t('deckMeta.missingNote')}</p>
+          <ul className="card-list">
+            {(open ? x.missing : x.missing.slice(0, SHOW)).map((m) => row(m.name, m.decks, m.share))}
+            {x.missing.length > SHOW && (
+              <li className="event-row more" onClick={() => setOpen(!open)}>
+                {open ? t('meta.showLess') : t('typical.allCards', { n: x.missing.length })}
+              </li>
+            )}
+          </ul>
+        </section>
+      )}
+      {x.pets.length > 0 && (
+        <section className="group">
+          <div className="group-title">
+            {t('deckMeta.pets')} · {t('typical.nCards', { n: x.pets.length })}
+          </div>
+          <p className="muted small group-note">{t('deckMeta.petsNote', { c: nick })}</p>
+          <ul className="card-list">{x.pets.map((p) => row(p.name, p.decks, p.share))}</ul>
         </section>
       )}
     </>

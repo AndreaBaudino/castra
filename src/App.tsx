@@ -565,6 +565,8 @@ export default function App() {
                 }}
                 onBack={() => go('decks')}
                 openCommander={openCommander}
+                openCard={openMetaCard}
+                dataset={dataset}
               />
             ),
             t('decks.pick'),

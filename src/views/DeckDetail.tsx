@@ -20,7 +20,7 @@ import {
   logChange,
   loadShared,
 } from '../lib/decks'
-import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
+import { type MetaDataset, type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
 import { type Match, fmtRecord, record } from '../lib/matches'
 import { fetchCollection, fetchPrints, requestKey, searchCards, symbolUrl } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
@@ -32,6 +32,7 @@ import { DeckAnalysis } from '../components/DeckAnalysis'
 import { summaryOf } from '../lib/analysis'
 import { CardDetails } from './Cards'
 import { useAuth } from '../lib/auth'
+import { DeckVsMeta } from './MetaCards'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
 
@@ -211,11 +212,15 @@ export default function DeckDetail({
   onDuplicate,
   onBack,
   openCommander,
+  openCard,
+  dataset,
   author,
   readOnly,
 }: {
   deck: Deck
   metaDecks: MetaDeck[]
+  dataset?: MetaDataset | null
+  openCard?: (name: string) => void
   matches: Match[]
   onChange: (d: Deck) => void // someone else's deck: only on this screen (the view, the cards' missing data)
   onDelete: () => void
@@ -545,6 +550,10 @@ export default function DeckDetail({
             </section>
           ))}
         </div>
+      )}
+
+      {meta && dataset && !readOnly && (
+        <DeckVsMeta dataset={dataset} deck={deck} cmd={meta.id} openCommander={openCommander} openCard={openCard} />
       )}
 
       <Sheet open={!!selected} onClose={() => setSelectedKey(null)} title={selected?.name}>

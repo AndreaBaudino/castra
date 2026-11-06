@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { type MetaDataset, type MetaEntry, type MetaFilter, entriesOf } from './meta'
+import { type Deck, groupOf } from './decks'
+import { ALL, type MetaDataset, type MetaEntry, type MetaFilter, entriesOf } from './meta'
 
 // The circuit's deck lists (public/decklists.json, built by scripts/build-meta.mjs from a fixed archive read once from
 // Moxfield): the cards of each list, which the build gives to the meta's entries (MetaEntry.deckList) by the rules of
@@ -181,6 +182,7 @@ export function typicalList(ds: MetaDataset, f: MetaFilter, dl: Decklists, cmd: 
     tech,
     choices: choices(tech),
     picked: unusual.filter((c) => c.share < 0.7).map((c) => ({ ...c, rest: rest(c.id) })),
+    cards, // every card, the most played first
   }
 }
 
@@ -221,5 +223,36 @@ export function playerCards(ds: MetaDataset, dl: Decklists, key: string) {
     lists: new Set(mine.map((e) => e.deckList)).size,
     commanders: new Set(mine.map((e) => e.cmd)).size,
     cards: cards.sort((a, b) => b.share - b.rest - (a.share - a.rest) || a.name.localeCompare(b.name)),
+  }
+}
+
+const front = (name: string) => name.split(' // ')[0].trim().toLowerCase()
+
+/** One of the user's decks against its commander's most played cards in the whole year (docs/liste-mazzi.md): the
+ * must haves and almost-always cards it has and lacks, its lands, and its cards in at most 5% of the lists' entries.
+ * Null when the commander has fewer than 2 lists. */
+export function deckVsMeta(ds: MetaDataset, dl: Decklists, cmd: number, deck: Deck) {
+  const x = typicalList(ds, ALL, dl, cmd)
+  if (x.lists < 2) return null
+  const main = deck.cards.filter((c) => c.section === 'main')
+  const mine = new Set(main.map((c) => front(c.name)))
+  const top = [...x.must, ...x.often]
+  const share = new Map(x.cards.map((c) => [front(c.name), c]))
+  const kinds = new Map(dl.cards.map((c) => [front(c[0]), c[2]]))
+  // a card without its Scryfall data yet: the lists know if it's a land
+  const isLand = (c: Deck['cards'][number]) => groupOf(c) === 'lands' || [1, 2].includes(kinds.get(front(c.name)) ?? 0)
+  return {
+    entries: x.entries,
+    lists: x.lists,
+    have: top.filter((c) => mine.has(front(c.name))).length,
+    of: top.length,
+    lands: main.filter((c) => isLand(c) || kinds.get(front(c.name)) === 3).reduce((s, c) => s + c.qty, 0),
+    avgLands: x.lands + x.modal,
+    missing: top.filter((c) => !mine.has(front(c.name))),
+    // spells only: lands are the deck's colors, not a choice
+    pets: main
+      .filter((c) => !isLand(c) && (share.get(front(c.name))?.share ?? 0) <= 0.05)
+      .map((c) => ({ name: c.name, decks: share.get(front(c.name))?.decks ?? 0, share: share.get(front(c.name))?.share ?? 0 }))
+      .sort((a, b) => b.share - a.share || a.name.localeCompare(b.name)),
   }
 }

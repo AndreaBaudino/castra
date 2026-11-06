@@ -108,6 +108,12 @@ lista.
   preferite**, cioè le carte (non terre) in almeno 2 sue liste e in almeno il 60% delle sue presenze che possono
   giocarle, giocate almeno 30 punti percentuali più che dagli altri giocatori (sulle loro presenze che possono
   giocarle). Prima la differenza più grande; toccando una carta si apre la sua scheda.
+- Nella pagina di un proprio mazzo, per ora solo per gli admin, **Contro il meta** (`DeckVsMeta`, conti in
+  `deckVsMeta`): se il comandante (trovato come per il winrate del meta) ha almeno 2 liste nel circuito, su tutto
+  l'anno e senza filtri: quante must have e quasi sempre ha il mazzo, le sue terre (con le carte modali) contro la media
+  del circuito, "Come mai non le giochi?" (le must have e quasi sempre che mancano) e "Le tue pet card" (le carte non
+  terre in al massimo il 5% delle presenze del comandante, o in nessuna). Le carte si riconoscono dalla faccia
+  frontale; il collegamento apre le carte più giocate del comandante, ogni carta la sua scheda.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
 
