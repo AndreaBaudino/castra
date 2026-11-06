@@ -9,8 +9,6 @@ import { CircuitInfoButton, MetaInfoButton } from './MetaInfo'
 import { POTY_SPOTS } from '../config'
 import { symbolUrl } from '../lib/scryfall'
 import { MetaPie } from '../components/MetaPie'
-import { useAuth } from '../lib/auth'
-import { useIsAdmin } from '../lib/admin'
 import MetaCards from './MetaCards'
 
 type Status = 'idle' | 'loading' | 'error'
@@ -191,10 +189,8 @@ export default function Meta({
 }) {
   const { t, lang } = useI18n()
   const [stored, setMode] = useStoredState<'decks' | 'cards' | 'circuit'>(META_MODE_KEY, 'decks')
-  // the cards are for the admins only, for now
-  const admin = useIsAdmin(useAuth().user?.uid ?? null)
-  const modes = admin ? (['decks', 'cards', 'circuit'] as const) : (['decks', 'circuit'] as const)
-  const mode = stored === 'cards' && !admin ? 'decks' : stored
+  const modes = ['decks', 'cards', 'circuit'] as const
+  const mode = stored
   const [filter, setFilter] = useStoredState<MetaFilter>(META_FILTER_KEY, ALL)
   const [q, setQ] = useState('')
   const [colors, setColors] = useState('') // WUBRG order, as the dataset's

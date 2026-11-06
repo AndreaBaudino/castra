@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useIsAdmin } from '../lib/admin'
-import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
 import { cardStats, cardUse, colorMatch, type CommanderUse, deckOfList, deckVsMeta, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
@@ -158,7 +156,7 @@ export default function MetaCards({
   )
 }
 
-/** A card's "In the circuit" section, in its page: with the Circuit's filters, for the admins only for now. */
+/** A card's "In the circuit" section, in its page: with the Circuit's filters. */
 export function CircuitUse({
   dataset,
   filter,
@@ -173,11 +171,10 @@ export function CircuitUse({
   openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
-  const admin = useIsAdmin(useAuth().user?.uid ?? null)
   const dl = useDecklists()
   const [all, setAll] = useState(false)
   const use = useMemo(() => (dl ? cardUse(dataset, filter, dl, name, colors) : null), [dataset, filter, dl, name, colors])
-  if (!admin || !dl || !use) return null
+  if (!dl || !use) return null
   const scope = [
     dataset.year,
     filter.season.toUpperCase(),
@@ -292,7 +289,7 @@ export function CircuitUse({
   )
 }
 
-/** A commander's typical list, in its page: with the page's filters, for the admins only for now. Nothing without lists;
+/** A commander's typical list, in its page: with the page's filters. Nothing without lists;
  * with a single one, who brought it (and its cards, with filters). A card opens its page. */
 export function TypicalList({
   dataset,
@@ -306,10 +303,9 @@ export function TypicalList({
   openCard: (name: string) => void
 }) {
   const { t, lang } = useI18n()
-  const admin = useIsAdmin(useAuth().user?.uid ?? null)
   const dl = useDecklists()
   const [open, setOpen] = useState<Record<string, boolean>>({})
-  const x = useMemo(() => (admin && dl ? typicalList(dataset, filter, dl, cmd) : null), [admin, dataset, filter, dl, cmd])
+  const x = useMemo(() => (dl ? typicalList(dataset, filter, dl, cmd) : null), [dataset, filter, dl, cmd])
   if (!x?.entries) return null
   const num = (n: number) => n.toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
   const title = (
@@ -410,7 +406,7 @@ export function TypicalList({
   )
 }
 
-/** A player's favourite cards, in their page: the whole year, for the admins only for now. Only with 2+ lists. */
+/** A player's favourite cards, in their page: the whole year. Only with 2+ lists. */
 export function PlayerCards({
   dataset,
   playerKey,
@@ -421,10 +417,9 @@ export function PlayerCards({
   openCard: (name: string) => void
 }) {
   const { t } = useI18n()
-  const admin = useIsAdmin(useAuth().user?.uid ?? null)
   const dl = useDecklists()
   const [all, setAll] = useState(false)
-  const x = useMemo(() => (admin && dl ? playerCards(dataset, dl, playerKey) : null), [admin, dataset, dl, playerKey])
+  const x = useMemo(() => (dl ? playerCards(dataset, dl, playerKey) : null), [dataset, dl, playerKey])
   if (!x || x.lists < 2) return null
   return (
     <>
@@ -480,7 +475,7 @@ export function PlayerCards({
   )
 }
 
-/** One of the user's decks against its commander's most played cards, in the deck's page: for the admins only for now.
+/** One of the user's decks against its commander's most played cards, in the deck's page.
  * Nothing when the commander has fewer than 2 lists. */
 export function DeckVsMeta({
   dataset,
@@ -496,10 +491,9 @@ export function DeckVsMeta({
   openCard?: (name: string) => void
 }) {
   const { t, lang } = useI18n()
-  const admin = useIsAdmin(useAuth().user?.uid ?? null)
   const dl = useDecklists()
   const [open, setOpen] = useState(false)
-  const x = useMemo(() => (admin && dl ? deckVsMeta(dataset, dl, cmd, deck) : null), [admin, dataset, dl, cmd, deck])
+  const x = useMemo(() => (dl ? deckVsMeta(dataset, dl, cmd, deck) : null), [dataset, dl, cmd, deck])
   if (!x) return null
   const c = dataset.commanders[cmd]
   const nick = nickName(c.name)
@@ -569,7 +563,7 @@ export function DeckVsMeta({
 }
 
 /** "Duplicate deck" next to a Moxfield link of the circuit: a new deck with the archived list (as it was when read),
- * only when the link is the list's own (not one given to the entry by the player's other lists). Admins only for now. */
+ * only when the link is the list's own (not one given to the entry by the player's other lists). */
 export function DuplicateDeck({
   dataset,
   entry,
@@ -582,7 +576,6 @@ export function DuplicateDeck({
   openDeck: (id: string) => void
 }) {
   const { t } = useI18n()
-  const admin = useIsAdmin(useAuth().user?.uid ?? null)
   const dl = useDecklists()
   const [made, setMade] = useState<Deck | null>(null)
   const [busy, setBusy] = useState(false)
@@ -592,7 +585,7 @@ export function DuplicateDeck({
     const id = setTimeout(() => (setMade(null), setFailed(false)), 5000)
     return () => clearTimeout(id)
   }, [made, failed])
-  if (!admin || !dl || entry.deckList == null || entry.deckListGuessed || dataset.year !== dl.year) return null
+  if (!dl || entry.deckList == null || entry.deckListGuessed || dataset.year !== dl.year) return null
   const make = async () => {
     const d = deckOfList(dl, entry.deckList!, t('meta.dupName', { c: nickName(dataset.commanders[entry.cmd].name), p: entry.player ?? '' }))
     setBusy(true)

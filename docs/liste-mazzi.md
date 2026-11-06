@@ -75,20 +75,20 @@ lista.
   Scryfall, una volta sola, salvati in `scripts/meta/cards.json`) e, per ogni lista dell'archivio nello stesso ordine,
   il comandante, le sue carte, quante terre e quante carte modali ha (contando le copie) e le carte con più di una
   copia. Fisso come l'archivio.
-- La pagina: Circuito → **Carte** (`src/views/MetaCards.tsx`, conti in `src/lib/decklists.ts`), per ora solo per gli
-  admin. Stessi filtri del Meta, più colori della carta (`colorMatch`): un colore mostra solo le carte di quel
+- La pagina: Circuito → **Carte** (`src/views/MetaCards.tsx`, conti in `src/lib/decklists.ts`).
+  Stessi filtri del Meta, più colori della carta (`colorMatch`): un colore mostra solo le carte di quel
   colore; più colori, le carte di ognuno e le multicolore fatte solo di quei colori (bianco e blu: bianche, blu e
   bianco-blu, non bianco-blu-nero); il tasto multicolore (disco dorato, come in Arena) tiene solo le multicolore tra
   queste, e con un colore solo tutte le multicolore con quel colore, da solo tutte le multicolore; l'incolore, da
   solo, le carte incolori, "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
   giocare; con un filtro attivo, se nessuna carta ci arriva, si vedono tutte con un avviso). Toccando una carta si apre la sua scheda (`#meta/x~<carta>`), accanto alla lista sul computer.
-- Nella scheda di ogni carta (dalla scheda Carte o dalla ricerca carte), per ora solo per gli admin, la sezione
+- Nella scheda di ogni carta (dalla scheda Carte o dalla ricerca carte), la sezione
   **Nel circuito** (`CircuitUse`, conti in `cardUse`): con i filtri del Circuito, scritti sotto il titolo, la
   percentuale, le presenze e le liste; "Chi la gioca" (i comandanti, 5 e poi tutti) e "Potrebbero giocarla, ma no"
   (fino a 3 comandanti con quei colori e più presenze che non la giocano mai). Sotto le cifre, con gli stessi filtri e
   sempre sui mazzi che possono giocarla: nei top 8 di Livello 1 e 2, fuori dai top 8, tra i vincitori delle tappe di
   lega (le righe senza presenze non compaiono), e Stagione 1 contro Stagione 2 (solo senza il filtro della stagione).
-- Nella pagina di ogni comandante, per ora solo per gli admin, la sezione **Le carte più giocate** (nel codice "lista tipica") (`TypicalList`, conti in
+- Nella pagina di ogni comandante, la sezione **Le carte più giocate** (nel codice "lista tipica") (`TypicalList`, conti in
   `typicalList`), con i filtri della pagina e i conti per presenza del punto 4, su quelle del comandante con una lista:
   - in alto le presenze con una lista (su quelle del comandante), le liste diverse e le **terre in media**, con la più
     bassa e la più alta: terre + carte modali, e quante sono le une e le altre;
@@ -109,18 +109,18 @@ lista.
     le terre in media e, al posto dei gruppi (sarebbe tutto "must have"), l'elenco delle carte della lista senza
     percentuali, con un avviso che dice di chi è e che non è "cosa si gioca di solito". Senza liste la
     sezione non compare.
-- Nella scheda di ogni giocatore, per ora solo per gli admin, **Le sue carte** (`PlayerCards`, conti in `playerCards`),
+- Nella scheda di ogni giocatore, **Le sue carte** (`PlayerCards`, conti in `playerCards`),
   su tutto l'anno e solo per chi ha almeno 2 liste diverse: presenze con una lista, liste e comandanti, e **Le sue
   preferite**, cioè le carte (non terre) in almeno 2 sue liste e in almeno il 60% delle sue presenze che possono
   giocarle, giocate almeno 30 punti percentuali più che dagli altri giocatori (sulle loro presenze che possono
   giocarle). Prima la differenza più grande; toccando una carta si apre la sua scheda.
-- Nella pagina di un proprio mazzo, per ora solo per gli admin, **Contro il meta** (`DeckVsMeta`, conti in
+- Nella pagina di un proprio mazzo, **Contro il meta** (`DeckVsMeta`, conti in
   `deckVsMeta`): se il comandante (trovato come per il winrate del meta) ha almeno 2 liste nel circuito, su tutto
   l'anno e senza filtri: quante must have e quasi sempre ha il mazzo, le sue terre (con le carte modali) contro la media
   del circuito, "Come mai non le giochi?" (le must have e quasi sempre che mancano) e "Le tue pet card" (le carte non
   terre in al massimo il 5% delle presenze del comandante, o in nessuna). Le carte si riconoscono dalla faccia
   frontale; il collegamento apre le carte più giocate del comandante, ogni carta la sua scheda.
-- Nella pagina del comandante, nelle **Liste Moxfield**, per ora solo per gli admin, **Duplica mazzo**
+- Nella pagina del comandante, nelle **Liste Moxfield**, **Duplica mazzo**
   (`DuplicateDeck`, mazzo da `deckOfList`): solo accanto ai link che sono la lista dell'archivio di quell'iscrizione
   (collegamento diretto, non un'estensione). Crea un mazzo in Mazzi con le carte e le copie salvate il 5/11 (non
   rilegge Moxfield; i dati delle carte da Scryfall, come per un import) e il nome "Comandante di Giocatore". Le liste

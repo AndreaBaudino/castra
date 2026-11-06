@@ -95,7 +95,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   creazione, iscritti, turni, risultati, top cut). Progetto in `docs/tornei.md`.
 - `decklists.ts`: le liste dei mazzi del circuito (`public/decklists.json`): `cardStats` (scheda Carte del Circuito),
   `cardUse` (scheda della carta), `typicalList` (le carte più giocate nella pagina del comandante), `playerCards` (le carte di un giocatore), `deckVsMeta` (un mazzo contro il meta), `deckOfList` (Duplica mazzo); viste in
-  `views/MetaCards.tsx`, per ora solo admin; regole in `docs/liste-mazzi.md`.
+  `views/MetaCards.tsx`; regole in `docs/liste-mazzi.md`.
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
   `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate
@@ -105,7 +105,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - Route nell'hash: `#tab` o `#tab/sottopagina`. Tab: `home`, `meta` (si chiama "Circuito" in UI), `game`, `stats`,
   `decks`, `account`, `cards`, `to` (area TO; `to/<id>` un torneo gestito in app), `live` (tornei in corso; `live/<id>` uno, da spettatore).
 - Sottopagine del Circuito con prefisso: `p~giocatore`, `e~evento`, `l~stagione~lega`, `c~a~b` (confronto),
-  `k~comandante`, `t~torneo`, `x~carta` (dalla scheda Carte, solo admin); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
+  `k~comandante`, `t~torneo`, `x~carta` (dalla scheda Carte); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
 - La cronologia è costruita apposta perché il tasto "indietro" del telefono funzioni: home → pagina principale →
   sottopagine impilate → foglio/dialogo aperto. Fogli e dialoghi usano `useBackCloses(open, onClose, layer)`:
   ogni nuovo pannello modale deve usarlo (o usare `Sheet` / `useDialog()`), mai `window.confirm`/`alert`.
