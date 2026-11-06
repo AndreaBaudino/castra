@@ -22,10 +22,10 @@ import {
   newId,
   parseDecklist,
 } from '../lib/decks'
-import { loadPrivate, ranking, tournamentTitle, useTournament } from '../lib/tournaments'
+import { loadPrivate, photoLink, ranking, tournamentTitle, useTournament } from '../lib/tournaments'
 import { placeLabel } from './Circuit'
 import { type MetaDataset, type MetaDeck, findMetaDeck, nickName, winrate } from '../lib/meta'
-import { type Match, fmtRecord, record } from '../lib/matches'
+import { type DeckTournament, type Match, deckTournaments, fmtRecord, record } from '../lib/matches'
 import { fetchCollection, fetchPrints, requestKey, searchCards, symbolUrl } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
@@ -169,11 +169,77 @@ function PrintsPicker({ name, current, onPick }: { name: string; current?: strin
 }
 
 /** The cards that went in and out, one line per day: closed until needed, like the stats. */
-function DeckHistory({ history }: { history: DeckChange[] }) {
+/** The cards that went in and out, by name: a change of the deck, or a tournament's list against the deck today. */
+function ChangeLines({ cards, labels = ['deck.in', 'deck.out'] }: { cards: Record<string, number>; labels?: [TKey, TKey] }) {
+  const { t } = useI18n()
+  const all = Object.entries(cards).sort((a, b) => a[0].localeCompare(b[0]))
+  const names = (cs: [string, number][]) => cs.map(([n, d]) => (Math.abs(d) > 1 ? `${Math.abs(d)} ${n}` : n)).join(', ')
+  const [ins, outs] = [all.filter(([, d]) => d > 0), all.filter(([, d]) => d < 0)]
+  return (
+    <>
+      {ins.length > 0 && (
+        <div>
+          <b className="good-text">{t(labels[0])}</b> {names(ins)}
+        </div>
+      )}
+      {outs.length > 0 && (
+        <div>
+          <b className="bad-text">{t(labels[1])}</b> {names(outs)}
+        </div>
+      )}
+    </>
+  )
+}
+
+// a tournament's line: its name, and how it went
+const tourLine = (x: DeckTournament, lang: string) => `${x.name} · ${fmtRecord(x.rec)}${x.place ? ` · ${placeLabel(x.place, lang)}` : ''}`
+
+/** The tournaments run in the app the deck was played at (docs/liste-mazzi.md, 8), each with its list's photo. */
+function DeckTournaments({ tours }: { tours: DeckTournament[] }) {
+  const { t, lang } = useI18n()
+  const [open, setOpen] = useState(false)
+  const sum = (k: 'w' | 'l' | 'd') => tours.reduce((s, x) => s + x.rec[k], 0)
+  const all = { w: sum('w'), l: sum('l'), d: sum('d'), games: 0, wr: 0 }
+  return (
+    <section className={`card collapsible ${open ? 'open' : ''}`}>
+      <button className="collapse-head" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="card-title">{t('deck.tours')}</span>
+        {!open && <span className="muted small ellipsis collapse-sum">{t('deck.toursSum', { n: tours.length, r: fmtRecord(all) })}</span>}
+        <span className="chev">
+          <Icon name="chevron" size={16} />
+        </span>
+      </button>
+      {open && (
+        <ul className="card-list">
+          {tours.map((x) => (
+            <li key={x.id} className="event-row">
+              <div className="event-main">
+                <span className="ellipsis">{x.name}</span>
+                <span className="muted small">
+                  {new Date(x.date).toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {x.place ? ` · ${placeLabel(x.place, lang)}` : ''} · {t('deck.tourGames', { n: x.rec.games })}
+                </span>
+              </div>
+              <b className={wrClass(x.rec.wr)}>{fmtRecord(x.rec)}</b>
+              {x.photo && (
+                <a className="link small" href={photoLink(x.id, x.photo)}>
+                  {t('deck.tourList')}
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function DeckHistory({ history, tours }: { history: DeckChange[]; tours: DeckTournament[] }) {
   const { t, lang } = useI18n()
   const [open, setOpen] = useState(false)
   const day = (iso: string) => new Date(iso).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })
-  const names = (cards: [string, number][]) => cards.map(([n, d]) => (Math.abs(d) > 1 ? `${Math.abs(d)} ${n}` : n)).join(', ')
+  // the tournaments at their day among the changes: which version of the deck was played
+  const items = [...history.map((h) => ({ at: h.at, h })), ...tours.map((x) => ({ at: x.date, x }))].sort((a, b) => b.at.localeCompare(a.at))
   return (
     <section className={`card collapsible ${open ? 'open' : ''}`}>
       <button className="collapse-head" onClick={() => setOpen(!open)} aria-expanded={open}>
@@ -184,25 +250,21 @@ function DeckHistory({ history }: { history: DeckChange[] }) {
         </span>
       </button>
       {open &&
-        history.map((h) => {
-          const all = Object.entries(h.cards).sort((a, b) => a[0].localeCompare(b[0]))
-          const [ins, outs] = [all.filter(([, d]) => d > 0), all.filter(([, d]) => d < 0)]
-          return (
-            <div key={h.at} className="deck-change">
-              <div className="muted small">{day(h.at)}</div>
-              {ins.length > 0 && (
-                <div>
-                  <b className="good-text">{t('deck.in')}</b> {names(ins)}
-                </div>
-              )}
-              {outs.length > 0 && (
-                <div>
-                  <b className="bad-text">{t('deck.out')}</b> {names(outs)}
-                </div>
-              )}
+        items.map((i) =>
+          'h' in i ? (
+            <div key={i.at} className="deck-change">
+              <div className="muted small">{day(i.at)}</div>
+              <ChangeLines cards={i.h.cards} />
             </div>
-          )
-        })}
+          ) : (
+            <div key={i.x.id} className="deck-change tour-mark">
+              <Icon name="trophy" size={16} />
+              <span>
+                <b>{day(i.at)}</b> · {tourLine(i.x, lang)}
+              </span>
+            </div>
+          ),
+        )}
     </section>
   )
 }
@@ -255,6 +317,7 @@ export default function DeckDetail({
   const meta = findMetaDeck(metaDecks, commanderNames(deck))
   const art = deckCover(deck)
   const mine = record(matches.filter((m) => m.deckId === deck.id))
+  const tours = useMemo(() => deckTournaments(matches, deck.id), [matches, deck.id])
   const statsLine = useMemo(() => {
     const s = summaryOf(deck)
     return [
@@ -484,7 +547,8 @@ export default function DeckDetail({
         )}
       </section>
 
-      {deck.history?.length ? <DeckHistory history={deck.history} /> : null}
+      {tours.length > 0 && <DeckTournaments tours={tours} />}
+      {deck.history?.length ? <DeckHistory history={deck.history} tours={tours} /> : null}
 
       <div className="deck-toolbar">
         <div className="seg">
@@ -796,12 +860,18 @@ export function CheckBox({ check }: { check: DeckCheck }) {
 export function TournamentPhoto({
   id,
   player,
+  me,
+  decks,
+  openDeck,
   authorOf,
   onCreate,
   ...rest
 }: {
   id: string
   player: string
+  me: string | null
+  decks: Deck[] // mine: my own list against the deck today
+  openDeck: (id: string) => void
   authorOf: (key: string, name: string) => Author
   onCreate: (d: Deck) => void
   metaDecks: MetaDeck[]
@@ -845,6 +915,9 @@ export function TournamentPhoto({
         )}
       </div>
     )
+  // my own list, of a deck I still have: what changed since
+  const today = player === me ? decks.find((d) => d.id === players.find(([k]) => k === player)?.[1].deck) : undefined
+  const since = today && (logChange([], deck.cards, today.cards)[0]?.cards ?? {})
   const rows = tour?.status === 'done' ? ranking(tour, players, matches) : []
   const at = rows.findIndex((r) => r.id === player)
   const r = rows[at]
@@ -881,6 +954,15 @@ export function TournamentPhoto({
           <button className="btn" onClick={copy}>
             <Icon name="copy" size={16} /> {t('meta.duplicate')}
           </button>
+          {since && (
+            <div className="deck-change">
+              <div className="muted small strong">{t('photo.vsDeck')}</div>
+              {Object.keys(since).length ? <ChangeLines cards={since} labels={['photo.nowIn', 'photo.nowOut']} /> : <div>{t('photo.same')}</div>}
+              <button className="link" onClick={() => openDeck(today.id)}>
+                {t('photo.openDeck')}
+              </button>
+            </div>
+          )}
         </section>
       }
     />

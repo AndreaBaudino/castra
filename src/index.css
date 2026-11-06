@@ -4084,6 +4084,21 @@ mark.diff-new {
   font-size: 0.88rem;
   overflow-wrap: anywhere;
 }
+/* a tournament among the changes: which version of the deck was played */
+.deck-change.tour-mark {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+  padding: 8px 10px;
+  border-top: 0;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+}
+.tour-mark svg {
+  flex: none;
+  color: var(--gold);
+}
 .collapse-head .chev {
   margin-left: auto;
   color: var(--muted);

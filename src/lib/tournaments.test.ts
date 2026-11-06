@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { type MetaDataset, type MetaTournament, ALL, matchupsOf } from './meta'
 import type { Source } from './sources'
 import type { Deck } from './decks'
+import { type Match as Played, deckTournaments, fmtRecord } from './matches'
 import {
   type Player,
   type TableMatch,
@@ -153,6 +154,37 @@ describe('tournaments', () => {
     expect(c.map((x) => [x.result, x.deckId, x.deckName])).toEqual([['D', undefined, 'Urza, Lord High Artificer'], ['W', undefined, 'Urza, Lord High Artificer']])
     expect(sideScore([1, 2, 0], true)).toBe('2-1')
     expect(sideScore([1, 1, 1], false)).toBe('1-1-1')
+  })
+
+  it("keeps the final position, and the photo's player when the deck of the app was the decklist", () => {
+    const players: [string, Player][] = [
+      ['a', { name: 'Anna', commander: 'Kinnan, Bonder Prodigy', deck: 'd1', list: true, at: '', by: '' }],
+      ['b', { name: 'Bruno', commander: 'Spider-Man 2099', list: true, at: '', by: '' }],
+    ]
+    const matches: TableMatch[] = [{ round: 1, table: 1, p1: 'a', p2: 'b', score: [0, 2, 0] }]
+    const t = { date: '2026-11-23', status: 'done', rounds: 1, cut: 0 } as Tournament
+    const deck = { id: 'd1', name: 'Kinnan turbo' } as Deck
+    expect(personalMatches('S~5', t, players, matches, 'a', [deck], 'Savona · Tappa 5').map((x) => [x.place, x.photo])).toEqual([[2, 'a']])
+    // a Moxfield link, no deck of the app: no photo
+    expect(personalMatches('S~5', t, players, matches, 'b', [], '').map((x) => [x.place, x.photo])).toEqual([[1, undefined]])
+    // while it's played: no position yet
+    expect(personalMatches('S~5', { ...t, status: 'swiss' }, players, matches, 'a', [deck], '')[0].place).toBeUndefined()
+  })
+
+  it("tells the tournaments a deck was played at, from the games in the stats", () => {
+    const g = (id: string, result: 'W' | 'L' | 'D', more: Partial<Played> = {}): Played =>
+      ({ id, date: '2026-11-23T10:00:00.000Z', result, deckId: 'd1', deckName: 'K', opponent: '', kind: 'tournament', notes: 'Savona · Tappa 5', ...more }) as Played
+    const ms = [
+      g('S~5~r1', 'W', { place: 3, photo: 'a' }),
+      g('S~5~r2', 'L', { place: 3, photo: 'a' }),
+      g('S~6~r1', 'D', { date: '2026-12-01T10:00:00.000Z', notes: 'Savona · Tappa 6' }),
+      g('x1', 'W'), // a tournament game typed by hand: no tournament of the app
+      g('S~7~r1', 'W', { deckId: 'd2' }), // another deck
+    ]
+    expect(deckTournaments(ms, 'd1').map((x) => [x.id, x.name, fmtRecord(x.rec), x.place, x.photo])).toEqual([
+      ['S~6', 'Savona · Tappa 6', '0-0-1', undefined, undefined],
+      ['S~5', 'Savona · Tappa 5', '1-1', 3, 'a'],
+    ])
   })
 
   it('shows the Swiss standings while playing, the final order with the sheet\'s records once over', () => {

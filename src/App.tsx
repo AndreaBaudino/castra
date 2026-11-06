@@ -531,6 +531,9 @@ export default function App() {
               key={route.deck}
               id={decodeURIComponent(route.deck.split('@')[0])}
               player={decodeURIComponent(route.deck.split('@')[1])}
+              me={me}
+              decks={decks}
+              openDeck={(id) => go('decks', id)}
               authorOf={(key, name) => ({ name, photo: claims.get(key)?.photo, open: () => openCurrentPlayer(key) })}
               onCreate={(d) => {
                 setDecks((ds) => [d, ...ds])

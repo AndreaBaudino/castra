@@ -17,6 +17,10 @@ export interface Match {
   kind: 'tournament' | 'casual'
   durationMin?: number
   notes?: string
+  // a tournament run in the app (src/lib/tournaments.ts personalMatches): the final position, and the player's key
+  // when the deck's photo was the decklist (its page: #live/<tournament>@<key>)
+  place?: number
+  photo?: string
 }
 
 export interface Record3 {
@@ -46,6 +50,35 @@ export function groupBy(ms: Match[], key: (m: Match) => string) {
 }
 
 export const fmtRecord = (r: Record3) => (r.d ? `${r.w}-${r.l}-${r.d}` : `${r.w}-${r.l}`)
+
+export interface DeckTournament {
+  id: string // the tournament's id in the app
+  name: string
+  date: string // ISO, its first game
+  rec: Record3
+  place?: number
+  photo?: string
+}
+
+/** The tournaments run in the app a deck was played at, the newest first: from the games they put in the stats
+ * (their ids: <tournament>~r<round>). */
+export function deckTournaments(matches: Match[], deckId: string): DeckTournament[] {
+  const by = new Map<string, Match[]>()
+  for (const m of matches) {
+    const id = m.kind === 'tournament' && m.deckId === deckId && /~r\d+$/.test(m.id) && m.id.replace(/~r\d+$/, '')
+    if (id) by.set(id, [...(by.get(id) ?? []), m])
+  }
+  return [...by]
+    .map(([id, ms]) => ({
+      id,
+      name: ms[0].notes ?? '',
+      date: ms.map((m) => m.date).sort()[0],
+      rec: record(ms),
+      place: ms.find((m) => m.place)?.place,
+      photo: ms.find((m) => m.photo)?.photo,
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date))
+}
 
 /**
  * The games of a bo3 that count: from the first, stopping at a missing one or once someone has won two.

@@ -196,6 +196,17 @@ foto al turno 1".
 - Nella pagina del comandante "Liste Moxfield" diventa "Liste": quelle di Castra hanno l'etichetta "Castra", si
   aprono nell'app e hanno sempre "Duplica mazzo".
 
+### Nel mazzo
+- Le partite di un torneo in app entrano nelle statistiche del giocatore (`personalMatches`) con la posizione finale
+  e, se la decklist era la foto del mazzo, la chiave del giocatore per aprirla.
+- Nella pagina del mazzo, **Tornei** (`deckTournaments` in `src/lib/matches.ts`): i tornei in app giocati con quel
+  mazzo, ricavati da quelle partite, con data, posizione, partite, record e "Lista" (la foto di quel giorno). Gli
+  stessi tornei compaiono tra le **Modifiche**, al loro giorno: si vede con quale versione del mazzo si è giocato.
+- Nella pagina della propria lista, se il mazzo c'è ancora, **Rispetto al tuo mazzo di oggi**: le carte entrate e
+  uscite da allora, o "Il tuo mazzo è ancora questa lista", e "Apri il mazzo".
+- Solo i tornei giocati in app, e solo da quando le partite entrano nelle statistiche (la card del torneo in Home a
+  torneo finito).
+
 ### Nelle statistiche
 - Il build della notte legge le foto da Firestore (senza credenziali, pubbliche a torneo finito) per i tornei finiti
   e pubblicati sul foglio e non ancora nell'archivio, e le aggiunge a un secondo archivio,

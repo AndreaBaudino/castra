@@ -242,6 +242,7 @@ export function personalMatches(
   const names = new Map(players)
   const p = names.get(me)
   const deck = decks.find((d) => d.id === p?.deck)
+  const place = t.status === 'done' ? ranking(t, players, matches).findIndex((r) => r.id === me) + 1 : 0
   return matches
     .filter((m) => m.p2 && m.score && (m.p1 === me || m.p2 === me))
     .map((m) => {
@@ -262,6 +263,9 @@ export function personalMatches(
         opponentPlayer: opp,
         kind: 'tournament',
         notes,
+        ...(place ? { place } : {}),
+        // registered with a deck of the app: the decklist is its photo
+        ...(p?.deck && p.list ? { photo: me } : {}),
       }
     })
 }
