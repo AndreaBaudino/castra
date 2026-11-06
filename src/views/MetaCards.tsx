@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
+import { useIsAdmin } from '../lib/admin'
+import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
-import { cardStats, useDecklists } from '../lib/decklists'
+import { cardStats, cardUse, type CommanderUse, useDecklists } from '../lib/decklists'
 import { type MetaDataset, type MetaFilter, normName, shortName } from '../lib/meta'
 import { symbolUrl } from '../lib/scryfall'
 import { useStoredState } from '../lib/storage'
@@ -11,6 +13,7 @@ import { CardsInfoButton } from './MetaInfo'
 
 const COLORS = ['W', 'U', 'B', 'R', 'G', 'C'] as const
 const MIN_OPTIONS = [0, 10, 20, 40]
+const SHOW = 5
 
 export default function MetaCards({
   dataset,
@@ -138,6 +141,112 @@ export default function MetaCards({
       </ol>
       {list.length > 200 && <p className="muted small center">{t('cardsMeta.capped', { n: list.length })}</p>}
       {min > 0 && list.length > 0 && <p className="muted small center">{t('cardsMeta.minNote', { n: min })}</p>}
+    </>
+  )
+}
+
+/** A card's "In the circuit" section, in its page: with the Circuit's filters, for the admins only for now. */
+export function CircuitUse({
+  dataset,
+  filter,
+  name,
+  colors,
+  openCommander,
+}: {
+  dataset: MetaDataset
+  filter: MetaFilter
+  name: string
+  colors: string
+  openCommander: (name: string) => void
+}) {
+  const { t } = useI18n()
+  const admin = useIsAdmin(useAuth().user?.uid ?? null)
+  const dl = useDecklists()
+  const [all, setAll] = useState(false)
+  const use = useMemo(() => (dl ? cardUse(dataset, filter, dl, name, colors) : null), [dataset, filter, dl, name, colors])
+  if (!admin || !dl || !use) return null
+  const scope = [
+    dataset.year,
+    filter.season.toUpperCase(),
+    filter.kind ? t(`meta.kind.${filter.kind}`) : t('meta.allKinds'),
+    filter.league,
+    filter.minPlayers || filter.maxPlayers ? `${t('meta.players')} ${filter.minPlayers || '…'}–${filter.maxPlayers || '…'}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  const row = (c: CommanderUse) => (
+    <li key={c.name} className="event-row" onClick={() => openCommander(c.name)}>
+      <div className="event-main">
+        <span className="ellipsis">
+          <Pips colors={c.colors} size={12} /> {shortName(c.name)}
+        </span>
+        <span className="muted small">
+          {c.decks
+            ? `${t('cardsMeta.cmdPlays', { n: c.decks, of: c.of })} · ${t('meta.nPlayers', { n: c.players })}`
+            : t('cardsMeta.cmdEntries', { n: c.of })}
+        </span>
+      </div>
+      <b className={c.decks ? '' : 'muted'}>{pct(c.decks / c.of, 0)}</b>
+    </li>
+  )
+  return (
+    <>
+      <section className="card">
+        <div className="card-title">
+          <span className="title-live">
+            {t('cardsMeta.inCircuit')}
+            <CardsInfoButton />
+          </span>
+        </div>
+        <span className="muted small">{t('cardsMeta.scope', { s: scope })}</span>
+        {dataset.year !== dl.year ? (
+          <p className="no-margin">{t('cardsMeta.otherYear', { y: dl.year })}</p>
+        ) : !use.of ? (
+          <p className="no-margin">{t('cardsMeta.none')}</p>
+        ) : !use.decks ? (
+          <>
+            <p className="no-margin">{t('cardsMeta.nobody')}</p>
+            <p className="muted small no-margin">{t('cardsMeta.nobodyOf', { n: use.of })}</p>
+          </>
+        ) : (
+          <div className="stats3">
+            <div>
+              <div className="stat-num">{pct(use.share, 0)}</div>
+              <div className="stat-label">{t('cardsMeta.share')}</div>
+            </div>
+            <div>
+              <div className="stat-num">{use.decks}</div>
+              <div className="stat-label">{t('cardsMeta.entriesOf', { n: use.of })}</div>
+            </div>
+            <div>
+              <div className="stat-num">{use.lists}</div>
+              <div className="stat-label">{t('cardsMeta.lists')}</div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {use.decks > 0 && (
+        <section className="group">
+          <div className="group-title">{t('cardsMeta.whoPlays')}</div>
+          <ul className="card-list">
+            {(all ? use.playing : use.playing.slice(0, SHOW)).map(row)}
+            {use.playing.length > SHOW && (
+              <li className="event-row more" onClick={() => setAll(!all)}>
+                {all ? t('meta.showLess') : t('cardsMeta.allCommanders', { n: use.playing.length })}
+              </li>
+            )}
+          </ul>
+          {!use.skipping.length && <p className="muted small group-note">{t('cardsMeta.everyone')}</p>}
+        </section>
+      )}
+
+      {use.decks > 0 && use.skipping.length > 0 && (
+        <section className="group">
+          <div className="group-title">{t('cardsMeta.whoSkips')}</div>
+          <ul className="card-list">{use.skipping.slice(0, 3).map(row)}</ul>
+        </section>
+      )}
     </>
   )
 }

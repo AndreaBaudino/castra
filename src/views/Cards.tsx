@@ -13,11 +13,13 @@ import {
 } from '../lib/scryfall'
 import { type Errata, RECENT_CARDS_KEY, addRecent, diffWords, fetchErrata } from '../lib/cards'
 import { legalityOf, useBanlist } from '../lib/banlist'
-import { type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
-import { useStoredState } from '../lib/storage'
+import { ALL, type MetaDataset, type MetaDeck, type MetaFilter, findMetaDeck, winrate } from '../lib/meta'
+import { readStored, useStoredState } from '../lib/storage'
 import { Icon, Sheet, pct, wrClass } from '../components/ui'
 import { SubPageShell } from './Circuit'
 import { useWide } from '../lib/wide'
+import { META_FILTER_KEY } from './Meta'
+import { CircuitUse } from './MetaCards'
 
 // ---------- search ----------
 
@@ -117,17 +119,19 @@ export function CardsSearchPage({ current, onOpen, onBack }: { current?: string;
 export function CardPage({
   name,
   metaDecks,
+  dataset,
   onBack,
   openCommander,
 }: {
   name: string
   metaDecks: MetaDeck[]
+  dataset: MetaDataset | null
   onBack: () => void
   openCommander: (name: string) => void
 }) {
   return (
     <SubPageShell title={name} onBack={onBack}>
-      <CardDetails key={name} name={name} metaDecks={metaDecks} openCommander={openCommander} />
+      <CardDetails key={name} name={name} metaDecks={metaDecks} openCommander={openCommander} dataset={dataset} />
     </SubPageShell>
   )
 }
@@ -192,7 +196,17 @@ const isCommanderCard = (d: Details) =>
   /\blegendary\b.*\b(creature|vehicle|spacecraft)\b/i.test(d.faces[0].typeLine) || d.faces.some((f) => /can be your commander/i.test(f.text))
 
 /** Everything about one card: image, Oracle text (or the Italian one), Centurion legality, errata and rulings. */
-export function CardDetails({ name, metaDecks, openCommander }: { name: string; metaDecks?: MetaDeck[]; openCommander?: (name: string) => void }) {
+export function CardDetails({
+  name,
+  metaDecks,
+  openCommander,
+  dataset,
+}: {
+  name: string
+  metaDecks?: MetaDeck[]
+  openCommander?: (name: string) => void
+  dataset?: MetaDataset | null // with openCommander: the card in the circuit's deck lists
+}) {
   const { t, lang } = useI18n()
   const card = useLoad((signal) => fetchCardDetails(name, signal), [name])
   useBanlist() // a newer banlist changes the legality
@@ -251,6 +265,16 @@ export function CardDetails({ name, metaDecks, openCommander }: { name: string; 
           ))}
           {showIt && <p className="muted small no-margin">{t('cards.itNote')}</p>}
         </section>
+
+        {dataset && openCommander && (
+          <CircuitUse
+            dataset={dataset}
+            filter={readStored<MetaFilter>(META_FILTER_KEY, ALL)}
+            name={details.name}
+            colors={details.colors}
+            openCommander={openCommander}
+          />
+        )}
 
         {errata.state === 'done' && errata.value && (
           <ErrataCard errata={errata.value} faces={details.faces} open={errataOpen} setOpen={setErrataOpen} />

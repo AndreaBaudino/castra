@@ -434,7 +434,7 @@ export default function App() {
                 openCommander={openCommander}
               />
             ) : metaSub === 'x' ? (
-              <CardPage name={metaArgs[0]} metaDecks={meta.decks} onBack={() => history.back()} openCommander={openCommander} />
+              <CardPage name={metaArgs[0]} metaDecks={meta.decks} dataset={dataset} onBack={() => history.back()} openCommander={openCommander} />
             ) : metaSub === 't' || (metaSub === 'e' && eventTournament) ? (
               <TournamentPage
                 dataset={dataset}
@@ -517,7 +517,9 @@ export default function App() {
         {route.tab === 'cards' &&
           split(
             <CardsSearchPage current={cardName} onOpen={openCard} onBack={() => go('home')} />,
-            cardName && <CardPage name={cardName} metaDecks={meta.decks} onBack={() => go('cards')} openCommander={openCommander} />,
+            cardName && (
+              <CardPage name={cardName} metaDecks={meta.decks} dataset={dataset} onBack={() => go('cards')} openCommander={openCommander} />
+            ),
             t('cards.pick'),
           )}
         {route.tab === 'decks' &&

@@ -167,6 +167,7 @@ export interface CardDetails {
   image?: string // the card as a whole: split, adventure and flip cards have one image for all faces
   scryfallUri: string
   notLegal: boolean // not a tournament card (un-sets, test cards…)
+  colors: string // color identity
 }
 
 const statsOf = (f: ScryFace) =>
@@ -193,6 +194,7 @@ export async function fetchCardDetails(name: string, signal?: AbortSignal): Prom
     image: c.image_uris?.normal,
     scryfallUri: c.scryfall_uri.replace(/\?.*/, ''),
     notLegal: c.legalities.commander === 'not_legal',
+    colors: (c.color_identity ?? []).join(''),
   }
 }
 

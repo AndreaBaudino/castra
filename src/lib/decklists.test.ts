@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardStats, type Decklists } from './decklists'
+import { cardStats, cardUse, type Decklists } from './decklists'
 import { ALL, type MetaDataset, type MetaEntry } from './meta'
 
 // The play rate of the circuit's cards (docs/liste-mazzi.md): per entry, among the decks that can play the card.
@@ -63,5 +63,22 @@ describe('cardStats', () => {
 
   it('has nothing for another year', () => {
     expect(cardStats({ ...ds, year: 2027 }, ALL, dl).cards).toEqual([])
+  })
+})
+
+describe('cardUse', () => {
+  it('splits a card by commander, as cardStats counts it', () => {
+    const u = cardUse(ds, ALL, dl, 'Sol Ring', '')
+    expect(u).toMatchObject({ decks: 3, of: 3, lists: 2 })
+    expect(u.playing.map((c) => [c.name, c.decks, c.of])).toEqual([
+      ['Phelia', 2, 2],
+      ['Vohar', 1, 1],
+    ])
+  })
+
+  it('names the commanders that could play it and never do', () => {
+    const u = cardUse(ds, ALL, dl, 'Counterspell', 'U')
+    expect(u.playing.map((c) => c.name)).toEqual(['Vohar'])
+    expect(cardUse(ds, ALL, dl, 'Brainstorm', 'U')).toMatchObject({ decks: 0, of: 1, skipping: [{ name: 'Vohar', of: 1 }] })
   })
 })

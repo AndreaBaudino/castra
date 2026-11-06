@@ -77,6 +77,10 @@ lista.
   admin. Stessi filtri del Meta, più colori della carta (il bianco: le carte con il bianco; incolore: le carte
   incolori), "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
   giocare). Toccando una carta si apre la sua scheda (`#meta/x~<carta>`), accanto alla lista sul computer.
+- Nella scheda di ogni carta (dalla scheda Carte o dalla ricerca carte), per ora solo per gli admin, la sezione
+  **Nel circuito** (`CircuitUse`, conti in `cardUse`): con i filtri del Circuito, scritti sotto il titolo, la
+  percentuale, le presenze e le liste; "Chi la gioca" (i comandanti, 5 e poi tutti) e "Potrebbero giocarla, ma no"
+  (fino a 3 comandanti con quei colori e più presenze che non la giocano mai).
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
 

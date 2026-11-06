@@ -44,6 +44,46 @@ export interface CardStat {
 
 const within = (identity: string, colors: string) => [...colors].every((c) => identity.includes(c))
 
+export interface CommanderUse {
+  name: string
+  colors: string
+  decks: number // its entries whose list plays the card
+  of: number // its entries with a list
+  players: number // different players among those decks
+}
+
+/** One card in the circuit, counted as in cardStats, by commander: those playing it (the most first) and those that
+ * could and never do (the most entries first). `colors`: the card's color identity, for a card in no list. */
+export function cardUse(ds: MetaDataset, f: MetaFilter, dl: Decklists, name: string, colors: string) {
+  const id = dl.cards.findIndex((c) => c[0] === name)
+  const identity = id >= 0 ? (dl.cards[id][1] ?? '') : colors
+  const rows = (ds.year === dl.year ? entriesOf(ds, f) : []).filter(
+    (e) => e.deckList != null && e.cmd >= 0 && within(ds.commanders[e.cmd].colors, identity),
+  )
+  const by = new Map<number, { decks: number; of: number; players: Set<string> }>()
+  const lists = new Set<number>()
+  for (const e of rows) {
+    const x = by.get(e.cmd) ?? { decks: 0, of: 0, players: new Set<string>() }
+    x.of++
+    if (id >= 0 && dl.lists[e.deckList!][1].includes(id)) {
+      x.decks++
+      lists.add(e.deckList!)
+      if (e.key) x.players.add(e.key)
+    }
+    by.set(e.cmd, x)
+  }
+  const cmds: CommanderUse[] = [...by].map(([c, x]) => ({ ...ds.commanders[c], decks: x.decks, of: x.of, players: x.players.size }))
+  const decks = cmds.reduce((s, c) => s + c.decks, 0)
+  return {
+    decks,
+    of: rows.length,
+    share: rows.length ? decks / rows.length : 0,
+    lists: lists.size,
+    playing: cmds.filter((c) => c.decks).sort((a, b) => b.decks - a.decks || b.of - a.of),
+    skipping: cmds.filter((c) => !c.decks).sort((a, b) => b.of - a.of),
+  }
+}
+
 /** Each card's play rate among the entries with a list, counted once per entry (a list brought twice counts twice),
  * out of those whose commander's color identity allows the card. Also how many entries and lists it rests on. */
 export function cardStats(ds: MetaDataset, f: MetaFilter, dl: Decklists) {
