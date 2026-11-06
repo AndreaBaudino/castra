@@ -343,7 +343,7 @@ export function TypicalList({
           <span>{t('typical.lands')}</span>
           <b>
             {num(x.lands + x.modal)}{' '}
-            {x.lo < x.hi && <span className="muted">({t('typical.range', { lo: x.lo, hi: x.hi })})</span>}
+            {x.lists > 1 && <span className="muted">({t('typical.range', { lo: x.lo, hi: x.hi })})</span>}
           </b>
         </div>
         {x.modal > 0 && (
