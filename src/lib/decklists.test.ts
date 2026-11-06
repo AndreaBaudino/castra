@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardStats, cardUse, type Decklists, deckVsMeta, playerCards, typicalList } from './decklists'
+import { cardStats, cardUse, type Decklists, deckOfList, deckVsMeta, playerCards, typicalList } from './decklists'
 import type { Deck, DeckCard } from './decks'
 import { ALL, type MetaDataset, type MetaEntry } from './meta'
 
@@ -40,8 +40,8 @@ const dl: Decklists = {
     ['Counterspell', 'U', 0],
   ],
   lists: [
-    ['Phelia', [0, 1], 36, 0],
-    ['Vohar', [1, 2], 37, 0],
+    ['Phelia', [0, 1], 36, 0, []],
+    ['Vohar', [1, 2], 37, 0, []],
   ],
 }
 
@@ -100,11 +100,11 @@ describe('typicalList', () => {
     ['Dust Bowl', '', 1],
   ]
   const lists: Decklists['lists'] = [
-    ['Phelia', [0, 1, 2, 4, 5, 6, 7, 8], 35, 1],
-    ['Phelia', [0, 1, 2, 4, 5, 6, 7], 36, 0],
-    ['Phelia', [0, 1, 3, 5, 6, 7, 10], 37, 0],
-    ['Phelia', [0, 1, 3, 5, 6, 7, 9, 10], 38, 1],
-    ['Vohar', [1, 6, 8], 36, 0],
+    ['Phelia', [0, 1, 2, 4, 5, 6, 7, 8], 35, 1, []],
+    ['Phelia', [0, 1, 2, 4, 5, 6, 7], 36, 0, []],
+    ['Phelia', [0, 1, 3, 5, 6, 7, 10], 37, 0, []],
+    ['Phelia', [0, 1, 3, 5, 6, 7, 9, 10], 38, 1, []],
+    ['Vohar', [1, 6, 8], 36, 0, []],
   ]
   // Phelia: list 0 brought 5 times, list 1 three times, lists 2 and 3 once, one entry without a list
   const phelia = [0, 0, 0, 0, 0, 1, 1, 1, 2, 3].map((l) => entry(0, 0, l))
@@ -161,10 +161,10 @@ describe('playerCards', () => {
     ['Solo', '', 0],
   ]
   const lists: Decklists['lists'] = [
-    ['A', [0, 1, 2, 3, 4], 36, 0], // Ana's two lists
-    ['B', [1, 2, 3, 4, 5], 36, 0],
-    ['A', [0, 2], 36, 0], // the others
-    ['B', [2], 36, 0],
+    ['A', [0, 1, 2, 3, 4], 36, 0, []], // Ana's two lists
+    ['B', [1, 2, 3, 4, 5], 36, 0, []],
+    ['A', [0, 2], 36, 0, []], // the others
+    ['B', [2], 36, 0, []],
   ]
   const ana = (t: number, cmd: number, l?: number) => ({ ...entry(t, cmd, l), player: 'Ana', key: 'ana' })
   const data: MetaDataset = {
@@ -205,8 +205,8 @@ describe('deckVsMeta', () => {
     ["Emeria's Call // Emeria, Shattered Skyclave", 'W', 3],
   ]
   const lists: Decklists['lists'] = [
-    ['Phelia', [0, 1, 3], 36, 0],
-    ['Phelia', [0, 1, 2, 3, 4], 35, 1],
+    ['Phelia', [0, 1, 3], 36, 0, []],
+    ['Phelia', [0, 1, 2, 3, 4], 35, 1, []],
   ]
   const data: MetaDataset = { ...ds, entries: [entry(0, 0, 0), entry(1, 0, 0), entry(1, 0, 1), entry(0, 1, 0)] }
   const dl2: Decklists = { v: 2, year: 2026, cards, lists }
@@ -224,5 +224,19 @@ describe('deckVsMeta', () => {
 
   it('has nothing with fewer than 2 lists', () => {
     expect(deckVsMeta({ ...data, entries: [entry(0, 0, 0)] }, dl2, 0, deck([]))).toBeNull()
+  })
+})
+
+describe('deckOfList', () => {
+  it('makes a deck with the list, its copies and its commanders', () => {
+    const dl2: Decklists = { v: 2, year: 2026, cards: [['Island', 'U', 2], ['Brainstorm', 'U', 0]], lists: [['Jeska / Yoshimaru', [0, 1], 30, 0, [[0, 30]]]] }
+    const d = deckOfList(dl2, 0, 'Jeska di Ana')
+    expect(d.name).toBe('Jeska di Ana')
+    expect(d.cards.map((c) => [c.name, c.qty, c.section])).toEqual([
+      ['Jeska', 1, 'commander'],
+      ['Yoshimaru', 1, 'commander'],
+      ['Island', 30, 'main'],
+      ['Brainstorm', 1, 'main'],
+    ])
   })
 })

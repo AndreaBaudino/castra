@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { type Deck, groupOf } from './decks'
+import { type Deck, groupOf, newId } from './decks'
 import { ALL, type MetaDataset, type MetaEntry, type MetaFilter, entriesOf } from './meta'
 
 // The circuit's deck lists (public/decklists.json, built by scripts/build-meta.mjs from a fixed archive read once from
@@ -12,7 +12,8 @@ export interface Decklists {
   // colors: color identity, null if unknown. Kind, by the front face: 0 not a land, 1 a land, 2 a staple land (basic,
   // fetch, making 2 to 4 colors), 3 a modal card with a land on the back
   cards: [name: string, colors: string | null, kind: 0 | 1 | 2 | 3][]
-  lists: [commander: string, cards: number[], lands: number, modal: number][] // lands and modal cards: with copies
+  // lands and modal cards: with copies; copies: the cards with more than one
+  lists: [commander: string, cards: number[], lands: number, modal: number, copies: [card: number, n: number][]][]
 }
 
 let loading: Promise<Decklists | null> | null = null
@@ -254,5 +255,24 @@ export function deckVsMeta(ds: MetaDataset, dl: Decklists, cmd: number, deck: De
       .filter((c) => !isLand(c) && (share.get(front(c.name))?.share ?? 0) <= 0.05)
       .map((c) => ({ name: c.name, decks: share.get(front(c.name))?.decks ?? 0, share: share.get(front(c.name))?.share ?? 0 }))
       .sort((a, b) => b.share - a.share || a.name.localeCompare(b.name)),
+  }
+}
+
+/** A new deck with one of the circuit's lists, as it was on the day it was read (partners: two commanders). */
+export function deckOfList(dl: Decklists, list: number, name: string): Deck {
+  const [commander, cards, , , copies] = dl.lists[list]
+  const n = new Map(copies)
+  const now = new Date().toISOString()
+  return {
+    id: newId(),
+    name,
+    tags: [],
+    notes: '',
+    cards: [
+      ...commander.split(' / ').map((c) => ({ name: c, qty: 1, section: 'commander' as const })),
+      ...cards.map((c) => ({ name: dl.cards[c][0], qty: n.get(c) ?? 1, section: 'main' as const })),
+    ],
+    createdAt: now,
+    updatedAt: now,
   }
 }

@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useIsAdmin } from '../lib/admin'
 import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
-import { cardStats, cardUse, type CommanderUse, deckVsMeta, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
-import { type MetaDataset, type MetaFilter, isFiltered, normName, shortName } from '../lib/meta'
+import { cardStats, cardUse, type CommanderUse, deckOfList, deckVsMeta, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
+import { type MetaDataset, type MetaEntry, type MetaFilter, isFiltered, nickName, normName, shortName } from '../lib/meta'
 import type { Deck } from '../lib/decks'
-import { symbolUrl } from '../lib/scryfall'
+import { fetchCollection, requestKey, symbolUrl } from '../lib/scryfall'
 import { useStoredState } from '../lib/storage'
 import { CardsInfoButton, DeckMetaInfoButton, PlayerCardsInfoButton, TypicalInfoButton } from './MetaInfo'
 
@@ -466,8 +466,7 @@ export function DeckVsMeta({
   const x = useMemo(() => (admin && dl ? deckVsMeta(dataset, dl, cmd, deck) : null), [admin, dataset, dl, cmd, deck])
   if (!x) return null
   const c = dataset.commanders[cmd]
-  // "Phelia" for "Phelia, Exuberant Shepherd", as people call it
-  const nick = shortName(c.name).replace(/,[^/]*/g, '')
+  const nick = nickName(c.name)
   const row = (name: string, decks: number, share: number) => (
     <li key={name} className="event-row" onClick={() => openCard?.(name)}>
       <div className="event-main">
@@ -528,6 +527,68 @@ export function DeckVsMeta({
           <p className="muted small group-note">{t('deckMeta.petsNote', { c: nick })}</p>
           <ul className="card-list">{x.pets.map((p) => row(p.name, p.decks, p.share))}</ul>
         </section>
+      )}
+    </>
+  )
+}
+
+/** "Duplicate deck" next to a Moxfield link of the circuit: a new deck with the archived list (as it was when read),
+ * only when the link is the list's own (not one given to the entry by the player's other lists). Admins only for now. */
+export function DuplicateDeck({
+  dataset,
+  entry,
+  onCreate,
+  openDeck,
+}: {
+  dataset: MetaDataset
+  entry: MetaEntry
+  onCreate: (d: Deck) => void
+  openDeck: (id: string) => void
+}) {
+  const { t } = useI18n()
+  const admin = useIsAdmin(useAuth().user?.uid ?? null)
+  const dl = useDecklists()
+  const [made, setMade] = useState<Deck | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!made && !failed) return
+    const id = setTimeout(() => (setMade(null), setFailed(false)), 5000)
+    return () => clearTimeout(id)
+  }, [made, failed])
+  if (!admin || !dl || entry.deckList == null || entry.deckListGuessed || dataset.year !== dl.year) return null
+  const make = async () => {
+    const d = deckOfList(dl, entry.deckList!, t('meta.dupName', { c: nickName(dataset.commanders[entry.cmd].name), p: entry.player ?? '' }))
+    setBusy(true)
+    setFailed(false)
+    try {
+      // as an imported deck: the cards' data first, the deck's page needs it
+      const { found } = await fetchCollection(d.cards)
+      for (const c of d.cards) c.info = found.get(requestKey(c))
+      onCreate(d)
+      setMade(d)
+    } catch {
+      setFailed(true)
+    }
+    setBusy(false)
+  }
+  return (
+    <>
+      <button className="btn small" onClick={make} disabled={busy}>
+        {t('meta.duplicate')}
+      </button>
+      {failed && (
+        <div className="toast" role="status">
+          {t('meta.dupError')}
+        </div>
+      )}
+      {made && (
+        <div className="toast toast-action" role="status">
+          <span className="ellipsis">{t('meta.dupDone', { d: made.name })}</span>
+          <button className="link" onClick={() => openDeck(made.id)}>
+            {t('meta.dupOpen')}
+          </button>
+        </div>
       )}
     </>
   )

@@ -419,7 +419,8 @@ const years = [...rebuilt, ...kept].sort((a, b) => b.year - a.year)
 writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
 // the lists' cards for the app, fixed like the archive: [name, color identity (null: not found on Scryfall), kind].
 // Kind, by the front face: 0 not a land, 1 a land, 2 a staple land (basic, fetch, or making 2 to 4 colors), 3 a modal
-// card with a land on the back. Each list: [commander, its cards, lands, modal cards], the last two counting copies.
+// card with a land on the back. Each list: [commander, its cards, lands, modal cards, [card, copies] when more than 1],
+// lands and modal cards counting copies.
 const names = [...new Set(listCards.map((n) => listCard(n)?.name ?? n))].sort()
 const cardIndex = new Map(names.map((n, i) => [n, i]))
 for (const n of names) if (!listCard(n)) warn('liste dei mazzi', `carta non trovata su Scryfall: ${n}`)
@@ -442,6 +443,15 @@ writeFileSync(
       [...new Set(l.cards.map((x) => cardIndex.get(listCard(cardName(x))?.name ?? cardName(x))))],
       copies(l, [1, 2]),
       copies(l, [3]),
+      // the copies, to make a deck from the list (basics)
+      Object.entries(
+        l.cards.reduce((m, x) => {
+          const i = cardIndex.get(listCard(cardName(x))?.name ?? cardName(x))
+          return { ...m, [i]: (m[i] ?? 0) + +(/^\d+/.exec(x)?.[0] ?? 1) }
+        }, {}),
+      )
+        .filter(([, n]) => n > 1)
+        .map(([i, n]) => [+i, n]),
     ]),
   }),
 )

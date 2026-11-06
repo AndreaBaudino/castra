@@ -1243,6 +1243,31 @@ button.kv.clickable b {
   z-index: 40;
 }
 
+.toast-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+}
+.toast-action .link {
+  color: var(--bg);
+  text-decoration: underline;
+}
+/* a list row with its own button beside the link (Moxfield lists: "Duplicate deck") */
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.row-actions > .event-row {
+  flex: 1;
+  min-width: 0;
+}
+.row-actions > .btn {
+  margin-right: 12px;
+  flex: none;
+}
+
 /* ---------- forms & sheets ---------- */
 .form {
   display: flex;

@@ -116,6 +116,9 @@ export function findMetaDeck(decks: MetaDeck[], commanderNames: string[]): MetaD
   )
 }
 
+/** As people call a commander: "Phelia" for "Phelia, Exuberant Shepherd", "Jeska / Yoshimaru" for partners. */
+export const nickName = (name: string) => shortName(name).replace(/,[^/]*/g, '')
+
 /** The name for lists: front faces only ("Ajani, Nacatl Pariah" for "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger"). */
 export const shortName = (name: string) =>
   name

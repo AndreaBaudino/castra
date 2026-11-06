@@ -22,7 +22,7 @@ import { ReportButton } from '../components/Feedback'
 import { META_FILTER_KEY, MetaFilters } from './Meta'
 import { MetaPie } from '../components/MetaPie'
 import { MetaInfoButton } from './MetaInfo'
-import { TypicalList } from './MetaCards'
+import { DuplicateDeck, TypicalList } from './MetaCards'
 import { type CircuitPrefs, MissingPage, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
 import type { Circuit, CircuitEvent, Player } from '../lib/circuit'
 import { commanderNames } from './Decks'
@@ -69,6 +69,7 @@ export function CommanderPage({
   openDeck,
   openCommander,
   openCard,
+  onCreateDeck,
 }: {
   dataset: MetaDataset | null
   name: string
@@ -79,6 +80,7 @@ export function CommanderPage({
   openDeck: (id: string) => void
   openCommander: (name: string) => void
   openCard: (name: string) => void
+  onCreateDeck?: (d: Deck) => void
 }) {
   const { t, lang } = useI18n()
   const [filter, setFilter] = useStoredState<MetaFilter>(META_FILTER_KEY, ALL)
@@ -347,7 +349,7 @@ export function CommanderPage({
                   {view.lists.map((e, i) => {
                     const x = dataset.tournaments[e.t]
                     return (
-                      <li key={i}>
+                      <li key={i} className="row-actions">
                         <a className="event-row" href={e.list!} target="_blank" rel="noreferrer">
                           <div className="event-main">
                             <span className="ellipsis">{e.player ?? '—'}</span>
@@ -357,6 +359,7 @@ export function CommanderPage({
                           </div>
                           <Icon name="external" size={16} />
                         </a>
+                        {onCreateDeck && <DuplicateDeck dataset={dataset} entry={e} onCreate={onCreateDeck} openDeck={openDeck} />}
                       </li>
                     )
                   })}

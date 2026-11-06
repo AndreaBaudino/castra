@@ -73,7 +73,8 @@ lista.
 - `public/decklists.json`, pubblicato con l'app e letto solo dalle pagine delle carte e dei comandanti: le carte con
   la loro identità di colore e il tipo (dalla faccia frontale: non terra, terra, terra staple, carta modale; da
   Scryfall, una volta sola, salvati in `scripts/meta/cards.json`) e, per ogni lista dell'archivio nello stesso ordine,
-  il comandante, le sue carte, quante terre e quante carte modali ha (contando le copie). Fisso come l'archivio.
+  il comandante, le sue carte, quante terre e quante carte modali ha (contando le copie) e le carte con più di una
+  copia. Fisso come l'archivio.
 - La pagina: Circuito → **Carte** (`src/views/MetaCards.tsx`, conti in `src/lib/decklists.ts`), per ora solo per gli
   admin. Stessi filtri del Meta, più colori della carta (il bianco: le carte con il bianco; incolore: le carte
   incolori), "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
@@ -114,6 +115,11 @@ lista.
   del circuito, "Come mai non le giochi?" (le must have e quasi sempre che mancano) e "Le tue pet card" (le carte non
   terre in al massimo il 5% delle presenze del comandante, o in nessuna). Le carte si riconoscono dalla faccia
   frontale; il collegamento apre le carte più giocate del comandante, ogni carta la sua scheda.
+- Nella pagina del comandante, nelle **Liste Moxfield**, per ora solo per gli admin, **Duplica mazzo**
+  (`DuplicateDeck`, mazzo da `deckOfList`): solo accanto ai link che sono la lista dell'archivio di quell'iscrizione
+  (collegamento diretto, non un'estensione). Crea un mazzo in Mazzi con le carte e le copie salvate il 5/11 (non
+  rilegge Moxfield; i dati delle carte da Scryfall, come per un import) e il nome "Comandante di Giocatore". Le liste
+  dell'archivio non sono sempre di 99 carte (41 su 304, da 92 a 106): il mazzo è com'era su Moxfield.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
 

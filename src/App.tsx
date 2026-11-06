@@ -433,6 +433,7 @@ export default function App() {
                 openDeck={(id) => go('decks', id)}
                 openCommander={openCommander}
                 openCard={openMetaCard}
+                onCreateDeck={(d) => setDecks((ds) => [d, ...ds])}
               />
             ) : metaSub === 'x' ? (
               <CardPage name={metaArgs[0]} metaDecks={meta.decks} dataset={dataset} onBack={() => history.back()} openCommander={openCommander} />
