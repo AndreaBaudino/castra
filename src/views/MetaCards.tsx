@@ -292,7 +292,7 @@ export function TypicalList({
         <p className="muted small no-margin">{t('typical.singleBy', { p: x.players.join(', '), n: x.entries })}</p>
       </section>
     )
-  const group = (key: 'must' | 'often' | 'tech' | 'picked', note: string, list: TypicalCard[], lands = false) =>
+  const group = (key: 'must' | 'often' | 'tech' | 'picked' | 'list', note: string, list: TypicalCard[], lands = false) =>
     list.length > 0 && (
       <section className="group">
         <div className="group-title">
@@ -302,14 +302,21 @@ export function TypicalList({
         <ul className="card-list">
           {(open[key] ? list : list.slice(0, SHOW)).map((c) => (
             <li key={c.id} className="event-row" onClick={() => openCard(c.name)}>
-              <div className="event-main">
-                <span className="ellipsis">{c.name}</span>
-                <span className="muted small">
-                  {t(lands ? 'typical.of' : 'typical.row', { n: c.decks, of: x.entries })} · {t('cardsMeta.nLists', { n: c.lists })}
-                  {c.rest != null && ` · ${t('typical.rest', { p: pct(c.rest, 0) })}`}
-                </span>
-              </div>
-              <b>{pct(c.share, 0)}</b>
+              {key === 'list' ? (
+                <span className="ellipsis grow">{c.name}</span>
+              ) : (
+                <>
+                  <div className="event-main">
+                    <span className="ellipsis">{c.name}</span>
+                    <span className="muted small">
+                      {t(lands ? 'typical.of' : 'typical.row', { n: c.decks, of: x.entries })} ·{' '}
+                      {t('cardsMeta.nLists', { n: c.lists })}
+                      {c.rest != null && ` · ${t('typical.rest', { p: pct(c.rest, 0) })}`}
+                    </span>
+                  </div>
+                  <b>{pct(c.share, 0)}</b>
+                </>
+              )}
             </li>
           ))}
           {list.length > SHOW && (
@@ -351,12 +358,17 @@ export function TypicalList({
           </p>
         )}
       </section>
-      <div className="typical-cols">
-        {group('must', t('typical.mustNote'), x.must)}
-        {group('often', t('typical.oftenNote'), x.often)}
-        {group('tech', t(x.tech > 0.2 ? 'typical.techNote30' : 'typical.techNote'), x.choices)}
-        {group('picked', t('typical.pickedNote'), x.picked, true)}
-      </div>
+      {x.lists === 1 ? (
+        // one list: every card is at 100%, so just its cards
+        group('list', t('typical.listNote'), x.must)
+      ) : (
+        <div className="typical-cols">
+          {group('must', t('typical.mustNote'), x.must)}
+          {group('often', t('typical.oftenNote'), x.often)}
+          {group('tech', t(x.tech > 0.2 ? 'typical.techNote30' : 'typical.techNote'), x.choices)}
+          {group('picked', t('typical.pickedNote'), x.picked, true)}
+        </div>
+      )}
     </>
   )
 }

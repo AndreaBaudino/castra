@@ -98,8 +98,9 @@ lista.
     restano nei gruppi delle carte, con il nome intero;
   - toccando una carta (o una terra) si apre la sua scheda, con "Nel circuito";
   - con una sola lista diversa (anche portata da più giocatori con lo stesso link): senza filtri, al posto dei dati un
-    avviso con chi l'ha portata e in quante presenze; con un filtro (una lega piccola, un tipo di torneo…) i dati si
-    vedono lo stesso, con un avviso che dice di chi è la lista e che non è "cosa si gioca di solito". Senza liste la
+    avviso con chi l'ha portata e in quante presenze; con un filtro (una lega piccola, un tipo di torneo…) si vedono
+    le terre in media e, al posto dei gruppi (sarebbe tutto "must have"), l'elenco delle carte della lista senza
+    percentuali, con un avviso che dice di chi è e che non è "cosa si gioca di solito". Senza liste la
     sezione non compare.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
