@@ -33,15 +33,17 @@ export default function MetaCards({
   const [lands, setLands] = useStoredState('cc.meta.cardLands', false)
   const [min, setMin] = useStoredState('cc.meta.cardMin', 20)
   const stats = useMemo(() => (dl ? cardStats(dataset, filter, dl) : null), [dataset, filter, dl])
-  const list = useMemo(() => {
+  const [list, belowMin] = useMemo(() => {
     const nq = normName(q)
-    return (stats?.cards ?? []).filter(
+    const found = (stats?.cards ?? []).filter(
       (c) =>
-        c.of >= min &&
         (lands || !c.land) &&
         (!nq || normName(c.name).includes(nq)) &&
         (colors === 'C' ? !c.colors : [...colors].every((x) => c.colors.includes(x))),
     )
+    const kept = found.filter((c) => c.of >= min)
+    // few lists in the filters (a small league): rather all the cards than none
+    return kept.length ? [kept, false] : [found, found.length > 0 && min > 0]
   }, [stats, q, colors, lands, min])
 
   if (dl === undefined) return <div className="notice">{t('cardsMeta.loading')}</div>
@@ -140,7 +142,9 @@ export default function MetaCards({
         {!list.length && <li className="empty">{t(stats.entries ? 'cardsMeta.noResults' : 'cardsMeta.none')}</li>}
       </ol>
       {list.length > 200 && <p className="muted small center">{t('cardsMeta.capped', { n: list.length })}</p>}
-      {min > 0 && list.length > 0 && <p className="muted small center">{t('cardsMeta.minNote', { n: min })}</p>}
+      {min > 0 && list.length > 0 && (
+        <p className="muted small center">{t(belowMin ? 'cardsMeta.belowMin' : 'cardsMeta.minNote', { n: min })}</p>
+      )}
     </>
   )
 }
@@ -251,8 +255,8 @@ export function CircuitUse({
   )
 }
 
-/** A commander's typical list, in its page: with the page's filters, for the admins only for now. Nothing without lists.
- * A card opens its page. */
+/** A commander's typical list, in its page: with the page's filters, for the admins only for now. Nothing without lists;
+ * with a single one, its cards and a warning. A card opens its page. */
 export function TypicalList({
   dataset,
   filter,
@@ -279,14 +283,6 @@ export function TypicalList({
       </span>
     </div>
   )
-  if (x.lists < 2)
-    return (
-      <section className="card">
-        {title}
-        <p className="no-margin">{t('typical.single')}</p>
-        <p className="muted small no-margin">{t('typical.singleBy', { p: x.players.join(', '), n: x.entries })}</p>
-      </section>
-    )
   const group = (key: 'must' | 'often' | 'tech' | 'picked', note: string, list: TypicalCard[], lands = false) =>
     list.length > 0 && (
       <section className="group">
@@ -330,7 +326,8 @@ export function TypicalList({
         <div className="kv">
           <span>{t('typical.lands')}</span>
           <b>
-            {num(x.lands + x.modal)} <span className="muted">({t('typical.range', { lo: x.lo, hi: x.hi })})</span>
+            {num(x.lands + x.modal)}{' '}
+            {x.lo < x.hi && <span className="muted">({t('typical.range', { lo: x.lo, hi: x.hi })})</span>}
           </b>
         </div>
         {x.modal > 0 && (
@@ -338,6 +335,11 @@ export function TypicalList({
             <span className="muted small">{t('typical.split', { l: num(x.lands), m: num(x.modal) })}</span>
             <span className="muted small">{t('typical.modalNote')}</span>
           </>
+        )}
+        {x.lists === 1 && (
+          <p className="notice no-margin">
+            {t('typical.single')} {t('typical.singleBy', { p: x.players.join(', '), n: x.entries })}
+          </p>
         )}
       </section>
       <div className="typical-cols">
