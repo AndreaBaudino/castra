@@ -151,3 +151,50 @@ lista.
 - Il build stampa i totali (dirette, estese, senza lista, orfani): al primo giro devono tornare con quelli qui sopra
   (647, 637, 1284, 959), a parità di fogli.
 - Area admin: copertura e collegamenti orfani nello stato dell'ultimo aggiornamento.
+
+## 8. Le liste di Castra (decise il 6/11/2026, da scrivere)
+
+Le liste dei tornei giocati in app con un mazzo di Castra. Mockup sul canvas di progetto, riga "Liste di Castra: la
+foto al turno 1".
+
+### Iscrizione
+- Una sola decklist per iscrizione. Con un mazzo di Castra la decklist è il mazzo: il campo del link Moxfield non
+  c'è, e un link già dato si toglie salvando. Senza mazzo, il link Moxfield come oggi.
+- Con un mazzo scelto il comandante viene dal mazzo e non si cambia a mano: per cambiarlo si sceglie un altro mazzo.
+- Nessun avviso sulla lista pubblica: chi usa un mazzo di Castra sa che la lista finisce nel report.
+
+### La foto
+- È una copia della lista, separata dal mazzo: le carte (comandante e 99, con copie ed edizione) com'erano
+  all'inizio del turno 1. Dopo, il giocatore può cambiare o cancellare il mazzo: la foto resta com'è.
+- La scrive l'app del giocatore, che è l'unica a leggere il mazzo: all'iscrizione e a ogni modifica di quel mazzo
+  finché le iscrizioni sono aperte. L'avvio del turno 1 la blocca (regole di Firestore): vale l'ultima versione
+  arrivata prima. Chi si iscrive in ritardo, a turni iniziati, la fotografa all'iscrizione, bloccata da subito.
+- Dopo il turno 1 nessuno la cambia, neanche il TO: se un deck check trova un'altra lista, il TO lo scrive nelle
+  note.
+- Sta nel documento privato dell'iscrizione (`players/{giocatore}/private/deck`), come il link Moxfield: fino alla
+  fine del torneo la vedono il giocatore e i TO (anche per un deck check), poi tutti.
+- I tornei in app già finiti prima di questa novità non hanno foto e non se ne ricostruiscono (al 6/11 non ce ne
+  sono).
+
+### Dove si vede
+- La pagina della lista è la pagina di un mazzo in sola lettura (come un mazzo condiviso): giocatore, comandante,
+  torneo e risultato, "Duplica mazzo", le viste Lista, Pile e Griglia del deckbuilder, toccando una carta la sua
+  scheda.
+- Nel report (colonna della decklist del foglio) c'è il link a quella pagina al posto del link Moxfield.
+- Nell'elenco degli iscritti del TO l'icona della decklist è quella del mazzo; dal turno 1 il TO apre la lista.
+- Nella classifica finale "Lista" apre la pagina nell'app; con Moxfield si apre Moxfield come oggi.
+- Nella pagina del comandante "Liste Moxfield" diventa "Liste": quelle di Castra hanno l'etichetta "Castra", si
+  aprono nell'app e hanno sempre "Duplica mazzo".
+
+### Nelle statistiche
+- Il build della notte legge le foto da Firestore (senza credenziali, pubbliche a torneo finito) per i tornei finiti
+  e pubblicati sul foglio, e le aggiunge a un secondo archivio sul ramo `meta-data`, che cresce soltanto: una foto
+  entrata non cambia più. L'archivio Moxfield (punto 1) non si tocca; il file per l'app li unisce, Moxfield prima e
+  Castra in fondo, così gli indici già scritti non si spostano.
+- Il collegamento viene da Firestore (torneo e giocatore), non dal link scritto nel foglio.
+- Prima delle regole del punto 3: **0. Lista di Castra**: un'iscrizione con la foto prende quella, prima del
+  collegamento diretto e dell'estensione. Vale per ogni anno, non solo per il 2026.
+- La foto vale solo per il suo torneo: non si estende ad altre iscrizioni dello stesso giocatore.
+- Un mazzo che non passava il controllo dell'app all'iscrizione (`invalid`) resta nel report ma non conta nelle
+  statistiche delle carte.
+- Si conta come al punto 4.
