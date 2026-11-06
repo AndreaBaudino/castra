@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
 import { cardStats, cardUse, type CommanderUse, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
-import { type MetaDataset, type MetaFilter, normName, shortName } from '../lib/meta'
+import { type MetaDataset, type MetaFilter, isFiltered, normName, shortName } from '../lib/meta'
 import { symbolUrl } from '../lib/scryfall'
 import { useStoredState } from '../lib/storage'
 import { CardsInfoButton, TypicalInfoButton } from './MetaInfo'
@@ -43,8 +43,8 @@ export default function MetaCards({
     )
     const kept = found.filter((c) => c.of >= min)
     // few lists in the filters (a small league): rather all the cards than none
-    return kept.length ? [kept, false] : [found, found.length > 0 && min > 0]
-  }, [stats, q, colors, lands, min])
+    return kept.length || !isFiltered(filter) ? [kept, false] : [found, found.length > 0 && min > 0]
+  }, [stats, q, colors, lands, min, filter])
 
   if (dl === undefined) return <div className="notice">{t('cardsMeta.loading')}</div>
   if (!dl || !stats) return <div className="notice warn">{t('cardsMeta.error')}</div>
@@ -256,7 +256,7 @@ export function CircuitUse({
 }
 
 /** A commander's typical list, in its page: with the page's filters, for the admins only for now. Nothing without lists;
- * with a single one, its cards and a warning. A card opens its page. */
+ * with a single one, who brought it (and its cards, with filters). A card opens its page. */
 export function TypicalList({
   dataset,
   filter,
@@ -283,6 +283,15 @@ export function TypicalList({
       </span>
     </div>
   )
+  // a single list: only who brought it, unless the filters left just one (a small league)
+  if (x.lists < 2 && !isFiltered(filter))
+    return (
+      <section className="card">
+        {title}
+        <p className="no-margin">{t('typical.single')}</p>
+        <p className="muted small no-margin">{t('typical.singleBy', { p: x.players.join(', '), n: x.entries })}</p>
+      </section>
+    )
   const group = (key: 'must' | 'often' | 'tech' | 'picked', note: string, list: TypicalCard[], lands = false) =>
     list.length > 0 && (
       <section className="group">
@@ -338,7 +347,7 @@ export function TypicalList({
         )}
         {x.lists === 1 && (
           <p className="notice no-margin">
-            {t('typical.single')} {t('typical.singleBy', { p: x.players.join(', '), n: x.entries })}
+            {t('typical.singleHere')} {t('typical.singleBy', { p: x.players.join(', '), n: x.entries })}
           </p>
         )}
       </section>

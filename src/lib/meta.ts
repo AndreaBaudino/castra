@@ -133,6 +133,7 @@ export interface MetaFilter {
   maxPlayers?: number // …and at most this many
 }
 export const ALL: MetaFilter = { season: '', kind: '', league: '' }
+export const isFiltered = (f: MetaFilter) => !!(f.season || f.kind || f.league || f.minPlayers || f.maxPlayers)
 
 export const inFilter = (t: MetaTournament, f: MetaFilter) =>
   (!f.season || t.season === f.season) &&

@@ -77,7 +77,7 @@ lista.
 - La pagina: Circuito → **Carte** (`src/views/MetaCards.tsx`, conti in `src/lib/decklists.ts`), per ora solo per gli
   admin. Stessi filtri del Meta, più colori della carta (il bianco: le carte con il bianco; incolore: le carte
   incolori), "Senza terre" (scelta di partenza) e "Min. mazzi" (20: nasconde le carte che meno di 20 mazzi possono
-  giocare; se con i filtri nessuna carta ci arriva, si vedono tutte con un avviso). Toccando una carta si apre la sua scheda (`#meta/x~<carta>`), accanto alla lista sul computer.
+  giocare; con un filtro attivo, se nessuna carta ci arriva, si vedono tutte con un avviso). Toccando una carta si apre la sua scheda (`#meta/x~<carta>`), accanto alla lista sul computer.
 - Nella scheda di ogni carta (dalla scheda Carte o dalla ricerca carte), per ora solo per gli admin, la sezione
   **Nel circuito** (`CircuitUse`, conti in `cardUse`): con i filtri del Circuito, scritti sotto il titolo, la
   percentuale, le presenze e le liste; "Chi la gioca" (i comandanti, 5 e poi tutti) e "Potrebbero giocarla, ma no"
@@ -97,9 +97,10 @@ lista.
     quelle che si trasformano, come Legion's Landing, che non si giocano come terra). Contano nelle terre in media e
     restano nei gruppi delle carte, con il nome intero;
   - toccando una carta (o una terra) si apre la sua scheda, con "Nel circuito";
-  - i dati si vedono sempre, anche con pochissime liste (una lega piccola): con una sola lista diversa (anche portata
-    da più giocatori con lo stesso link) i gruppi mostrano le sue carte e un avviso dice di chi è, in quante presenze,
-    e che non è "cosa si gioca di solito"; senza liste la sezione non compare.
+  - con una sola lista diversa (anche portata da più giocatori con lo stesso link): senza filtri, al posto dei dati un
+    avviso con chi l'ha portata e in quante presenze; con un filtro (una lega piccola, un tipo di torneo…) i dati si
+    vedono lo stesso, con un avviso che dice di chi è la lista e che non è "cosa si gioca di solito". Senza liste la
+    sezione non compare.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli
   orfani sono anche negli avvisi, uno per uno.
 
