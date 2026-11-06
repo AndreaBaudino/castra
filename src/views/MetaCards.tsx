@@ -120,7 +120,7 @@ export default function MetaCards({
               <span className="rank">{i + 1}</span>
               <div className="meta-name">
                 <div className="name-line">
-                  <span className="ellipsis">{shortName(c.name)}</span>
+                  <span className="ellipsis">{c.name}</span>
                 </div>
                 <div className="sub-line">
                   <Pips colors={c.colors} size={10} />
