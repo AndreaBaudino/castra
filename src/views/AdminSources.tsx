@@ -51,7 +51,7 @@ function UpdateStatus({ status, names }: { status: ReturnType<typeof useMetaStat
               <div>{s.ok ? t('sources.ok', { d: when! }) : t('sources.failed', { d: when! })}</div>
               {s.error && <div className="muted small">{s.error}</div>}
               {s.ok && s.years.map((y) => <div key={y.year} className="muted small">{t('sources.yearSummary', { y: y.year, t: y.t, e: y.e })}</div>)}
-              {s.ok && s.decklists && <div className="muted small">{t('sources.decklists', { ...s.decklists, n: s.decklists.orphans })}</div>}
+              {s.ok && s.decklists && <div className="muted small">{t('sources.decklists', { ...s.decklists, castra: s.decklists.castra ?? 0, n: s.decklists.orphans })}</div>}
             </div>
           </div>
           {s.failed.length > 0 && (

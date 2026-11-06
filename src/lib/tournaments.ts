@@ -5,7 +5,7 @@ import type { WriteBatch } from 'firebase/firestore'
 import { fmt } from './timer'
 import type { T } from '../i18n'
 import type { MetaDataset } from './meta'
-import type { Deck } from './decks'
+import { type Deck, exportDecklist } from './decks'
 import type { Match as Played } from './matches'
 import { NOTIFY_URL, PUBLISH_URL } from '../config'
 import { type Source, type SourceKind, isEvent } from './sources'
@@ -68,10 +68,16 @@ export interface Player {
 /** Whether the player gave their commander: maybe still secret. */
 export const hasCommander = (p: Player) => !!p.commander || !!p.secret
 
-/** What players/{key}/private/deck keeps: the decklist link and, until round 1, the commander. */
+/** What players/{key}/private/deck keeps: the decklist (a Moxfield link, or the photo of a deck of the app) and, until
+ * round 1, the commander. */
 export interface Private {
   link?: string
   commander?: string
+  // the photo (docs/liste-mazzi.md, 8): the deck as it was when round 1 started, apart from the deck itself
+  cards?: string // exportDecklist, without the sideboard
+  name?: string
+  at?: string // the deck's updatedAt when taken
+  invalid?: boolean // it failed the app's check
 }
 
 /** A match: matches/r{round}t{table}, the bye at table 0. */
@@ -118,6 +124,13 @@ export const unconfirmed = (m: TableMatch) => !!m.score && !!m.reportedBy && !m.
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 export const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => CODE_CHARS[b % 32]).join('')
 export const joinLink = (code: string) => `${location.origin}${location.pathname}#join~${code}`
+
+/** The page of a player's photographed list (#live/<tournament>@<player>), the link written in the sheet. */
+export const photoLink = (id: string, key: string) => `${location.origin}${location.pathname}#live/${encodeURIComponent(id)}@${encodeURIComponent(key)}`
+/** A link to a page of the app, opened in place (App.tsx) rather than in another tab. */
+export const isAppLink = (url: string) => url.startsWith(`${location.origin}${location.pathname}#`)
+/** The props of a link to a decklist: Moxfield in another tab, a photo in place. */
+export const listLinkProps = (url: string) => (isAppLink(url) ? { href: url } : { href: url, target: '_blank', rel: 'noreferrer' })
 
 /** One tournament for each sheet: the sheet, and for a league the stage. */
 export const tournamentId = (drive: string, stage?: number) => (stage ? `${drive}~${stage}` : drive)
@@ -587,12 +600,29 @@ export async function joinTournament(
   if (!existing) ping({ id, action: 'request', player: key })
 }
 
-/** The decklist link (null: none), private until the tournament is over. */
-export async function saveList(id: string, key: string, link: string | null) {
+/** The decklist link (null: none), private until the tournament is over: it takes the place of a photo. */
+export async function saveList(id: string, key: string, link: string | null, photo = false) {
   const { db, fs } = await fb()
+  const gone = fs.deleteField()
   // the same document keeps the secret commander
-  await fs.setDoc(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'), { link: link ?? fs.deleteField() }, { merge: true })
+  await fs.setDoc(
+    fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'),
+    { link: link ?? gone, ...(photo ? { cards: gone, name: gone, at: gone, invalid: gone } : {}) },
+    { merge: true },
+  )
   await fs.updateDoc(fs.doc(db, 'tournaments', id, 'players', key), { list: !!link })
+}
+
+/** The photo of the deck the player registered with: taken again at each change until round 1 locks it. */
+export async function savePhoto(id: string, key: string, deck: Deck, invalid: boolean) {
+  const { db, fs } = await fb()
+  const cards = exportDecklist({ ...deck, cards: deck.cards.filter((c) => c.section !== 'side') })
+  await fs.setDoc(
+    fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'),
+    { cards, name: deck.name, at: deck.updatedAt, invalid, link: fs.deleteField() },
+    { merge: true },
+  )
+  await fs.updateDoc(fs.doc(db, 'tournaments', id, 'players', key), { list: true })
 }
 
 /** The player's private document: their decklist and, until round 1, their commander. */
@@ -601,7 +631,11 @@ export async function loadPrivate(id: string, key: string) {
   return ((await fs.getDoc(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))).data() as Private | undefined) ?? {}
 }
 
-export const loadList = async (id: string, key: string) => (await loadPrivate(id, key)).link ?? null
+/** The decklist's link: Moxfield, or the page of the photo. */
+export const loadList = async (id: string, key: string) => {
+  const p = await loadPrivate(id, key)
+  return p.link ?? (p.cards ? photoLink(id, key) : null)
+}
 
 /** Every decklist given, by player: for the TOs, and for everyone once the tournament is over. */
 export async function loadLists(id: string, players: [string, Player][]) {

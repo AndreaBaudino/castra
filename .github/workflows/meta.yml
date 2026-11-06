@@ -61,6 +61,10 @@ jobs:
           if git cat-file -e FETCH_HEAD:meta.json 2>/dev/null; then
             git show FETCH_HEAD:meta.json > public/meta.json
           fi
+          # the photos of the decks of the app (docs/liste-mazzi.md, 8): an archive that only grows
+          if git cat-file -e FETCH_HEAD:decklists-castra.json 2>/dev/null; then
+            mkdir -p .meta-cache && git show FETCH_HEAD:decklists-castra.json > .meta-cache/decklists-castra.json
+          fi
           npm run meta
       # also when something failed: status.json tells the app's admin area how the update went
       - name: Publish to the meta-data branch
@@ -74,6 +78,9 @@ jobs:
           fi
           if [ "$BUILT" = success ]; then
             cp public/meta.json /tmp/out/meta.json
+            # the deck lists with the photos, read by the app (src/lib/decklists.ts), and the photos' archive
+            cp public/decklists.json /tmp/out/decklists.json
+            if [ -f .meta-cache/decklists-castra.json ]; then cp .meta-cache/decklists-castra.json /tmp/out/decklists-castra.json; fi
             # each year on its own too, as older app versions read it (meta-2026.json)
             node -e "for (const y of require('./public/meta.json').years) require('fs').writeFileSync('/tmp/out/meta-' + y.year + '.json', JSON.stringify(y))"
           fi

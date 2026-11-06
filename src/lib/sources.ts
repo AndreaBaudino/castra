@@ -104,7 +104,7 @@ export interface MetaStatus {
   aliases?: Record<string, { n: number; where: string[] }> // by correction id
   aliasOrigin?: 'firestore' | 'file' | null
   // entries given a deck list (docs/liste-mazzi.md): missing in reports from before the lists
-  decklists?: { year: number; direct: number; extended: number; none: number; orphans: number } | null
+  decklists?: { year: number; direct: number; extended: number; castra?: number; none: number; orphans: number } | null
 }
 
 /** A name the update couldn't place: a commander not on Scryfall (or read by its fuzzy search, `guess`), a player not

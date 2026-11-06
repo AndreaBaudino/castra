@@ -28,6 +28,7 @@ import {
   ranking,
   removePlayer,
   saveList,
+  savePhoto,
   setDrop,
   sideScore,
   timeLeft,
@@ -138,6 +139,11 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
   // their commander, secret until round 1: only they (and the TOs) read it
   const secret = useLiveDoc<Private>(mine?.secret && me ? `tournaments/${id}/players/${me}/private/deck` : null)
   const chosen = decks.find((d) => d.id === mine?.deck) // the deck of the app they registered with
+  // its photo follows the deck until round 1 locks it (docs/liste-mazzi.md, 8); a deck deleted leaves the last one
+  useEffect(() => {
+    if (tour?.status === 'open' && chosen && me && secret && secret.at !== chosen.updatedAt)
+      savePhoto(id, me, chosen, !isValid(checkDeck(chosen))).catch(() => {})
+  }, [tour?.status, chosen?.updatedAt, secret?.at]) // eslint-disable-line react-hooks/exhaustive-deps
   // once in, the card stays as one of the player's: the code would turn invalid at round 1
   useEffect(() => {
     if (typed && entered) close()
@@ -423,6 +429,7 @@ export function JoinSheet({
   const [cmd, setCmd] = useState('')
   const [link, setLink] = useState('')
   const [saved, setSaved] = useState('')
+  const [photo, setPhoto] = useState(false) // a photo saved: a Moxfield link, or no list, takes it off
   const [busy, setBusy] = useState(false)
   useEffect(() => {
     if (!open) return
@@ -430,6 +437,7 @@ export function JoinSheet({
     setCmd(mine?.commander ?? '')
     setLink('')
     setSaved('')
+    setPhoto(false)
     // the decklist, and the commander while it's secret
     if (mine?.list || mine?.secret)
       loadPrivate(id, me).then(
@@ -437,6 +445,7 @@ export function JoinSheet({
           if (p.commander && !mine?.commander) setCmd(p.commander)
           setLink(p.link ?? '')
           setSaved(p.link ?? '')
+          setPhoto(!!p.cards)
         },
         () => {},
       )
@@ -447,6 +456,10 @@ export function JoinSheet({
   useBanlist() // a newer banlist changes the check
   const chosen = decks.find((d) => d.id === deck)
   const check = chosen && checkDeck(chosen)
+  // with a deck of the app, the commander is the deck's and the decklist is its photo
+  const locked = !!chosen && commanderNames(chosen).length > 0
+  // partners in alphabetical order, as in the sheets
+  const commander = locked ? commanderNames(chosen).sort().join(' / ') : cmd.trim()
   const pick = (deckId: string) => {
     setDeck(deckId)
     const d = decks.find((x) => x.id === deckId)
@@ -456,8 +469,9 @@ export function JoinSheet({
   const save = async () => {
     setBusy(true)
     try {
-      await joinTournament(user, id, me, { name, commander: cmd.trim(), deck: deck || null, invalid: !!check && !isValid(check), verified }, !!mine)
-      if (clean !== saved) await saveList(id, me, clean || null)
+      await joinTournament(user, id, me, { name, commander, deck: deck || null, invalid: !!check && !isValid(check), verified }, !!mine)
+      if (chosen) await savePhoto(id, me, chosen, !!check && !isValid(check))
+      else if (clean !== saved || photo) await saveList(id, me, clean || null, photo)
       onClose()
       if (!mine) onJoined()
     } catch {
@@ -487,13 +501,24 @@ export function JoinSheet({
             {!isValid(check) && <p className="muted small no-margin">{t('join.badDeckHint')}</p>}
           </>
         )}
-        <CommanderInput value={cmd} onChange={setCmd} />
-        <label>
-          <span>{t('join.list')}</span>
-          <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://moxfield.com/decks/…" />
-          <span className={`field-hint ${badLink ? 'bad-text' : ''}`}>{t(badLink ? 'join.badList' : 'join.listHint')}</span>
-        </label>
-        <button className="btn primary" disabled={busy || !cmd.trim() || badLink} onClick={save}>
+        <CommanderInput value={locked ? commander : cmd} onChange={setCmd} locked={locked} />
+        {chosen ? (
+          <div className="field">
+            <span>{t('join.photo')}</span>
+            <div className="photo-row">
+              <Icon name="decks" size={18} />
+              <b className="ellipsis">{chosen.name}</b>
+            </div>
+            <span className="field-hint">{t('join.photoHint')}</span>
+          </div>
+        ) : (
+          <label>
+            <span>{t('join.list')}</span>
+            <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://moxfield.com/decks/…" />
+            <span className={`field-hint ${badLink ? 'bad-text' : ''}`}>{t(badLink ? 'join.badList' : 'join.listHint')}</span>
+          </label>
+        )}
+        <button className="btn primary" disabled={busy || !commander || (badLink && !chosen)} onClick={save}>
           {t(mine ? 'join.save' : verified ? 'join.register' : 'join.request')}
         </button>
       </div>

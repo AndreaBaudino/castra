@@ -14,6 +14,7 @@ import {
   tournamentStatus,
   tournamentTitle,
   unconfirmed,
+  listLinkProps,
   useLists,
   useNow,
   useTournament,
@@ -85,7 +86,7 @@ export function RankingList({ rows, onPick, lists, secret }: { rows: RankRow[]; 
             </span>
           </div>
           {lists?.get(r.id) && (
-            <a className="link small" href={lists.get(r.id)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+            <a className="link small" {...listLinkProps(lists.get(r.id)!)} onClick={(e) => e.stopPropagation()}>
               {t('live.list')}
             </a>
           )}

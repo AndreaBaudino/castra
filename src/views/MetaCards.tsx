@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Icon, Pips, pct } from '../components/ui'
-import { cardStats, cardUse, colorMatch, type CommanderUse, deckOfList, deckVsMeta, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
+import { cardStats, cardUse, colorMatch, type CommanderUse, deckOfList, deckVsMeta, hasLists, playerCards, type TypicalCard, typicalList, useDecklists } from '../lib/decklists'
 import { type MetaDataset, type MetaEntry, type MetaFilter, isFiltered, nickName, normName, shortName } from '../lib/meta'
 import type { Deck } from '../lib/decks'
 import { fetchCollection, requestKey, symbolUrl } from '../lib/scryfall'
@@ -55,7 +55,7 @@ export default function MetaCards({
 
   if (dl === undefined) return <div className="notice">{t('cardsMeta.loading')}</div>
   if (!dl || !stats) return <div className="notice warn">{t('cardsMeta.error')}</div>
-  if (dataset.year !== dl.year) return <div className="notice">{t('cardsMeta.otherYear', { y: dl.year })}</div>
+  if (!hasLists(dataset, dl)) return <div className="notice">{t('cardsMeta.otherYear', { y: (dl.years ?? [dl.year]).join(', ') })}</div>
 
   return (
     <>
@@ -231,8 +231,8 @@ export function CircuitUse({
           </span>
         </div>
         <span className="muted small">{t('cardsMeta.scope', { s: scope })}</span>
-        {dataset.year !== dl.year ? (
-          <p className="no-margin">{t('cardsMeta.otherYear', { y: dl.year })}</p>
+        {!hasLists(dataset, dl) ? (
+          <p className="no-margin">{t('cardsMeta.otherYear', { y: (dl.years ?? [dl.year]).join(', ') })}</p>
         ) : !use.of ? (
           <p className="no-margin">{t('cardsMeta.none')}</p>
         ) : !use.decks ? (
@@ -585,7 +585,7 @@ export function DuplicateDeck({
     const id = setTimeout(() => (setMade(null), setFailed(false)), 5000)
     return () => clearTimeout(id)
   }, [made, failed])
-  if (!dl || entry.deckList == null || entry.deckListGuessed || dataset.year !== dl.year) return null
+  if (!dl || entry.deckList == null || entry.deckList >= dl.lists.length || entry.deckListGuessed || !hasLists(dataset, dl)) return null
   const make = async () => {
     const d = deckOfList(dl, entry.deckList!, t('meta.dupName', { c: nickName(dataset.commanders[entry.cmd].name), p: entry.player ?? '' }))
     setBusy(true)

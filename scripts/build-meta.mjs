@@ -14,7 +14,7 @@ import ExcelJS from 'exceljs'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { aliasLookup, commanderKey, loadAliases, playerKey } from './meta/aliases.mjs'
 import { firestoreDocs } from './meta/firestore.mjs'
-import { assignLists, cardName } from './meta/decklists.mjs'
+import { assignLists, cardName, givePhotos } from './meta/decklists.mjs'
 import { pairingsOf } from './meta/pairings.mjs'
 
 const dir = new URL('./meta/', import.meta.url)
@@ -315,13 +315,30 @@ await resolveCards(listCards.map(frontFace))
 
 await resolveCards(tables.flatMap(({ rows, ctx }) => rows.flatMap((r) => (r.commander ? splitPartners(r.commander, ctx, false).map(frontFace) : []))))
 
+// the photos of the decks of the app, taken at round 1 of the tournaments run in it (docs/liste-mazzi.md, 8): a second
+// archive that only grows, kept on the meta-data branch (the nightly workflow brings it here and back)
+const photoUrl = new URL('.meta-cache/decklists-castra.json', root)
+const photoArchive = existsSync(photoUrl) ? readJson(photoUrl) : { v: 1, lists: [] }
+const archived = new Set(photoArchive.lists.map((l) => l.id))
+const photos = new Map() // tournament id in the app → player key → { cards, name, at, invalid }
+
 // who played whom: only the tournaments run in the app know it (docs/tornei.md), once their results are in the sheet.
 // The tournament's id is its sheet, and stage for the leagues.
 const played = new Map()
 let playedFailed = false
 try {
-  for (const x of await firestoreDocs('tournaments'))
-    if (x.status === 'done' && (x.published || x.filed)) played.set(x.id, await firestoreDocs(`tournaments/${x.id}/matches`))
+  for (const x of await firestoreDocs('tournaments')) {
+    if (x.status !== 'done' || !(x.published || x.filed)) continue
+    played.set(x.id, await firestoreDocs(`tournaments/${x.id}/matches`))
+    if (archived.has(x.id)) continue // its photos can't change once round 1 started
+    const mine = new Map()
+    for (const p of await firestoreDocs(`tournaments/${x.id}/players`)) {
+      if (!p.list) continue
+      const d = (await firestoreDocs(`tournaments/${x.id}/players/${p.id}/private`)).find((d) => d.id === 'deck')
+      if (d?.cards) mine.set(p.id, d)
+    }
+    photos.set(x.id, mine)
+  }
 } catch (e) {
   playedFailed = true
   warn('tornei in app', `match non letti da Firestore (${e.message}): restano quelli già pubblicati`)
@@ -360,16 +377,27 @@ function build(tables) {
 }
 const yearList = [...new Set(tables.map((x) => x.year))].sort((a, b) => b - a)
 const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.year === year)) }))
-// each entry of the lists' year with a list gets two more fields: [..., list index, 1 when taken by extension]
+// the new photos join their archive, under the commander of the entry they belong to; never one already there
+const appOf = new Map(tables.map((x) => [x.t.id, x.app]))
+const photoAt = givePhotos(photoArchive, photos, built.map((y) => ({ ...y, app: y.t.map((t) => appOf.get(t.id)) })), playerKey)
+
+// each entry with a list gets two more fields: [..., list index, 1 when taken by extension]. A photo first, for any
+// year (a deck that failed the app's check: no list at all); then, for the archive's year, the Moxfield lists
 let listReport = null
-for (const y of built.filter((y) => y.year === listYear)) {
+built.forEach((y, yi) => {
+  const own = photoAt[yi]
   const { lists, orphans } = assignLists(archive, y.year, y.t, y.c, y.e, playerKey)
-  lists.forEach((x, i) => x && y.e[i].push(...x))
-  const direct = lists.filter((x) => x && !x[1]).length
-  const extended = lists.filter((x) => x?.[1]).length
-  listReport = { year: listYear, direct, extended, none: y.e.length - direct - extended, orphans: orphans.length }
+  y.e.forEach((x, i) => {
+    if (own[i] == null) return lists[i] && x.push(...lists[i])
+    if (!photoArchive.lists[own[i]].invalid) x.push(archive.lists.length + own[i], 0)
+  })
+  if (y.year !== listYear) return
+  const direct = lists.filter((x, i) => x && !x[1] && own[i] == null).length
+  const extended = lists.filter((x, i) => x?.[1] && own[i] == null).length
+  const castra = own.filter((x) => x != null).length
+  listReport = { year: listYear, direct, extended, castra, none: y.e.length - direct - extended - castra, orphans: orphans.length }
   for (const o of orphans) warn('liste dei mazzi', `iscrizione non più trovata con il suo comandante: ${o}`)
-}
+})
 // players missing from their year's circuit leaderboard: usually a typo, fixed with an alias. The leaderboard sheet of
 // each year is on Firestore (circuits/{year}, set from the app's admin area); 2026's is also in src/config.ts.
 async function circuitSheets() {
@@ -421,7 +449,9 @@ writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
 // Kind, by the front face: 0 not a land, 1 a land, 2 a staple land (basic, fetch, or making 2 to 4 colors), 3 a modal
 // card with a land on the back. Each list: [commander, its cards, lands, modal cards, [card, copies] when more than 1],
 // lands and modal cards counting copies.
-const names = [...new Set(listCards.map((n) => listCard(n)?.name ?? n))].sort()
+const photoCardNames = photoArchive.lists.flatMap((l) => l.cards.map(cardName))
+await resolveCards(photoCardNames.map(frontFace))
+const names = [...new Set([...listCards, ...photoCardNames].map((n) => listCard(n)?.name ?? n))].sort()
 const cardIndex = new Map(names.map((n, i) => [n, i]))
 for (const n of names) if (!listCard(n)) warn('liste dei mazzi', `carta non trovata su Scryfall: ${n}`)
 function kindOf(c) {
@@ -436,8 +466,10 @@ writeFileSync(
   JSON.stringify({
     v: 2,
     year: listYear,
+    years: [...new Set([listYear, ...photoArchive.lists.map((l) => l.year)])].sort(),
     cards: names.map((n) => [n, listCard(n)?.colors ?? null, kindOf(listCard(n))]),
-    lists: archive.lists.map((l) => [
+    // the photos after the Moxfield lists: the indexes already given don't move
+    lists: [...archive.lists, ...photoArchive.lists].map((l) => [
       l.commander,
       // a set: two names of one card ("A-Teferi") count once
       [...new Set(l.cards.map((x) => cardIndex.get(listCard(cardName(x))?.name ?? cardName(x))))],
@@ -456,6 +488,7 @@ writeFileSync(
   }),
 )
 writeFileSync(cardsUrl, JSON.stringify(Object.fromEntries(Object.entries(cards).sort()), null, 1) + '\n')
+if (existsSync(new URL('.meta-cache/', root))) writeFileSync(photoUrl, JSON.stringify(photoArchive))
 
 // for the update's report (scripts/meta-status.mjs)
 const summary = years.map((y) => ({ year: y.year, t: y.t.length, e: y.e.length, c: y.c.length }))
@@ -471,7 +504,8 @@ for (const y of years) console.log(`${y.year}: ${y.t.length} tornei, ${y.e.lengt
 const unused = aliases.list.filter((a) => !usage[a.id]).length
 console.log(`Correzioni (${aliases.origin === 'firestore' ? 'Firestore' : 'aliases.json'}): ${aliases.list.length}, ${unused} non usate`)
 if (listReport)
-  console.log(`Liste dei mazzi ${listReport.year}: ${listReport.direct} iscrizioni dirette, ${listReport.extended} estese, ${listReport.none} senza lista, ${listReport.orphans} orfane`)
+  console.log(`Liste dei mazzi ${listReport.year}: ${listReport.direct} iscrizioni dirette, ${listReport.extended} estese, ${listReport.castra} di Castra, ${listReport.none} senza lista, ${listReport.orphans} orfane`)
+console.log(`Liste di Castra: ${photoArchive.lists.length}`)
 if (issueList.length)
   console.log(`\nNomi da correggere (${issueList.length}):\n- ${issueList.map((x) => `${x.kind === 'player' ? 'giocatore' : 'comandante'} "${x.name}"${x.guess ? ` (forse ${x.guess})` : ''}: ${x.where.slice(0, 3).join(', ')}`).join('\n- ')}`)
 if (warnings.length) console.log(`\nDa controllare (${warnings.length}):\n- ${warnings.join('\n- ')}`)

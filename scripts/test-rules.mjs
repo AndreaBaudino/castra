@@ -262,6 +262,13 @@ await allowed('the TO reads a decklist', getDoc(list(gina, 'nina')))
 await allowed('the player reads their decklist', getDoc(list(lea, 'nina')))
 await denied('another player reads it during the tournament', getDoc(list(kim, 'nina')))
 await denied('a spectator reads it during the tournament', getDoc(list(guest, 'nina')))
+// the photo of a deck of the app (src/lib/tournaments.ts savePhoto), in place of the link
+const PHOTO = { cards: 'Commander\n1 Kinnan, Bonder Prodigy\n\nDeck\n1 Sol Ring (C21) 263', name: 'Kinnan di Nina', at: AT, invalid: false }
+await allowed('the photo of your deck, before round 1', setDoc(list(lea, 'nina'), { ...PHOTO, link: deleteField() }, { merge: true }))
+await denied("the TO writing a player's photo", setDoc(list(gina, 'nina'), { cards: '1 Sol Ring' }, { merge: true }))
+await denied('a photo for someone else', setDoc(list(kim, 'nina'), PHOTO, { merge: true }))
+await denied('a photo too long', setDoc(list(lea, 'nina'), { cards: 'x'.repeat(20001) }, { merge: true }))
+await denied('a photo with a check that is not true or false', setDoc(list(lea, 'nina'), { invalid: 'no' }, { merge: true }))
 // the TO confirms a waiting player and verifies their claim, in one batch (src/lib/tournaments.ts confirmPlayer)
 const confirm = (db, key, by, more = {}) => {
   const b = writeBatch(db)
@@ -297,6 +304,10 @@ await allowed(
     await b.commit()
   })(),
 )
+await denied('changing your photo once round 1 started', setDoc(list(lea, 'nina'), { cards: '1 Sol Ring' }, { merge: true }))
+await denied('taking the photo off once round 1 started', setDoc(list(lea, 'nina'), { link: MOX, cards: deleteField() }, { merge: true }))
+await denied('deleting your decklist once round 1 started', deleteDoc(list(lea, 'nina')))
+await allowed('the TO reads the photo, for a deck check', getDoc(list(gina, 'nina')))
 const r1 = doc(gina, 'tournaments', STAGE, 'matches', 'r1t1')
 await allowed('a result, by the TO', updateDoc(r1, { score: [2, 1, 0] }))
 await allowed('an intentional draw', updateDoc(r1, { score: [0, 0, 0] }))

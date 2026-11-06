@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { playerKey } from './aliases.mjs'
-import { assignLists, cardName } from './decklists.mjs'
+import { assignLists, cardName, givePhotos, photoCards } from './decklists.mjs'
 
 // The rules of docs/liste-mazzi.md on a small year shaped as the real one: tournaments, commanders and entries as in
 // meta.json ([tournament, player, commander, place, w, l, d, bye, link]).
@@ -82,4 +82,57 @@ describe('assignLists', () => {
 it('cardName drops the quantity', () => {
   expect(cardName('1 Brazen Borrower // Petty Theft')).toBe('Brazen Borrower // Petty Theft')
   expect(cardName('12 Snow-Covered Island')).toBe('Snow-Covered Island')
+})
+
+describe('the photos of the decks of the app', () => {
+  it('keep the 99 as the archive writes them: no commander, no headers, no edition', () => {
+    const text = 'Commander\n1 Phelia, Exuberant Shepherd (MH3) 39\n\nDeck\n1 Sol Ring (C21) 263\n16 Snow-Covered Plains (KHM) 276\n1 Fire // Ice\n1 Mother of Runes'
+    expect(photoCards(text)).toEqual(['1 Sol Ring', '16 Snow-Covered Plains', '1 Fire // Ice', '1 Mother of Runes'])
+  })
+})
+
+describe('the photos given to the entries', () => {
+  const DECK = 'Commander\n1 Phelia, Exuberant Shepherd\n\nDeck\n1 Sol Ring (C21) 263\n1 Mother of Runes'
+  const year = (y, rows) => ({
+    year: y,
+    t: [{ id: 'l1-2027-02-06-savona' }, { id: 's1-genova-2' }],
+    app: ['drive1', 'drive2~2'],
+    c: [{ n: 'Phelia, Exuberant Shepherd' }, { n: 'Atraxa, Grand Unifier' }],
+    e: rows,
+  })
+  const photos = () =>
+    new Map([
+      ['drive1', new Map([['lorenzo misuri', { cards: DECK, name: 'Phelia di Lorenzo', at: 'x', invalid: false }]])],
+      ['drive2~2', new Map([['gian marco waltz', { cards: DECK, name: 'Prova', at: 'y', invalid: true }]])],
+    ])
+
+  it('a new photo joins the archive under its entry, for any year, and the entry gets it', () => {
+    const archive = { v: 1, lists: [] }
+    const y = year(2027, [row(0, 'Lorenzo Misuri', 0), row(1, 'Lorenzo Misuri', 0), row(0, 'Gian Marco Waltz', 1)])
+    expect(givePhotos(archive, photos(), [y], playerKey)).toEqual([[0, undefined, undefined]])
+    expect(archive.lists).toEqual([
+      { id: 'drive1', player: 'lorenzo misuri', year: 2027, commander: 'Phelia, Exuberant Shepherd', name: 'Phelia di Lorenzo', at: 'x', invalid: false, cards: ['1 Sol Ring', '1 Mother of Runes'] },
+    ])
+  })
+
+  it('a deck that failed the check is archived as such', () => {
+    const archive = { v: 1, lists: [] }
+    expect(givePhotos(archive, photos(), [year(2027, [row(1, 'Gian Marco Waltz', 1)])], playerKey)).toEqual([[0]])
+    expect(archive.lists[0].invalid).toBe(true)
+  })
+
+  it('a photo already in the archive never changes, and still goes to its entry', () => {
+    const old = { id: 'drive1', player: 'lorenzo misuri', year: 2027, commander: 'Phelia, Exuberant Shepherd', name: 'Prima', at: 'a', invalid: false, cards: ['1 Sol Ring'] }
+    const archive = { v: 1, lists: [old] }
+    expect(givePhotos(archive, photos(), [year(2027, [row(0, 'lorenzo misuri', 0)])], playerKey)).toEqual([[0]])
+    expect(archive.lists).toEqual([old])
+    // the next night, Firestore not read: the entry keeps its photo
+    expect(givePhotos(archive, new Map(), [year(2027, [row(0, 'Lorenzo Misuri', 0)])], playerKey)).toEqual([[0]])
+  })
+
+  it('no photo for an entry without a commander', () => {
+    const archive = { v: 1, lists: [] }
+    expect(givePhotos(archive, photos(), [year(2027, [row(0, 'Lorenzo Misuri', -1)])], playerKey)).toEqual([[undefined]])
+    expect(archive.lists).toEqual([])
+  })
 })

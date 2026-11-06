@@ -23,7 +23,8 @@ import { CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPa
 import { ComparePage, LeaguePage } from './views/CircuitMore'
 import { CardPage, CardsSearchPage } from './views/Cards'
 import Decks from './views/Decks'
-import DeckDetail, { type Author, SharedDeck } from './views/DeckDetail'
+import DeckDetail, { type Author, SharedDeck, TournamentPhoto } from './views/DeckDetail'
+import { isAppLink } from './lib/tournaments'
 import Stats from './views/Stats'
 import Account, { isAccountSection } from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
@@ -156,7 +157,19 @@ export default function App() {
       pending.current = null
     }
     addEventListener('popstate', onPop)
-    return () => removeEventListener('popstate', onPop)
+    // a link to a page of the app (a tournament's list, written in full for the sheets): opened in place, stacked
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as Element).closest?.('a')
+      if (!a || !isAppLink(a.href) || e.ctrlKey || e.metaKey || e.shiftKey) return
+      e.preventDefault()
+      const [tab, sub] = new URL(a.href).hash.slice(1).split('/')
+      go(tab as Tab, sub, true)
+    }
+    document.addEventListener('click', onClick)
+    return () => {
+      removeEventListener('popstate', onPop)
+      document.removeEventListener('click', onClick)
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // on a desktop the circuit and the decks show the list and the open page side by side: moving between pages
   // of the same list scrolls only the open page, so the list stays where it was
@@ -512,7 +525,23 @@ export default function App() {
             <OrganizerArea user={user} organizer={organizer} dataset={dataset} onBack={() => go('home')} openTournament={openRun} />
           ))}
         {route.tab === 'live' &&
-          (route.deck ? (
+          (route.deck?.includes('@') ? (
+            // live/<tournament>@<player>: a list photographed at round 1
+            <TournamentPhoto
+              key={route.deck}
+              id={decodeURIComponent(route.deck.split('@')[0])}
+              player={decodeURIComponent(route.deck.split('@')[1])}
+              authorOf={(key, name) => ({ name, photo: claims.get(key)?.photo, open: () => openCurrentPlayer(key) })}
+              onCreate={(d) => {
+                setDecks((ds) => [d, ...ds])
+                go('decks', d.id)
+              }}
+              metaDecks={meta.decks}
+              onBack={() => history.back()}
+              openCommander={openCommander}
+              openCard={openMetaCard}
+            />
+          ) : route.deck ? (
             <LivePage id={decodeURIComponent(route.deck)} me={me} onBack={() => history.back()} />
           ) : (
             <LiveList onBack={() => go('home')} open={openLive} />

@@ -51,3 +51,36 @@ function ranks(t) {
 
 /** "1 Lightning Bolt" → "Lightning Bolt" */
 export const cardName = (line) => line.replace(/^\d+x?\s+/, '')
+
+/** A photo of a deck of the app (src/lib/tournaments.ts savePhoto, written as exportDecklist) as the archive's lines:
+ * the 99 without the commander, "1 Sol Ring (C21) 263" → "1 Sol Ring". */
+export const photoCards = (text) =>
+  text
+    .split(/^Deck$/m)
+    .pop()
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => /^\d+\s/.test(l))
+    .map((l) => l.replace(/\s+\([A-Za-z0-9]{2,6}\)(?:\s+[\w★-]+)?$/, ''))
+
+/**
+ * The photos of the decks of the app (docs/liste-mazzi.md, 8) given to the entries. The new ones join `archive`
+ * (`photos`: tournament id in the app → player key → its private document), under the commander of their entry; one
+ * already there never changes. Returns, for each year, each entry's photo index in the archive, or undefined.
+ * `years`: as in meta.json, plus `app`, each tournament's id in the app; `key` is playerKey.
+ */
+export function givePhotos(archive, photos, years, key) {
+  const at = (id, player) => `${id}|${player}`
+  const have = new Set(archive.lists.map((l) => at(l.id, l.player)))
+  for (const y of years)
+    for (const x of y.e) {
+      const [id, player] = [y.app[x[0]], x[1] && key(x[1])]
+      const p = photos.get(id)?.get(player)
+      if (!p || x[2] < 0 || have.has(at(id, player))) continue
+      const c = y.c[x[2]].n
+      archive.lists.push({ id, player, year: y.year, commander: c, name: p.name ?? '', at: p.at ?? '', invalid: !!p.invalid, cards: photoCards(p.cards) })
+      have.add(at(id, player))
+    }
+  const index = new Map(archive.lists.map((l, i) => [at(l.id, l.player), i]))
+  return years.map((y) => y.e.map((x) => index.get(at(y.app[x[0]], x[1] && key(x[1])))))
+}

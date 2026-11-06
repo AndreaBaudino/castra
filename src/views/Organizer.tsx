@@ -25,6 +25,7 @@ import {
   finishTournament,
   hasCommander,
   joinLink,
+  listLinkProps,
   loadList,
   newCode,
   nextCutRound,
@@ -384,7 +385,7 @@ export function TournamentAdmin({
   const entered = players.filter(([, p]) => !p.pending)
   const active = entered.filter(([, p]) => p.drop == null)
   const noCommander = entered.filter(([, p]) => !hasCommander(p)).length
-  const listed = entered.filter(([, p]) => p.list).length
+  const listed = entered.filter(([, p]) => p.list && !p.deck).length // a deck of the app: its photo is the decklist
   const linked = entered.filter(([, p]) => p.deck).length
   const playing = tour.status === 'swiss' || tour.status === 'cut'
   const lastSwiss = tour.status === 'swiss' && tour.round >= tour.rounds
@@ -757,15 +758,10 @@ export function TournamentAdmin({
                         {penalties.has(k) && <span className="bad-text"> · {t('run.penalties', { n: penalties.get(k)! })}</span>}
                       </span>
                     </div>
-                    {/* the Moxfield decklist always (missing in red), the deck of the app only when linked */}
-                    <span className={`row-icon ${p.list ? 'good-text' : 'bad-text'}`} title={t(p.list ? 'join.listIn' : 'join.noList')}>
-                      <Icon name="list" size={16} />
+                    {/* the decklist (missing in red): a Moxfield link, or the photo of a deck of the app */}
+                    <span className={`row-icon ${p.list ? 'good-text' : 'bad-text'}`} title={t(p.deck ? 'run.castraLinked' : p.list ? 'join.listIn' : 'join.noList')}>
+                      <Icon name={p.deck ? 'decks' : 'list'} size={16} />
                     </span>
-                    {p.deck && (
-                      <span className="row-icon" title={t('run.castraLinked')}>
-                        <Icon name="decks" size={16} />
-                      </span>
-                    )}
                     <Icon name="chevron" size={16} />
                   </li>
                 ))}
@@ -1016,19 +1012,19 @@ function useCommanders(q: string) {
   return cards
 }
 
-export function CommanderInput({ value, onChange, hint }: { value: string; onChange: (v: string) => void; hint?: string }) {
+export function CommanderInput({ value, onChange, hint, locked }: { value: string; onChange: (v: string) => void; hint?: string; locked?: boolean }) {
   const { t } = useI18n()
   const cards = useCommanders(value)
   return (
     <label>
       <span>{t('run.commander')}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={hint} list="to-commanders" autoComplete="off" />
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={hint} list="to-commanders" autoComplete="off" disabled={locked} />
       <datalist id="to-commanders">
         {cards.map((n) => (
           <option key={n} value={n} />
         ))}
       </datalist>
-      <span className="field-hint">{t('run.commanderHint')}</span>
+      <span className="field-hint">{t(locked ? 'join.cmdFromDeck' : 'run.commanderHint')}</span>
     </label>
   )
 }
@@ -1094,7 +1090,7 @@ function PlayerSheet({
             </p>
           )}
           {list && (
-            <a className="link" href={list} target="_blank" rel="noreferrer">
+            <a className="link" {...listLinkProps(list)}>
               {t('run.openList')}
             </a>
           )}

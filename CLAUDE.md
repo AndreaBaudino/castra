@@ -93,7 +93,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - `organizers.ts` (TO e zone, `canRun`), `swiss.ts` (motore dei tornei: abbinamenti svizzeri, classifica con gli
   spareggi MTR, top cut; funzioni pure), `tournaments.ts` (tornei su Firestore: `useTournaments`, `useTournament`,
   creazione, iscritti, turni, risultati, top cut). Progetto in `docs/tornei.md`.
-- `decklists.ts`: le liste dei mazzi del circuito (`public/decklists.json`): `cardStats` (scheda Carte del Circuito),
+- `decklists.ts`: le liste dei mazzi del circuito (`decklists.json` dal ramo `meta-data`, riserva in `public/`): `cardStats` (scheda Carte del Circuito),
   `cardUse` (scheda della carta), `typicalList` (le carte più giocate nella pagina del comandante), `playerCards` (le carte di un giocatore), `deckVsMeta` (un mazzo contro il meta), `deckOfList` (Duplica mazzo); viste in
   `views/MetaCards.tsx`; regole in `docs/liste-mazzi.md`.
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
@@ -117,6 +117,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   (`sources`, `aliases`), con `scripts/meta/sources.json` / `aliases.json` come riserva.
   Le liste dei mazzi del circuito sono in `scripts/meta/decklists.json`: archivio fisso letto una volta da Moxfield
   (lista → comandante, carte e iscrizioni `[id del torneo, giocatore]`), da non rigenerare né sovrascrivere.
+  Le liste dei tornei giocati in app con un mazzo di Castra sono foto prese al turno 1 (documento privato
+  dell'iscrizione), archiviate dal build in `decklists-castra.json` sul ramo `meta-data`, che cresce soltanto.
   Regole per usarle nelle statistiche delle carte in `docs/liste-mazzi.md`.
 - **Errata**: `.github/workflows/cards.yml` ogni lunedì da MTGJSON → `scripts/build-errata.mjs` → ramo `cards-data`.
 - **Circuito**: Google Sheet pubblico letto dal browser in CSV, per scheda (gid).

@@ -293,17 +293,28 @@ service cloud.firestore {
 
         // the decklist (a Moxfield link) and, until round 1, the commander: the player and the TOs see them, everyone
         // once the tournament is over
+        // or, in place of the link, the photo of a deck of the app (docs/liste-mazzi.md, 8): only the player's app
+        // reads the deck, so only the player writes it, until round 1 locks it for good
+        function photo(d) {
+          return d.diff(resource == null ? {} : resource.data).affectedKeys().hasAny(['cards', 'name', 'at', 'invalid']);
+        }
         match /private/{doc} {
           allow read: if managed() || holds(key) || tour().status == 'done';
           allow create, update: if (managed() || holds(key))
             && doc == 'deck'
             && !tour().get('filed', false)
-            && request.resource.data.keys().hasOnly(['link', 'commander'])
+            && request.resource.data.keys().hasOnly(['link', 'commander', 'cards', 'name', 'at', 'invalid'])
             && (request.resource.data.get('link', null) == null
               || (text(request.resource.data, 'link', 1, 300)
                 && request.resource.data.link.matches('https://(www[.])?moxfield[.]com/decks/[-_A-Za-z0-9]+/?')))
-            && optional(request.resource.data, 'commander', 300);
-          allow delete: if managed() || (holds(key) && !tour().get('filed', false));
+            && optional(request.resource.data, 'commander', 300)
+            && (!photo(request.resource.data) || (holds(key) && tour().status == 'open'))
+            && optional(request.resource.data, 'cards', 20000)
+            && optional(request.resource.data, 'name', 200)
+            && optional(request.resource.data, 'at', 40)
+            && request.resource.data.get('invalid', false) is bool;
+          // the player leaves before round 1 (the TO takes them off at any time): the photo goes with them
+          allow delete: if managed() || (holds(key) && tour().status == 'open');
         }
       }
       // the log: a line for each change, written with it, signed and timed by the server. Its TOs read it, a player

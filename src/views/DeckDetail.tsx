@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import {
   type CardInfo,
@@ -19,8 +19,12 @@ import {
   sortColors,
   logChange,
   loadShared,
+  newId,
+  parseDecklist,
 } from '../lib/decks'
-import { type MetaDataset, type MetaDeck, findMetaDeck, winrate } from '../lib/meta'
+import { loadPrivate, ranking, tournamentTitle, useTournament } from '../lib/tournaments'
+import { placeLabel } from './Circuit'
+import { type MetaDataset, type MetaDeck, findMetaDeck, nickName, winrate } from '../lib/meta'
 import { type Match, fmtRecord, record } from '../lib/matches'
 import { fetchCollection, fetchPrints, requestKey, searchCards, symbolUrl } from '../lib/scryfall'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
@@ -216,6 +220,7 @@ export default function DeckDetail({
   dataset,
   author,
   readOnly,
+  extra,
 }: {
   deck: Deck
   metaDecks: MetaDeck[]
@@ -229,6 +234,7 @@ export default function DeckDetail({
   openCommander: (name: string) => void
   author?: Author
   readOnly?: boolean // someone else's deck, opened from its link
+  extra?: ReactNode // under the cover: what a tournament's list adds
 }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
@@ -380,6 +386,8 @@ export default function DeckDetail({
           </div>
         </div>
       </div>
+
+      {extra}
 
       {editing && (
         <section className="card form">
@@ -778,5 +786,103 @@ export function CheckBox({ check }: { check: DeckCheck }) {
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * A player's list at a tournament run in the app, photographed when round 1 started (docs/liste-mazzi.md, 8): read
+ * only, with the deck page's views. The player and the TOs see it during the tournament, everyone once it's over.
+ */
+export function TournamentPhoto({
+  id,
+  player,
+  authorOf,
+  onCreate,
+  ...rest
+}: {
+  id: string
+  player: string
+  authorOf: (key: string, name: string) => Author
+  onCreate: (d: Deck) => void
+  metaDecks: MetaDeck[]
+  onBack: () => void
+  openCommander: (name: string) => void
+  openCard: (name: string) => void
+}) {
+  const { t, lang } = useI18n()
+  const { t: tour, players, matches } = useTournament(id)
+  const [deck, setDeck] = useState<Deck | null | 'private' | undefined>()
+  useEffect(() => {
+    loadPrivate(id, player).then(
+      async (p) => {
+        if (!p.cards) return setDeck(null)
+        const cards = parseDecklist(p.cards)
+        try {
+          const { found } = await fetchCollection(cards)
+          for (const c of cards) c.info = found.get(requestKey(c))
+        } catch {
+          /* offline: the names only */
+        }
+        setDeck({ id: `${id}@${player}`, name: p.name ?? '', tags: [], notes: '', cards, createdAt: p.at ?? '', updatedAt: p.at ?? '' })
+      },
+      (e) => setDeck(e?.code === 'permission-denied' ? 'private' : null),
+    )
+  }, [id, player])
+  const name = players.find(([k]) => k === player)?.[1].name ?? player
+  if (typeof deck !== 'object' || !deck)
+    return (
+      <div className="page">
+        <header className="page-head">
+          <button className="icon-btn" onClick={rest.onBack} aria-label={t('deck.back')}>
+            <Icon name="back" />
+          </button>
+        </header>
+        {deck !== undefined && (
+          <div className="empty-state">
+            <Icon name={deck ? 'shield' : 'decks'} size={40} />
+            <p>{t(deck ? 'photo.hidden' : 'deck.missing')}</p>
+          </div>
+        )}
+      </div>
+    )
+  const rows = tour?.status === 'done' ? ranking(tour, players, matches) : []
+  const at = rows.findIndex((r) => r.id === player)
+  const r = rows[at]
+  const copy = () => {
+    const now = new Date().toISOString()
+    const cmd = commanderNames(deck).join(' / ')
+    onCreate({ ...deck, id: newId(), name: t('meta.dupName', { c: nickName(cmd), p: name }), history: [], createdAt: now, updatedAt: now })
+  }
+  return (
+    <DeckDetail
+      {...rest}
+      deck={deck}
+      matches={[]}
+      onChange={setDeck}
+      onDelete={() => {}}
+      onDuplicate={() => {}}
+      author={authorOf(player, name)}
+      readOnly
+      extra={
+        <section className="card form">
+          <div>
+            <div className="card-title">{t('photo.title')}</div>
+            {tour && (
+              <p className="no-margin">
+                <b>{tournamentTitle(tour, t)}</b>
+                <span className="muted small">
+                  {' · '}
+                  {new Date(`${tour.date}T12:00:00`).toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {r && ` · ${r.wins}-${r.losses}${r.draws ? `-${r.draws}` : ''}, ${placeLabel(at + 1, lang)}`}
+                </span>
+              </p>
+            )}
+          </div>
+          <button className="btn" onClick={copy}>
+            <Icon name="copy" size={16} /> {t('meta.duplicate')}
+          </button>
+        </section>
+      }
+    />
   )
 }

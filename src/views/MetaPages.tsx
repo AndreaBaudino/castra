@@ -16,6 +16,7 @@ import {
   winrate,
 } from '../lib/meta'
 import type { Deck } from '../lib/decks'
+import { isAppLink, listLinkProps } from '../lib/tournaments'
 import { useStoredState } from '../lib/storage'
 import { Icon, Pips, RecNum, ShareButton, pct, wrClass } from '../components/ui'
 import { ReportButton } from '../components/Feedback'
@@ -350,14 +351,18 @@ export function CommanderPage({
                     const x = dataset.tournaments[e.t]
                     return (
                       <li key={i} className="row-actions">
-                        <a className="event-row" href={e.list!} target="_blank" rel="noreferrer">
+                        <a className="event-row" {...listLinkProps(e.list!)}>
                           <div className="event-main">
-                            <span className="ellipsis">{e.player ?? '—'}</span>
+                            <span className="ellipsis">
+                              {e.player ?? '—'}
+                              {isAppLink(e.list!) && ' '}
+                              {isAppLink(e.list!) && <span className="tag warn">{t('meta.castraList')}</span>}
+                            </span>
                             <span className="muted small">
                               {tournamentLabel(x, t)} · {dateLabel(x, lang, t)}
                             </span>
                           </div>
-                          <Icon name="external" size={16} />
+                          {!isAppLink(e.list!) && <Icon name="external" size={16} />}
                         </a>
                         {onCreateDeck && <DuplicateDeck dataset={dataset} entry={e} onCreate={onCreateDeck} openDeck={openDeck} />}
                       </li>
@@ -870,7 +875,7 @@ export function DeckRecords({ dataset, openCommander }: { dataset: MetaDataset; 
   )
 }
 
-/** The Moxfield lists a player submitted, one row per list (the same list is often used at several tournaments). */
+/** The lists a player submitted (Moxfield, or photos of decks of the app), one row per list (the same list is often used at several tournaments). */
 export function PlayerLists({ dataset, entries }: { dataset: MetaDataset; entries: MetaEntry[] }) {
   const { t, lang } = useI18n()
   const [open, setOpen] = useState(false)
@@ -897,17 +902,19 @@ export function PlayerLists({ dataset, entries }: { dataset: MetaDataset; entrie
             const c = last.cmd >= 0 ? dataset.commanders[last.cmd] : null
             return (
               <li key={url}>
-                <a className="event-row" href={url} target="_blank" rel="noreferrer">
+                <a className="event-row" {...listLinkProps(url)}>
                   <div className="event-main">
                     <span className="ellipsis">
                       {c && <Pips colors={c.colors} size={9} />} {c ? shortName(c.name) : t('meta.noCommander')}
+                      {isAppLink(url) && ' '}
+                      {isAppLink(url) && <span className="tag warn">{t('meta.castraList')}</span>}
                     </span>
                     <span className="muted small ellipsis">
                       {list.length > 1 ? `${t('meta.usedAt', { n: list.length })} ` : ''}
                       {tournamentLabel(x, t)} · {dateLabel(x, lang, t)}
                     </span>
                   </div>
-                  <Icon name="external" size={16} />
+                  {!isAppLink(url) && <Icon name="external" size={16} />}
                 </a>
               </li>
             )

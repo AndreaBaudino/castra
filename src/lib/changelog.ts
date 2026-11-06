@@ -17,6 +17,8 @@ export const CHANGELOG: Release[] = [
       'Circuito, comandanti: "Le carte più giocate" divide le carte delle liste di quel comandante in must have, quasi sempre, tech choices e terre particolari, con la media delle terre. In "Liste Moxfield" il pulsante Duplica mazzo crea in Mazzi un mazzo con quella lista',
       'Circuito, giocatori: "Le sue carte" mostra, per chi ha almeno 2 liste, le carte che gioca molto più del resto del circuito',
       'Mazzi: "Contro il meta" confronta il tuo mazzo con le carte più giocate con il suo comandante: quante must have hai, quelle che ti mancano, le terre rispetto alla media e le tue pet card',
+      'Tornei in app: se ti iscrivi con un tuo mazzo di Castra, la decklist è il mazzo. La lista com\'è all\'inizio del turno 1 resta salvata per il torneo, anche se poi cambi o cancelli il mazzo, e il comandante è quello del mazzo. Nel report del torneo c\'è il link alla lista al posto di quello Moxfield: si apre nell\'app come un mazzo, con le viste Lista, Pile e Griglia e Duplica mazzo. Fino alla fine del torneo la vedono solo il giocatore e i TO, poi tutti',
+      'Circuito → Carte: le liste dei tornei giocati in app con un mazzo di Castra entrano nelle statistiche delle carte, prima di ogni lista Moxfield e anche negli anni dopo il 2026. Nelle pagine dei comandanti e dei giocatori "Liste Moxfield" diventa "Liste", e quelle di Castra hanno l\'etichetta',
     ],
     en: [
       'Decks: "Duplicate deck" always makes a private copy, even of a deck you shared: the variant you are trying shows to nobody until you choose to share it',
@@ -26,6 +28,8 @@ export const CHANGELOG: Release[] = [
       'Circuit, commanders: "The most played cards" splits the cards in that commander\'s lists into must have, almost always, tech choices and unusual lands, with the average lands. In "Moxfield lists" the Duplicate deck button makes a deck in Decks with that list',
       'Circuit, players: "Their cards" shows, for whoever has at least 2 lists, the cards they play much more than the rest of the circuit',
       'Decks: "Against the meta" compares your deck with the most played cards with its commander: how many must haves you have, the ones you lack, your lands against the average and your pet cards',
+      'Tournaments in the app: register with one of your Castra decks and the decklist is the deck. The list as it is when round 1 starts stays saved for the tournament, even if you later change or delete the deck, and the commander is the deck\'s. The tournament report links to that list instead of Moxfield: it opens in the app like a deck, with the List, Piles and Grid views and Duplicate deck. Until the tournament is over only the player and the TOs see it, then everyone',
+      'Circuit → Cards: the lists of the tournaments played in the app with a Castra deck join the card statistics, ahead of any Moxfield list and in the years after 2026 too. On the commanders\' and players\' pages "Moxfield lists" becomes "Lists", and the Castra ones are labelled',
     ],
   },
   {

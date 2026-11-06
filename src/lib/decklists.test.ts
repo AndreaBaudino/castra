@@ -65,6 +65,15 @@ describe('cardStats', () => {
   it('has nothing for another year', () => {
     expect(cardStats({ ...ds, year: 2027 }, ALL, dl).cards).toEqual([])
   })
+
+  it('counts another year once it has photos of decks of the app (docs/liste-mazzi.md, 8)', () => {
+    expect(cardStats({ ...ds, year: 2027 }, ALL, { ...dl, years: [2026, 2027] })).toMatchObject({ entries: 3, lists: 2 })
+  })
+
+  it('leaves out a list the file does not have yet (an older copy, without the newest photos)', () => {
+    const newer = { ...ds, entries: [...ds.entries, entry(0, 0, 2)] }
+    expect(cardStats(newer, ALL, dl)).toMatchObject({ entries: 3, total: 5 })
+  })
 })
 
 describe('cardUse', () => {

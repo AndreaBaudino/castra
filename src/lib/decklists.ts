@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { type Deck, groupOf, newId } from './decks'
 import { ALL, type MetaDataset, type MetaEntry, type MetaFilter, entriesOf } from './meta'
+import { META_DATA_URL } from '../config'
 
-// The circuit's deck lists (public/decklists.json, built by scripts/build-meta.mjs from a fixed archive read once from
-// Moxfield): the cards of each list, which the build gives to the meta's entries (MetaEntry.deckList) by the rules of
-// docs/liste-mazzi.md. Shipped with the app and read only by the cards' pages.
+// The circuit's deck lists (decklists.json, built by scripts/build-meta.mjs from a fixed archive read once from
+// Moxfield, then the photos of the decks of the app taken at the tournaments run in it): the cards of each list, which
+// the build gives to the meta's entries (MetaEntry.deckList) by the rules of docs/liste-mazzi.md. Read from the
+// meta-data branch, with the copy shipped with the app as a fallback, and only by the cards' pages.
 
 export interface Decklists {
   v: number
-  year: number // the only year with lists
+  year: number // the archive's year
+  years?: number[] // every year with lists: the archive's and the photos' (missing in older files: the archive's)
   // colors: color identity, null if unknown. Kind, by the front face: 0 not a land, 1 a land, 2 a staple land (basic,
   // fetch, making 2 to 4 colors), 3 a modal card with a land on the back
   cards: [name: string, colors: string | null, kind: 0 | 1 | 2 | 3][]
@@ -22,9 +25,12 @@ let loading: Promise<Decklists | null> | null = null
 export function useDecklists() {
   const [data, setData] = useState<Decklists | null>()
   useEffect(() => {
-    loading ??= fetch(`${import.meta.env.BASE_URL}decklists.json`)
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null)
+    const read = (url: string) =>
+      fetch(url)
+        .then((r) => (r.ok ? (r.json() as Promise<Decklists>) : null))
+        .catch(() => null)
+    loading ??= read(META_DATA_URL.replace(/meta\.json$/, 'decklists.json'))
+      .then((d) => d ?? read(`${import.meta.env.BASE_URL}decklists.json`))
       .then((d) => (d ? d : ((loading = null), null)))
     let on = true
     loading.then((d) => on && setData(d))
@@ -47,6 +53,10 @@ export interface CardStat {
 }
 
 const within = (identity: string, colors: string) => [...colors].every((c) => identity.includes(c))
+/** Whether the year has lists. */
+export const hasLists = (ds: MetaDataset, dl: Decklists) => (dl.years ?? [dl.year]).includes(ds.year)
+// an entry with a list this file has (an older copy may lack the newest photos)
+const listed = (dl: Decklists, e: MetaEntry) => e.deckList != null && e.deckList < dl.lists.length
 
 export interface CommanderUse {
   name: string
@@ -62,8 +72,8 @@ export interface CommanderUse {
 export function cardUse(ds: MetaDataset, f: MetaFilter, dl: Decklists, name: string, colors: string) {
   const id = dl.cards.findIndex((c) => c[0] === name)
   const identity = id >= 0 ? (dl.cards[id][1] ?? '') : colors
-  const rows = (ds.year === dl.year ? entriesOf(ds, f) : []).filter(
-    (e) => e.deckList != null && e.cmd >= 0 && within(ds.commanders[e.cmd].colors, identity),
+  const rows = (hasLists(ds, dl) ? entriesOf(ds, f) : []).filter(
+    (e) => listed(dl, e) && e.cmd >= 0 && within(ds.commanders[e.cmd].colors, identity),
   )
   const by = new Map<number, { decks: number; of: number; players: Set<string> }>()
   const lists = new Set<number>()
@@ -104,8 +114,8 @@ export function cardUse(ds: MetaDataset, f: MetaFilter, dl: Decklists, name: str
 /** Each card's play rate among the entries with a list, counted once per entry (a list brought twice counts twice),
  * out of those whose commander's color identity allows the card. Also how many entries and lists it rests on. */
 export function cardStats(ds: MetaDataset, f: MetaFilter, dl: Decklists) {
-  const all = ds.year === dl.year ? entriesOf(ds, f) : []
-  const rows = all.filter((e) => e.deckList != null && e.cmd >= 0)
+  const all = hasLists(ds, dl) ? entriesOf(ds, f) : []
+  const rows = all.filter((e) => listed(dl, e) && e.cmd >= 0)
   const byIdentity = new Map<string, number>()
   const decks = new Map<number, number>()
   const lists = new Map<number, Set<number>>()
@@ -143,8 +153,8 @@ export interface TypicalCard {
 /** A commander's typical list (docs/liste-mazzi.md), counted per entry as in cardStats: the cards in nearly every list,
  * the choices of a few lists, the lands picked on purpose, and the average land count. */
 export function typicalList(ds: MetaDataset, f: MetaFilter, dl: Decklists, cmd: number) {
-  const shown = ds.year === dl.year ? entriesOf(ds, f) : []
-  const all = shown.filter((e) => e.deckList != null && e.cmd >= 0)
+  const shown = hasLists(ds, dl) ? entriesOf(ds, f) : []
+  const all = shown.filter((e) => listed(dl, e) && e.cmd >= 0)
   const rows = all.filter((e) => e.cmd === cmd)
   const identity = ds.commanders[cmd].colors
   const decks = new Map<number, number>()
@@ -212,7 +222,7 @@ export interface PlayerCard {
 /** A player's favourite cards (docs/liste-mazzi.md): in at least 2 of their lists and 60% of their entries that can
  * play them, and at least 30 points above the rest of the circuit. The biggest gap first. Only with 2+ lists. */
 export function playerCards(ds: MetaDataset, dl: Decklists, key: string) {
-  const all = (ds.year === dl.year ? ds.entries : []).filter((e) => e.deckList != null && e.cmd >= 0)
+  const all = (hasLists(ds, dl) ? ds.entries : []).filter((e) => listed(dl, e) && e.cmd >= 0)
   const mine = all.filter((e) => e.key === key)
   const others = all.filter((e) => e.key !== key)
   const lists = new Map<number, Set<number>>()
@@ -233,7 +243,7 @@ export function playerCards(ds: MetaDataset, dl: Decklists, key: string) {
   }
   return {
     entries: mine.length,
-    total: (ds.year === dl.year ? ds.entries : []).filter((e) => e.key === key).length,
+    total: (hasLists(ds, dl) ? ds.entries : []).filter((e) => e.key === key).length,
     lists: new Set(mine.map((e) => e.deckList)).size,
     commanders: new Set(mine.map((e) => e.cmd)).size,
     cards: cards.sort((a, b) => b.share - b.rest - (a.share - a.rest) || a.name.localeCompare(b.name)),
