@@ -16,19 +16,11 @@ const COLORS = ['W', 'U', 'B', 'R', 'G', 'C', 'M'] as const
 const MIN_OPTIONS = [0, 10, 20, 40]
 const SHOW = 5
 
-// multicolored, as Arena draws it: a gold disc with a ring (a fixed symbol, like the mana symbols' images)
+// multicolored, as Arena draws it: a gold disc with a ring, flat like the mana symbols (a fixed symbol, like their images)
 const MultiIcon = () => (
   <svg viewBox="0 0 26 26" aria-hidden="true">
-    <defs>
-      <radialGradient id="multi-gold" cx="40%" cy="35%" r="70%">
-        <stop offset="0" stopColor="#F3D98A" />
-        <stop offset="0.6" stopColor="#C99A3B" />
-        <stop offset="1" stopColor="#8A6420" />
-      </radialGradient>
-    </defs>
-    <circle cx="13" cy="13" r="13" fill="url(#multi-gold)" />
-    <circle cx="13" cy="13" r="7.5" fill="none" stroke="#5C3F0E" strokeWidth="2.2" />
-    <circle cx="13" cy="13" r="7.5" fill="none" stroke="#F7E3A6" strokeWidth="0.8" opacity="0.7" />
+    <circle cx="13" cy="13" r="13" fill="#E3C46B" />
+    <circle cx="13" cy="13" r="7" fill="none" stroke="#3B2A0A" strokeWidth="2.6" />
   </svg>
 )
 
