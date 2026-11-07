@@ -32,13 +32,20 @@ export async function standingsImage(rows: RankRow[], txt: ImageText, lang: stri
     while (s && g.measureText(s + '…').width > max) s = s.slice(0, -1)
     return s + '…'
   }
+  // the app's icon on the left of the title
+  const icon = new Image()
+  icon.src = `${import.meta.env.BASE_URL}icon.svg`
+  await icon.decode().catch(() => {})
+  const IC = 116
+  if (icon.complete && icon.naturalWidth) g.drawImage(icon, PAD, 52, IC, IC)
+  const xT = PAD + IC + 28
   g.textBaseline = 'alphabetic'
   g.fillStyle = v('--text')
-  g.font = '700 60px "Space Grotesk", sans-serif'
-  g.fillText(fit(txt.title.toUpperCase(), W - 2 * PAD), PAD, 110)
+  g.font = '700 56px "Space Grotesk", sans-serif'
+  g.fillText(fit(txt.title.toUpperCase(), W - PAD - xT), xT, 112)
   g.fillStyle = v('--muted')
   g.font = '400 30px Inter, sans-serif'
-  g.fillText(fit(txt.subtitle, W - 2 * PAD), PAD, 158)
+  g.fillText(fit(txt.subtitle, W - PAD - xT), xT, 156)
 
   // columns: right edges of the numbers, the name in between
   const xPlace = PAD + 70
