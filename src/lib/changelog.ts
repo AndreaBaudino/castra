@@ -8,6 +8,11 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-07',
+    it: ['Area TO: a fine torneo, sotto la classifica finale, "Scarica immagine" crea un\'immagine della classifica (posizione, nome, comandante, punti, V-S-P e OMW) da salvare o mandare subito nel gruppo'],
+    en: ['TO area: once a tournament is over, under the final standings, "Download image" makes a picture of the standings (place, name, commander, points, W-L-D and OMW) to save or send straight to the group chat'],
+  },
+  {
     date: '2026-11-06',
     it: [
       'Mazzi: "Duplica mazzo" crea sempre una copia privata, anche da un tuo mazzo condiviso: la variante da provare non compare a nessuno finché non scegli di condividerla',

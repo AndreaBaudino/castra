@@ -67,6 +67,7 @@ import { Toggle } from './Account'
 import { MatchList, RankingList } from './Live'
 import { JoinSheet } from './MyTournament'
 import type { Deck } from '../lib/decks'
+import { savePicture, standingsImage } from '../lib/standingsImage'
 
 // The tournament organizers' pages (docs/tornei.md): the card on the home, the TO area (#to) with the tournaments to
 // run, and one tournament run from the phone (#to/<id>): registration, rounds, results, top cut, the rows for the sheet.
@@ -445,6 +446,15 @@ export function TournamentAdmin({
       setBusy(false)
     }
   }
+  const picture = () =>
+    act(async () => {
+      const day = new Date(tour.date).toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' })
+      const head = t('run.pictureHead').split('|') as [string, string, string, string, string]
+      const title = tournamentTitle(tour, t)
+      const sub = `${day} · ${t('run.players', { n: rows.length })}`
+      const blob = await standingsImage(rows, { title, subtitle: sub, head, dropped: t('run.dropped') }, lang)
+      await savePicture(blob, `${title.replace(/[^\p{L}\p{N}]+/gu, '-')}.png`)
+    })
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -678,6 +688,11 @@ export function TournamentAdmin({
             <section className="card">
               <div className="card-title">{tour.status === 'done' ? t('run.final') : t('run.standings')}</div>
               <RankingList rows={rows} onPick={setPlayer} />
+              {tour.status === 'done' && (
+                <button className="btn ghost" disabled={busy} onClick={picture}>
+                  <Icon name="download" size={16} /> {t('run.picture')}
+                </button>
+              )}
             </section>
           )}
 
