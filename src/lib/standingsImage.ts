@@ -1,6 +1,5 @@
 // The final standings as a picture, for the TO to post in the group chat: drawn on a canvas with the app's colors and fonts.
 import type { RankRow } from './tournaments'
-import { inkOn } from './theme'
 
 export interface ImageText {
   title: string
@@ -15,8 +14,15 @@ const TOP = 230
 const ROW = 84
 
 export async function standingsImage(rows: RankRow[], txt: ImageText, lang: string): Promise<Blob> {
-  const css = getComputedStyle(document.documentElement)
-  const v = (k: string) => css.getPropertyValue(k).trim()
+  // always the dark theme, with the app's own accent: one look for every report, whatever theme the TO uses
+  const root = document.documentElement
+  const mode = root.dataset.theme
+  root.dataset.theme = 'dark'
+  const css = getComputedStyle(root)
+  const col = Object.fromEntries(['--bg', '--surface', '--gold', '--text', '--muted'].map((k) => [k, css.getPropertyValue(k).trim()]))
+  if (mode) root.dataset.theme = mode
+  else delete root.dataset.theme
+  const v = (k: string) => col[k]!
   // fonts not on screen yet aren't loaded: the canvas would fall back silently
   await Promise.all(['700 64px "Space Grotesk"', '400 30px Inter', '600 30px Inter'].map((f) => document.fonts.load(f).catch(() => {})))
   const c = document.createElement('canvas')
@@ -34,22 +40,8 @@ export async function standingsImage(rows: RankRow[], txt: ImageText, lang: stri
     return s + '…'
   }
   // the app's icon on the left of the title
-  // on a light page the icon's dark square goes: the helmet alone, outlined in dark to stand out from the page
-  let svg = await fetch(`${import.meta.env.BASE_URL}icon.svg`).then((r) => r.text()).catch(() => '')
-  if (inkOn(v('--bg')) !== '#ffffff') {
-    const ink = '#0b0b0c'
-    const paths = svg.match(/<path[^>]*>/g) ?? []
-    const shapes = paths.filter((d) => !d.includes(ink))
-    const cuts = paths.filter((d) => d.includes(ink)).map((d) => d.replace(ink, v('--bg')))
-    const line = (w: number, ps: string[]) =>
-      `<g stroke="${ink}" stroke-width="${w}" stroke-linejoin="round">${ps.join('')}</g>`
-    const outline = shapes.map((d) => d.replace(/fill="[^"]*"/, 'fill="none"'))
-    svg = svg
-      .replace(/<rect[^>]*>/, '')
-      .replace(/(<g transform="[^"]*">)[\s\S]*<\/g>/, `$1${line(48, outline)}${shapes.join('')}${line(24, cuts)}</g>`)
-  }
   const icon = new Image()
-  icon.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+  icon.src = `${import.meta.env.BASE_URL}icon.svg`
   await icon.decode().catch(() => {})
   const IC = 116
   if (icon.complete && icon.naturalWidth) g.drawImage(icon, PAD, 52, IC, IC)
