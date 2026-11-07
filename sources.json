@@ -1,0 +1,303 @@
+{
+ "tournaments": [
+  {
+   "drive": "1pDyFNFEu7b1b5RQkkiptmocGDnTbC0WF",
+   "kind": "l1",
+   "name": "MR Magic Savona",
+   "date": "2026-01-25",
+   "circuit": "MR MAGIC - 25/01 - 50 PL"
+  },
+  {
+   "drive": "1uu0GwxfeXu7IcF1DBqOPK2QH1QaUrI_d",
+   "kind": "l1",
+   "name": "Damnation Lucca",
+   "date": "2026-02-01",
+   "circuit": "Damnation Lucca - FEB 01 - 23 PL"
+  },
+  {
+   "drive": "1_ukpohCLOU-Kf5VAcD7uHYUFX5DBrIIi",
+   "kind": "l1",
+   "name": "Rise of Thaur",
+   "date": "2026-02-15",
+   "circuit": "Rise of Thaur - FEB 15 - 11 PL"
+  },
+  {
+   "drive": "1j1u4tyApVENW7eEYJsxCoaUijsajgllj",
+   "kind": "l1",
+   "name": "Covo del nerd",
+   "date": "2026-02-15",
+   "circuit": "Covo del nerd - FEB 15 - 14 PL"
+  },
+  {
+   "drive": "12ddDs9l-v5ZAhhH6_JUAR19yoaia7MyT",
+   "kind": "l1",
+   "name": "Cogoleto",
+   "date": "2026-02-22",
+   "circuit": "Cogoleto - FEB 22 - 34 PL"
+  },
+  {
+   "drive": "1FUoFVUS1JUD2zMty9_Jv_CDBQrYrvJz4",
+   "kind": "l1",
+   "name": "Savona",
+   "date": "2026-03-22",
+   "circuit": "Savona - MAR 22 - 26 PL"
+  },
+  {
+   "drive": "1ZS-562woEZX-v9twbkh7fOuF2_CEYVQw",
+   "kind": "l1",
+   "name": "Warmaster Ciampino",
+   "date": "2026-03-28",
+   "circuit": "Warmaster Ciampino - MAR 28 - 17 PL"
+  },
+  {
+   "drive": "1S_q5gB3LrPMb5yrvIkBuVyBGmzbTPMOk",
+   "kind": "l1",
+   "name": "Lucca Collezionando",
+   "date": "2026-03-29",
+   "circuit": "Lucca Collezionando - MAR 29 - 9 PL"
+  },
+  {
+   "drive": "1LylhjoLT3NLJ7my7kr5ysh00TyVPGcd7BfAiz5K2Ke8",
+   "kind": "l2",
+   "name": "Genova",
+   "date": "2026-04-12",
+   "circuit": "LV2 Genova"
+  },
+  {
+   "drive": "1_q5f_5EVhkgcuNah0pM25tU5__lR6bs3gNgC3MmDETE",
+   "kind": "l1",
+   "name": "Roma",
+   "date": "2026-04-26",
+   "circuit": "LV1 Roma"
+  },
+  {
+   "drive": "1s8aSM1IXPSYW68pXO8Nbg6kzDLcHILDmsX-yF2a3tMw",
+   "kind": "l1",
+   "name": "High Tide Genova",
+   "date": "2026-05-24",
+   "circuit": "LV1 Genova - high tide"
+  },
+  {
+   "drive": "19-La6DyT0aGuMWrfiSe0c4Uru0seUQmbdFZRGcz88jI",
+   "kind": "l1",
+   "name": "Vice District Monselice",
+   "date": "2026-05-31",
+   "circuit": "Vice District - Monselice"
+  },
+  {
+   "drive": "1knjPvvFYLWk5sGVX-0Ct4eQK5D-MSYh0a-MHxZdljKg",
+   "kind": "l2",
+   "name": "Roma · Covo del nerd",
+   "date": "2026-06-21",
+   "circuit": "Roma - Covo del nerd, LV2"
+  },
+  {
+   "drive": "16EUBIk_qPjnfYacP_dNAmU6P9lur9PigZBWxGZzkXtY",
+   "kind": "l1",
+   "name": "MR Magic Savona",
+   "date": "2026-06-28",
+   "circuit": "Savona - MR. Magic - giugno 2026"
+  },
+  {
+   "drive": "1o8MiAfBXHvyhuo-ECGrbSgYDlpb0fIuidGfAyjQ_XHs",
+   "kind": "l1",
+   "name": "Paupergeddon",
+   "date": "2026-07-12",
+   "circuit": "Paupergeddon - Luglio 2026"
+  },
+  {
+   "drive": "1yo9wJfM_ddBka91ixqpDp3K6yqAGeeMWtM2w_FCTn9Q",
+   "kind": "l1",
+   "name": "MR Magic Savona",
+   "date": "2026-07-26",
+   "circuit": "MR magic LV1 luglio"
+  },
+  {
+   "drive": "1X5PYHjG7Hj7UMo36l5fmY953SQciFP3-DiK8HzMPqq4",
+   "kind": "l1",
+   "name": "Rocca3Corvi Genova",
+   "date": "2026-08-23",
+   "circuit": "23/08 - LV1 - Rocca3Corvi"
+  },
+  {
+   "drive": "1CTU_j_uGPkQ2bOMZS5k6kVuK9B0wHB9GH4DwadjGNBY",
+   "kind": "l1",
+   "name": "Jolly Giochiamo Lucca",
+   "date": "2026-09-06"
+  },
+  {
+   "drive": "1IHHr3oL_QCR3UBsDgZxYeVEe0Y2A8p58wgRcXFdV7eM",
+   "kind": "l2",
+   "name": "Albisola",
+   "date": "2026-09-20",
+   "circuit": "Albisola - LV2- 20 settembre2026"
+  },
+  {
+   "drive": "1bTu0MrxlTaKJbMCtyVoO93EZjy3Z0AlZS19XznAqkA4",
+   "kind": "l1",
+   "name": "Covo del nerd",
+   "date": "2026-09-26",
+   "circuit": "Covo del nerd settembre - S2 Lv1 - 2026"
+  },
+  {
+   "drive": "1EX-g2mNOeZ4q1cgZ6Viao8EnAWwudhIn_vcMwBMjX0s",
+   "kind": "l1",
+   "name": "MagicHammer",
+   "date": "2026-09-27",
+   "circuit": "MagicHammer settembre - S2 LVL 1 - 2026"
+  },
+  {
+   "drive": "1jzTLVCHTHicpuh-0By0FEM3g0HOXPimtK9mg4Ipdf28",
+   "kind": "l1",
+   "name": "MagicHammer",
+   "date": "2026-10-18",
+   "circuit": "Magic Hammer Ottobre 2026"
+  },
+  {
+   "drive": "1rgVLAagL9xiO4pjLVtCA7mvtYhzoA7q52OkyHfVMl8Y",
+   "kind": "l1",
+   "name": "Dark Zone Roma",
+   "date": "2026-10-25",
+   "circuit": "Darkzone Roma Ottobre 2026"
+  },
+  {
+   "drive": "1zW7FQOvWw5IbaSgcCHvRlsd_xrbiKM9s4T7kAWbMpDM",
+   "kind": "l1",
+   "name": "Rocca3Corvi Genova",
+   "date": "2026-10-25",
+   "circuit": "Rocca3corvi Genova - Ottobre 2026"
+  },
+  {
+   "drive": "1un00dQ3C0bvcxEd_P8iydNsWDoP-kCxm7xCNlhi-5BI",
+   "kind": "l1",
+   "name": "Lost Legio Latina",
+   "date": "2026-11-08"
+  },
+  {
+   "drive": "16Ojxm9Dilnka9bNNuGK9QFXDh6kAeG2IltCGuLwZfZ4",
+   "kind": "l1",
+   "name": "Vice District",
+   "date": "2026-11-15"
+  },
+  {
+   "drive": "1FFedec5jYBl4-8o8X3_13aM_58PdCU76myVsL7V-pK4",
+   "kind": "l1",
+   "name": "Dungeon Street",
+   "date": "2026-11-15"
+  },
+  {
+   "drive": "123zfDIO22C1YXe49zQ0B7o-xlQhluNt18UWGluQHVXk",
+   "kind": "league",
+   "year": 2026,
+   "season": "s1",
+   "league": "Arena Games"
+  },
+  {
+   "drive": "1VFs6epTTLsHOgzYAGzvRekDkXNEJzRuFzuEooudvbp8",
+   "kind": "league",
+   "year": 2026,
+   "season": "s1",
+   "league": "Ciriè"
+  },
+  {
+   "drive": "17rwbutxjOUxFVDaRjzBFblxLCHYG3IVkT_1iHqNr4jU",
+   "kind": "league",
+   "year": 2026,
+   "season": "s1",
+   "league": "Genova",
+   "venue": "Cogoleto"
+  },
+  {
+   "drive": "1-qGyoAOoZw6AhI_35nOz8f7196EwiueixqXLo2XDmRQ",
+   "kind": "league",
+   "year": 2026,
+   "season": "s1",
+   "league": "Magic Lair"
+  },
+  {
+   "drive": "1jvUhYQOJvF3JsLUmKIzERI0kW6Mu-446NvCgf_4sNuc",
+   "kind": "league",
+   "year": 2026,
+   "season": "s1",
+   "league": "Roma"
+  },
+  {
+   "drive": "1Rngg221eJ7WIjmfC_Hmm1qVnASzjrDx4OPZJ-3SMSq4",
+   "kind": "league",
+   "year": 2026,
+   "season": "s1",
+   "league": "Sanremo"
+  },
+  {
+   "drive": "1BoI2eLxuwBEZXcCVMZORnpl6eGkAdytHAl56ItAs3z0",
+   "kind": "league",
+   "year": 2026,
+   "season": "s1",
+   "league": "Savona"
+  },
+  {
+   "drive": "16KGdsGO4jlwR_tiL5_yaxXt4piezo55Vw9wyNrgpTy4",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Genova",
+   "venue": "ComicSans"
+  },
+  {
+   "drive": "1dfh9cKagU9M2vRLRV0WtR1Id3tW8440tBJOg_iKFV-Y",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Isola d'Elba"
+  },
+  {
+   "drive": "1IYlri8MY1gvAkCBGyzKNgwVhu3Puj7QGsZthiBvLd5k",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Latina / Frosinone"
+  },
+  {
+   "drive": "1j3CFGkfMdR89PCKMghsE_gkLn5A-SjIieo1LnWnyyBo",
+   "kind": "online",
+   "year": 2026,
+   "season": "s2",
+   "league": "Lega Online"
+  },
+  {
+   "drive": "123LYooPqakR9rcwqC1RLdBks3dyu9rgXDSF2RSOGpdA",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Orbassano"
+  },
+  {
+   "drive": "1EFJfXheicUN7X4mbdGw5F-VgtXmSFqOrqH7uu4Uxj04",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Roma"
+  },
+  {
+   "drive": "1mIS7XJvUjVnSzTj-tIAH82z822_yvMzPZ9mGLDop4ZA",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Sanremo"
+  },
+  {
+   "drive": "1Qck40xjQ_zODQtI3YY6qFGFq1adeHsMiUCwPIhZ7mvw",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Savona"
+  },
+  {
+   "drive": "1YNyAgDY_nqySGU_3aAnzCZSQic5SCxuYrRtjsFxWvSM",
+   "kind": "league",
+   "year": 2026,
+   "season": "s2",
+   "league": "Vice District"
+  }
+ ]
+}
