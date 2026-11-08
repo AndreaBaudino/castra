@@ -191,6 +191,9 @@ foto al turno 1".
 - I link a una pagina dell'app (`isAppLink`) si aprono nell'app, impilati (`App.tsx`); quelli a Moxfield in un'altra
   scheda.
 - Nel report (colonna della decklist del foglio) c'è il link a quella pagina al posto del link Moxfield.
+  "Pubblica sul foglio" lo scrive tramite lo script dei fogli, che accetta solo il link Moxfield o quello della foto
+  di un giocatore dello stesso torneo, sull'indirizzo dell'app (`APP` in `scripts/meta/apps-script/Code.gs`, da
+  cambiare se l'app cambia indirizzo; l'app lo costruisce dalla base, `photoLink`).
 - Nell'elenco degli iscritti del TO l'icona della decklist è quella del mazzo; dal turno 1 il TO apre la lista.
 - Nella classifica finale "Lista" apre la pagina nell'app; con Moxfield si apre Moxfield come oggi.
 - Nella pagina del comandante "Liste Moxfield" diventa "Liste": quelle di Castra hanno l'etichetta "Castra", si

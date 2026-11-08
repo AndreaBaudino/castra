@@ -126,9 +126,11 @@ export const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)
 export const joinLink = (code: string) => `${location.origin}${location.pathname}#join~${code}`
 
 /** The page of a player's photographed list (#live/<tournament>@<player>), the link written in the sheet. */
-export const photoLink = (id: string, key: string) => `${location.origin}${location.pathname}#live/${encodeURIComponent(id)}@${encodeURIComponent(key)}`
+// the app's base, not the page open now: the sheets' Apps Script takes only this address (scripts/meta/apps-script)
+const app = () => `${location.origin}${import.meta.env.BASE_URL}`
+export const photoLink = (id: string, key: string) => `${app()}#live/${encodeURIComponent(id)}@${encodeURIComponent(key)}`
 /** A link to a page of the app, opened in place (App.tsx) rather than in another tab. */
-export const isAppLink = (url: string) => url.startsWith(`${location.origin}${location.pathname}#`)
+export const isAppLink = (url: string) => url.startsWith(`${app()}#`)
 /** The props of a link to a decklist: Moxfield in another tab, a photo in place. */
 export const listLinkProps = (url: string) => (isAppLink(url) ? { href: url } : { href: url, target: '_blank', rel: 'noreferrer' })
 

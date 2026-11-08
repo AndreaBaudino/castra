@@ -161,7 +161,7 @@ function tournament(token, id) {
 const mayRun = (token, id, t) => firestore('patch', 'tournaments/' + id + mask('filed'), token, { filed: !!t.filed }, 'non gestisci questo torneo')
 
 function publish(token, id, rows) {
-  checkRows(rows)
+  checkRows(rows, id)
   const t = tournament(token, id)
   if (t.status !== 'done') throw new Error('il torneo non è concluso')
   if (t.filed || t.published) throw new Error('il torneo risulta già nel foglio')
@@ -250,14 +250,20 @@ function unpublish(token, id) {
   return { ok: true, tab: p.tab, kept }
 }
 
+// the page of a deck of the app photographed at round 1 (src/lib/tournaments.ts photoLink), on the app's GitHub Pages
+const APP = 'https://andreabaudino.github.io/castra/'
+
 /** The rows as the app sends them: checked, as they go into a sheet many people use. */
-function checkRows(rows) {
+function checkRows(rows, id) {
   const n = (v) => Number.isInteger(v) && v >= 0 && v <= 30
+  // a Moxfield deck, or the photo of a player of this very tournament
+  const list = (s) => /^https:\/\/(www\.)?moxfield\.com\/decks\/[-_A-Za-z0-9]+\/?$/.test(s)
+    || (s.startsWith(APP + '#live/' + id + '@') && /^[-_.!~*'()A-Za-z0-9%]+$/.test(s.slice((APP + '#live/' + id + '@').length)))
   const ok = Array.isArray(rows) && rows.length > 0 && rows.length <= 300 && rows.every((r) =>
     r && typeof r.name === 'string' && r.name.trim() && r.name.length <= 200
       && (r.commander == null || (typeof r.commander === 'string' && r.commander.length <= 300))
       && n(r.w) && n(r.l) && n(r.d) && typeof r.bye === 'boolean'
-      && (!r.list || (typeof r.list === 'string' && /^https:\/\/(www\.)?moxfield\.com\/decks\/[-_A-Za-z0-9]+\/?$/.test(r.list))))
+      && (!r.list || (typeof r.list === 'string' && list(r.list))))
   if (!ok) throw new Error('righe non valide')
 }
 
