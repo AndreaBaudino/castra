@@ -22,6 +22,7 @@ export function RecordMatch({
   decks,
   metaNames,
   suggestedResult,
+  suggestedOpponent,
   durationMin,
   saveLabel,
   editing,
@@ -33,6 +34,8 @@ export function RecordMatch({
   decks: Deck[]
   metaNames: string[]
   suggestedResult?: Result
+  /** the opponent's commander, when known (the life counter's background): fills an empty field */
+  suggestedOpponent?: string
   durationMin?: number
   saveLabel?: string
   /** an existing match to edit instead of recording a new one */
@@ -91,6 +94,11 @@ export function RecordMatch({
     setStart(null)
     setOppName('')
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // after the reset above; the check behind the suggestion may also answer once the sheet is open
+  useEffect(() => {
+    if (open && !editing && suggestedOpponent) setOpponent((o) => o || suggestedOpponent)
+  }, [open, suggestedOpponent]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // picked from the list, or written exactly as one of the decks is called
   const deck = decks.find((d) => d.id === deckId) ?? decks.find((d) => normName(d.name) === normName(deckText.trim()))

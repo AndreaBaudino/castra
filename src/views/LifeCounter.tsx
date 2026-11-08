@@ -26,6 +26,7 @@ import type { Score } from '../lib/swiss'
 import { ResultSheet } from './Organizer'
 import { artUrl } from './MetaPages'
 import { ArtSheet, type CardArt } from '../components/ArtSheet'
+import { isCommander } from '../lib/scryfall'
 
 export interface PlayerState {
   life: number
@@ -410,6 +411,18 @@ export default function LifeCounter({
     return c ? { name: c, art: artUrl(c) } : undefined
   }
   const arts = tm ? [cmdArt(flip ? tm.p1 : tm.p2), cmdArt(tg!.me)] : [game.art, mine ?? undefined]
+  // the opponent's background, when it's a card that can be a commander, fills in their deck when the game is recorded;
+  // a commander of the meta needs no check (and works offline)
+  const [oppCmd, setOppCmd] = useState<string>()
+  const bg = game.art?.name
+  useEffect(() => {
+    setOppCmd(undefined)
+    if (!bg) return
+    if (metaNames.includes(bg)) return setOppCmd(bg)
+    const ctrl = new AbortController()
+    isCommander(bg, ctrl.signal).then((ok) => ok && setOppCmd(bg)).catch(() => {})
+    return () => ctrl.abort()
+  }, [bg]) // eslint-disable-line react-hooks/exhaustive-deps
   const started = tg && live.t?.round === tg.round ? live.t.started : null
   const clock = tg ? { ...settings, mainMin: ROUND_MINUTES } : settings
   const round = started && { ...stored, elapsedMs: 0, runningSince: started.toMillis(), addedMs: (tm?.extra ?? 0) * 60_000 }
@@ -872,6 +885,7 @@ export default function LifeCounter({
           metaNames={metaNames}
           players={players}
           suggestedResult={suggested}
+          suggestedOpponent={oppCmd}
           durationMin={Math.round(elapsed(timer) / 60_000) || undefined}
           saveLabel={t('match.saveAndReset')}
           onSave={(m) => {

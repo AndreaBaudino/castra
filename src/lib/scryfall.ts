@@ -125,6 +125,10 @@ export const fetchPrints = (name: string) => search(`!"${front(name)}"`, '&uniqu
 /** A card's different illustrations, one printing each. */
 export const fetchArts = (name: string, signal?: AbortSignal) => search(`!"${front(name)}"`, '&unique=art', signal)
 
+/** Whether a card can lead a deck (legendary creature, "can be your commander"…), by Scryfall's own rule. */
+export const isCommander = (name: string, signal?: AbortSignal) =>
+  search(`!"${front(name)}" is:commander`, '', signal).then((r) => r.length > 0)
+
 // ---------- one card in full: Oracle text, Italian text, rulings ----------
 
 interface ScryFace {

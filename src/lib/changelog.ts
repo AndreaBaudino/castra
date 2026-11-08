@@ -9,8 +9,14 @@ export interface Release {
 export const CHANGELOG: Release[] = [
   {
     date: '2026-11-08',
-    it: ['Life counter: il pulsante "Sfondo" del giocatore in alto apre la scelta dello sfondo girata verso di lui, così la legge senza girare il telefono'],
-    en: ['Life counter: the top player\'s "Background" button opens the background picker turned towards them, so they can read it without turning the phone'],
+    it: [
+      'Life counter: il pulsante "Sfondo" del giocatore in alto apre la scelta dello sfondo girata verso di lui, così la legge senza girare il telefono',
+      'Life counter: se lo sfondo dell\'avversario è una carta che può essere comandante, registrando la partita il comandante avversario è già scritto',
+    ],
+    en: [
+      'Life counter: the top player\'s "Background" button opens the background picker turned towards them, so they can read it without turning the phone',
+      'Life counter: if the opponent\'s background is a card that can be a commander, recording the game fills in the opposing commander',
+    ],
   },
   {
     date: '2026-11-07',
