@@ -311,6 +311,8 @@ const it = {
   'life.exit': 'Esci',
   'life.startLife': 'Vita iniziale',
   'life.close': 'Chiudi',
+  'life.keySpace': 'Spazio',
+  'life.keyDel': 'Cancella',
   'life.cmdDamageFrom': 'Danno dal comandante avversario',
 
   'decks.title': 'Mazzi',
@@ -1786,6 +1788,8 @@ const en: Record<Key, string> = {
   'life.exit': 'Exit',
   'life.startLife': 'Starting life',
   'life.close': 'Close',
+  'life.keySpace': 'Space',
+  'life.keyDel': 'Delete',
   'life.cmdDamageFrom': 'Damage from opposing commander',
 
   'decks.title': 'Decks',

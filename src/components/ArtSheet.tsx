@@ -4,6 +4,9 @@ import { type CardInfo, type Deck, deckCover } from '../lib/decks'
 import { fetchArts, searchCards } from '../lib/scryfall'
 import { Icon } from './ui'
 
+// the phone's keyboard always opens upright at the bottom: the top player types on these keys, turned with the sheet
+const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
+
 /** A card's art behind a player's life total, with the card's name for the game menu. */
 export interface CardArt {
   name: string
@@ -30,6 +33,7 @@ export function ArtSheet({
   const [q, setQ] = useState('')
   const [results, setResults] = useState<CardInfo[]>([])
   const [arts, setArts] = useState<CardInfo[]>([])
+  const [keys, setKeys] = useState(false)
 
   useEffect(() => {
     const ctrl = new AbortController()
@@ -99,8 +103,33 @@ export function ArtSheet({
         )}
         <div className="search">
           <Icon name="search" size={18} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('player.coverSearch')} />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('player.coverSearch')}
+            readOnly={up}
+            onClick={() => up && setKeys(true)}
+          />
         </div>
+        {up && keys && (
+          <div className="keypad">
+            {ROWS.map((r) => (
+              <div key={r}>
+                {[...r].map((k) => (
+                  <button key={k} onClick={() => setQ(q + k.toLowerCase())}>
+                    {k}
+                  </button>
+                ))}
+              </div>
+            ))}
+            <div>
+              <button className="wide" onClick={() => setQ(q + ' ')} aria-label={t('life.keySpace')} />
+              <button onClick={() => setQ(q.slice(0, -1))} aria-label={t('life.keyDel')}>
+                <Icon name="back" size={18} />
+              </button>
+            </div>
+          </div>
+        )}
         {results.length > 0 && grid(asArt(results))}
         <button className="btn ghost" onClick={onClose}>
           {t('life.close')}

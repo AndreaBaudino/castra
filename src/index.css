@@ -1954,6 +1954,34 @@ button.kv.clickable b {
 .reset-card.up {
   transform: rotate(180deg);
 }
+/* the keys the top player types on, dark like the menu */
+.keypad {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.keypad div {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.keypad button {
+  flex: 1;
+  max-width: 34px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #26262a;
+  border-radius: var(--radius);
+  background: #1b1b1e;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+}
+.keypad button.wide {
+  max-width: none;
+}
 /* a long menu scrolls: without this its rows would shrink instead, the boxed ones (overflow: hidden) to nothing */
 .reset-card > * {
   flex-shrink: 0;
