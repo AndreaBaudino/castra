@@ -10,12 +10,14 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-08',
     it: [
+      'Area TO: accanto al codice delle iscrizioni il pulsante QR lo mostra a tutto schermo, da far inquadrare in sala: la fotocamera apre Castra sul torneo, pronto per iscriversi. Sotto ci sono il codice in grande e gli iscritti, che salgono in diretta; lo schermo resta acceso finché il QR è aperto',
       'Life counter: il pulsante "Sfondo" del giocatore in alto apre la scelta dello sfondo girata verso di lui, così la legge senza girare il telefono',
       'Life counter: nella scelta dello sfondo girata verso il giocatore in alto la ricerca ha una tastiera girata anche lei, perché quella del telefono si apre sempre dal lato di chi lo tiene',
       'Life counter: se lo sfondo dell\'avversario è una carta che può essere comandante, registrando la partita il comandante avversario è già scritto',
       'Life counter: due nuovi contatori da accendere nel menu della partita. Storm conta le magie lanciate nel turno; Mana tiene il mana fluttuante per colore e incolore: tocca un colore per aggiungerne uno, il − sotto il colore per toglierlo, × svuota la riserva',
     ],
     en: [
+      'Organizer area: next to the registration code, the QR button shows it full screen for players to scan in the room: the camera opens Castra on the tournament, ready to register. Below are the code in large type and the live number of registered players; the screen stays on while the QR is open',
       'Life counter: the top player\'s "Background" button opens the background picker turned towards them, so they can read it without turning the phone',
       'Life counter: in the background picker turned towards the top player the search has its own keyboard turned the same way, since the phone\'s keyboard always opens on the owner\'s side',
       'Life counter: if the opponent\'s background is a card that can be a commander, recording the game fills in the opposing commander',

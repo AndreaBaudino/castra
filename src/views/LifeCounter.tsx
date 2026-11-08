@@ -27,6 +27,7 @@ import { ResultSheet } from './Organizer'
 import { artUrl } from './MetaPages'
 import { ArtSheet, type CardArt } from '../components/ArtSheet'
 import { isCommander } from '../lib/scryfall'
+import { useWakeLock } from '../lib/wakeLock'
 
 export interface PlayerState {
   life: number
@@ -466,24 +467,7 @@ export default function LifeCounter({
   const timer: TimerState = round ? { ...round, alerted: stored.addedMs === round.addedMs ? stored.alerted : 'none' } : stored
 
   // keep the screen awake during the game (unless turned off in the account's preferences)
-  useEffect(() => {
-    if (!readPrefs().wake) return
-    let lock: WakeLockSentinel | null = null
-    const acquire = async () => {
-      try {
-        lock = await navigator.wakeLock?.request('screen')
-      } catch {
-        /* not supported or denied */
-      }
-    }
-    acquire()
-    const onVis = () => document.visibilityState === 'visible' && acquire()
-    document.addEventListener('visibilitychange', onVis)
-    return () => {
-      document.removeEventListener('visibilitychange', onVis)
-      lock?.release().catch(() => {})
-    }
-  }, [])
+  useWakeLock(readPrefs().wake)
 
   const setTimer = (fn: (t: TimerState) => TimerState) => setGame((g) => ({ ...g, timer: fn(g.timer ?? freshTimer()) }))
 

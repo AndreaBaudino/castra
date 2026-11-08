@@ -46,6 +46,7 @@ function Swords() {
 const paths: Record<string, ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   meta: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  qr: <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h3v3h-3z" />,
   game: <Swords />,
   decks: (
     <>

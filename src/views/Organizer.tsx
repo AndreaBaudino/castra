@@ -58,11 +58,12 @@ import {
   useTournaments,
   useUnfiled,
 } from '../lib/tournaments'
-import { Icon, Sheet } from '../components/ui'
+import { Icon, Sheet, useBackCloses } from '../components/ui'
 import { NOTIFY_URL, TOURNAMENT_GUIDE_URL } from '../config'
 import { pushBlock, turnOnPush } from '../lib/push'
 import { useDialog } from '../components/Dialog'
-import { SubPageShell } from './Circuit'
+import { LiveDot, SubPageShell } from './Circuit'
+import { useWakeLock } from '../lib/wakeLock'
 import { Toggle } from './Account'
 import { MatchList, RankingList } from './Live'
 import { JoinSheet } from './MyTournament'
@@ -353,6 +354,7 @@ export function TournamentAdmin({
   const [player, setPlayer] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [joining, setJoining] = useState(false)
+  const [qr, setQr] = useState(false)
   const [busy, setBusy] = useState(false)
   const rows = useMemo(() => (tour ? ranking(tour, players, matches) : []), [tour, players, matches])
   // the decklists, read once it's over: copying needs them at hand (a phone allows it only right after the tap)
@@ -485,25 +487,36 @@ export function TournamentAdmin({
           )}
           {tour.status === 'open' && (
             <div className="to-code">
-              <span className="muted small">{t('run.code')}</span>
-              <b>{tour.code ?? '—'}</b>
+              <div>
+                <span className="muted small">{t('run.code')}</span>
+                <b>{tour.code ?? '—'}</b>
+              </div>
               {tour.code && (
-                <button className="icon-btn" onClick={() => shareCode(tour.code!)} aria-label={t('share.label')}>
-                  <Icon name="share" size={18} />
-                </button>
+                <>
+                  <button className="btn tonal small" onClick={() => setQr(true)} aria-label={t('run.qrShow')}>
+                    <Icon name="qr" size={18} /> QR
+                  </button>
+                  <button className="icon-btn" onClick={() => shareCode(tour.code!)} aria-label={t('share.label')}>
+                    <Icon name="share" size={18} />
+                  </button>
+                </>
               )}
-              <button
-                className="btn ghost small"
-                disabled={busy}
-                onClick={async () => {
-                  if (!tour.code || (await dialog.confirm(t('run.newCodeConfirm'), { ok: t('run.newCode') }))) act(() => setTournament(id, { code: newCode() }))
-                }}
-              >
-                {t(tour.code ? 'run.newCode' : 'run.makeCode')}
-              </button>
             </div>
           )}
-          {tour.status === 'open' && <p className="muted small no-margin">{t('run.codeHint')}</p>}
+          {tour.status === 'open' && (
+            <button
+              className="btn ghost small to-new-code"
+              disabled={busy}
+              onClick={async () => {
+                if (!tour.code || (await dialog.confirm(t('run.newCodeConfirm'), { ok: t('run.newCode') }))) act(() => setTournament(id, { code: newCode() }))
+              }}
+            >
+              {t(tour.code ? 'run.newCode' : 'run.makeCode')}
+            </button>
+          )}
+          {qr && tour.status === 'open' && tour.code && (
+            <QrScreen tour={tour} code={tour.code} players={active.length} onShare={() => shareCode(tour.code!)} onClose={() => setQr(false)} />
+          )}
           {/* a TO who plays too: with one of their decks, for their stats, as the players do from the home */}
           {tour.status === 'open' && (
             <button className="btn ghost" onClick={() => setJoining(true)}>
@@ -1364,5 +1377,52 @@ function AddPlayerSheet({
         </button>
       </div>
     </Sheet>
+  )
+}
+
+/** The registration code as a QR, full screen, to show in the room: the camera opens the app on the tournament. */
+function QrScreen({ tour, code, players, onShare, onClose }: { tour: Tournament; code: string; players: number; onShare: () => void; onClose: () => void }) {
+  const { t, lang } = useI18n()
+  const [path, setPath] = useState<{ n: number; d: string }>()
+  useBackCloses(true, onClose)
+  useWakeLock(true)
+  useEffect(() => {
+    // loaded only here: no weight for whoever never opens it
+    import('qrcode-generator').then(({ default: qrcode }) => {
+      const q = qrcode(0, 'M')
+      q.addData(joinLink(code))
+      q.make()
+      const n = q.getModuleCount()
+      let d = ''
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`
+      setPath({ n, d })
+    })
+  }, [code])
+  return (
+    <div className="qr-screen" role="dialog" aria-modal>
+      <div className="qr-head">
+        <span className="qr-status">{tournamentStatus(tour, t)}</span>
+        <button className="icon-btn" onClick={onClose} aria-label="close">
+          <Icon name="close" />
+        </button>
+      </div>
+      <h2>{tournamentTitle(tour, t)}</h2>
+      <span className="muted">{new Date(tour.date).toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+      <div className="qr-code">
+        {path && (
+          <svg viewBox={`-1 -1 ${path.n + 2} ${path.n + 2}`} shapeRendering="crispEdges" role="img" aria-label={t('run.qrAlt')}>
+            <path d={path.d} />
+          </svg>
+        )}
+      </div>
+      <span className="muted small">{t('run.qrOr')}</span>
+      <b className="qr-text">{code}</b>
+      <span className="qr-count">
+        <LiveDot live="live" /> {t('run.qrCount', { n: players })}
+      </span>
+      <button className="btn qr-share" onClick={onShare}>
+        <Icon name="share" size={16} /> {t('run.qrShare')}
+      </button>
+    </div>
   )
 }

@@ -40,8 +40,8 @@ scrivere codice. I mockup delle schermate sono su
   scheda `Classifica` della lega) oppure crea un giocatore nuovo, con un avviso se il nome somiglia a uno esistente
   (`playerKey`).
 - **Con link o codice**: quando apre le iscrizioni il torneo riceve un codice di 6 caratteri senza caratteri ambigui
-  (es. `K7P3QX`) e il link `…/castra/#join~K7P3QX`. Il TO lo condivide o lo mostra in sala e può rigenerarlo (il
-  vecchio smette di funzionare). Il codice non è un segreto (sta nel torneo, che tutti leggono): serve a trovare il
+  (es. `K7P3QX`) e il link `…/castra/#join~K7P3QX`. Il TO lo condivide o lo mostra in sala (il pulsante QR lo apre a
+  tutto schermo come QR del link, con lo schermo che resta acceso) e può rigenerarlo (il vecchio smette di funzionare). Il codice non è un segreto (sta nel torneo, che tutti leggono): serve a trovare il
   torneo. A proteggere le iscrizioni sono il collegamento al giocatore e la conferma del TO per chi non è verificato.
 
   | Chi apre il link | Cosa succede |

@@ -2839,13 +2839,92 @@ textarea {
 .to-code {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+}
+.to-code > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .to-code b {
-  flex: 1;
+  font-family: var(--font-mono);
   font-size: 1.6rem;
   letter-spacing: 0.15em;
   font-variant-numeric: tabular-nums;
+}
+.to-new-code {
+  align-self: flex-start;
+}
+/* the registration QR, full screen to show in the room: white under the code so every camera reads it */
+.qr-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: calc(var(--safe-t) + 10px) 24px calc(var(--safe-b) + 24px);
+  overflow-y: auto;
+  text-align: center;
+}
+.qr-head {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.qr-status {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.qr-screen h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+.qr-code {
+  width: min(306px, 80vw, 45dvh);
+  aspect-ratio: 1;
+  margin: 6px 0;
+  padding: 18px;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 8px;
+}
+.qr-code svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: #0b0b0c;
+}
+.qr-text {
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  letter-spacing: 0.18em;
+  padding-left: 0.18em;
+}
+.qr-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.qr-share {
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 480px;
 }
 /* the home's row to type a tournament's code */
 .join-row {
