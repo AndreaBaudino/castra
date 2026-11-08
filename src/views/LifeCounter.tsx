@@ -15,7 +15,8 @@ import {
   phaseOf,
   totalMs,
 } from '../lib/timer'
-import { Icon, useBackCloses } from '../components/ui'
+import { Icon, Pips, useBackCloses } from '../components/ui'
+import { useLongPress } from '../lib/longPress'
 import { RecordMatch } from '../components/RecordMatch'
 import { useDialog } from '../components/Dialog'
 import { CardLookupSheet } from './Cards'
@@ -34,16 +35,22 @@ export interface PlayerState {
   poison: number
   energy?: number
   exp?: number // experience
+  storm?: number
+  mana?: number[] // floating mana by MANA: storm and mana change too often for the history
 }
 
+const MANA = ['W', 'U', 'B', 'R', 'G', 'C']
+
 /** The counters shown in one game: commander damage unless turned off, the others when turned on. */
-export type Extra = 'cmd' | 'poison' | 'energy' | 'exp' | 'monarch' | 'initiative' | 'dungeon'
-const EXTRAS: Extra[] = ['cmd', 'poison', 'energy', 'exp', 'monarch', 'initiative', 'dungeon']
+export type Extra = 'cmd' | 'poison' | 'energy' | 'exp' | 'storm' | 'mana' | 'monarch' | 'initiative' | 'dungeon'
+const EXTRAS: Extra[] = ['cmd', 'poison', 'energy', 'exp', 'storm', 'mana', 'monarch', 'initiative', 'dungeon']
 const EXTRA_KEY = {
   cmd: 'life.cmd',
   poison: 'life.poison',
   energy: 'life.energy',
   exp: 'life.exp',
+  storm: 'life.storm',
+  mana: 'life.mana',
   monarch: 'life.monarch',
   initiative: 'life.initiative',
   dungeon: 'life.dungeon',
@@ -207,7 +214,7 @@ function PlayerPanel({
   const minus = useRepeat(() => changeLife(-1))
   const plus = useRepeat(() => changeLife(1))
 
-  const counter = (key: 'cmd' | 'poison' | 'energy' | 'exp', label: string, step: number, lethal?: number) => (
+  const counter = (key: 'cmd' | 'poison' | 'energy' | 'exp' | 'storm', label: string, step: number, lethal?: number) => (
     <div className={`counter ${lethal && (p[key] ?? 0) >= lethal ? 'lethal' : ''}`}>
       <button
         aria-label={`${label} -`}
@@ -281,13 +288,44 @@ function PlayerPanel({
           )}
         </div>
       )}
+      {extras.includes('mana') && <ManaPool mana={p.mana} set={(mana) => update((p) => ({ ...p, mana }))} />}
       <div className="counters">
         {extras.includes('cmd') && counter('cmd', t('life.cmd'), 1, COMMANDER_DAMAGE_LETHAL)}
         {extras.includes('poison') && counter('poison', t('life.poison'), 1, POISON_LETHAL)}
         {extras.includes('energy') && counter('energy', t('life.energy'), 1)}
         {extras.includes('exp') && counter('exp', t('life.exp'), 1)}
+        {extras.includes('storm') && counter('storm', t('life.storm'), 1)}
       </div>
     </section>
+  )
+}
+
+/** The mana a player has floating: tap a colour to add one, hold it to take one away, × empties the pool. */
+function ManaPool({ mana = [], set }: { mana?: number[]; set: (m: number[] | undefined) => void }) {
+  const { t } = useI18n()
+  const add = (i: number, d: number) => {
+    haptic()
+    set(MANA.map((_, j) => Math.max(0, (mana[j] ?? 0) + (j === i ? d : 0))))
+  }
+  return (
+    <div className="mana-pool">
+      {MANA.map((c, i) => (
+        <ManaBtn key={c} c={c} n={mana[i] ?? 0} add={(d) => add(i, d)} />
+      ))}
+      <button className="mana-clear" disabled={!mana.some(Boolean)} onClick={() => set(undefined)} aria-label={t('life.manaClear')}>
+        <Icon name="close" size={14} />
+      </button>
+    </div>
+  )
+}
+
+function ManaBtn({ c, n, add }: { c: string; n: number; add: (d: number) => void }) {
+  const press = useLongPress(() => add(1), () => add(-1))
+  return (
+    <button className={`mana ${n ? 'on' : ''}`} {...press} aria-label={`${c} ${n}`}>
+      <Pips colors={c} size={14} />
+      <b>{n}</b>
+    </button>
   )
 }
 
@@ -824,6 +862,7 @@ export default function LifeCounter({
                 </button>
               ))}
             </div>
+            {extras.includes('mana') && <div className="muted small">{t('life.manaHint')}</div>}
 
             {!tg && (
               <>

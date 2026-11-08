@@ -1571,6 +1571,34 @@ button.kv.clickable b {
   border-radius: var(--radius);
   height: 48px;
 }
+/* floating mana, one button per colour and colourless */
+.mana-pool {
+  display: flex;
+  gap: 4px;
+  padding: 0 8px 8px;
+}
+.mana-pool button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.mana-pool .mana:not(.on) {
+  opacity: 0.55;
+}
+.mana-pool .mana-clear {
+  flex: 0 0 32px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.mana-pool .mana-clear:disabled {
+  opacity: 0.3;
+}
 .counter.lethal {
   background: rgba(0, 0, 0, 0.6);
   box-shadow: inset 0 0 0 2px var(--gold);
