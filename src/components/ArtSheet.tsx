@@ -13,12 +13,14 @@ export interface CardArt {
 /** Picks the art behind a player's panel: one of the player's decks, any card, or none (the player's colour). */
 export function ArtSheet({
   mine,
+  up,
   value,
   decks,
   onPick,
   onClose,
 }: {
   mine: boolean // the bottom player's, kept for the next games
+  up?: boolean // turned towards the top player, who opened it from their panel
   value?: CardArt
   decks: Deck[]
   onPick: (a: CardArt | undefined) => void
@@ -74,7 +76,7 @@ export function ArtSheet({
 
   return (
     <div className="roll-overlay dim" onClick={onClose}>
-      <div className="reset-card" onClick={(e) => e.stopPropagation()}>
+      <div className={`reset-card ${up ? 'up' : ''}`} onClick={(e) => e.stopPropagation()}>
         <strong>{t(mine ? 'life.artMine' : 'life.artOpp')}</strong>
         <p className="muted small no-margin">{t(mine ? 'life.artMineHint' : 'life.artOppHint')}</p>
         <div className="chips">

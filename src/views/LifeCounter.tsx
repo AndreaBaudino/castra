@@ -393,6 +393,7 @@ export default function LifeCounter({
   const [roll, setRoll] = useState<Roll | null>(null)
   const [mine, setMine] = useStoredState<CardArt | null>('cc.lifeArt', null)
   const [artFor, setArtFor] = useState<0 | 1 | null>(null)
+  const [artUp, setArtUp] = useState(false) // opened from the top panel: the sheet faces that player
   useBackCloses(artFor !== null, () => setArtFor(null))
   const [banner, setBanner] = useState('')
   const [, tick] = useState(0)
@@ -503,7 +504,16 @@ export default function LifeCounter({
   }
   const pickArt = (i: 0 | 1, a?: CardArt) => (i ? setMine(a ?? null) : setGame((g) => ({ ...g, art: a })))
   // at a tournament table the backgrounds are the commanders: nothing to change
-  const artBtns = (i: 0 | 1) => (tg ? {} : { onArt: () => setArtFor(i), onClear: () => pickArt(i) })
+  const artBtns = (i: 0 | 1) =>
+    tg
+      ? {}
+      : {
+          onArt: () => {
+            setArtUp(!i)
+            setArtFor(i)
+          },
+          onClear: () => pickArt(i),
+        }
   const tokens = (i: 0 | 1) => ({
     extras,
     holds: (k: 'monarch' | 'initiative') => game[k] === i,
@@ -642,6 +652,7 @@ export default function LifeCounter({
       {artFor !== null && (
         <ArtSheet
           mine={artFor === 1}
+          up={artUp}
           value={arts[artFor]}
           decks={decks}
           onPick={(a) => pickArt(artFor, a)}
@@ -781,6 +792,7 @@ export default function LifeCounter({
                       className="btn small ghost"
                       onClick={() => {
                         setMenu(false)
+                        setArtUp(false)
                         setArtFor(i)
                       }}
                     >

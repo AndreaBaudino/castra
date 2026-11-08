@@ -1897,6 +1897,10 @@ button.kv.clickable b {
 .reset-card > strong {
   text-align: center;
 }
+/* the background picker opened from the top panel faces that player */
+.reset-card.up {
+  transform: rotate(180deg);
+}
 /* a long menu scrolls: without this its rows would shrink instead, the boxed ones (overflow: hidden) to nothing */
 .reset-card > * {
   flex-shrink: 0;
