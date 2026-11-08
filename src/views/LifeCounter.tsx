@@ -16,7 +16,6 @@ import {
   totalMs,
 } from '../lib/timer'
 import { Icon, Pips, useBackCloses } from '../components/ui'
-import { useLongPress } from '../lib/longPress'
 import { RecordMatch } from '../components/RecordMatch'
 import { useDialog } from '../components/Dialog'
 import { CardLookupSheet } from './Cards'
@@ -300,7 +299,7 @@ function PlayerPanel({
   )
 }
 
-/** The mana a player has floating: tap a colour to add one, hold it to take one away, × empties the pool. */
+/** The mana a player has floating: tap a colour to add one, its − to take one away, × empties the pool. */
 function ManaPool({ mana = [], set }: { mana?: number[]; set: (m: number[] | undefined) => void }) {
   const { t } = useI18n()
   const add = (i: number, d: number) => {
@@ -310,22 +309,21 @@ function ManaPool({ mana = [], set }: { mana?: number[]; set: (m: number[] | und
   return (
     <div className="mana-pool">
       {MANA.map((c, i) => (
-        <ManaBtn key={c} c={c} n={mana[i] ?? 0} add={(d) => add(i, d)} />
+        // the − keeps its room when hidden, so the panel doesn't move as mana comes and goes
+        <div key={c} className="mana-slot">
+          <button className={`mana ${mana[i] ? 'on' : ''}`} onClick={() => add(i, 1)} aria-label={`${c} +`}>
+            <Pips colors={c} size={14} />
+            <b>{mana[i] ?? 0}</b>
+          </button>
+          <button className="mana-minus" hidden={!mana[i]} onClick={() => add(i, -1)} aria-label={`${c} −`}>
+            −
+          </button>
+        </div>
       ))}
       <button className="mana-clear" disabled={!mana.some(Boolean)} onClick={() => set(undefined)} aria-label={t('life.manaClear')}>
         <Icon name="close" size={14} />
       </button>
     </div>
-  )
-}
-
-function ManaBtn({ c, n, add }: { c: string; n: number; add: (d: number) => void }) {
-  const press = useLongPress(() => add(1), () => add(-1))
-  return (
-    <button className={`mana ${n ? 'on' : ''}`} {...press} aria-label={`${c} ${n}`}>
-      <Pips colors={c} size={14} />
-      <b>{n}</b>
-    </button>
   )
 }
 
@@ -862,7 +860,6 @@ export default function LifeCounter({
                 </button>
               ))}
             </div>
-            {extras.includes('mana') && <div className="muted small">{t('life.manaHint')}</div>}
 
             {!tg && (
               <>
