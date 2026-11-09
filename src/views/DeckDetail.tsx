@@ -288,6 +288,7 @@ function DeckBar({ count, total, types, onPrice }: { count: number; total: strin
   const { t } = useI18n()
   const wide = useWide()
   const [page, setPage] = useState(0) // always opens on the price
+  const [from, setFrom] = useState<'left' | 'right'>() // the new page slides in from the side it comes from
   const startX = useRef(0)
   const info = (
     <div className="deck-bar-info">
@@ -314,8 +315,6 @@ function DeckBar({ count, total, types, onPrice }: { count: number; total: strin
         {icons}
       </div>
     )
-  // the new page slides in from the side it comes from
-  const [from, setFrom] = useState<'left' | 'right'>()
   const flip = (side: 'left' | 'right') => {
     setFrom(side)
     setPage(1 - page)
