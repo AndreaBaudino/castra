@@ -179,7 +179,7 @@ service cloud.firestore {
     }
     match /tournaments/{tid} {
       function valid(d) {
-        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code', 'published', 'at', 'by'])
+        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code', 'published', 'time', 'place', 'address', 'hidden', 'at', 'by'])
           && d.drive is string
           // its id is its sheet (and stage): one tournament for each
           && ((d.kind in ['l1', 'l2'] && tid == d.drive && d.get('stage', null) == null)
@@ -194,6 +194,11 @@ service cloud.firestore {
           && d.get('filed', false) is bool
           // the registration code: none once round 1 starts
           && (d.get('code', null) == null || (d.code is string && d.code.matches('[A-Z0-9]{6}')))
+          // for the calendar: start time, venue and its address, or kept out of it by the TO
+          && (d.get('time', null) == null || (d.time is string && d.time.matches('[0-2][0-9]:[0-5][0-9]')))
+          && (d.get('place', null) == null || (d.place is string && d.place.size() <= 100))
+          && (d.get('address', null) == null || (d.address is string && d.address.size() <= 200))
+          && d.get('hidden', false) is bool
           // what the Apps Script wrote into the sheet, to take it off again
           && (d.get('published', null) == null
             || (d.published is map && d.published.keys().hasOnly(['tab', 'first', 'rows', 'players', 'commanders'])
@@ -214,7 +219,7 @@ service cloud.firestore {
       // the round's clock starts at the server's time, the same for every phone
       allow update: if manages(resource.data.drive)
         && valid(request.resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code', 'published'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code', 'published', 'time', 'place', 'address', 'hidden'])
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['started']) || request.resource.data.started == request.time);
       allow delete: if manages(resource.data.drive);
 

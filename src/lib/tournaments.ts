@@ -43,6 +43,11 @@ export interface Tournament {
   started: { toMillis: () => number } | null // the round's clock, at the server's time
   filed: boolean // its results are in the sheet: until then the TO keeps finding it
   code?: string | null // to register from the app (#join~CODE): none once round 1 starts
+  // the calendar of the next tournaments: start, venue, its address for the maps; `hidden` by the TO keeps it out
+  time?: string | null // HH:MM
+  place?: string | null
+  address?: string | null
+  hidden?: boolean
   // what "Pubblica sul foglio" wrote, kept by the Apps Script to take it off again
   published?: { tab: string; first: number; rows: number; players: string[]; commanders: string[] }
   at: string
@@ -307,6 +312,54 @@ export function useTournaments() {
   return { tournaments: docs, loaded }
 }
 
+/** The calendar: tournaments not started yet, from today on, that their TO didn't hide; the soonest first. */
+export const upcoming = (ts: [string, Tournament][]) => {
+  const today = new Date().toLocaleDateString('sv') // the local day, as YYYY-MM-DD
+  return ts
+    .filter(([, x]) => x.status === 'open' && !x.hidden && x.date >= today)
+    .sort(([, a], [, b]) => (a.date + (a.time ?? '')).localeCompare(b.date + (b.time ?? '')))
+}
+
+/** Which of these tournaments the player is in (a request waiting for the TO counts): undefined while reading. */
+export function useEntered(ids: string[], me: string | null) {
+  const [entered, setEntered] = useState<Set<string>>()
+  const key = ids.join('|')
+  useEffect(() => {
+    if (!me || !ids.length) return setEntered(new Set())
+    let on = true
+    fb()
+      .then(({ db, fs }) => Promise.all(ids.map((id) => fs.getDoc(fs.doc(db, 'tournaments', id, 'players', me)).then((d) => (d.exists() ? id : '')))))
+      .then((r) => on && setEntered(new Set(r.filter(Boolean))), () => on && setEntered(new Set()))
+    return () => {
+      on = false
+    }
+  }, [key, me]) // eslint-disable-line react-hooks/exhaustive-deps
+  return entered
+}
+
+/** The tournament as a calendar file (.ics): the day, or from its start time for four hours. */
+export function icsOf(id: string, x: Tournament, title: string, url: string) {
+  const day = x.date.replace(/-/g, '')
+  const esc = (v: string) => v.replace(/[\\,;]/g, (c) => '\\' + c).replace(/\n/g, '\\n')
+  const when = x.time
+    ? [`DTSTART:${day}T${x.time.replace(':', '')}00`, `DURATION:PT4H`]
+    : [`DTSTART;VALUE=DATE:${day}`, `DURATION:P1D`]
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Castra//IT',
+    'BEGIN:VEVENT',
+    `UID:${id.replace(/[^\w~-]/g, '')}@castra`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
+    ...when,
+    `SUMMARY:${esc(title)}`,
+    ...(x.place || x.address ? [`LOCATION:${esc([x.place, x.address].filter(Boolean).join(', '))}`] : []),
+    `URL:${url}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+}
+
 /** The tournaments whose results aren't in the sheet yet, however old. */
 export function useUnfiled() {
   return useLiveCollection<Tournament>('tournaments', ['filed', '==', false]).docs
@@ -388,7 +441,7 @@ export async function createTournament(user: AppUser, s: Source, date: string, s
 }
 
 /** Date, Swiss rounds, top cut and registration code, while they can still change. */
-export async function setTournament(id: string, patch: Partial<Pick<Tournament, 'date' | 'rounds' | 'cut' | 'code'>>) {
+export async function setTournament(id: string, patch: Partial<Pick<Tournament, 'date' | 'rounds' | 'cut' | 'code' | 'time' | 'place' | 'address' | 'hidden'>>) {
   const { db, fs } = await fb()
   await fs.updateDoc(fs.doc(db, 'tournaments', id), patch)
 }

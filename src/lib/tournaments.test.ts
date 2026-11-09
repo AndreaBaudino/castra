@@ -8,6 +8,8 @@ import {
   type TableMatch,
   type Tournament,
   entrantsOf,
+  icsOf,
+  upcoming,
   isListLink,
   newCode,
   nextStage,
@@ -254,5 +256,33 @@ describe('commanders against commanders', () => {
       { id: 0, wins: 1, losses: 2, draws: 0, games: 3 },
       { id: 2, wins: 1, losses: 0, draws: 0, games: 1 },
     ])
+  })
+})
+
+describe('the calendar of the next tournaments', () => {
+  const day = (n: number) => new Date(Date.now() + n * 864e5).toLocaleDateString('sv')
+  const tour = (p: Partial<Tournament>) => ({ name: 'Savona', kind: 'league', stage: 4, status: 'open', date: day(3), cut: 0, ...p }) as Tournament
+
+  it('keeps the ones not started, from today on, not hidden, the soonest first', () => {
+    const list: [string, Tournament][] = [
+      ['late', tour({ date: day(9) })],
+      ['afternoon', tour({ date: day(2), time: '15:00' })],
+      ['morning', tour({ date: day(2), time: '10:00' })],
+      ['today', tour({ date: day(0) })],
+      ['yesterday', tour({ date: day(-1) })],
+      ['playing', tour({ status: 'swiss' })],
+      ['hidden', tour({ hidden: true })],
+    ]
+    expect(upcoming(list).map(([id]) => id)).toEqual(['today', 'morning', 'afternoon', 'late'])
+  })
+
+  it('makes a calendar file: from the start time, or the whole day', () => {
+    const at = icsOf('sv~4', tour({ date: '2026-11-15', time: '15:30', place: 'Fortezza', address: 'Via Roma 1, Savona' }), 'Savona · Tappa 4', 'https://x/#live/sv~4')
+    expect(at).toContain('DTSTART:20261115T153000')
+    expect(at).toContain('LOCATION:Fortezza\\, Via Roma 1\\, Savona')
+    expect(at.split('\r\n')[0]).toBe('BEGIN:VCALENDAR')
+    const allDay = icsOf('sv~4', tour({ date: '2026-11-15' }), 'Savona', 'https://x')
+    expect(allDay).toContain('DTSTART;VALUE=DATE:20261115')
+    expect(allDay).not.toContain('LOCATION')
   })
 })

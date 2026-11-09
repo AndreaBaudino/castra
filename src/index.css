@@ -4528,6 +4528,63 @@ mark.diff-new {
 .home-row-link b {
   font-size: 1.1rem;
 }
+/* the live row with the calendar's link beside: two buttons, the first one takes the room */
+div.home-row > .home-row-link:first-child {
+  flex: 1;
+  justify-content: space-between;
+  min-height: 44px;
+}
+div.home-row > .home-row-link.link {
+  gap: 6px;
+  min-height: 44px;
+  padding-left: 12px;
+  margin-left: 12px;
+  border-left: 1px solid var(--line);
+  color: var(--gold);
+}
+/* the calendar: the day in a box, then the tournament with its registration state */
+.cal-date {
+  width: 46px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.cal-date small {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.cal-date b {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.1;
+  color: var(--text);
+}
+.event-main > .tag {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+}
+.cal-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.cal-line {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.cal-line > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--muted);
+}
 /* the meta card's title: images / list switch, then "see all" */
 .title-actions {
   display: inline-flex;

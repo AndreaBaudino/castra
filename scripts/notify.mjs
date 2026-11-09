@@ -1,5 +1,5 @@
 // Push notifications, sent by .github/workflows/notify.yml: in the morning the banlist and the admin area, in the
-// evening the circuit and the admin area. Each run compares with what the previous one saw (notify/state on
+// evening the circuit, the admin area and the reminders of tomorrow's tournaments. Each run compares with what the previous one saw (notify/state on
 // Firestore, read only by this script) and sends to the devices of the accounts that turned that kind on (their
 // prefs, src/lib/push.ts). Run with vite-node, so the circuit and the banlist are read with the app's own code:
 //   npx vite-node scripts/notify.mjs morning|evening [--dry]
@@ -37,6 +37,9 @@ const T = {
     claims: (n) => (n === 1 ? '1 giocatore collegato' : `${n} giocatori collegati`),
     toSee: (s) => `${s} da vedere`,
     and: 'e',
+    tomorrow: (n) => `Domani: ${n}`,
+    stage: (n) => `Tappa ${n}`,
+    play: 'Domani si gioca: apri Castra per i dettagli.',
   },
   en: {
     me: (to, d) => `You're #${to} in the circuit${d ? ` (${d})` : ''}`,
@@ -52,6 +55,9 @@ const T = {
     claims: (n) => (n === 1 ? '1 linked player' : `${n} linked players`),
     toSee: (s) => `${s} to check`,
     and: 'and',
+    tomorrow: (n) => `Tomorrow: ${n}`,
+    stage: (n) => `Stage ${n}`,
+    play: 'Game day tomorrow: open Castra for the details.',
   },
 }
 const textOf = (u) => T[u.lang === 'en' ? 'en' : 'it']
@@ -105,6 +111,27 @@ if (evening) {
     year: c.year,
     players: c.players.map((p) => ({ key: p.key, rank: p.rank, total: p.total })),
     events: c.events.map((e) => ({ name: e.name })),
+  }
+}
+
+// ---------- reminders (evening): tomorrow's tournaments, to whoever asked from the tournament's page ----------
+
+if (evening) {
+  const tomorrow = new Date(Date.now() + 864e5).toLocaleDateString('sv', { timeZone: 'Europe/Rome' })
+  for (const d of (await db.collection('tournaments').where('date', '==', tomorrow).get()).docs) {
+    const x = d.data()
+    if (x.status !== 'open' || x.hidden) continue
+    for (const u of (await db.collection('users').where('remind', 'array-contains', d.id).get()).docs.map((u) => ({ uid: u.id, ...u.data() }))) {
+      const t = textOf(u)
+      const where = [x.time, x.place].filter(Boolean).join(' · ')
+      out.push({
+        uid: u.uid,
+        title: t.tomorrow(x.stage ? `${x.name} · ${t.stage(x.stage)}` : x.name),
+        body: where || t.play,
+        url: `#live/${encodeURIComponent(d.id)}`,
+        tag: `remind-${d.id}`,
+      })
+    }
   }
 }
 

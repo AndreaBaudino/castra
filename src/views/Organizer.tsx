@@ -576,6 +576,8 @@ export function TournamentAdmin({
           )}
         </section>
 
+        {tour.status === 'open' && <CalendarCard id={id} tour={tour} />}
+
         {playing && (
           <section className="card to-tables">
             <div className="card-title">{tour.status === 'cut' ? t('run.cutRound', { n: current.length * 2 }) : t('run.pairings')}</div>
@@ -1424,5 +1426,53 @@ function QrScreen({ tour, code, players, onShare, onClose }: { tour: Tournament;
         <Icon name="share" size={16} /> {t('run.qrShare')}
       </button>
     </div>
+  )
+}
+
+/** Day, start, venue and address of a tournament not started yet, for the calendar; or kept out of it. */
+function CalendarCard({ id, tour }: { id: string; tour: Tournament }) {
+  const { t } = useI18n()
+  const dialog = useDialog()
+  const initial = { date: tour.date, time: tour.time ?? '', place: tour.place ?? '', address: tour.address ?? '', hidden: !!tour.hidden }
+  const [f, setF] = useState(initial)
+  const [busy, setBusy] = useState(false)
+  const changed = JSON.stringify(f) !== JSON.stringify(initial)
+  const save = async () => {
+    setBusy(true)
+    try {
+      await setTournament(id, { date: f.date, time: f.time || null, place: f.place.trim() || null, address: f.address.trim() || null, hidden: f.hidden })
+    } catch {
+      await dialog.alert(t('admin.error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <section className="card form">
+      <div className="card-title">{t('cal.card')}</div>
+      <p className="muted small no-margin">{t('cal.cardHint')}</p>
+      <div className="cal-fields">
+        <label>
+          <span>{t('cal.day')}</span>
+          <input type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
+        </label>
+        <label>
+          <span>{t('cal.time')}</span>
+          <input type="time" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} />
+        </label>
+      </div>
+      <label>
+        <span>{t('cal.place')}</span>
+        <input maxLength={100} value={f.place} onChange={(e) => setF({ ...f, place: e.target.value })} />
+      </label>
+      <label>
+        <span>{t('cal.address')}</span>
+        <input maxLength={200} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} />
+      </label>
+      <Toggle label={t('cal.show')} hint={t('cal.showHint')} on={!f.hidden} set={(on) => setF({ ...f, hidden: !on })} />
+      <button className="btn tonal" disabled={busy || !changed || !f.date} onClick={save}>
+        {t('join.save')}
+      </button>
+    </section>
   )
 }

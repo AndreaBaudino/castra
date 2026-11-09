@@ -166,6 +166,16 @@ scrivere codice. I mockup delle schermate sono su
 - Va in cima la card del torneo in corso, poi "Nuova partita" e il resto della Home.
 - **Tornei in corso**: tutti quelli del circuito, con tipo, luogo, turno, giocatori e tempo rimasto, e in fondo
   "Conclusi oggi" con il vincitore e il suo comandante. Con un solo torneo in corso il link apre direttamente quello.
+- **Calendario** (`#live/calendar`): i tornei non ancora iniziati, da oggi in poi, mese per mese, con giorno, ora,
+  luogo e stato delle iscrizioni ("Ci sei" se si è iscritti); filtri Tutti / Le mie leghe (quelle in cui il giocatore
+  collegato ha giocato, dal meta) / Livelli 1 e 2. Ci sono tutti i tornei aperti in app che il TO non ha tolto con
+  "Mostra nel calendario" (campo `hidden`). In Home la card "Prossimi tornei" mostra i prossimi due, escluso quello a
+  cui si è iscritti (ha già la sua card); se non ce n'è nessuno la card non c'è e la riga "Tornei in corso" ha a
+  destra il link "Calendario".
+- **Pagina di un torneo non ancora iniziato** (la stessa da spettatore): giorno, ora e formato, luogo con "Apri nelle
+  mappe", "Iscriviti" (porta alla card in Home con il codice), "Aggiungi al calendario" (file .ics) e "Ricordamelo":
+  l'id del torneo va in `users/{uid}.remind` e la sera prima `scripts/notify.mjs` manda la notifica. Nell'Area TO la
+  card "Nel calendario" cambia giorno, ora (`time`), luogo (`place`), indirizzo (`address`) e `hidden`.
 - **Pagina del torneo da spettatore**: barra con turno e timer, "Cerca un giocatore" (tavolo, punti, avversario),
   schede Abbinamenti e Classifica. Il giocatore iscritto ha in più "I miei match", il proprio tavolo evidenziato e il
   drop.

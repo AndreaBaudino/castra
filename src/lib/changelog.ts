@@ -8,6 +8,21 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-09',
+    it: [
+      'Calendario dei tornei: i prossimi tornei gestiti in Castra, mese per mese, con giorno, ora, luogo e iscrizioni aperte (o "Ci sei" se sei già iscritto). Si filtrano per le leghe in cui hai giocato o per i Livelli 1 e 2',
+      'Home: la card "Prossimi tornei" mostra i prossimi due, tranne quello a cui sei iscritto, che ha già la sua card. Se non ce ne sono, la card non c\'è e il Calendario si apre dalla riga "Tornei in corso"',
+      'Pagina di un torneo in arrivo: giorno, ora, formato, luogo con "Apri nelle mappe", "Iscriviti", "Aggiungi al calendario" del telefono e "Ricordamelo", una notifica la sera prima',
+      'Area TO: nella pagina di un torneo con le iscrizioni aperte, "Nel calendario" per scrivere giorno, ora di inizio, luogo e indirizzo, o per toglierlo dal calendario',
+    ],
+    en: [
+      'Tournament calendar: the next tournaments run in Castra, month by month, with day, time, venue and open registration (or "You\'re in" if you already are). Filter by the leagues you played in or by Levels 1 and 2',
+      'Home: the "Next tournaments" card shows the next two, except the one you registered for, which has its own card. With none, the card is gone and the Calendar opens from the "Tournaments in progress" row',
+      'An upcoming tournament\'s page: day, time, format, venue with "Open in maps", "Register", "Add to calendar" on the phone and "Remind me", a notification the evening before',
+      'Organizer area: on a tournament with open registration, "In the calendar" sets day, start time, venue and address, or takes it off the calendar',
+    ],
+  },
+  {
     date: '2026-11-08',
     it: [
       'Area TO: accanto al codice delle iscrizioni il pulsante QR lo mostra a tutto schermo, da far inquadrare in sala: la fotocamera apre Castra sul torneo, pronto per iscriversi. Sotto ci sono il codice in grande e gli iscritti, che salgono in diretta; lo schermo resta acceso finché il QR è aperto',

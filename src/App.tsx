@@ -3,7 +3,7 @@ import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
 import { syncPaused, useCollectionSync, useDocFieldSync } from './lib/sync'
 import { DEFAULT_PREFS, PREFS_KEY, type Prefs, readPrefs } from './lib/prefs'
-import { pushBlock, savePush } from './lib/push'
+import { pushBlock, savePush, turnOnPush } from './lib/push'
 import { DEFAULT_TIMER_SETTINGS, type TimerSettings } from './lib/timer'
 import { DEFAULT_THEME, type Theme, applyTheme, currentTheme } from './lib/theme'
 import { type Deck, newId, newerDeck } from './lib/decks'
@@ -34,7 +34,7 @@ import { SideNav } from './components/SideNav'
 import { useWide } from './lib/wide'
 import { useOrganizer } from './lib/organizers'
 import OrganizerArea, { OrganizerCard, TournamentAdmin } from './views/Organizer'
-import LiveList, { LiveLink, LivePage } from './views/Live'
+import LiveList, { CalendarPage, LivePage, NextTournaments } from './views/Live'
 import { TournamentCards } from './views/MyTournament'
 
 type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards' | 'to' | 'live'
@@ -73,6 +73,7 @@ export default function App() {
   const shown = shownSheet?.year === circuitSheets[0].year ? circuit : pastCircuit
   const [circuitMe, setCircuitMe] = useStoredState<string | null>('cc.circuit.me', null)
   const [follow, setFollow] = useStoredState<string[]>('cc.circuit.follow', [])
+  const [remind, setRemind] = useStoredState<string[]>('cc.remind', []) // tournaments to be reminded of the day before
   const [notice, setNotice] = useStoredState<CircuitNotice | null>('cc.circuit.notice', null)
   const { user } = useAuth()
   const uid = user?.uid ?? null
@@ -97,6 +98,7 @@ export default function App() {
   useDocFieldSync(uid, 'lang', lang, setLang)
   useDocFieldSync(uid, 'circuitMe', circuitMe, setCircuitMe)
   useDocFieldSync(uid, 'circuitFollow', follow, setFollow)
+  useDocFieldSync(uid, 'remind', remind, setRemind)
   // a device's token can change: saved again at start while notifications are on and allowed
   const notify = prefs.notifyCircuit || prefs.notifyBanlist || prefs.notifyAdmin || prefs.notifyTournaments
   useEffect(() => {
@@ -363,7 +365,7 @@ export default function App() {
                     }
                   />
                   {organizer && uid && <OrganizerCard uid={uid} organizer={organizer} open={(id) => (id ? openRun(id) : go('to'))} />}
-                  <LiveLink open={openLive} />
+                  <NextTournaments me={me} open={openLive} openCalendar={() => go('live', 'calendar', true)} />
                 </div>
                 <BanlistNoticeCard decks={decks} openDeck={(id) => go('decks', id)} openCard={openCard} />
                 {noticeCard}
@@ -545,7 +547,33 @@ export default function App() {
               openCard={openMetaCard}
             />
           ) : route.deck ? (
-            <LivePage id={decodeURIComponent(route.deck)} me={me} onBack={() => history.back()} />
+            route.deck === 'calendar' ? (
+              <CalendarPage me={me} dataset={dataset} open={openLive} onBack={() => history.back()} />
+            ) : (
+              <LivePage
+                id={decodeURIComponent(route.deck)}
+                me={me}
+                onBack={() => history.back()}
+                onJoin={(code) => {
+                  setJoinCode(code)
+                  go('home')
+                }}
+                remind={
+                  uid && !pushBlock()
+                    ? {
+                        on: remind.includes(decodeURIComponent(route.deck)),
+                        set: (on) => {
+                          const id = decodeURIComponent(route.deck!)
+                          const save = (ok: boolean) => setRemind((r) => (ok ? [...new Set([...r, id])] : r.filter((x) => x !== id)))
+                          // the reminder comes as a notification: the phone's permission first
+                          if (on) turnOnPush(uid, save)
+                          else save(false)
+                        },
+                      }
+                    : undefined
+                }
+              />
+            )
           ) : (
             <LiveList onBack={() => go('home')} open={openLive} />
           ))}

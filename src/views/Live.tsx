@@ -15,12 +15,17 @@ import {
   tournamentTitle,
   unconfirmed,
   listLinkProps,
+  icsOf,
+  upcoming,
+  useEntered,
   useLists,
   useNow,
   useTournament,
   useTournaments,
 } from '../lib/tournaments'
 import { Icon, ShareButton } from '../components/ui'
+import { Toggle } from './Account'
+import type { MetaDataset } from '../lib/meta'
 import { useWide } from '../lib/wide'
 import { LiveDot, SubPageShell, placeLabel } from './Circuit'
 
@@ -100,24 +105,138 @@ export function RankingList({ rows, onPick, lists, secret }: { rows: RankRow[]; 
 const playing = (x: Tournament) => x.status === 'swiss' || x.status === 'cut'
 const today = () => new Date().toLocaleDateString('sv') // the local day, as YYYY-MM-DD
 
-/** On the home, when a tournament is being played: to follow it (one) or pick one (more). */
-export function LiveLink({ open }: { open: (id?: string) => void }) {
+/** On the home, when a tournament is being played: to follow it (one) or pick one (more); `calendar`: its link beside. */
+export function LiveLink({ open, calendar }: { open: (id?: string) => void; calendar?: () => void }) {
   const { t } = useI18n()
   const { tournaments, loaded } = useTournaments()
   const live = tournaments.filter(([, x]) => playing(x))
   // once read, a red dot says there's none rather than the row disappearing
   if (!loaded) return null
+  const follow = () => open(live.length === 1 ? live[0][0] : undefined)
+  const title = (
+    <span className="title-live">
+      {t('live.title')}
+      <LiveDot live={live.length ? 'live' : 'none'} />
+    </span>
+  )
+  const status = <span className="muted small">{live.length ? t('live.follow', { n: live.length }) : t('live.nobody')}</span>
+  if (calendar)
+    return (
+      <div className="card home-row">
+        <button className="home-row-link" onClick={follow}>
+          {title}
+          {status}
+        </button>
+        <button className="home-row-link link" onClick={calendar}>
+          <Icon name="calendar" size={16} /> {t('cal.title')}
+        </button>
+      </div>
+    )
   return (
-    <button className="card home-row" onClick={() => open(live.length === 1 ? live[0][0] : undefined)}>
-      <span className="title-live">
-        {t('live.title')}
-        <LiveDot live={live.length ? 'live' : 'none'} />
-      </span>
+    <button className="card home-row" onClick={follow}>
+      {title}
       <span className="home-row-link">
-        <span className="muted small">{live.length ? t('live.follow', { n: live.length }) : t('live.nobody')}</span>
+        {status}
         <Icon name="chevron" size={16} />
       </span>
     </button>
+  )
+}
+
+/** On the home: the live link, then the next tournaments but the player's own (they have their card); with none,
+ *  no card and the calendar's link in the live row. */
+export function NextTournaments({ me, open, openCalendar }: { me: string | null; open: (id?: string) => void; openCalendar: () => void }) {
+  const { t } = useI18n()
+  const next = upcoming(useTournaments().tournaments)
+  const entered = useEntered(
+    next.map(([id]) => id),
+    me,
+  )
+  const others = entered ? next.filter(([id]) => !entered.has(id)) : []
+  return (
+    <>
+      <LiveLink open={open} calendar={entered && !others.length ? openCalendar : undefined} />
+      {others.length > 0 && (
+        <section className="card">
+          <div className="card-title">
+            {t('cal.next')}
+            <button className="link" onClick={openCalendar}>
+              {t('cal.title')}
+            </button>
+          </div>
+          <ul className="card-list">
+            {others.slice(0, 2).map(([id, x]) => (
+              <CalendarRow key={id} id={id} x={x} me={me} open={open} />
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  )
+}
+
+const dayOf = (x: Tournament) => new Date(x.date + 'T12:00') // midday: the same day in every time zone
+
+/** A tournament of the calendar: its day, time and venue, and whether registration is open (or the player is in). */
+function CalendarRow({ id, x, me, open }: { id: string; x: Tournament; me: string | null; open: (id: string) => void }) {
+  const { t, lang } = useI18n()
+  const players = useLiveCollection<Player>(`tournaments/${id}/players`).docs
+  const n = players.filter(([, p]) => p.drop == null && !p.pending).length
+  const mine = !!me && players.some(([k]) => k === me)
+  const d = dayOf(x)
+  const short = (o: Intl.DateTimeFormatOptions) => d.toLocaleDateString(lang, o).replace('.', '').toUpperCase()
+  return (
+    <li className="event-row" onClick={() => open(id)}>
+      <span className="cal-date">
+        <small>{short({ weekday: 'short' })}</small>
+        <b>{d.getDate()}</b>
+        <small>{short({ month: 'short' })}</small>
+      </span>
+      <div className="event-main">
+        <strong className="ellipsis">{tournamentTitle(x, t)}</strong>
+        <span className="muted small ellipsis">{[x.time, x.place].filter(Boolean).join(' · ') || t('cal.tbd')}</span>
+        <span className={`tag ${mine ? 'idea' : x.code ? 'new' : ''}`}>
+          {mine ? t('cal.in') : x.code ? t('run.status.open') : t('cal.notYet')} · {t('run.qrCount', { n })}
+        </span>
+      </div>
+    </li>
+  )
+}
+
+/** The calendar: the tournaments not started yet, month by month; the player's leagues are the ones they played in. */
+export function CalendarPage({ me, dataset, open, onBack }: { me: string | null; dataset: MetaDataset | null; open: (id: string) => void; onBack: () => void }) {
+  const { t, lang } = useI18n()
+  const { tournaments, loaded } = useTournaments()
+  const [f, setF] = useState<'all' | 'mine' | 'events'>('all')
+  const leagues = useMemo(
+    () => new Set(me && dataset ? dataset.entries.filter((e) => e.key === me).map((e) => dataset.tournaments[e.t]?.league) : []),
+    [dataset, me],
+  )
+  const shown = upcoming(tournaments).filter(([, x]) => (f === 'all' ? true : f === 'events' ? x.kind !== 'league' : x.kind === 'league' && leagues.has(x.name)))
+  const months = new Map<string, [string, Tournament][]>()
+  for (const r of shown) months.set(r[1].date.slice(0, 7), [...(months.get(r[1].date.slice(0, 7)) ?? []), r])
+  return (
+    <SubPageShell title={t('cal.title')} onBack={onBack}>
+      <div className="seg wide">
+        {(['all', ...(leagues.size ? ['mine' as const] : []), 'events'] as const).map((v) => (
+          <button key={v} className={f === v ? 'on' : ''} onClick={() => setF(v)}>
+            {t(`cal.${v}`)}
+          </button>
+        ))}
+      </div>
+      {!shown.length && <p className="muted no-margin">{loaded ? t('cal.none') : '…'}</p>}
+      {[...months].map(([m, rows]) => (
+        <section key={m}>
+          <h3 className="group-title">{dayOf(rows[0][1]).toLocaleDateString(lang, { month: 'long', year: 'numeric' })}</h3>
+          <ul className="card-list">
+            {rows.map(([id, x]) => (
+              <CalendarRow key={id} id={id} x={x} me={me} open={open} />
+            ))}
+          </ul>
+        </section>
+      ))}
+      <p className="muted small group-note">{t('cal.hint')}</p>
+    </SubPageShell>
   )
 }
 
@@ -185,7 +304,19 @@ export default function LiveList({ onBack, open }: { onBack: () => void; open: (
 }
 
 /** One tournament, as whoever follows it sees it: no results to enter, a search for a player. */
-export function LivePage({ id, me, onBack }: { id: string; me: string | null; onBack: () => void }) {
+export function LivePage({
+  id,
+  me,
+  onBack,
+  onJoin,
+  remind,
+}: {
+  id: string
+  me: string | null
+  onBack: () => void
+  onJoin: (code: string) => void // to the registration, on the home
+  remind?: { on: boolean; set: (on: boolean) => void } // a notification the day before: signed in, with notifications
+}) {
   const { t, lang } = useI18n()
   const now = useNow()
   const { t: tour, players, matches } = useTournament(id)
@@ -236,6 +367,51 @@ export function LivePage({ id, me, onBack }: { id: string; me: string | null; on
           </div>
         )}
       </section>
+
+      {/* not started yet: when and where, to register, into the phone's calendar, a reminder */}
+      {tour.status === 'open' && (
+        <section className="card">
+          <div className="cal-line">
+            <Icon name="calendar" size={18} />
+            <div className="event-main">
+              <strong>{new Date(tour.date + 'T12:00').toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' })}</strong>
+              <span className="muted small">
+                {[tour.time && t('cal.start', { t: tour.time }), tour.cut ? t('cal.swissCut', { n: tour.cut }) : t('cal.swiss')].filter(Boolean).join(' · ')}
+              </span>
+            </div>
+          </div>
+          {(tour.place || tour.address) && (
+            <div className="cal-line">
+              <Icon name="pin" size={18} />
+              <div className="event-main">
+                <strong>{tour.place || tour.address}</strong>
+                {tour.place && tour.address && <span className="muted small">{tour.address}</span>}
+                <a className="link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([tour.place, tour.address].filter(Boolean).join(', '))}`} target="_blank" rel="noreferrer">
+                  {t('cal.maps')}
+                </a>
+              </div>
+            </div>
+          )}
+          {tour.code && !(me && names.has(me)) && (
+            <button className="btn primary" onClick={() => onJoin(tour.code!)}>
+              {t('join.register')}
+            </button>
+          )}
+          <button
+            className="btn"
+            onClick={() => {
+              const a = document.createElement('a')
+              a.href = URL.createObjectURL(new Blob([icsOf(id, tour, title, `${location.origin}${location.pathname}#live/${encodeURIComponent(id)}`)], { type: 'text/calendar' }))
+              a.download = 'castra.ics'
+              a.click()
+              URL.revokeObjectURL(a.href)
+            }}
+          >
+            <Icon name="calendar" size={16} /> {t('cal.ics')}
+          </button>
+          {remind && <Toggle label={t('cal.remind')} hint={t('cal.remindHint')} on={remind.on} set={remind.set} />}
+        </section>
+      )}
 
       {tour.status !== 'open' && (
         <>
