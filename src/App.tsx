@@ -159,10 +159,11 @@ export default function App() {
       pending.current = null
     }
     addEventListener('popstate', onPop)
-    // a link to a page of the app (a tournament's list, written in full for the sheets): opened in place, stacked
+    // a link to a page of the app (a tournament's list, written in full for the sheets): opened in place, stacked;
+    // not one for another tab (the room screen)
     const onClick = (e: MouseEvent) => {
       const a = (e.target as Element).closest?.('a')
-      if (!a || !isAppLink(a.href) || e.ctrlKey || e.metaKey || e.shiftKey) return
+      if (!a || !isAppLink(a.href) || a.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey) return
       e.preventDefault()
       const [tab, sub] = new URL(a.href).hash.slice(1).split('/')
       go(tab as Tab, sub, true)
