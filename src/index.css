@@ -2440,16 +2440,43 @@ button.kv.clickable b {
 }
 /* the deck's bar, at the bottom of its page above the tab bar: cards and price, cards by type */
 .deck-bar {
+  box-sizing: border-box;
   position: sticky;
   bottom: calc(var(--tabbar-h) + var(--safe-b));
   margin: 0 -16px -16px; /* edge to edge, and down onto the main's bottom padding */
-  height: 40px;
+  /* on a phone the game button rises out of the tab bar: the bar's bottom strip sits under it, the content above */
+  height: 66px;
+  padding-bottom: 26px;
   display: flex;
   align-items: center;
   background: var(--surface);
   border-top: 1px solid var(--line);
   font-size: 0.8rem;
   z-index: 5;
+}
+.deck-bar-page {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.deck-bar-page.left {
+  animation: deck-bar-in 0.2s ease-out;
+  --from: -24px;
+}
+.deck-bar-page.right {
+  animation: deck-bar-in 0.2s ease-out;
+  --from: 24px;
+}
+@keyframes deck-bar-in {
+  from {
+    transform: translateX(var(--from));
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deck-bar-page {
+    animation: none !important;
+  }
 }
 .deck-bar > .icon-btn {
   flex: none;
@@ -2488,7 +2515,7 @@ button.kv.clickable b {
   color: var(--muted);
 }
 .deck-page .toast {
-  bottom: calc(var(--tabbar-h) + var(--safe-b) + 56px);
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + 82px);
 }
 .mono {
   font-family: var(--font-mono);

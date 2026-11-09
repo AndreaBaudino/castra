@@ -314,18 +314,28 @@ function DeckBar({ count, total, types, onPrice }: { count: number; total: strin
         {icons}
       </div>
     )
-  const flip = () => setPage(1 - page)
+  // the new page slides in from the side it comes from
+  const [from, setFrom] = useState<'left' | 'right'>()
+  const flip = (side: 'left' | 'right') => {
+    setFrom(side)
+    setPage(1 - page)
+  }
   return (
     <div
       className="deck-bar"
       onTouchStart={(e) => (startX.current = e.touches[0].clientX)}
-      onTouchEnd={(e) => Math.abs(e.changedTouches[0].clientX - startX.current) > 40 && flip()}
+      onTouchEnd={(e) => {
+        const dx = e.changedTouches[0].clientX - startX.current
+        if (Math.abs(dx) > 40) flip(dx > 0 ? 'left' : 'right')
+      }}
     >
-      <button className="icon-btn" onClick={flip} aria-label={t('deck.bar.prev')}>
+      <button className="icon-btn" onClick={() => flip('left')} aria-label={t('deck.bar.prev')}>
         <Icon name="prev2" size={16} />
       </button>
-      {page ? icons : info}
-      <button className="icon-btn" onClick={flip} aria-label={t('deck.bar.next')}>
+      <div key={page} className={`deck-bar-page ${from ?? ''}`}>
+        {page ? icons : info}
+      </div>
+      <button className="icon-btn" onClick={() => flip('right')} aria-label={t('deck.bar.next')}>
         <Icon name="next2" size={16} />
       </button>
     </div>
