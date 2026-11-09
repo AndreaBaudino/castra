@@ -183,6 +183,12 @@ scrivere codice. I mockup delle schermate sono su
   foglio. Le pagine di gestione: iscrizioni (codice, richieste da confermare, iscritti con stato della lista, turni e
   top cut, "Avvia il turno 1"), turno in corso (timer, stato di ogni tavolo, "Rifai abbinamenti", "Abbina il turno
   successivo"), chiusura (classifica finale con spareggi, "Pubblica sul foglio", "Copia le righe").
+- **Schermo per la sala** (`#screen/<id>`, `RoomScreen.tsx`): dall'Area TO, "Schermo per la sala" (o "Copia link")
+  da aprire sul computer del proiettore o della TV. Si apre da solo, senza l'app intorno e senza accedere (i tornei
+  sono pubblici), tiene lo schermo acceso e cambia con lo stato del torneo: con le iscrizioni aperte il QR del codice,
+  l'ora del turno 1 e gli iscritti; nei turni svizzeri tempo, abbinamenti e classifica; nel top cut il tabellone; alla
+  fine la classifica finale con i comandanti. Le liste lunghe scorrono a pagine ogni 12 secondi; in fondo un QR porta
+  alla pagina del torneo sul telefono.
 
 ## 8. Pubblicazione sul foglio
 

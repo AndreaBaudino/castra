@@ -63,7 +63,8 @@ src/
                     DeckDetail, Stats, Cards, Account, Admin* (area admin), BanlistNotice, Organizer (area TO e
                     gestione di un torneo: card in Home, `#to`, `#to/<torneo>`), Live (tornei in corso per chi
                     li segue: link in Home, `#live`, `#live/<torneo>`), MyTournament (il torneo del giocatore: riga del
-                    codice e card in Home, iscrizione, risultato da segnare o confermare, drop; link `#join~CODICE`)
+                    codice e card in Home, iscrizione, risultato da segnare o confermare, drop; link `#join~CODICE`), RoomScreen (lo schermo
+                    per la sala, `#screen/<torneo>`: aperto da `main.tsx` da solo, senza App né login)
   lib/              logica senza UI (vedi sotto)
 scripts/            build del meta e delle errata (Node, eseguiti dalle GitHub Actions)
 firestore.rules     regole di sicurezza: unica protezione dei dati, pubblicate da `rules.yml` dopo i test (push su main)

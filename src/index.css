@@ -2929,6 +2929,349 @@ textarea {
   width: 100%;
   max-width: 480px;
 }
+/* the TO card's hint under the room screen's button */
+.to-screen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.to-screen > span {
+  flex: 1;
+}
+/* the screen for the room (RoomScreen.tsx): a 1920×1080 stage scaled to the window, so sizes are in px */
+.rs {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+.rs-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 1080px;
+  box-sizing: border-box;
+  padding: 40px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.rs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+.rs-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.rs-kicker {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.rs h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 56px;
+  letter-spacing: -0.02em;
+}
+.rs h2 {
+  margin: 0;
+  font-size: 26px;
+}
+.rs-sub,
+.rs-note,
+.rs-muted,
+.rs-clock span {
+  color: var(--muted);
+}
+.rs-sub {
+  font-size: 22px;
+}
+.rs-note {
+  font-size: 18px;
+}
+.rs-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: none;
+  gap: 8px;
+  font-size: 20px;
+}
+.rs-clock b {
+  font-family: var(--font-mono);
+  font-size: 168px;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.rs-clock.small b {
+  font-size: 120px;
+}
+.rs-empty {
+  margin: auto;
+  font-size: 48px;
+  color: var(--muted);
+}
+.rs-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 28px;
+}
+.rs-swiss {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+.rs-open {
+  grid-template-columns: 640px minmax(0, 1fr);
+}
+.rs-panel {
+  min-height: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.rs-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.rs-cell {
+  padding: 0 14px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  font-size: 22px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* 8 rows a column, filled top to bottom */
+.rs-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  grid-auto-flow: column;
+  gap: 8px 20px;
+}
+.rs-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.rs-row.first {
+  box-shadow: inset 0 0 0 2px var(--red);
+}
+.rs-num {
+  flex: none;
+  width: 44px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.rs-two {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rs-two > span,
+.rs-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.rs-row b,
+.rs-line b,
+.rs-side b {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.rs-rec {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--muted);
+}
+.rs-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rs-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 4px;
+  border-top: 1px solid var(--line);
+  font-size: 22px;
+  font-weight: 600;
+}
+.rs-line .rs-num {
+  width: 40px;
+  text-align: left;
+}
+.rs-name {
+  flex: 1;
+  min-width: 0;
+}
+.rs-line b {
+  width: 44px;
+  text-align: right;
+}
+/* registration: the QR white under the code so every camera reads it, then who's in */
+.rs-join {
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+.rs-join .rs-qr {
+  width: 440px;
+  height: 440px;
+  padding: 26px;
+}
+.rs-code {
+  font-family: var(--font-mono);
+  font-size: 72px;
+  letter-spacing: 0.18em;
+  padding-left: 0.18em;
+}
+.rs-count {
+  font-family: var(--font-mono);
+  font-size: 40px;
+}
+.rs-names {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 20px;
+  align-content: start;
+}
+.rs-names .rs-cell {
+  padding: 14px 16px;
+  font-size: 24px;
+}
+.rs-foot {
+  margin-top: auto;
+}
+/* the top cut's bracket: a column a round, the one being played in the accent, the losers dimmed */
+.rs-bracket {
+  gap: 40px;
+}
+.rs-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.rs-col-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rs-col-title.on {
+  color: var(--red);
+}
+.rs-col-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+.rs-match {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.rs-match.on {
+  border-color: var(--red);
+}
+.rs-match.later {
+  border-style: dashed;
+  color: var(--muted);
+}
+.rs-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 26px;
+  font-weight: 600;
+}
+.rs-side + .rs-side {
+  border-top: 1px solid var(--line);
+}
+.rs-side.out {
+  color: var(--muted);
+}
+.rs-side .rs-num {
+  font-size: 20px;
+  font-weight: 500;
+}
+.rs-footer {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+.rs-footer .rs-muted {
+  font-size: 20px;
+  font-weight: 400;
+}
+.rs-footer .rs-qr {
+  width: 96px;
+  height: 96px;
+  padding: 8px;
+}
+.rs-qr {
+  flex: none;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 8px;
+}
+.rs-qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: #0b0b0c;
+}
+.rs-brand {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--muted);
+}
+/* outside the stage, top middle where no layout puts anything: gone once full screen */
+.rs-full {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
 /* the home's row to type a tournament's code */
 .join-row {
   gap: 10px;

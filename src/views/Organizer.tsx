@@ -25,6 +25,7 @@ import {
   finishTournament,
   hasCommander,
   joinLink,
+  screenLink,
   listLinkProps,
   loadList,
   newCode,
@@ -64,6 +65,7 @@ import { pushBlock, turnOnPush } from '../lib/push'
 import { useDialog } from '../components/Dialog'
 import { LiveDot, SubPageShell } from './Circuit'
 import { useWakeLock } from '../lib/wakeLock'
+import { useQr } from '../lib/qr'
 import { Toggle } from './Account'
 import { MatchList, RankingList } from './Live'
 import { JoinSheet } from './MyTournament'
@@ -414,7 +416,7 @@ export function TournamentAdmin({
   const shareCode = async (code: string) => {
     const url = joinLink(code)
     if (navigator.share) return navigator.share({ title: 'Castra', text: t('run.codeShare', { n: tournamentTitle(tour, t), c: code }), url }).catch(() => {})
-    copy(url)
+    copy(url, t('run.linkCopied'))
   }
   const publish = async () => {
     const tab = tour.stage ? t('run.stage', { n: tour.stage }) : 'Classifica'
@@ -457,10 +459,10 @@ export function TournamentAdmin({
       const blob = await standingsImage(rows, { title, subtitle: sub, head, dropped: t('run.dropped') }, lang)
       await savePicture(blob, `${title.replace(/[^\p{L}\p{N}]+/gu, '-')}.png`)
     })
-  const copy = async (text: string) => {
+  const copy = async (text: string, done = t('run.copied')) => {
     try {
       await navigator.clipboard.writeText(text)
-      await dialog.alert(t('run.copied'))
+      await dialog.alert(done)
     } catch {
       await dialog.alert(t('admin.error'))
     }
@@ -532,6 +534,16 @@ export function TournamentAdmin({
               </button>
             </div>
           )}
+          {/* the room's projector or TV: opened on that computer, or its link sent there */}
+          <a className="btn tonal" href={screenLink(id)} target="_blank" rel="noreferrer">
+            <Icon name="screen" size={18} /> {t('run.screen')}
+          </a>
+          <div className="to-screen">
+            <span className="muted small">{t('run.screenHint')}</span>
+            <button className="btn ghost small" onClick={() => copy(screenLink(id), t('run.linkCopied'))}>
+              {t('run.copyLink')}
+            </button>
+          </div>
           <button className="link" onClick={openLive}>
             {t('run.livePage')}
           </button>
@@ -1385,21 +1397,9 @@ function AddPlayerSheet({
 /** The registration code as a QR, full screen, to show in the room: the camera opens the app on the tournament. */
 function QrScreen({ tour, code, players, onShare, onClose }: { tour: Tournament; code: string; players: number; onShare: () => void; onClose: () => void }) {
   const { t, lang } = useI18n()
-  const [path, setPath] = useState<{ n: number; d: string }>()
+  const path = useQr(joinLink(code))
   useBackCloses(true, onClose)
   useWakeLock(true)
-  useEffect(() => {
-    // loaded only here: no weight for whoever never opens it
-    import('qrcode-generator').then(({ default: qrcode }) => {
-      const q = qrcode(0, 'M')
-      q.addData(joinLink(code))
-      q.make()
-      const n = q.getModuleCount()
-      let d = ''
-      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`
-      setPath({ n, d })
-    })
-  }, [code])
   return (
     <div className="qr-screen" role="dialog" aria-modal>
       <div className="qr-head">

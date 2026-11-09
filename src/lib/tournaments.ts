@@ -134,6 +134,9 @@ export const joinLink = (code: string) => `${location.origin}${location.pathname
 // the app's base, not the page open now: the sheets' Apps Script takes only this address (scripts/meta/apps-script)
 const app = () => `${location.origin}${import.meta.env.BASE_URL}`
 export const photoLink = (id: string, key: string) => `${app()}#live/${encodeURIComponent(id)}@${encodeURIComponent(key)}`
+/** The page of a tournament for whoever follows it, and its screen for the room (RoomScreen.tsx). */
+export const liveLink = (id: string) => `${app()}#live/${encodeURIComponent(id)}`
+export const screenLink = (id: string) => `${app()}#screen/${encodeURIComponent(id)}`
 /** A link to a page of the app, opened in place (App.tsx) rather than in another tab. */
 export const isAppLink = (url: string) => url.startsWith(`${app()}#`)
 /** The props of a link to a decklist: Moxfield in another tab, a photo in place. */

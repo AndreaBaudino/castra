@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-09',
     it: [
+      'Area TO: "Schermo per la sala", da aprire sul computer collegato al proiettore o alla TV. Va a tutto schermo, si aggiorna da solo e non serve accedere: con le iscrizioni aperte mostra il QR per iscriversi e chi c\'è, durante i turni il tempo, gli abbinamenti e la classifica, nel top cut il tabellone e alla fine la classifica finale. Le liste lunghe scorrono da sole',
       'Life counter: nuovo contatore Tassa, da accendere nel menu della partita. Ogni + è un lancio del comandante dalla zona di comando e il numero è già quello da pagare in più (+2, +4…); con due comandanti la tassa è una sola. Non entra nella cronologia e riparte da zero con una nuova partita',
       'Life counter: i contatori hanno un\'icona al posto della scritta (scudo incrinato per il danno da comandante, freccia in su per la tassa, simbolo phyrexiano per il veleno, tornado per lo storm…), così anche con tanti accesi si leggono bene. Nel menu della partita sono due righe da cinque, con l\'icona sopra il nome',
       'Calendario dei tornei: i prossimi tornei gestiti in Castra, mese per mese, con giorno, ora, luogo e iscrizioni aperte (o "Ci sei" se sei già iscritto). Si filtrano per le leghe in cui hai giocato o per i Livelli 1 e 2',
@@ -18,6 +19,7 @@ export const CHANGELOG: Release[] = [
       'Area TO: nella pagina di un torneo con le iscrizioni aperte, "Nel calendario" per scrivere giorno, ora di inizio, luogo e indirizzo, o per toglierlo dal calendario',
     ],
     en: [
+      'Organizer area: "Room screen", to open on the computer connected to the projector or the TV. It goes full screen, updates by itself and needs no sign-in: with open registration it shows the QR to register and who\'s in, during the rounds the time, the pairings and the standings, in the top cut the bracket and at the end the final standings. Long lists turn page by themselves',
       'Life counter: new Tax counter, turned on from the game menu. Each + is a cast of your commander from the command zone and the number is already what you pay on top (+2, +4…); with two commanders there is one tax. It stays out of the history and starts from zero with a new game',
       'Life counter: the counters show an icon instead of their name (a cracked shield for commander damage, an arrow up for the tax, the Phyrexian symbol for poison, a tornado for storm…), easy to read even with many on. In the game menu they are two rows of five, the icon above the name',
       'Tournament calendar: the next tournaments run in Castra, month by month, with day, time, venue and open registration (or "You\'re in" if you already are). Filter by the leagues you played in or by Levels 1 and 2',

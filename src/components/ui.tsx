@@ -79,6 +79,7 @@ const paths: Record<string, ReactNode> = {
     />
   ),
   mana: <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />,
+  screen: <path d="M3 4h18v13H3zM8 21h8M12 17v4" />,
   qr: <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h3v3h-3z" />,
   game: <Swords />,
   decks: (

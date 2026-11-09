@@ -180,11 +180,15 @@ L'app nasce per il telefono. Sopra i 1024px (`useWide`, `@media (min-width: 1024
 Nuova partita piena, voci con la voce attiva su fondo `--surface-2`, e il profilo in fondo; le pagine si dispongono a
 più colonne. Stesse regole di colori, angoli e caratteri.
 
+Lo schermo per la sala (`#screen/<id>`, `RoomScreen.tsx`, classi `.rs-*`) è l'eccezione: un palco fisso di 1920×1080
+scalato sulla finestra, quindi misure in px e caratteri grandi da leggere a qualche metro; sempre scuro, anche con il
+tema chiaro, perché su proiettore e TV si legge meglio.
+
 ## Tema chiaro
 
 Stessi componenti e stesse regole: fondo quasi bianco, card bianche, bordi grigio chiaro, testo quasi nero. I fondi
-ember restano `#F65A1A` con testo scuro; testi e link ember usano `#C2410C`. Il life counter e il suo menu restano
-scuri in entrambi i temi.
+ember restano `#F65A1A` con testo scuro; testi e link ember usano `#C2410C`. Il life counter e il suo menu, e lo schermo per la
+sala, restano scuri in entrambi i temi.
 
 ## App installata
 
