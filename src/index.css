@@ -2445,8 +2445,8 @@ button.kv.clickable b {
   bottom: calc(var(--tabbar-h) + var(--safe-b));
   margin: 0 -16px -16px; /* edge to edge, and down onto the main's bottom padding */
   /* on a phone the game button rises out of the tab bar: the bar's bottom strip sits under it, the content above */
-  height: 66px;
-  padding-bottom: 26px;
+  height: 52px;
+  padding-bottom: 12px;
   display: flex;
   align-items: center;
   background: var(--surface);
