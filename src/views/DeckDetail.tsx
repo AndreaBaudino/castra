@@ -9,7 +9,9 @@ import {
   type DeckView,
   type Group,
   type Visibility,
+  GROUP_KEY,
   GROUP_ORDER,
+  TYPE_ICON,
   cardKey,
   checkDeck,
   deckCover,
@@ -41,20 +43,6 @@ import { useAuth } from '../lib/auth'
 import { DeckVsMeta } from './MetaCards'
 
 type TKey = Parameters<ReturnType<typeof useI18n>['t']>[0]
-
-const GROUP_KEY: Record<Group, TKey> = {
-  commander: 'deck.commander',
-  creatures: 'deck.creatures',
-  planeswalkers: 'deck.planeswalkers',
-  instants: 'deck.instants',
-  sorceries: 'deck.sorceries',
-  artifacts: 'deck.artifacts',
-  enchantments: 'deck.enchantments',
-  battles: 'deck.battles',
-  lands: 'deck.lands',
-  other: 'deck.other',
-  sideboard: 'deck.sideboard',
-}
 
 const VIEW_KEY: Record<DeckView, TKey> = { list: 'deck.view.list', pile: 'deck.view.pile', grid: 'deck.view.grid' }
 const VISIBILITIES: Visibility[] = ['private', 'unlisted', 'public']
@@ -271,18 +259,6 @@ function DeckHistory({ history, tours }: { history: DeckChange[]; tours: DeckTou
   )
 }
 
-// the deck's bar: an icon a card type, shown when the deck has some
-const TYPE_ICON: Partial<Record<Group, string>> = {
-  creatures: 'creature',
-  planeswalkers: 'planeswalker',
-  instants: 'instant',
-  sorceries: 'sorcery',
-  artifacts: 'artifact',
-  enchantments: 'enchantment',
-  battles: 'game',
-  lands: 'land',
-}
-
 /** At the bottom of the deck: its cards and price, then its cards by type (two pages on a phone, one row on a computer). */
 function DeckBar({ count, total, types, onPrice }: { count: number; total: string; types: [Group, number][]; onPrice?: () => void }) {
   const { t } = useI18n()
@@ -401,6 +377,7 @@ export default function DeckDetail({
   author,
   readOnly,
   extra,
+  onCompare,
 }: {
   deck: Deck
   metaDecks: MetaDeck[]
@@ -415,6 +392,7 @@ export default function DeckDetail({
   author?: Author
   readOnly?: boolean // someone else's deck, opened from its link
   extra?: ReactNode // under the cover: what a tournament's list adds
+  onCompare?: () => void
 }) {
   const { t, lang } = useI18n()
   const dialog = useDialog()
@@ -670,6 +648,11 @@ export default function DeckDetail({
           <button className="btn ghost" onClick={() => setHand(true)}>
             <Icon name="cards" size={16} /> {t('hand.title')}
           </button>
+          {onCompare && (
+            <button className="btn ghost" onClick={onCompare}>
+              <Icon name="swap" size={16} /> {t('cmp.button')}
+            </button>
+          )}
         </div>
       </section>
       <SampleHand open={hand} onClose={() => setHand(false)} deck={deck} />
@@ -991,6 +974,7 @@ export function SharedDeck({
   metaDecks: MetaDeck[]
   onBack: () => void
   openCommander: (name: string) => void
+  onCompare: (d: Deck) => void
 }) {
   const { t } = useI18n()
   const [deck, setDeck] = useState<Deck | null | 'private' | undefined>()
@@ -1021,6 +1005,7 @@ export function SharedDeck({
       onChange={setDeck}
       onDelete={() => {}}
       onDuplicate={() => {}}
+      onCompare={() => rest.onCompare(deck)}
       author={authorOf(uid, deck.author)}
       readOnly
     />

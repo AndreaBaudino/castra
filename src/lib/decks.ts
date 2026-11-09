@@ -1,6 +1,7 @@
 import { DECK_SIZE } from '../config'
 import { type BanCheck, banCheck, banCount } from './banlist'
 import { fb } from './firebase'
+import type { T } from '../i18n'
 
 export type Section = 'commander' | 'main' | 'side'
 
@@ -108,6 +109,32 @@ export const GROUP_ORDER: Group[] = [
   'other',
   'sideboard',
 ]
+
+export const GROUP_KEY: Record<Group, Parameters<T>[0]> = {
+  commander: 'deck.commander',
+  creatures: 'deck.creatures',
+  planeswalkers: 'deck.planeswalkers',
+  instants: 'deck.instants',
+  sorceries: 'deck.sorceries',
+  artifacts: 'deck.artifacts',
+  enchantments: 'deck.enchantments',
+  battles: 'deck.battles',
+  lands: 'deck.lands',
+  other: 'deck.other',
+  sideboard: 'deck.sideboard',
+}
+
+// the deck's bar: an icon a card type, shown when the deck has some
+export const TYPE_ICON: Partial<Record<Group, string>> = {
+  creatures: 'creature',
+  planeswalkers: 'planeswalker',
+  instants: 'instant',
+  sorceries: 'sorcery',
+  artifacts: 'artifact',
+  enchantments: 'enchantment',
+  battles: 'game',
+  lands: 'land',
+}
 
 export function groupOf(c: DeckCard): Group {
   if (c.section === 'commander') return 'commander'
@@ -282,3 +309,29 @@ export async function loadShared(uid: string, id: string) {
 }
 
 export const cardKey = (c: Pick<DeckCard, 'name' | 'section'>) => `${c.section}|${c.name}`
+
+export interface DeckDiff {
+  onlyA: DeckCard[]
+  onlyB: DeckCard[]
+  common: DeckCard[] // the same number of copies in both
+  changed: { card: DeckCard; a: number; b: number }[] // in both, a different number (the basic lands, mostly)
+}
+
+/** Two decks' 100 side by side, by card name: a card can be the commander in one and in the 99 of the other. */
+export function compareDecks(a: Deck, b: Deck): DeckDiff {
+  const count = (d: Deck) => {
+    const m = new Map<string, DeckCard>()
+    for (const c of d.cards) if (c.section !== 'side') m.set(c.name, { ...c, qty: (m.get(c.name)?.qty ?? 0) + c.qty })
+    return m
+  }
+  const [ma, mb] = [count(a), count(b)]
+  const diff: DeckDiff = { onlyA: [], onlyB: [], common: [], changed: [] }
+  for (const [n, c] of ma) {
+    const o = mb.get(n)
+    if (!o) diff.onlyA.push(c)
+    else if (o.qty === c.qty) diff.common.push(c)
+    else diff.changed.push({ card: c, a: c.qty, b: o.qty })
+  }
+  for (const [n, c] of mb) if (!ma.has(n)) diff.onlyB.push(c)
+  return diff
+}

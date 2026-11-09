@@ -23,8 +23,9 @@ import { CommanderDecksPage, CommanderPage, TournamentPage, tournamentOfEvent } 
 import { usePublishDecks } from './lib/publicDecks'
 import { ComparePage, LeaguePage } from './views/CircuitMore'
 import { CardPage, CardsSearchPage } from './views/Cards'
-import Decks from './views/Decks'
+import Decks, { commanderNames } from './views/Decks'
 import DeckDetail, { type Author, SharedDeck, TournamentPhoto } from './views/DeckDetail'
+import DeckCompare, { CompareSheet } from './views/DeckCompare'
 import { isAppLink } from './lib/tournaments'
 import Stats from './views/Stats'
 import Account, { isAccountSection } from './views/Account'
@@ -216,8 +217,18 @@ export default function App() {
     />
   )
 
-  // decks/<id>: one of mine; decks/<owner uid>~<id>: a shared deck, from its link (mine too, when I open my own link)
-  const [deckOwner, deckId] = route.tab === 'decks' && route.deck?.includes('~') ? route.deck.split('~') : [uid, route.deck]
+  // decks/<id>: one of mine; decks/<owner uid>~<id>: a shared deck, from its link (mine too, when I open my own link);
+  // decks/cmp~<a>~<b>: two decks compared (DeckCompare)
+  const cmp = route.tab === 'decks' && route.deck?.startsWith('cmp~') ? route.deck.split('~').slice(1) : null
+  const [deckOwner, deckId] = cmp ? [null, null] : route.tab === 'decks' && route.deck?.includes('~') ? route.deck.split('~') : [uid, route.deck]
+  // "Compare with…" open on a deck: one of mine (its id) or someone else's ("<owner>.<id>")
+  const [comparing, setComparing] = useState<{ deck: Deck; ref: string } | null>(null)
+  const startCompare = (deck: Deck, ref: string) => {
+    // someone else's deck and a single one of mine with its commander: straight to the comparison
+    const same = decks.filter((d) => commanderNames(d).sort().join() === commanderNames(deck).sort().join())
+    if (ref.includes('.') && same.length === 1) go('decks', `cmp~${same[0].id}~${ref}`, true)
+    else setComparing({ deck, ref })
+  }
   const openDeck = deckId && deckOwner === uid ? decks.find((d) => d.id === deckId) : undefined
   const openShared = (owner: string, id: string) => go('decks', `${owner}~${id}`, true)
   // the public decks of a verified player, listed on their commanders' pages
@@ -615,6 +626,20 @@ export default function App() {
                 metaDecks={meta.decks}
                 onBack={() => history.back()}
                 openCommander={openCommander}
+                onCompare={(d) => startCompare(d, `${deckOwner}.${deckId}`)}
+              />
+            ) : cmp ? (
+              <DeckCompare
+                key={route.deck}
+                refs={cmp}
+                decks={decks}
+                authorOf={authorOf}
+                onBack={() => history.back()}
+                onSwap={() => {
+                  history.replaceState(history.state, '', `#decks/cmp~${cmp[1]}~${cmp[0]}`)
+                  setRoute(fromHash())
+                }}
+                openCard={openMetaCard}
               />
             ) : openDeck && (
               <DeckDetail
@@ -641,10 +666,27 @@ export default function App() {
                 openCommander={openCommander}
                 openCard={openMetaCard}
                 dataset={dataset}
+                onCompare={() => startCompare(openDeck, openDeck.id)}
               />
             ),
             t('decks.pick'),
           )}
+        {comparing && (
+          <CompareSheet
+            deck={comparing.deck}
+            decks={decks}
+            claims={claims}
+            uid={uid}
+            withPublic={!comparing.ref.includes('.')}
+            onPick={(ref) => {
+              const [a, b] = comparing.ref.includes('.') ? [ref, comparing.ref] : [comparing.ref, ref]
+              // stacked on the deck once the sheet's history entry is gone (closing it goes back one step)
+              addEventListener('popstate', () => setTimeout(() => go('decks', `cmp~${a}~${b}`, true)), { once: true })
+              setComparing(null)
+            }}
+            onClose={() => setComparing(null)}
+          />
+        )}
       </main>
 
       {!wide && (

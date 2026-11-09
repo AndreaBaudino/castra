@@ -165,6 +165,10 @@ titolo, in `--muted`.
 sopra il menu in basso. Testo piccolo, prezzo in JetBrains Mono, icone dei tipi a 14px in `--muted` (piene quelle
 disegnate dalle immagini date, a tratto le altre). Sul telefono due pagine con « », sul computer una riga.
 
+**Confronto di due mazzi** (`DeckCompare`): A e B sono riquadri con una lettera, A piena ember, B bordata in `--text`.
+Sul telefono un `.seg` a tre voci (Solo in A, Solo in B, In comune), sul computer le due colonne affiancate e le carte in
+comune sotto; in fondo la stessa barra del mazzo con i valori da A a B ("1,62 → 1,71").
+
 ## Immagini delle carte
 
 - Nella lista dei mazzi l'immagine del comandante sta a sinistra e **sfuma verso destra** (`.deck-art`, maschera

@@ -5810,6 +5810,86 @@ div.home-row > .home-row-link.link {
   }
 }
 
+/* two decks compared (DeckCompare): A and B at the top, the cards only in one or in both */
+.btn-pair:has(> :nth-child(3)) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.btn-pair:has(> :nth-child(3)) > .btn {
+  padding-inline: 6px;
+}
+/* three in a row on a phone: the words without the icons, which would be squeezed to a dot */
+.btn-pair:has(> :nth-child(3)) > .btn svg {
+  display: none;
+}
+.cmp-decks {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cmp-deck {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.cmp-deck .pub-cover {
+  display: none; /* on a phone the names need the room */
+  width: 40px;
+  height: 30px;
+}
+.cmp-badge {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.cmp-badge.a {
+  background: var(--gold);
+  color: var(--on-accent);
+}
+.cmp-badge.b {
+  border: 1px solid var(--text);
+}
+.cmp-sum {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+.cmp-group,
+.cmp-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cmp-group svg {
+  color: var(--muted);
+}
+.cmp-col-head {
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cmp-to {
+  color: var(--text);
+}
+.cmp-bar {
+  gap: 24px;
+}
+.cmp-bar .mono {
+  margin-left: 6px;
+}
+
 /* the deck's bar on a computer: one row, the types on the right */
 @media (min-width: 1024px) {
   .deck-bar {
@@ -5825,5 +5905,23 @@ div.home-row > .home-row-link.link {
     flex: none;
     margin-left: auto;
     gap: 22px;
+  }
+  .cmp-deck .pub-cover {
+    display: block;
+  }
+  .cmp-cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+  }
+  .cmp-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cmp-bar {
+    flex: 1;
+    justify-content: flex-start;
   }
 }

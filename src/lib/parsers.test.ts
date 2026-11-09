@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildCircuit, parseEventName, playerKey, potyStatus } from './circuit'
-import { type Deck, type DeckCard, checkDeck, logChange, newerDeck, parseDecklist, safeDeck } from './decks'
+import { type Deck, type DeckCard, checkDeck, compareDecks, logChange, newerDeck, parseDecklist, safeDeck } from './decks'
 import { type MetaDataset, ALL, aggregate, parseCsv } from './meta'
 import { DUNGEONS } from './dungeons'
 import { readStored, writeStored } from './storage'
@@ -162,6 +162,21 @@ describe('logChange', () => {
     expect(h).toEqual([{ at: day.toISOString(), cards: { Brainstorm: 1 } }])
     expect(logChange(h, added, deck, new Date('2026-11-03T10:00:00'))[0].cards).toEqual({ 'Mana Vault': -1 })
     expect(logChange(h, [...deck, card('Brainstorm')], deck, day)).toEqual([])
+  })
+})
+
+describe('compareDecks', () => {
+  const card = (name: string, qty = 1, section: DeckCard['section'] = 'main'): DeckCard => ({ name, qty, section })
+  const deck = (cards: DeckCard[]) => ({ cards }) as Deck
+
+  it('splits by name: only in one, the same, a different number; the sideboard left out', () => {
+    const a = deck([card('Kinnan', 1, 'commander'), card('Sol Ring'), card('Island', 3), card('Chrome Mox'), card('Pact', 1, 'side')])
+    const b = deck([card('Kinnan'), card('Sol Ring'), card('Island', 2), card('Island', 3, 'main'), card('Mana Vault')])
+    const d = compareDecks(a, b)
+    expect(d.onlyA.map((c) => c.name)).toEqual(['Chrome Mox'])
+    expect(d.onlyB.map((c) => c.name)).toEqual(['Mana Vault'])
+    expect(d.common.map((c) => c.name)).toEqual(['Kinnan', 'Sol Ring'])
+    expect(d.changed.map((x) => [x.card.name, x.a, x.b])).toEqual([['Island', 3, 5]])
   })
 })
 

@@ -60,7 +60,7 @@ src/
   components/       ui.tsx (Icon, Pips, Sheet, useBackCloses, pct, wrClass), Dialog (confirm/alert propri),
                     SideNav (menu da computer), AppBanners (nuova versione), MetaPie, DeckAnalysis, RecordMatch…
   views/            una pagina per file: Home, Meta, MetaPages, Circuit, CircuitMore, PlayerCard, LifeCounter, Decks,
-                    DeckDetail, Stats, Cards, Account, Admin* (area admin), BanlistNotice, Organizer (area TO e
+                    DeckDetail, DeckCompare (due mazzi a confronto, `#decks/cmp~A~B`), Stats, Cards, Account, Admin* (area admin), BanlistNotice, Organizer (area TO e
                     gestione di un torneo: card in Home, `#to`, `#to/<torneo>`), Live (tornei in corso per chi
                     li segue: link in Home, `#live`, `#live/<torneo>`), MyTournament (il torneo del giocatore: riga del
                     codice e card in Home, iscrizione, risultato da segnare o confermare, drop; link `#join~CODICE`), RoomScreen (lo schermo
@@ -108,6 +108,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 ### Navigazione (App.tsx)
 - Route nell'hash: `#tab` o `#tab/sottopagina`. Tab: `home`, `meta` (si chiama "Circuito" in UI), `game`, `stats`,
   `decks`, `account`, `cards`, `to` (area TO; `to/<id>` un torneo gestito in app), `live` (tornei in corso; `live/<id>` uno, da spettatore).
+- Mazzi: `decks/<id>` uno mio, `decks/<uid>~<id>` uno condiviso, `decks/cmp~<a>~<b>` due a confronto (un mazzo è
+  `<id>` se mio, `<uid>.<id>` se di altri).
 - Sottopagine del Circuito con prefisso: `p~giocatore`, `e~evento`, `l~stagione~lega`, `c~a~b` (confronto),
   `k~comandante` (`kd~comandante`: i suoi mazzi pubblici), `t~torneo`, `x~carta` (dalla scheda Carte); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
 - La cronologia è costruita apposta perché il tasto "indietro" del telefono funzioni: home → pagina principale →

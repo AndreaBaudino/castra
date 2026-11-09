@@ -71,7 +71,8 @@ export function usePublishDecks(uid: string | null, player: string | null, decks
  */
 export function useCommanderDecks(name: string, claims: Map<string, Claim>) {
   const parts = name.split(' / ').map(front)
-  const { docs, loaded } = useLiveCollection<PublicDeck>('publicDecks', ['commanders', 'array-contains', parts[0]])
+  // no commander (a deck without one, or none asked for): nothing to read
+  const { docs, loaded } = useLiveCollection<PublicDeck>(parts[0] ? 'publicDecks' : null, ['commanders', 'array-contains', parts[0]])
   const decks = docs
     .map(([, d]) => d)
     .filter((d) => d.commanders.length === parts.length && parts.every((p) => d.commanders.includes(p)))
