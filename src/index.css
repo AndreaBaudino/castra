@@ -1569,7 +1569,7 @@ button.kv.clickable b {
   justify-content: space-between;
   background: rgba(0, 0, 0, 0.25);
   border-radius: var(--radius);
-  height: 48px;
+  height: 44px;
 }
 /* floating mana, one button per colour and colourless, with a − tab under the colours that have some */
 .mana-pool {
@@ -1636,20 +1636,17 @@ button.kv.clickable b {
 }
 .counter-val {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: 6px;
   line-height: 1.1;
+}
+.counter-val svg {
+  opacity: 0.75;
 }
 .counter-num {
   font-weight: 800;
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
-}
-.counter-label {
-  font-size: 0.58rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.7;
 }
 .life-bar {
   display: flex;
@@ -1837,17 +1834,23 @@ button.kv.clickable b {
 /* the counters turned on for one game: in the game menu, and monarch and initiative on each side */
 .extra-chips {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
 }
+/* an icon over its name: the ten counters in two rows */
 .extra-chips .chip {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 9px 4px;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 1px;
   border-radius: var(--radius);
+  font-size: 0.58rem;
+  letter-spacing: 0;
 }
+
 .tokens {
   display: flex;
   justify-content: center;

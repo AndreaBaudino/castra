@@ -43,9 +43,42 @@ function Swords() {
   )
 }
 
+// filled counter icons with lines cut through them (a mask, so the panel's colour shows in the cuts)
+function Cut({ shape, cuts, width = 1.6 }: { shape: string; cuts: string; width?: number }) {
+  const id = useId()
+  return (
+    <g fill="currentColor" stroke="none">
+      <mask id={id} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+        <rect width="24" height="24" fill="#fff" />
+        <path d={cuts} fill="none" stroke="#000" strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
+      </mask>
+      <path d={shape} mask={`url(#${id})`} />
+    </g>
+  )
+}
+
 const paths: Record<string, ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   meta: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  // the game's counters (LifeCounter)
+  cmd: <Cut shape="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" cuts="M12.5 3.5 10 9l3.2 3-2.4 4.8 1.2 3.4" />,
+  tax: <path strokeWidth="2.5" d="M3 17l6-6 4 4 8-8M14 7h7v7" />,
+  poison: (
+    <g fill="currentColor" stroke="none" transform="scale(.012) translate(354 0)">
+      <path fillRule="evenodd" d="M74 996a572 485 0 1 0 1144 0a572 485 0 1 0 -1144 0zM330 996a316 255 0 1 0 632 0a316 255 0 1 0 -632 0z" />
+      <path d="M553 322 739 162V1678L553 1838z" />
+    </g>
+  ),
+  energy: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
+  exp: <path d="M6 18l6-5 6 5M6 11l6-5 6 5" />,
+  storm: (
+    <Cut
+      shape="M2 5.5C2 3.6 6.5 2.5 12 2.5s10 1.1 10 3c0 1-.8 1.6-1.6 2.2L14.5 16c-1 1.6-1.3 3.6-.5 5.5-2.5-1-4-3-4.2-5.6L3.6 7.7C2.6 7 2 6.4 2 5.5z"
+      cuts="M5.5 5.2c2 .6 4 .8 6.5.8s4.5-.2 6.5-.8M7 10h9M9 13.2h5.5M11 16.3h2.5"
+      width={1.5}
+    />
+  ),
+  mana: <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />,
   qr: <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h3v3h-3z" />,
   game: <Swords />,
   decks: (

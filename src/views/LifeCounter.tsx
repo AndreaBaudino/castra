@@ -36,16 +36,18 @@ export interface PlayerState {
   energy?: number
   exp?: number // experience
   storm?: number
+  tax?: number // commander casts from the command zone, shared by both commanders: +2 each
   mana?: number[] // floating mana by MANA: storm and mana change too often for the history
 }
 
 const MANA = ['W', 'U', 'B', 'R', 'G', 'C']
 
 /** The counters shown in one game: commander damage unless turned off, the others when turned on. */
-export type Extra = 'cmd' | 'poison' | 'energy' | 'exp' | 'storm' | 'mana' | 'monarch' | 'initiative' | 'dungeon'
-const EXTRAS: Extra[] = ['cmd', 'poison', 'energy', 'exp', 'storm', 'mana', 'monarch', 'initiative', 'dungeon']
+export type Extra = 'cmd' | 'tax' | 'poison' | 'energy' | 'exp' | 'storm' | 'mana' | 'monarch' | 'initiative' | 'dungeon'
+const EXTRAS: Extra[] = ['cmd', 'tax', 'poison', 'energy', 'exp', 'storm', 'mana', 'monarch', 'initiative', 'dungeon']
 const EXTRA_KEY = {
   cmd: 'life.cmd',
+  tax: 'life.tax',
   poison: 'life.poison',
   energy: 'life.energy',
   exp: 'life.exp',
@@ -55,6 +57,8 @@ const EXTRA_KEY = {
   initiative: 'life.initiative',
   dungeon: 'life.dungeon',
 } as const
+// the counters' icons (components/ui.tsx) are named after them, but for these three
+const EXTRA_ICON: Partial<Record<Extra, string>> = { monarch: 'crown', initiative: 'door', dungeon: 'map' }
 
 /** A tournament match opened from the home (docs/tornei.md): the round's clock, and the result goes to the tournament.
  * The match reaches the stats only with the tournament's own record, once over: never recorded here, never twice. */
@@ -135,7 +139,7 @@ export const defaultGame = () => fresh(STARTING_LIFE)
 
 export function isGameInProgress(g: GameState) {
   return (
-    g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison || p.energy || p.exp) ||
+    g.players.some((p) => p.life !== g.startLife || p.cmd || p.poison || p.energy || p.exp || p.tax) ||
     g.monarch !== undefined ||
     g.initiative !== undefined ||
     runsOf(g).some((r) => r.path.length || r.done) ||
@@ -214,7 +218,7 @@ function PlayerPanel({
   const minus = useRepeat(() => changeLife(-1))
   const plus = useRepeat(() => changeLife(1))
 
-  const counter = (key: 'cmd' | 'poison' | 'energy' | 'exp' | 'storm', label: string, step: number, lethal?: number) => (
+  const counter = (key: 'cmd' | 'tax' | 'poison' | 'energy' | 'exp' | 'storm', label: string, step: number, lethal?: number) => (
     <div className={`counter ${lethal && (p[key] ?? 0) >= lethal ? 'lethal' : ''}`}>
       <button
         aria-label={`${label} -`}
@@ -226,9 +230,10 @@ function PlayerPanel({
       >
         −
       </button>
-      <div className="counter-val">
-        <span className="counter-num">{p[key] ?? 0}</span>
-        <span className="counter-label">{label}</span>
+      <div className="counter-val" title={label}>
+        <Icon name={key} size={16} />
+        {/* the tax shows what it adds to the cost */}
+        <span className="counter-num">{key === 'tax' ? `+${(p.tax ?? 0) * 2}` : (p[key] ?? 0)}</span>
       </div>
       <button
         aria-label={`${label} +`}
@@ -291,6 +296,7 @@ function PlayerPanel({
       {extras.includes('mana') && <ManaPool mana={p.mana} set={(mana) => update((p) => ({ ...p, mana }))} />}
       <div className="counters">
         {extras.includes('cmd') && counter('cmd', t('life.cmd'), 1, COMMANDER_DAMAGE_LETHAL)}
+        {extras.includes('tax') && counter('tax', t('life.tax'), 1)}
         {extras.includes('poison') && counter('poison', t('life.poison'), 1, POISON_LETHAL)}
         {extras.includes('energy') && counter('energy', t('life.energy'), 1)}
         {extras.includes('exp') && counter('exp', t('life.exp'), 1)}
@@ -839,8 +845,9 @@ export default function LifeCounter({
             <div className="menu-section">{t('life.extras')}</div>
             <div className="extra-chips">
               {EXTRAS.map((x) => (
-                <button key={x} className={`chip ${extras.includes(x) ? 'on' : ''}`} aria-pressed={extras.includes(x)} onClick={() => toggleExtra(x)}>
-                  {t(EXTRA_KEY[x])}
+                <button key={x} className={`chip ${extras.includes(x) ? 'on' : ''}`} aria-pressed={extras.includes(x)} aria-label={t(EXTRA_KEY[x])} onClick={() => toggleExtra(x)}>
+                  <Icon name={EXTRA_ICON[x] ?? x} size={22} />
+                  <span>{t(x === 'cmd' ? 'life.cmdShort' : EXTRA_KEY[x])}</span>
                 </button>
               ))}
             </div>

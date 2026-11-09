@@ -10,12 +10,16 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-09',
     it: [
+      'Life counter: nuovo contatore Tassa, da accendere nel menu della partita. Ogni + è un lancio del comandante dalla zona di comando e il numero è già quello da pagare in più (+2, +4…); con due comandanti la tassa è una sola. Non entra nella cronologia e riparte da zero con una nuova partita',
+      'Life counter: i contatori hanno un\'icona al posto della scritta (scudo incrinato per il danno da comandante, freccia in su per la tassa, simbolo phyrexiano per il veleno, tornado per lo storm…), così anche con tanti accesi si leggono bene. Nel menu della partita sono due righe da cinque, con l\'icona sopra il nome',
       'Calendario dei tornei: i prossimi tornei gestiti in Castra, mese per mese, con giorno, ora, luogo e iscrizioni aperte (o "Ci sei" se sei già iscritto). Si filtrano per le leghe in cui hai giocato o per i Livelli 1 e 2',
       'Home: la card "Prossimi tornei" mostra i prossimi due, tranne quello a cui sei iscritto, che ha già la sua card. Se non ce ne sono, la card non c\'è e il Calendario si apre dalla riga "Tornei in corso"',
       'Pagina di un torneo in arrivo: giorno, ora, formato, luogo con "Apri nelle mappe", "Iscriviti", "Aggiungi al calendario" del telefono e "Ricordamelo", una notifica la sera prima',
       'Area TO: nella pagina di un torneo con le iscrizioni aperte, "Nel calendario" per scrivere giorno, ora di inizio, luogo e indirizzo, o per toglierlo dal calendario',
     ],
     en: [
+      'Life counter: new Tax counter, turned on from the game menu. Each + is a cast of your commander from the command zone and the number is already what you pay on top (+2, +4…); with two commanders there is one tax. It stays out of the history and starts from zero with a new game',
+      'Life counter: the counters show an icon instead of their name (a cracked shield for commander damage, an arrow up for the tax, the Phyrexian symbol for poison, a tornado for storm…), easy to read even with many on. In the game menu they are two rows of five, the icon above the name',
       'Tournament calendar: the next tournaments run in Castra, month by month, with day, time, venue and open registration (or "You\'re in" if you already are). Filter by the leagues you played in or by Levels 1 and 2',
       'Home: the "Next tournaments" card shows the next two, except the one you registered for, which has its own card. With none, the card is gone and the Calendar opens from the "Tournaments in progress" row',
       'An upcoming tournament\'s page: day, time, format, venue with "Open in maps", "Register", "Add to calendar" on the phone and "Remind me", a notification the evening before',
