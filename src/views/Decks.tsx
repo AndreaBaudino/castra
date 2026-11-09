@@ -6,7 +6,8 @@ import { useBanlist } from '../lib/banlist'
 import { type Deck, type DeckCard, checkDeck, deckCover, isValid, newId, parseDecklist, safeDeck, sortColors } from '../lib/decks'
 import { useLiveCollection } from '../lib/firebase'
 import { type MetaDeck, findMetaDeck, normName, winrate } from '../lib/meta'
-import { fetchCollection, requestKey } from '../lib/scryfall'
+import { euro, fetchCollection, requestKey } from '../lib/scryfall'
+import { readStored } from '../lib/storage'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { useDialog } from '../components/Dialog'
 import { useWide } from '../lib/wide'
@@ -29,12 +30,13 @@ export function DeckTile({
   onLongPress?: () => void
   on?: boolean // open beside the list, on a desktop
 }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   useBanlist() // a newer banlist changes the check
   const check = checkDeck(deck)
   const art = deckCover(deck)
   const m = findMetaDeck(metaDecks, commanderNames(deck))
   const press = useLongPress(onClick, onLongPress)
+  const price = readStored<Record<string, number>>('cc.deckPrices', {})[deck.id] // the last seen on the deck's page
   return (
     <button className={on ? 'deck-tile on' : 'deck-tile'} {...press}>
       <div className="deck-art" style={art ? { backgroundImage: `url(${art})` } : undefined} />
@@ -49,6 +51,7 @@ export function DeckTile({
           ) : (
             !isValid(check) && <span className="small warn-text">⚠ {t('decks.invalid')}</span>
           )}
+          {price != null && <span className="small mono">{euro(price, lang, 0)}</span>}
           {deck.tags.slice(0, 2).map((tag) => (
             <span key={tag} className="tag">
               {tag}

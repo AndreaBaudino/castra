@@ -161,6 +161,10 @@ sporgente.
 **Intestazione**: niente occhiello sopra i titoli. Lo slogan ("Every legion needs a camp") e la stagione vanno sotto il
 titolo, in `--muted`.
 
+**Barra del mazzo** (`.deck-bar`): sottile (40px, 44px sul computer), fondo `--surface` e bordo in alto, attaccata
+sopra il menu in basso. Testo piccolo, prezzo in JetBrains Mono, icone dei tipi a 14px in `--muted` (piene quelle
+disegnate dalle immagini date, a tratto le altre). Sul telefono due pagine con « », sul computer una riga.
+
 ## Immagini delle carte
 
 - Nella lista dei mazzi l'immagine del comandante sta a sinistra e **sfuma verso destra** (`.deck-art`, maschera

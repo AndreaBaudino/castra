@@ -2438,6 +2438,96 @@ button.kv.clickable b {
   margin-top: -8px;
   background: var(--bg);
 }
+/* the deck's bar, at the bottom of its page above the tab bar: cards and price, cards by type */
+.deck-bar {
+  position: sticky;
+  bottom: calc(var(--tabbar-h) + var(--safe-b));
+  margin: 0 -16px -16px; /* edge to edge, and down onto the main's bottom padding */
+  height: 40px;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+  z-index: 5;
+}
+.deck-bar > .icon-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  color: var(--muted);
+}
+.deck-bar-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.deck-bar-price {
+  padding: 8px 4px;
+  background: none;
+  border: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: inherit;
+  font-weight: 600;
+}
+.deck-bar-types {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  font-family: var(--font-mono);
+}
+.deck-bar-types span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.deck-bar-types svg {
+  color: var(--muted);
+}
+.deck-page .toast {
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + 56px);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+/* the most expensive cards: a bar each, as long as its price against the first */
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 2px;
+}
+.price-rank {
+  width: 1.4em;
+}
+.price-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.price-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--red);
+}
+.price-box {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+.price-box .kv {
+  gap: 12px;
+}
 .set-code {
   font-size: 0.65rem;
   font-weight: 700;
@@ -5643,5 +5733,23 @@ div.home-row > .home-row-link.link {
   }
   .account-body.circuit > h2 {
     grid-column: 1 / -1;
+  }
+}
+
+/* the deck's bar on a computer: one row, the types on the right */
+@media (min-width: 1024px) {
+  .deck-bar {
+    margin: 0 -16px -32px;
+    height: 44px;
+    padding: 0 32px;
+    gap: 28px;
+  }
+  .deck-bar-info {
+    flex: none;
+  }
+  .deck-bar-types {
+    flex: none;
+    margin-left: auto;
+    gap: 22px;
   }
 }

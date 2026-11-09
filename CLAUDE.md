@@ -87,7 +87,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   avvisi di classifica (`snapshotOf`, `noticeOf`, `mergeNotices`).
 - `claims.ts`: "questo sono io" (`claims/{playerKey}`, un giocatore per account). `admin.ts`: `useIsAdmin`, revoche.
 - `decks.ts`: tipi `Deck`/`DeckCard`, `parseDecklist` (Moxfield/MTGO/Arena), `exportDecklist`, `checkDeck`, `newId`.
-- `scryfall.ts`: API Scryfall (≤10 richieste/s), `CardInfo`. `cards.ts`: errata dal ramo `cards-data`, `diffWords`.
+- `scryfall.ts`: API Scryfall (≤10 richieste/s), `CardInfo`, prezzi Cardmarket (`fetchPrices`, `fetchCheapest`, `euro`;
+  il totale di ogni mazzo resta in `cc.deckPrices` per l'elenco dei mazzi). `cards.ts`: errata dal ramo `cards-data`, `diffWords`.
 - `banlist.ts` (copia inclusa + `loadBanlist`, `legalityOf`, `banCheck`) e `banlistSync.ts` (lettura dal sito via API
   WordPress e pubblicazione su `config/banlist`).
 - `sources.ts` / `aliases.ts`: elenco dei fogli dei tornei e correzioni dei nomi, gestiti dall'area admin.

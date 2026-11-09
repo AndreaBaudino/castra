@@ -18,6 +18,8 @@ interface ScryCard {
   keywords?: string[]
   image_uris?: { normal: string; art_crop: string }
   card_faces?: { mana_cost?: string; type_line?: string; image_uris?: { normal: string; art_crop: string } }[]
+  prices?: { eur?: string | null; eur_foil?: string | null; usd?: string | null }
+  purchase_uris?: { cardmarket?: string }
 }
 
 // what lets two cards share the command zone
@@ -108,6 +110,67 @@ export async function fetchCollection(reqs: CardRequest[]) {
   }
   return { found: first.found, notFound }
 }
+
+// ---------- prices: Cardmarket's, in euro, which Scryfall refreshes once a day ----------
+
+export interface Price {
+  eur: number | null
+  foil: number | null
+  url?: string // the card on Cardmarket
+  from?: string // the set of the printing priced, when not the deck's (which has no price: an MTGO one…)
+}
+
+const num = (s?: string | null) => (s ? Number(s) : null)
+const priceOf = (c: ScryCard): Price => ({ eur: num(c.prices?.eur), foil: num(c.prices?.eur_foil), url: c.purchase_uris?.cardmarket })
+const prices = new Map<string, Price>() // by printing: a session is short enough to keep them
+
+/**
+ * The cheapest paper printing of each card, by name. A price counts when the US market has one too: a lone euro
+ * price on a printing nobody sells (Summer Magic at €0.02) is noise.
+ */
+export async function fetchCheapest(names: string[]) {
+  const best = new Map<string, Price & { from: string }>()
+  for (let i = 0; i < names.length; i += 10) {
+    const q = names.slice(i, i + 10).map((n) => `!"${front(n)}"`).join(' or ')
+    let url: string | undefined = `${API}/cards/search?q=${encodeURIComponent(`(${q}) game:paper`)}&unique=prints`
+    for (let page = 0; url && page < 3; page++) {
+      await sleep(120)
+      const res = await fetch(url)
+      if (!res.ok) break // 404: none
+      const json = (await res.json()) as { data: ScryCard[]; next_page?: string }
+      for (const c of json.data) {
+        const p = priceOf(c)
+        const old = best.get(c.name)
+        if (p.eur != null && c.prices?.usd && (!old || p.eur < old.eur!)) best.set(c.name, { ...p, from: c.set! })
+      }
+      url = json.next_page
+    }
+  }
+  return best
+}
+
+/** The prices of the deck's printings (by Scryfall id); one without any gets its card's cheapest paper printing's. */
+export async function fetchPrices(cards: { id: string; name: string }[]) {
+  const todo = [...new Map(cards.filter((c) => !prices.has(c.id)).map((c) => [c.id, c])).values()]
+  for (let i = 0; i < todo.length; i += 75) {
+    if (i) await sleep(120)
+    const res = await fetch(`${API}/cards/collection`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ identifiers: todo.slice(i, i + 75).map(({ id }) => ({ id })) }),
+    })
+    if (!res.ok) throw new Error(`Scryfall ${res.status}`)
+    for (const c of ((await res.json()) as { data: ScryCard[] }).data) prices.set(c.id, priceOf(c))
+  }
+  const priced = (id: string) => prices.get(id)?.eur != null || prices.get(id)?.foil != null
+  const bare = todo.filter((c) => !priced(c.id))
+  const cheap = bare.length ? await fetchCheapest(bare.map((c) => c.name)) : new Map()
+  for (const c of bare) prices.set(c.id, cheap.get(c.name) ?? { eur: null, foil: null })
+  return new Map(prices)
+}
+
+export const euro = (v: number, lang: string, digits = 2) =>
+  v.toLocaleString(lang, { style: 'currency', currency: 'EUR', minimumFractionDigits: digits, maximumFractionDigits: digits })
 
 async function search(q: string, extra = '', signal?: AbortSignal): Promise<CardInfo[]> {
   const res = await fetch(`${API}/cards/search?q=${encodeURIComponent(q)}${extra}`, { signal })

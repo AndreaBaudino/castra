@@ -26,7 +26,9 @@ import { loadPrivate, photoLink, ranking, tournamentTitle, useTournament } from 
 import { placeLabel } from './Circuit'
 import { type MetaDataset, type MetaDeck, findMetaDeck, nickName, winrate } from '../lib/meta'
 import { type DeckTournament, type Match, deckTournaments, fmtRecord, record } from '../lib/matches'
-import { fetchCollection, fetchPrints, requestKey, searchCards, symbolUrl } from '../lib/scryfall'
+import { type Price, euro, fetchCheapest, fetchCollection, fetchPrices, fetchPrints, requestKey, searchCards, symbolUrl } from '../lib/scryfall'
+import { readStored, writeStored } from '../lib/storage'
+import { useWide } from '../lib/wide'
 import { Icon, Pips, Sheet, pct, wrClass } from '../components/ui'
 import { commanderNames } from './Decks'
 import { useDialog } from '../components/Dialog'
@@ -269,6 +271,113 @@ function DeckHistory({ history, tours }: { history: DeckChange[]; tours: DeckTou
   )
 }
 
+// the deck's bar: an icon a card type, shown when the deck has some
+const TYPE_ICON: Partial<Record<Group, string>> = {
+  creatures: 'creature',
+  planeswalkers: 'planeswalker',
+  instants: 'instant',
+  sorceries: 'sorcery',
+  artifacts: 'artifact',
+  enchantments: 'enchantment',
+  battles: 'game',
+  lands: 'land',
+}
+
+/** At the bottom of the deck: its cards and price, then its cards by type (two pages on a phone, one row on a computer). */
+function DeckBar({ count, total, types, onPrice }: { count: number; total: string; types: [Group, number][]; onPrice?: () => void }) {
+  const { t } = useI18n()
+  const wide = useWide()
+  const [page, setPage] = useState(0) // always opens on the price
+  const startX = useRef(0)
+  const info = (
+    <div className="deck-bar-info">
+      <span className="muted">{t('deck.bar.cards', { n: count })}</span>
+      <button className="deck-bar-price" disabled={!onPrice} onClick={onPrice}>
+        {total}
+      </button>
+    </div>
+  )
+  const icons = (
+    <div className="deck-bar-types">
+      {types.map(([g, n]) => (
+        <span key={g} title={t(GROUP_KEY[g])}>
+          <Icon name={TYPE_ICON[g]!} size={14} />
+          {n}
+        </span>
+      ))}
+    </div>
+  )
+  if (wide)
+    return (
+      <div className="deck-bar">
+        {info}
+        {icons}
+      </div>
+    )
+  const flip = () => setPage(1 - page)
+  return (
+    <div
+      className="deck-bar"
+      onTouchStart={(e) => (startX.current = e.touches[0].clientX)}
+      onTouchEnd={(e) => Math.abs(e.changedTouches[0].clientX - startX.current) > 40 && flip()}
+    >
+      <button className="icon-btn" onClick={flip} aria-label={t('deck.bar.prev')}>
+        <Icon name="prev2" size={16} />
+      </button>
+      {page ? icons : info}
+      <button className="icon-btn" onClick={flip} aria-label={t('deck.bar.next')}>
+        <Icon name="next2" size={16} />
+      </button>
+    </div>
+  )
+}
+
+/** A card's price in the card's sheet: its printing's, foil, and the cheapest printing when cheaper. */
+function CardPrice({ name, price }: { name: string; price: Price }) {
+  const { t, lang } = useI18n()
+  const [cheap, setCheap] = useState<Price | null>(null)
+  useEffect(() => {
+    let off = false
+    setCheap(null)
+    fetchCheapest([name])
+      .then((m) => !off && setCheap(m.get(name) ?? null))
+      .catch(() => {})
+    return () => {
+      off = true
+    }
+  }, [name])
+  if (price.eur == null && price.foil == null) return null
+  return (
+    <div className="price-box">
+      {price.eur != null && (
+        <div className="kv">
+          <span>{price.from ? t('price.other', { s: price.from.toUpperCase() }) : 'Cardmarket'}</span>
+          <b className="mono">{euro(price.eur, lang)}</b>
+        </div>
+      )}
+      {price.foil != null && (
+        <div className="kv">
+          <span>{t('price.foil')}</span>
+          <span className="mono">{euro(price.foil, lang)}</span>
+        </div>
+      )}
+      {cheap?.from && cheap.from !== price.from && cheap.eur! < (price.eur ?? price.foil!) && (
+        <div className="kv">
+          <span>{t('price.cheapest')}</span>
+          <span className="mono">
+            {euro(cheap.eur!, lang)} · {cheap.from.toUpperCase()}
+          </span>
+        </div>
+      )}
+      {price.url && (
+        <a className="link small" href={price.url} target="_blank" rel="noreferrer">
+          {t('price.open')}
+        </a>
+      )}
+    </div>
+  )
+}
+
 export default function DeckDetail({
   deck,
   metaDecks,
@@ -311,6 +420,7 @@ export default function DeckDetail({
   const [hand, setHand] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
   useEffect(() => setStatsOpen(false), [deck.id])
+  const [top, setTop] = useState(false)
   const [toast, setToast] = useState('')
   const banlist = useBanlist()
   const check = useMemo(() => checkDeck(deck), [deck, banlist]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -339,6 +449,47 @@ export default function DeckDetail({
     return GROUP_ORDER.filter((k) => g.has(k)).map((k) => [k, g.get(k)!] as const)
   }, [deck.cards])
 
+
+  // the 100 (not the sideboard): their prices, their types
+  const playing = deck.cards.filter((c) => c.section !== 'side')
+  // basic lands cost cents and have a thousand printings: left out
+  const basic = (c: DeckCard) => /\bbasic\b/i.test(c.info?.typeLine ?? '')
+  const toPrice = playing.flatMap((c) => (c.info && !basic(c) ? [{ id: c.info.id, name: c.name }] : []))
+  const ids = toPrice.map((c) => c.id)
+  const [prices, setPrices] = useState<Map<string, Price> | 'failed'>()
+  useEffect(() => {
+    let off = false
+    fetchPrices(toPrice)
+      .then((m) => !off && setPrices(m))
+      .catch(() => !off && setPrices('failed'))
+    return () => {
+      off = true
+    }
+  }, [ids.join()]) // eslint-disable-line react-hooks/exhaustive-deps
+  const priced = useMemo(() => {
+    if (!prices || prices === 'failed') return null
+    const rows = playing.filter((c) => !basic(c)).map((c) => {
+      const p = c.info && prices.get(c.info.id)
+      const each = p ? (p.eur ?? p.foil) : null
+      return { c, cost: each == null ? null : each * c.qty, set: p?.from ?? c.info?.set }
+    })
+    const total = rows.reduce((s, r) => s + (r.cost ?? 0), 0)
+    return { rows: rows.filter((r) => r.cost != null).sort((a, b) => b.cost! - a.cost!), none: rows.filter((r) => r.cost == null), total }
+  }, [prices, deck.cards]) // eslint-disable-line react-hooks/exhaustive-deps
+  // the deck list shows the last price seen
+  useEffect(() => {
+    if (priced && !readOnly) writeStored('cc.deckPrices', { ...readStored<Record<string, number>>('cc.deckPrices', {}), [deck.id]: priced.total })
+  }, [priced?.total]) // eslint-disable-line react-hooks/exhaustive-deps
+  const types = useMemo(() => {
+    const n = new Map<Group, number>()
+    for (const c of playing) {
+      const g = groupOf({ ...c, section: 'main' })
+      if (TYPE_ICON[g]) n.set(g, (n.get(g) ?? 0) + c.qty)
+    }
+    return GROUP_ORDER.filter((g) => n.has(g)).map((g) => [g, n.get(g)!] as [Group, number])
+  }, [deck.cards]) // eslint-disable-line react-hooks/exhaustive-deps
+  const top10 = priced?.rows.slice(0, 10) ?? []
+  const topSum = top10.reduce((s, r) => s + r.cost!, 0)
 
   const save = (patch: Partial<Deck>) =>
     onChange({
@@ -628,6 +779,42 @@ export default function DeckDetail({
         <DeckVsMeta dataset={dataset} deck={deck} cmd={meta.id} openCommander={openCommander} openCard={openCard} />
       )}
 
+      <DeckBar
+        count={check.count}
+        total={priced ? euro(priced.total, lang) : prices === 'failed' ? '—' : '…'}
+        types={types}
+        onPrice={priced ? () => setTop(true) : undefined}
+      />
+
+      <Sheet open={top} onClose={() => setTop(false)} title={t('price.top')}>
+        {priced && (
+          <>
+            {priced.total > 0 && (
+              <p className="muted small no-margin">
+                {t('price.share', { n: top10.length, p: pct(topSum / priced.total, 0), a: euro(topSum, lang, 0), b: euro(priced.total, lang, 0) })}
+              </p>
+            )}
+            <ul className="card-list">
+              {top10.map(({ c, cost, set }, i) => (
+                <li key={cardKey(c)} className="price-row">
+                  <span className="muted mono price-rank">{i + 1}</span>
+                  <div className="price-main">
+                    <span className="ellipsis">{c.name}</span>
+                    <span className="price-bar" style={{ width: `${(cost! / top10[0].cost!) * 100}%` }} />
+                  </div>
+                  <span className="set-code">{set?.toUpperCase()}</span>
+                  <b className="mono">{euro(cost!, lang)}</b>
+                </li>
+              ))}
+            </ul>
+            {priced.none.length > 0 && (
+              <p className="muted small no-margin">{t('price.none', { n: priced.none.length, cards: priced.none.map((r) => r.c.name).join(', ') })}</p>
+            )}
+            <p className="muted small no-margin">{t('price.source')}</p>
+          </>
+        )}
+      </Sheet>
+
       <Sheet open={!!selected} onClose={() => setSelectedKey(null)} title={selected?.name}>
         {selected &&
           (choosingPrint ? (
@@ -662,6 +849,9 @@ export default function DeckDetail({
                 </span>
                 {!readOnly && <span className="link">{t('deck.change')}</span>}
               </button>
+              {selected.info && prices instanceof Map && prices.get(selected.info.id) && (
+                <CardPrice name={selected.name} price={prices.get(selected.info.id)!} />
+              )}
               {!readOnly && <div className="qty-line">
                 <span>{t('deck.qty')}</span>
                 <span className="stepper-ctrl">
