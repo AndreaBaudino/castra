@@ -119,7 +119,8 @@ export function LiveLink({ open, calendar }: { open: (id?: string) => void; cale
       <LiveDot live={live.length ? 'live' : 'none'} />
     </span>
   )
-  const status = <span className="muted small">{live.length ? t('live.follow', { n: live.length }) : t('live.nobody')}</span>
+  // none: the red dot says it, no words to squeeze beside the calendar
+  const status = live.length > 0 && <span className="muted small">{t('live.follow', { n: live.length })}</span>
   if (calendar)
     return (
       <div className="card home-row">
