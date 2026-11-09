@@ -49,6 +49,30 @@ service cloud.firestore {
       }
     }
 
+    // the public decks of the verified players, by commander (src/lib/publicDecks.ts): a small card of each, read by
+    // everyone, written by the deck's owner only while the account holds a verified claim
+    match /publicDecks/{id} {
+      function card(d) {
+        return d.keys().hasOnly(['uid', 'deck', 'player', 'name', 'commanders', 'cover', 'tags', 'at'])
+          && d.uid == request.auth.uid
+          && text(d, 'deck', 1, 40) && id == d.uid + '~' + d.deck
+          && d.player is string
+          && exists(/databases/$(database)/documents/claims/$(d.player))
+          && get(/databases/$(database)/documents/claims/$(d.player)).data.uid == request.auth.uid
+          && get(/databases/$(database)/documents/claims/$(d.player)).data.get('verified', false) == true
+          && text(d, 'name', 0, 200)
+          && d.commanders is list && d.commanders.size() >= 1 && d.commanders.size() <= 2
+          && d.tags is list && d.tags.size() <= 5
+          && (d.cover == null || (d.cover is string && d.cover.size() <= 1000
+            && d.cover.matches('https://cards[.]scryfall[.]io/[-_./A-Za-z0-9=?]*')))
+          && stamp(d.at);
+      }
+      allow read: if true;
+      allow create, update: if request.auth != null && card(request.resource.data);
+      // a missing one too: the owner's app removes what it no longer finds, already gone or not
+      allow delete: if request.auth != null && (resource == null || resource.data.uid == request.auth.uid);
+    }
+
     // circuit players claimed by an account ("this is me"): everyone can see who is linked (and verified),
     // a free player can be claimed once, and only the claimer can change or release it
     match /claims/{playerKey} {

@@ -41,7 +41,7 @@ export function useLiveDoc<T>(path: string | null) {
  * only the documents whose field compares so with the value, or (a list) that match any of the conditions: a change
  * to the other documents isn't sent, nor paid for.
  */
-type Cond = [string, '==' | '>=', string | boolean]
+type Cond = [string, '==' | '>=' | 'array-contains', string | boolean]
 export function useLiveCollection<T>(name: string | null, where?: Cond | Cond[]) {
   const [docs, setDocs] = useState<[string, T][]>([])
   const [loaded, setLoaded] = useState(false) // confirmed by the server, not just the offline cache

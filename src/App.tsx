@@ -19,7 +19,8 @@ import { Icon } from './components/ui'
 import Home from './views/Home'
 import Meta, { META_MODE_KEY } from './views/Meta'
 import { CircuitNoticeCard, EventPage, PlayerPage, focusMeInRanking } from './views/Circuit'
-import { CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPages'
+import { CommanderDecksPage, CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPages'
+import { usePublishDecks } from './lib/publicDecks'
 import { ComparePage, LeaguePage } from './views/CircuitMore'
 import { CardPage, CardsSearchPage } from './views/Cards'
 import Decks from './views/Decks'
@@ -219,6 +220,9 @@ export default function App() {
   const [deckOwner, deckId] = route.tab === 'decks' && route.deck?.includes('~') ? route.deck.split('~') : [uid, route.deck]
   const openDeck = deckId && deckOwner === uid ? decks.find((d) => d.id === deckId) : undefined
   const openShared = (owner: string, id: string) => go('decks', `${owner}~${id}`, true)
+  // the public decks of a verified player, listed on their commanders' pages
+  const verifiedMe = circuitMe && claims.get(circuitMe)?.uid === uid && claims.get(circuitMe)?.verified ? circuitMe : null
+  usePublishDecks(claimsLoaded ? uid : null, verifiedMe, decks)
   // the account name written in the deck, the picture and circuit page of the player the account claimed
   const authorOf = (owner: string, name?: string): Author | undefined => {
     const [key, c] = [...claims].find(([, c]) => c.uid === owner) ?? []
@@ -276,8 +280,8 @@ export default function App() {
     findMe()
   }
   // meta/p~<player key>, meta/e~<event id>, meta/l~<season>~<league>, meta/c~<player a>~<player b>,
-  // meta/k~<commander>, meta/t~<tournament id> (an event or a league stage of the deck meta), meta/x~<card> (from the
-  // circuit's cards)
+  // meta/k~<commander> (meta/kd~<commander>: its public decks), meta/t~<tournament id> (an event or a league stage of
+  // the deck meta), meta/x~<card> (from the circuit's cards)
   const [metaSub, ...metaArgs] = route.tab === 'meta' && route.deck ? route.deck.split('~').map(decodeURIComponent) : []
   // a circuit event with its sheet opens as a tournament of the meta: same players, plus decks and records
   const circuitEvent = metaSub === 'e' ? shown.data?.events.find((e) => e.id === metaArgs[0]) : undefined
@@ -450,7 +454,12 @@ export default function App() {
                 openCommander={openCommander}
                 openCard={openMetaCard}
                 onCreateDeck={(d) => setDecks((ds) => [d, ...ds])}
+                claims={claims}
+                openShared={openShared}
+                openAllDecks={() => go('meta', `kd~${encodeURIComponent(metaArgs[0])}`, true)}
               />
+            ) : metaSub === 'kd' ? (
+              <CommanderDecksPage name={metaArgs[0]} claims={claims} openDeck={openShared} openPlayer={openPlayer} onBack={() => history.back()} />
             ) : metaSub === 'x' ? (
               <CardPage name={metaArgs[0]} metaDecks={meta.decks} dataset={dataset} onBack={() => history.back()} openCommander={openCommander} />
             ) : metaSub === 't' || (metaSub === 'e' && eventTournament) ? (

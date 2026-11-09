@@ -11,6 +11,7 @@ import {
   findMetaDeck,
   matchupsOf,
   recordOf,
+  nickName,
   shortName,
   wilson,
   winrate,
@@ -27,6 +28,8 @@ import { DuplicateDeck, TypicalList } from './MetaCards'
 import { type CircuitPrefs, MissingPage, PotyTag, SubPageShell, VerifiedTick, placeLabel } from './Circuit'
 import type { Circuit, CircuitEvent, Player } from '../lib/circuit'
 import { commanderNames } from './Decks'
+import { type PublicDeck, useCommanderDecks } from '../lib/publicDecks'
+import type { Claim } from '../lib/claims'
 
 // Pages built on the tournament data: a commander's page, and the shared bits (tournament labels, records)
 // the player, event and league pages use.
@@ -60,6 +63,91 @@ export function PlaceBadge({ place, event }: { place: number; event: boolean }) 
 
 const SHOW = 5
 
+/** A public deck of a verified player: its cover, its name, who plays it (to their page) and its last change. */
+function PublicDeckRow({ d, claim, onOpen, openPlayer }: { d: PublicDeck; claim: Claim; onOpen: () => void; openPlayer: () => void }) {
+  const { lang } = useI18n()
+  return (
+    <li className="event-row" onClick={onOpen}>
+      <span className="pub-cover" style={d.cover ? { backgroundImage: `url(${d.cover})` } : undefined} />
+      <div className="event-main">
+        <span className="ellipsis">{d.name}</span>
+        <span className="muted small pub-by">
+          {claim.photo ? <img src={claim.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{(claim.name ?? '?').charAt(0)}</span>}
+          <button
+            className="link-plain ellipsis"
+            onClick={(e) => {
+              e.stopPropagation()
+              openPlayer()
+            }}
+          >
+            {claim.name ?? d.player}
+          </button>
+          <span className="pub-when">· {new Date(d.at).toLocaleDateString(lang, { day: 'numeric', month: 'short' })}</span>
+        </span>
+        {d.tags.length > 0 && (
+          <span className="pub-tags">
+            {d.tags.map((tag) => (
+              <span key={tag} className="tag">
+                {tag}
+              </span>
+            ))}
+          </span>
+        )}
+      </div>
+      <Icon name="chevron" size={16} />
+    </li>
+  )
+}
+
+type DeckLinks = { claims: Map<string, Claim>; openDeck: (owner: string, id: string) => void; openPlayer: (key: string) => void }
+
+/** On a commander's page: the newest public decks of the verified players who lead with it. */
+function CommanderDecks({ name, claims, openDeck, openPlayer, openAll }: DeckLinks & { name: string; openAll: () => void }) {
+  const { t } = useI18n()
+  const { decks } = useCommanderDecks(name, claims)
+  if (!decks.length) return null
+  return (
+    <section className="group">
+      <div className="group-title pub-head">
+        <span>
+          {t('pub.title')} <span className="muted">{decks.length}</span>
+        </span>
+        {decks.length > 3 && (
+          <button className="link" onClick={openAll}>
+            {t('pub.all')}
+          </button>
+        )}
+      </div>
+      <ul className="card-list">
+        {decks.slice(0, 3).map((d) => (
+          <PublicDeckRow key={d.uid + d.deck} d={d} claim={claims.get(d.player)!} onOpen={() => openDeck(d.uid, d.deck)} openPlayer={() => openPlayer(d.player)} />
+        ))}
+      </ul>
+      <p className="muted small group-note">{t('pub.note', { c: nickName(name) })}</p>
+    </section>
+  )
+}
+
+/** All of a commander's public decks (meta/kd~<commander>). */
+export function CommanderDecksPage({ name, claims, openDeck, openPlayer, onBack }: DeckLinks & { name: string; onBack: () => void }) {
+  const { t } = useI18n()
+  const { decks, loaded } = useCommanderDecks(name, claims)
+  return (
+    <SubPageShell title={`${t('pub.title')} · ${nickName(name)}`} onBack={onBack}>
+      {!decks.length ? (
+        <p className="muted no-margin">{loaded ? t('pub.none') : '…'}</p>
+      ) : (
+        <ul className="card-list">
+          {decks.map((d) => (
+            <PublicDeckRow key={d.uid + d.deck} d={d} claim={claims.get(d.player)!} onOpen={() => openDeck(d.uid, d.deck)} openPlayer={() => openPlayer(d.player)} />
+          ))}
+        </ul>
+      )}
+      <p className="muted small group-note">{t('pub.allNote')}</p>
+    </SubPageShell>
+  )
+}
+
 export function CommanderPage({
   dataset,
   name,
@@ -71,7 +159,13 @@ export function CommanderPage({
   openCommander,
   openCard,
   onCreateDeck,
+  claims,
+  openShared,
+  openAllDecks,
 }: {
+  claims: Map<string, Claim>
+  openShared: (owner: string, id: string) => void
+  openAllDecks: () => void
   dataset: MetaDataset | null
   name: string
   decks: Deck[]
@@ -242,6 +336,8 @@ export function CommanderPage({
           )}
 
           <TypicalList dataset={dataset} filter={filter} cmd={cmd.id} openCard={openCard} />
+
+          <CommanderDecks name={cmd.name} claims={claims} openDeck={openShared} openPlayer={openPlayer} openAll={openAllDecks} />
 
           {mine.length > 0 && (
             <ul className="card-list">

@@ -460,4 +460,27 @@ await denied("listing someone's unlisted decks", getDocs(query(collection(guest,
 await denied("listing all of someone's decks", getDocs(collection(alice, 'users', 'dave', 'decks')))
 await denied("changing someone else's public deck", setDoc(doc(alice, 'users', 'dave', 'decks', 'pub'), { id: 'pub', name: 'x', visibility: 'public' }))
 
+// the public decks of the verified players (src/lib/publicDecks.ts): read by everyone, by commander
+await asAdmin(async (db) => {
+  await setDoc(doc(db, 'claims', 'pit'), { uid: 'pia', name: 'G', photo: null, at: 'x', verified: true })
+  await setDoc(doc(db, 'claims', 'quill'), { uid: 'quinn', name: 'H', photo: null, at: 'x' })
+})
+const pia = env.authenticatedContext('pia').firestore()
+const quinn = env.authenticatedContext('quinn').firestore()
+const card = (uid, player, extra = {}) => ({
+  uid, deck: 'd1', player, name: 'Kinnan turbo', commanders: ['Kinnan, Bonder Prodigy'], tags: ['combo'],
+  cover: 'https://cards.scryfall.io/art_crop/front/a/b/ab12.jpg?1', at: AT, ...extra,
+})
+await allowed('a verified player listing a public deck', setDoc(doc(pia, 'publicDecks', 'pia~d1'), card('pia', 'pit')))
+await allowed('everyone finding the decks of a commander', getDocs(query(collection(guest, 'publicDecks'), where('commanders', 'array-contains', 'Kinnan, Bonder Prodigy'))))
+await denied('a player not verified listing a deck', setDoc(doc(quinn, 'publicDecks', 'quinn~d1'), card('quinn', 'quill')))
+await denied("listing a deck on someone else's verified player", setDoc(doc(quinn, 'publicDecks', 'quinn~d1'), card('quinn', 'pit')))
+await denied("listing a deck as someone else", setDoc(doc(quinn, 'publicDecks', 'pia~d2'), card('pia', 'pit', { deck: 'd2' })))
+await denied('a card whose id is not its deck', setDoc(doc(pia, 'publicDecks', 'pia~x'), card('pia', 'pit')))
+await denied('a cover from another site', setDoc(doc(pia, 'publicDecks', 'pia~d1'), card('pia', 'pit', { cover: 'https://spy.example/p.png' })))
+await denied('a card with other fields', setDoc(doc(pia, 'publicDecks', 'pia~d1'), card('pia', 'pit', { cards: [] })))
+await denied("removing someone else's card", deleteDoc(doc(quinn, 'publicDecks', 'pia~d1')))
+await allowed('removing your own card', deleteDoc(doc(pia, 'publicDecks', 'pia~d1')))
+await allowed('removing a card already gone', deleteDoc(doc(pia, 'publicDecks', 'pia~d9')))
+
 await env.cleanup()

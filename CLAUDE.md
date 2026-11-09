@@ -86,6 +86,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
   `playerKey(nome)` normalizza i nomi; un foglio per anno (`circuits/{anno}` su Firestore, 2026 in `config.ts`);
   avvisi di classifica (`snapshotOf`, `noticeOf`, `mergeNotices`).
 - `claims.ts`: "questo sono io" (`claims/{playerKey}`, un giocatore per account). `admin.ts`: `useIsAdmin`, revoche.
+- `publicDecks.ts`: i mazzi pubblici dei giocatori verificati per comandante (`publicDecks/{uid}~{mazzo}`, una scheda
+  piccola scritta dall'app del proprietario con `usePublishDecks` in `App.tsx`; letti da `useCommanderDecks`).
 - `decks.ts`: tipi `Deck`/`DeckCard`, `parseDecklist` (Moxfield/MTGO/Arena), `exportDecklist`, `checkDeck`, `newId`.
 - `scryfall.ts`: API Scryfall (≤10 richieste/s), `CardInfo`, prezzi Cardmarket (`fetchPrices`, `fetchCheapest`, `euro`;
   il totale di ogni mazzo resta in `cc.deckPrices` per l'elenco dei mazzi). `cards.ts`: errata dal ramo `cards-data`, `diffWords`.
@@ -107,7 +109,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - Route nell'hash: `#tab` o `#tab/sottopagina`. Tab: `home`, `meta` (si chiama "Circuito" in UI), `game`, `stats`,
   `decks`, `account`, `cards`, `to` (area TO; `to/<id>` un torneo gestito in app), `live` (tornei in corso; `live/<id>` uno, da spettatore).
 - Sottopagine del Circuito con prefisso: `p~giocatore`, `e~evento`, `l~stagione~lega`, `c~a~b` (confronto),
-  `k~comandante`, `t~torneo`, `x~carta` (dalla scheda Carte); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
+  `k~comandante` (`kd~comandante`: i suoi mazzi pubblici), `t~torneo`, `x~carta` (dalla scheda Carte); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
 - La cronologia è costruita apposta perché il tasto "indietro" del telefono funzioni: home → pagina principale →
   sottopagine impilate → foglio/dialogo aperto. Fogli e dialoghi usano `useBackCloses(open, onClose, layer)`:
   ogni nuovo pannello modale deve usarlo (o usare `Sheet` / `useDialog()`), mai `window.confirm`/`alert`.
@@ -126,7 +128,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - **Circuito**: Google Sheet pubblico letto dal browser in CSV, per scheda (gid).
 - **Banlist**: pubblicata dall'area admin su `config/banlist`, letta da ogni app all'avvio.
 - **Firestore**: `users/{uid}` (+ sottoraccolte `decks`, `matches`), `claims`, `revoked`, `admins` (solo da console),
-  `sources`, `circuits`, `aliases`, `config`. Un campo o una raccolta nuova di solito richiede di aggiornare
+  `sources`, `circuits`, `aliases`, `config`, `publicDecks`. Un campo o una raccolta nuova di solito richiede di aggiornare
   `firestore.rules` (che elenca i campi ammessi con `hasOnly`): le pubblica `rules.yml` se i test passano.
 - Il README (in italiano) descrive per esteso setup di Firebase, Apps Script e procedure dell'area admin.
 
