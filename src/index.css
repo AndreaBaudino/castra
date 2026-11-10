@@ -911,6 +911,12 @@ button.kv.clickable b {
   flex-direction: column;
   gap: 4px;
 }
+/* a commander: the art under the bar that stays at the top (.sticky-head), which already leaves room for the notch */
+.deck-hero.under-head {
+  height: 150px;
+  padding-top: 10px;
+  justify-content: flex-end;
+}
 /* who made the deck, above its name; their circuit page when they claimed a player */
 .deck-author {
   display: flex;

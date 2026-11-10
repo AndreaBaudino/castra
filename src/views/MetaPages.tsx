@@ -235,22 +235,22 @@ export function CommanderPage({
   const [lo, hi] = deck ? wilson(deck.wins, deck.wins + deck.losses) : [0, 0]
 
   return (
-    <div className="page deck-page">
-      <div className="deck-hero" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
+    <SubPageShell
+      title={cmd.name}
+      onBack={onBack}
+      actions={
+        deck && (
+          <div className="hero-actions">
+            <ReportButton about={cmd.name} />
+            <ShareButton text={t('share.commander', { name: cmd.name, share: pct(deck.share), wr: pct(winrate(deck)) })} />
+          </div>
+        )
+      }
+    >
+      {/* under the bar that stays at the top, as on a player's page */}
+      <div className="deck-hero under-head" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
         <div className="deck-hero-shade" />
-        <div className="deck-hero-top">
-          <button className="icon-btn on-image" onClick={onBack} aria-label="back">
-            <Icon name="back" />
-          </button>
-          {deck && (
-            <div className="hero-actions">
-              <ReportButton onImage about={cmd.name} />
-              <ShareButton onImage text={t('share.commander', { name: cmd.name, share: pct(deck.share), wr: pct(winrate(deck)) })} />
-            </div>
-          )}
-        </div>
         <div className="deck-hero-body">
-          <h1 className="sub-title">{cmd.name}</h1>
           <div className="sub-line">
             <Pips colors={cmd.colors} size={12} />
           </div>
@@ -470,7 +470,7 @@ export function CommanderPage({
           )}
         </>
       )}
-    </div>
+    </SubPageShell>
   )
 }
 

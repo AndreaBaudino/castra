@@ -177,6 +177,8 @@ comune sotto; in fondo la stessa barra del mazzo con i valori da A a B ("1,62 �
 - Nel mazzo aperto l'immagine in alto sfuma nel fondo della pagina. Sopra il nome c'è l'autore (`.deck-author`): avatar
   tondo da 24 px (foto del giocatore verificato o iniziale su `--gold`), nome e, per il proprietario, l'etichetta con la
   visibilità (`.tag`).
+- Nelle schede di giocatori e comandanti la barra con indietro, nome e pulsanti (`.sticky-head`) resta fissa in cima;
+  l'immagine sta sotto la barra (`.player-cover`, `.deck-hero.under-head` con i colori del comandante).
 - Nel life counter l'illustrazione scelta per un giocatore (`.player-art`) parte dal lato verso la barra centrale e sfuma
   nel colore del giocatore prima dei contatori, che restano sul colore pieno. Le vite hanno un'ombra leggera per leggersi
   sull'immagine (l'unica eccezione alla regola "niente ombre"). Sul bordo verso la barra, i pulsanti "Sfondo" e X
