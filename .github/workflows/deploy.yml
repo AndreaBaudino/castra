@@ -7,6 +7,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # Dependabot's pull requests: checks only, never published
+  pull_request:
+    branches: [main]
   schedule:
     # 4:00 in Italy: one cron for summer time, one for winter time (the job keeps only the right one)
     - cron: '0 2 * * *'
@@ -52,19 +55,19 @@ jobs:
               fi ;;
           esac
           echo "deploy=$go" | tee -a "$GITHUB_OUTPUT"
-      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+      - if: github.event_name != 'schedule' || steps.go.outputs.deploy == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+      - if: github.event_name != 'schedule' || steps.go.outputs.deploy == 'true'
         run: npm ci
-      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+      - if: github.event_name != 'schedule' || steps.go.outputs.deploy == 'true'
         run: npm test
-      # type check, lint and build on every push too: with nightly publishing a break would surface only at 4:00
-      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+      # type check, lint and build on every push and pull request: with nightly publishing a break would show at 4:00
+      - if: github.event_name != 'schedule' || steps.go.outputs.deploy == 'true'
         run: npm run lint
-      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+      - if: github.event_name != 'schedule' || steps.go.outputs.deploy == 'true'
         run: npm run build
         env:
           BASE: /${{ github.event.repository.name }}/

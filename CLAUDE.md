@@ -51,7 +51,8 @@ GitHub Pages ogni notte alle 4:00 (ora italiana) se l'app è cambiata (`.github/
 a ogni push girano solo i test). Per pubblicare subito una correzione urgente: `[subito]` nel messaggio di commit, o
 "Run workflow" su GitHub. Un push che cambia `firestore.rules` pubblica subito anche l'app, perché `rules.yml` mette
 online le regole in pochi minuti e regole nuove possono richiedere l'app che va con loro. L'app si aggiorna da sola all'avvio o quando va in background, e chiede solo con una partita
-in corso (`AppBanners.tsx`). Nessun router né state manager:
+in corso (`AppBanners.tsx`). Dependabot (`.github/dependabot.yml`) apre ogni mese le pull request di aggiornamento
+delle dipendenze, controllate da `deploy.yml` senza pubblicare: il merge lo fa il proprietario. Nessun router né state manager:
 React puro, `localStorage` e Firebase (Auth + Firestore) caricato in modo pigro.
 
 ```

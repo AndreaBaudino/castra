@@ -1,0 +1,26 @@
+# Monthly dependency updates as pull requests, checked by deploy.yml (tests, types, lint, build) before merging.
+# Minor and patch updates come together in one pull request; a major one comes on its own, as it may need code changes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+      time: '06:00'
+      timezone: Europe/Rome
+    commit-message:
+      prefix: 'Dipendenze:'
+    groups:
+      npm:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      time: '06:00'
+      timezone: Europe/Rome
+    commit-message:
+      prefix: 'Azioni:'
+    groups:
+      actions:
+        patterns: ['*']
