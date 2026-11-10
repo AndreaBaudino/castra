@@ -1,7 +1,8 @@
 /**
  * The circuit's deck lists (scripts/meta/decklists.json, read once from Moxfield and never again) given to the year's
  * entries, by the rules of docs/liste-mazzi.md: an entry listed in the archive under the same commander takes that
- * list; any other entry of a player with a list for the same commander takes that player's latest one. Returns, for
+ * list; any other entry of a player with a list for the same commander takes that player's latest one, but a list read
+ * later (`taken` of the list) never replaces the one an entry played before that day already took. Returns, for
  * each entry, [list index, 1 when taken by extension] or null, and the archive's entries no longer found (orphans).
  * Only the year the archive was taken in: a list of that year says nothing about the next one's decks.
  * `t`, `c`, `e` are the year's tournaments, commanders and entries as in meta.json; `key` is playerKey.
@@ -11,8 +12,8 @@ export function assignLists(archive, year, t, c, e, key) {
   if (year !== +archive.taken.slice(0, 4)) return { lists: out, orphans: [] }
   const at = new Map(e.map((x, i) => [`${t[x[0]].id}|${x[1] && key(x[1])}`, i]))
   const orphans = []
-  const own = new Map() // player key|commander → [list, latest tournament rank]
-  const rank = ranks(t)
+  const own = new Map() // player key|commander → { day the list was read → [list, latest tournament rank] }
+  const [rank, day] = ranks(t)
   archive.lists.forEach((l, li) => {
     for (const [tid, player] of l.entries) {
       const i = at.get(`${tid}|${key(player)}`)
@@ -24,14 +25,27 @@ export function assignLists(archive, year, t, c, e, key) {
       out[i] = [li, 0]
       const k = `${key(player)}|${l.commander}`
       const r = rank[x[0]]
-      if (!own.has(k) || r > own.get(k)[1]) own.set(k, [li, r])
+      const m = own.get(k) ?? own.set(k, {}).get(k)
+      const b = l.taken ?? archive.taken
+      if (!m[b] || r > m[b][1]) m[b] = [li, r]
     }
   })
   e.forEach((x, i) => {
-    const mine = !out[i] && x[1] && x[2] >= 0 && own.get(`${key(x[1])}|${c[x[2]].n}`)
+    const m = !out[i] && x[1] && x[2] >= 0 && own.get(`${key(x[1])}|${c[x[2]].n}`)
+    const mine = m && latest(m, day[x[0]])
     if (mine) out[i] = [mine[0], 1]
   })
   return { lists: out, orphans }
+}
+
+// the latest list known when a tournament played on `d` was first given one: the lists read later don't replace it
+function latest(m, d) {
+  let best = null
+  for (const b of Object.keys(m).sort()) {
+    if (!best || m[b][1] > best[1]) best = m[b]
+    if (d <= b) return best
+  }
+  return best
 }
 
 // tournaments in time order: by date, and between the stages of one league by their number, so a stage without a
@@ -46,7 +60,7 @@ function ranks(t) {
   const order = t.map((x, i) => i).sort((a, b) => day[a].localeCompare(day[b]) || (t[a].st ?? 0) - (t[b].st ?? 0) || a - b)
   const rank = []
   order.forEach((ti, r) => (rank[ti] = r))
-  return rank
+  return [rank, day]
 }
 
 /** "1 Lightning Bolt" → "Lightning Bolt" */

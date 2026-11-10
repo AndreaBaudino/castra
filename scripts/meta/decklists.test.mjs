@@ -79,6 +79,27 @@ describe('assignLists', () => {
   })
 })
 
+describe('a list read later', () => {
+  // read on 10/11, played by Misuri on 8/11 and by Arzenton with Phelia, who had no Phelia list
+  const t2 = [...t, { id: 'l1-2026-11-08-savona', d: '2026-11-08' }]
+  const LATE = 'https://moxfield.com/decks/late'
+  const e2 = [...e, row(6, 'Lorenzo Misuri', 0, LATE), row(6, 'Lorenzo Arzenton', 0, LATE)]
+  const late = { link: LATE, commander: c[0].n, taken: '2026-11-10', cards: [] }
+  late.entries = [['l1-2026-11-08-savona', 'Lorenzo Misuri'], ['l1-2026-11-08-savona', 'Lorenzo Arzenton']]
+  const { lists } = assignLists({ ...archive, lists: [...archive.lists, late] }, 2026, t2, c, e2, playerKey)
+
+  it('keeps the list an entry played before that day already had', () => {
+    expect(lists[1]).toEqual([2, 1])
+    expect(lists[6]).toEqual([2, 1])
+  })
+
+  it('goes to the earlier entries without a list and to the later ones', () => {
+    expect(lists[9]).toEqual([3, 1]) // Arzenton's Phelia on 4/3: no list before
+    expect(lists[7]).toEqual([3, 1]) // Misuri on 12/12: his latest list
+    expect(lists[10]).toEqual([3, 0])
+  })
+})
+
 it('cardName drops the quantity', () => {
   expect(cardName('1 Brazen Borrower // Petty Theft')).toBe('Brazen Borrower // Petty Theft')
   expect(cardName('12 Snow-Covered Island')).toBe('Snow-Covered Island')

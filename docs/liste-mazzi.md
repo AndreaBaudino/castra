@@ -8,11 +8,15 @@ sono statistiche delicate, ogni regola qui sotto va rispettata e provata dai tes
 
 - File: `scripts/meta/decklists.json`. Liste lette **una sola volta** da Moxfield il 5/11/2026 (estrazione fatta dal
   proprietario): non si rileggono e non si rigenerano, nessuna chiamata a Moxfield da parte dell'app o dei workflow.
-- 304 liste di 119 comandanti. Per ognuna: link, comandante (nome come nel meta, partner come `A / B`), carte
+- 304 liste di 119 comandanti al 5/11. Per ognuna: link, comandante (nome come nel meta, partner come `A / B`), carte
   (`"1 Nome"`) e iscrizioni collegate, come `[id del torneo, giocatore]` (l'id del meta, es.
   `l1-2026-01-25-mr-magic-savona`, non la posizione nell'elenco, che può cambiare).
 - Un'estrazione futura può solo **aggiungere** liste per iscrizioni che non ne hanno una: non sostituisce mai quelle
-  già presenti. Se lo stesso link ricompare, la lista archiviata non cambia.
+  già presenti. Se lo stesso link ricompare, la lista archiviata non cambia. Le liste aggiunte dopo stanno in fondo
+  (gli indici delle altre non cambiano) con `taken`, il giorno in cui sono state lette.
+- 10/11/2026: aggiunte 5 liste dei link comparsi nei fogli dopo il 5/11 (trovati confrontando il meta pubblicato la
+  notte del 5/11 con quello del 10/11): Novani con Oloro e Ferretti con Six alla Lega Online 4, Zunino con Vohar a
+  Savona 18, De Bono con The Ur-Dragon e Crisci con Shorikai a Sanremo 8. Archivio: 309 liste.
 
 ## 2. Quando una lista è valida
 
@@ -38,6 +42,11 @@ Dal 2027 nessuna iscrizione prende una lista di questo archivio.
      comandante): vale la **più recente**, cioè quella con l'iscrizione collegata più recente.
    - "Più recente" segue la data del torneo. Tra tappe della stessa lega conta il **numero della tappa**: una tappa
      senza data (oggi `s1-sanremo-3` e `s2-orbassano-4`) viene subito dopo la tappa precedente della sua lega.
+   - **Liste lette dopo** (`taken` più recente): non cambiano la lista di un'iscrizione giocata prima di quel giorno
+     che ne aveva già una per estensione; vanno alle iscrizioni giocate prima che non ne avevano nessuna e a quelle
+     giocate dopo (dove vale la più recente, come sempre). Es. Zunino: la lista Vohar letta il 10/11 è diretta a
+     Savona 18, ma le sue 7 iscrizioni Vohar senza link di prima restano sulla lista del 5/11; Crisci con Shorikai a
+     Sanremo 7 (19/10), senza lista, prende quella letta il 10/11.
 3. **Nessuna lista**: nessuna lista valida di quel giocatore per quel comandante (es. Bresciani con Oloro ad
    Albisola il 20/09, iscritto con il link della Tivit di Arzenton). L'iscrizione resta nel meta con il comandante del
    foglio e i suoi risultati, senza carte.
@@ -141,8 +150,8 @@ lista.
 
 - Test automatici (`scripts/meta/decklists.test.mjs`) sui casi reali, ridotti: un link di un altro comandante senza
   una lista propria non dà carte (Bresciani); i collegamenti diretti; l'estensione con la lista più recente, anche con
-  un link rotto e per un torneo dopo il 5/11, e tra tappe conta il numero; un'iscrizione del 2027 non prende liste
-  del 2026; una lista portata due volte conta due. `src/lib/decklists.test.ts`: la percentuale conta per presenza e
+  un link rotto e per un torneo dopo il 5/11, e tra tappe conta il numero; una lista letta dopo non sostituisce
+  quella già data per estensione; un'iscrizione del 2027 non prende liste del 2026; una lista portata due volte conta due. `src/lib/decklists.test.ts`: la percentuale conta per presenza e
   solo i mazzi che possono giocare la carta, i filtri, nessun dato per un altro anno; le carte più giocate del comandante (gruppi, soglia
   delle tech al 30%, terre particolari, media delle terre con le carte modali, una lista sola).
 - Controllati sul meta pubblicato il 5/11: Bresciani con Oloro senza lista (2 iscrizioni); Waltz con Atraxa, 12
