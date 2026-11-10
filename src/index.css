@@ -5552,9 +5552,15 @@ div.home-row > .home-row-link.link {
     max-width: 1440px;
     margin: 0 auto;
   }
+  /* the main's bottom room goes to the list: with the page beside it as tall as the window, the window doesn't
+     scroll (and move the page) when the list is short */
+  .split {
+    margin-bottom: -32px;
+  }
   .split-list {
     flex: 0 1 420px;
     min-width: 340px;
+    padding-bottom: 32px;
   }
   .split-page {
     flex: 1;
