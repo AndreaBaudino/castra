@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useI18n } from '../i18n'
+import { type T, useI18n } from '../i18n'
 import type { AppUser } from '../lib/auth'
 import type { Claim } from '../lib/claims'
 import { type Deck, checkDeck, isValid } from '../lib/decks'
@@ -116,6 +116,43 @@ export function TournamentCards({ code, setCode, ...me }: Me & { code: string | 
       </form>
     </>
   )
+}
+
+/** The table the player has to sit at: a match of the round being played, with an opponent and no result yet. */
+interface Table {
+  id: string
+  tour: Tournament
+  m?: TableMatch
+}
+
+/**
+ * Puts the life counter on this match, with the round's clock: its result goes to the tournament (docs/tornei.md).
+ * False when the player keeps the game in progress instead.
+ */
+async function sitAt(dialog: ReturnType<typeof useDialog>, t: T, { id, tour, m }: Table, me: string, verified: boolean) {
+  const g = readStored<GameState>(GAME_KEY, defaultGame())
+  if (g.tour?.id === id && g.tour.round === tour.round) return true
+  if (isGameInProgress(g) && !(await dialog.confirm(t('join.playReplace'), { ok: t('join.play') }))) return false
+  // opened once the time is up: no alarm (unless the TO adds minutes)
+  const up = (timeLeft(tour, Date.now(), m?.extra) ?? 1) <= 0
+  const timer = { ...freshTimer(), addedMs: (m?.extra ?? 0) * 60_000, alerted: up ? 'turns' : 'none' } as const
+  writeStored<GameState>(GAME_KEY, { ...defaultGame(), timer, tour: { id, round: tour.round, me, verified, games: [0, 0, 0] } })
+  return true
+}
+
+/** Sits the player at their table (false: they kept the game in progress). */
+export type Sit = () => Promise<boolean>
+
+/** Follows a tournament being played and tells the app how to sit the player at their table in it, or null: the game
+ * button does it. */
+export function TableWatch({ id, me, verified, onTable }: { id: string; me: string; verified: boolean; onTable: (id: string, sit: Sit | null) => void }) {
+  const { t } = useI18n()
+  const dialog = useDialog()
+  const { t: tour, matches } = useTournament(id, me)
+  const m = tour && matches.find((x) => x.round === tour.round && x.p2 && !x.score && (x.p1 === me || x.p2 === me))
+  useEffect(() => onTable(id, tour && m ? () => sitAt(dialog, t, { id, tour, m }, me, verified) : null), [tour, m, verified]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onTable(id, null), []) // eslint-disable-line react-hooks/exhaustive-deps
+  return null
 }
 
 /** The clock of the round, with the minutes added to the player's table. */
@@ -298,17 +335,8 @@ function TournamentCard({ id, typed, close, user, me, claim, name, decks, openLi
 
   // playing
   const current = m
-  // the life counter on this match, with the round's clock: its result goes to the tournament (docs/tornei.md)
   const play = async () => {
-    const g = readStored<GameState>(GAME_KEY, defaultGame())
-    if (g.tour?.id !== id || g.tour.round !== tour.round) {
-      if (isGameInProgress(g) && !(await dialog.confirm(t('join.playReplace'), { ok: t('join.play') }))) return
-      // opened once the time is up: no alarm (unless the TO adds minutes)
-      const up = (timeLeft(tour, Date.now(), current?.extra) ?? 1) <= 0
-      const timer = { ...freshTimer(), addedMs: (current?.extra ?? 0) * 60_000, alerted: up ? 'turns' : 'none' } as const
-      writeStored<GameState>(GAME_KEY, { ...defaultGame(), timer, tour: { id, round: tour.round, me: me!, verified, games: [0, 0, 0] } })
-    }
-    openGame()
+    if (await sitAt(dialog, t, { id, tour, m: current }, me!, verified)) openGame()
   }
   return (
     <section className="card my-tour playing">

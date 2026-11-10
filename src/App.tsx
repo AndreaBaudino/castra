@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from './i18n'
 import { useAuth } from './lib/auth'
 import { syncPaused, useCollectionSync, useDocFieldSync } from './lib/sync'
@@ -26,7 +26,7 @@ import { CardPage, CardsSearchPage } from './views/Cards'
 import Decks, { commanderNames } from './views/Decks'
 import DeckDetail, { type Author, SharedDeck, TournamentPhoto } from './views/DeckDetail'
 import DeckCompare, { CompareSheet } from './views/DeckCompare'
-import { isAppLink } from './lib/tournaments'
+import { isAppLink, useTournaments } from './lib/tournaments'
 import Stats from './views/Stats'
 import Account, { isAccountSection } from './views/Account'
 import LifeCounter, { GAME_KEY, type GameState, defaultGame, isGameInProgress } from './views/LifeCounter'
@@ -37,7 +37,7 @@ import { useWide } from './lib/wide'
 import { useOrganizer } from './lib/organizers'
 import OrganizerArea, { OrganizerCard, TournamentAdmin } from './views/Organizer'
 import LiveList, { CalendarPage, LivePage, NextTournaments } from './views/Live'
-import { TournamentCards } from './views/MyTournament'
+import { type Sit, TableWatch, TournamentCards } from './views/MyTournament'
 
 type Tab = 'home' | 'meta' | 'game' | 'decks' | 'stats' | 'account' | 'cards' | 'to' | 'live'
 const TABS = ['home', 'meta', 'game', 'stats', 'decks'] as const
@@ -267,6 +267,15 @@ export default function App() {
   const openMetaCard = (name: string) => go('meta', `x~${encodeURIComponent(name)}`, true)
   // to: the TO area; to/<id>: a tournament run in the app
   const openRun = (id: string) => go('to', encodeURIComponent(id), true)
+  // the player's table at a tournament being played: the game button sits them there, as the card in Home does
+  const { tournaments } = useTournaments()
+  const playing = me ? tournaments.filter(([, x]) => x.status === 'swiss' || x.status === 'cut').map(([id]) => id) : []
+  const [table, setTable] = useState<{ id: string; sit: Sit } | null>(null)
+  const onTable = useCallback((id: string, sit: Sit | null) => setTable((cur) => (sit ? { id, sit } : cur?.id === id ? null : cur)), [])
+  const openGame = async () => {
+    await table?.sit()
+    go('game')
+  }
   // live: the tournaments being played; live/<id>: one, for whoever follows it
   const openLive = (id?: string) => (id ? go('live', encodeURIComponent(id), true) : go('live'))
   // from the home, the profile and the notices: the player in this year's circuit, whatever year the tab shows
@@ -340,7 +349,10 @@ export default function App() {
   return (
     <div className="app">
       <UpdateBanner />
-      {wide && <SideNav tab={route.tab} go={(tab) => go(tab)} user={user} gameInProgress={gameInProgress} />}
+      {wide && <SideNav tab={route.tab} go={(tab) => (tab === 'game' ? openGame() : go(tab))} user={user} gameInProgress={gameInProgress} />}
+      {playing.map((id) => (
+        <TableWatch key={id} id={id} me={me!} verified={!!claims.get(me!)?.verified} onTable={onTable} />
+      ))}
       <main>
         {route.tab === 'game' && (
           <LifeCounter
@@ -695,7 +707,7 @@ export default function App() {
             <button
               key={tab}
               className={`${tab === 'game' ? 'center' : ''} ${route.tab === tab || (tab === 'home' && (route.tab === 'account' || route.tab === 'cards' || route.tab === 'to' || route.tab === 'live')) ? 'on' : ''}`}
-              onClick={() => go(tab)}
+              onClick={() => (tab === 'game' ? openGame() : go(tab))}
             >
               {tab === 'game' ? (
                 <span className="fab">
