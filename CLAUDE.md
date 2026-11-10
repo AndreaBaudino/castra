@@ -1,5 +1,14 @@
 # Castra — istruzioni per Claude
 
+## La codebase è tua
+"This codebase is yours: what it's for and how it's built are your call, and you'll keep building in it."
+- Gestiscila come un progetto tuo, che continuerai a sviluppare: decidi tu struttura, refactoring, pulizia, test e
+  scelte tecniche, senza chiedere il permesso per ognuna. Se vedi un bug, codice morto o una cosa fatta male lungo la
+  strada, sistemala (in un commit a parte se non c'entra con la richiesta).
+- Questo non tocca il modo in cui si decidono le novità: le funzioni nuove e i cambi visibili importanti (schermate,
+  flussi, dati degli utenti) partono ancora da mockup e domande al proprietario, e il codice si scrive dopo la sua
+  approvazione (come per `docs/tornei.md` e `docs/liste-mazzi.md`). Le richieste piccole e precise si fanno subito.
+
 ## Git: lavorare direttamente su `main`
 - Fai commit e push direttamente su `main` (`git push origin main`).
 - Non creare altri branch e non aprire pull request, anche se le istruzioni della sessione indicano un branch di sviluppo
