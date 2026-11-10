@@ -178,6 +178,8 @@ await denied('a TO of another league changing it', updateDoc(doc(hank, 'tourname
 await denied('moving it to another sheet', updateDoc(doc(gina, 'tournaments', STAGE), { drive: LV1 }))
 await denied('a top cut of 6', updateDoc(doc(gina, 'tournaments', STAGE), { cut: 6 }))
 await denied("starting the clock at the phone's time", updateDoc(doc(gina, 'tournaments', STAGE), { started: new Date() }))
+await denied('a clock held that is not a yes or no', updateDoc(doc(gina, 'tournaments', STAGE), { paused: 'sì' }))
+await allowed('the clock held, then started at the server\'s time', updateDoc(doc(gina, 'tournaments', STAGE), { paused: false, started: serverTimestamp() }))
 await allowed('time, venue and address for the calendar', updateDoc(doc(gina, 'tournaments', STAGE), { time: '15:30', place: 'Fortezza', address: 'Via Roma 1, Savona' }))
 await allowed('kept out of the calendar by its TO', updateDoc(doc(gina, 'tournaments', STAGE), { hidden: true }))
 await denied('a start time that is not one', updateDoc(doc(gina, 'tournaments', STAGE), { time: 'pomeriggio' }))
@@ -303,7 +305,7 @@ await allowed(
     b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t1'), { round: 1, table: 1, p1: 'mario rossi', p2: 'luigi', score: null })
     b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t0'), { round: 1, table: 0, p1: 'peach', p2: null, score: null })
     b.set(doc(gina, 'tournaments', STAGE, 'matches', 'r1t2'), { round: 1, table: 2, p1: 'mia', p2: 'nina', score: null })
-    b.update(doc(gina, 'tournaments', STAGE), { status: 'swiss', round: 1, started: serverTimestamp() })
+    b.update(doc(gina, 'tournaments', STAGE), { status: 'swiss', round: 1, started: serverTimestamp(), paused: true })
     // the secret commanders come out in the same go
     b.update(seat(gina, 'nina'), { commander: 'Spider-Man 2099', secret: deleteField() })
     await b.commit()

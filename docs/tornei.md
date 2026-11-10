@@ -253,7 +253,7 @@ organizers/{uid}                 player, name, leagues: [nomi delle leghe], at, 
 sources/{drive}                  + zone?: nome della lega, tos?: [uid]                (tornei di livello)
 tournaments/{tid}                tid = drive (livelli) o drive~tappa (leghe): un torneo per foglio e tappa
                                  drive, kind, name, stage?, date, status (open | swiss | cut | done), rounds, cut,
-                                 round (turno in corso, svizzero e top cut di seguito), started (orologio del server),
+                                 round (turno in corso, svizzero e top cut di seguito), started (orologio del server), paused (tempo fermo dagli abbinamenti ad "Avvia il turno"),
                                  filed (risultati riportati nel foglio: finché è false il torneo resta nell'Area TO),
                                  at, by
   /players/{playerKey}           name, commander (null finché non c'è), joined? (ritardatario), drop? (ultimo turno)

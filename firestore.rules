@@ -203,7 +203,7 @@ service cloud.firestore {
     }
     match /tournaments/{tid} {
       function valid(d) {
-        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code', 'published', 'time', 'place', 'address', 'hidden', 'at', 'by'])
+        return d.keys().hasOnly(['drive', 'kind', 'name', 'stage', 'date', 'status', 'rounds', 'cut', 'round', 'started', 'paused', 'filed', 'code', 'published', 'time', 'place', 'address', 'hidden', 'at', 'by'])
           && d.drive is string
           // its id is its sheet (and stage): one tournament for each
           && ((d.kind in ['l1', 'l2'] && tid == d.drive && d.get('stage', null) == null)
@@ -216,6 +216,7 @@ service cloud.firestore {
           && d.cut in [0, 2, 4, 8]
           && d.round is int && d.round >= 0 && d.round <= 30
           && d.get('filed', false) is bool
+          && d.get('paused', false) is bool
           // the registration code: none once round 1 starts
           && (d.get('code', null) == null || (d.code is string && d.code.matches('[A-Z0-9]{6}')))
           // for the calendar: start time, venue and its address, or kept out of it by the TO
@@ -243,7 +244,7 @@ service cloud.firestore {
       // the round's clock starts at the server's time, the same for every phone
       allow update: if manages(resource.data.drive)
         && valid(request.resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started', 'filed', 'code', 'published', 'time', 'place', 'address', 'hidden'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'status', 'rounds', 'cut', 'round', 'started', 'paused', 'filed', 'code', 'published', 'time', 'place', 'address', 'hidden'])
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['started']) || request.resource.data.started == request.time);
       allow delete: if manages(resource.data.drive);
 
@@ -384,7 +385,7 @@ service cloud.firestore {
               && request.resource.data.get('uid', null) == null
               && told(request.resource.data)))
           && request.resource.data.kind in ['join', 'commander', 'leave', 'report', 'confirm', 'drop', 'undrop', 'add',
-            'remove', 'accept', 'score', 'extra', 'pair', 'repair', 'cut', 'done', 'filed', 'unfiled', 'publish',
+            'remove', 'accept', 'score', 'extra', 'pair', 'repair', 'cut', 'clock', 'done', 'filed', 'unfiled', 'publish',
             'unpublish', 'cancel', 'warning', 'gameLoss', 'matchLoss', 'dq', 'note', 'deckCheck'];
       }
       // a Bo3 result, games won by p1, by p2 and drawn: as src/lib/swiss.ts validScore

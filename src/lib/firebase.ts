@@ -10,6 +10,11 @@ async function load() {
   const db = fs.initializeFirestore(fbApp, {
     localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }),
   })
+  // a phone back from standby: its listeners' connection may have died without a word, and the tournament's results
+  // and rounds would stay old until the app is opened again; reconnecting at once brings them
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') fs.disableNetwork(db).then(() => fs.enableNetwork(db)).catch(() => {})
+  })
   return { auth: auth.getAuth(fbApp), db, authMod: auth, fs }
 }
 

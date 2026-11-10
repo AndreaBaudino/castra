@@ -466,7 +466,7 @@ export default function LifeCounter({
     isCommander(bg, ctrl.signal).then((ok) => ok && setOppCmd(bg)).catch(() => {})
     return () => ctrl.abort()
   }, [bg]) // eslint-disable-line react-hooks/exhaustive-deps
-  const started = tg && live.t?.round === tg.round ? live.t.started : null
+  const started = tg && live.t?.round === tg.round && !live.t.paused ? live.t.started : null
   const clock = tg ? { ...settings, mainMin: ROUND_MINUTES } : settings
   const round = started && { ...stored, elapsedMs: 0, runningSince: started.toMillis(), addedMs: (tm?.extra ?? 0) * 60_000 }
   // the alarm rang with these minutes: more minutes from the TO give it back

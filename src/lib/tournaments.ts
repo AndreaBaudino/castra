@@ -41,6 +41,7 @@ export interface Tournament {
   cut: 0 | 2 | 4 | 8
   round: number // the one being played, Swiss and top cut in a row (0: not started)
   started: { toMillis: () => number } | null // the round's clock, at the server's time
+  paused?: boolean // paired, the clock still held at full time until the TO starts it (players sitting down)
   filed: boolean // its results are in the sheet: until then the TO keeps finding it
   code?: string | null // to register from the app (#join~CODE): none once round 1 starts
   // the calendar of the next tournaments: start, venue, its address for the maps; `hidden` by the TO keeps it out
@@ -96,7 +97,7 @@ export interface TableMatch extends Match {
 /** What the log tells: the TO's actions, and the players' own (registering, results, drop). */
 export type LogKind =
   | 'join' | 'commander' | 'leave' | 'report' | 'confirm' | 'drop' // also the players
-  | 'undrop' | 'add' | 'remove' | 'accept' | 'score' | 'extra' | 'pair' | 'repair' | 'cut' | 'done'
+  | 'undrop' | 'add' | 'remove' | 'accept' | 'score' | 'extra' | 'pair' | 'repair' | 'cut' | 'clock' | 'done'
   | 'filed' | 'unfiled' | 'publish' | 'unpublish' | 'cancel'
   | Penalty
 
@@ -292,9 +293,11 @@ export function useNow() {
   return now
 }
 
-/** Time left in the round (negative once it's over), or null when no round is being played. */
+/** Time left in the round (negative once it's over; all of it while held), or null when no round is being played. */
 export const timeLeft = (tour: Tournament, now: number, extra = 0) =>
-  tour.started && tour.status !== 'done' && tour.status !== 'open' ? tour.started.toMillis() + (ROUND_MINUTES + extra) * 60_000 - now : null
+  !tour.started || tour.status === 'done' || tour.status === 'open'
+    ? null
+    : (tour.paused ? now : tour.started.toMillis()) + (ROUND_MINUTES + extra) * 60_000 - now
 export const clockLabel = (ms: number | null, t: T) => (ms == null ? '' : ms > 0 ? fmt(ms) : t('run.time'))
 
 export const tournamentTitle = (tour: Tournament, t: T) => (tour.stage ? `${tour.name} · ${t('run.stage', { n: tour.stage })}` : tour.name)
@@ -499,8 +502,13 @@ export async function setExtra(id: string, m: TableMatch, minutes: number) {
   )
 }
 
+/** Starts the round's clock, held since the pairings: from now, at the server's time. */
+export async function startClock(id: string, round: number) {
+  await logged(id, { kind: 'clock', round }, ({ db, fs }, b) => b.update(fs.doc(db, 'tournaments', id), { paused: false, started: fs.serverTimestamp() }))
+}
+
 /**
- * Writes a round's pairings and starts its clock, in one go: every phone sees them at once. The round's matches
+ * Writes a round's pairings, its clock held until the TO starts it, in one go: every phone sees them at once. The round's matches
  * already there go (pairing a round again after a mistake). A transaction, not a batch: it fails ('stale') when the
  * tournament is no longer at the round `seen` (another phone moved it on), and it fails offline instead of waiting in
  * the queue, where it would replace a round already being played once back online.
@@ -536,7 +544,7 @@ async function writeRound(
       const m: TableMatch = { round, table: n, p1, p2, score: null }
       tx.set(fs.doc(db, 'tournaments', id, 'matches', matchId(round, n)), m)
     }
-    tx.update(ref, { ...patch, round, started: fs.serverTimestamp() })
+    tx.update(ref, { ...patch, round, started: fs.serverTimestamp(), paused: true })
     tx.set(...logLine(f, id, { kind, round }))
   })
   ping({ id, action: 'round' })

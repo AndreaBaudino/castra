@@ -45,6 +45,7 @@ import {
   setTournament,
   sheetData,
   sheetRows,
+  startClock,
   startCut,
   timeLeft,
   tournamentStatus,
@@ -616,8 +617,13 @@ export function TournamentAdmin({
               {t('run.startRound', { n: 1 })}
             </button>
           )}
+          {playing && tour.paused && (
+            <button className="btn primary" disabled={busy} onClick={() => act(() => startClock(id, tour.round))}>
+              {t('run.startClock', { n: tour.round })}
+            </button>
+          )}
           {tour.status === 'swiss' && !lastSwiss && (
-            <button className="btn primary" disabled={busy} onClick={nextRound}>
+            <button className={`btn ${tour.paused ? 'tonal' : 'primary'}`} disabled={busy} onClick={nextRound}>
               {t('run.startRound', { n: tour.round + 1 })}
             </button>
           )}
@@ -849,7 +855,7 @@ export function TournamentAdmin({
 
       <ResultSheet
         id={id}
-        match={result}
+        match={result && (matches.find((m) => m.table === result.table && m.round === result.round) ?? result)}
         cut={!!result && result.round > tour.rounds && tour.status !== 'swiss'}
         nameOf={nameOf}
         onClose={() => setResult(null)}
@@ -980,14 +986,24 @@ export function ResultSheet({
             {t('run.saveResult')}
           </button>
           {!me && (
-            <div className="btn-pair">
-              <button className="btn ghost" disabled={busy} onClick={() => run(() => setExtra(id, match, (match.extra ?? 0) + 5))}>
-                {t('run.addMinutes', { n: match.extra ?? 0 })}
-              </button>
+            <>
+              {/* the sheet stays open: as many minutes as needed, the TO closes it */}
+              <div className="stepper to-step">
+                <span className="ellipsis">{t('run.extraMinutes')}</span>
+                <div className="stepper-ctrl">
+                  <button disabled={busy || !match.extra} onClick={() => run(() => setExtra(id, match, Math.max(0, (match.extra ?? 0) - 5)), false)}>
+                    −
+                  </button>
+                  <b>{match.extra ?? 0}</b>
+                  <button disabled={busy || (match.extra ?? 0) >= 60} onClick={() => run(() => setExtra(id, match, (match.extra ?? 0) + 5), false)}>
+                    +
+                  </button>
+                </div>
+              </div>
               <button className="btn ghost" disabled={busy || !match.score} onClick={() => run(() => setScore(id, match, null))}>
                 {t('run.clearResult')}
               </button>
-            </div>
+            </>
           )}
           {log && !check && match.p2 && (
             <button className="btn ghost" onClick={() => setCheck(true)}>

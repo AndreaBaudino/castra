@@ -29,6 +29,7 @@ import {
   setFiled,
   setScore,
   setTournament,
+  startClock,
   startCut,
 } from './tournaments'
 
@@ -112,10 +113,13 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     expect(s.players.find(([k]) => k === 'g')![1]).toMatchObject({ commander: null, secret: true })
     expect(await loadPrivate(id, 'g')).toEqual({ commander: 'Spider-Man 2099' })
 
-    // round 1: three tables and the bye, the clock started at the server's time; the commanders come out
+    // round 1: three tables and the bye, the clock held until the TO starts it; the commanders come out
     await pairSwiss(id, s.t, s.players, s.matches)
     s = await read(id)
-    expect(s.t).toMatchObject({ status: 'swiss', round: 1 })
+    expect(s.t).toMatchObject({ status: 'swiss', round: 1, paused: true })
+    await startClock(id, 1)
+    s = await read(id)
+    expect(s.t.paused).toBe(false)
     expect(s.players.find(([k]) => k === 'g')![1].commander).toBe('Spider-Man 2099')
     expect(s.players.every(([, p]) => p.commander && !p.secret)).toBe(true)
     expect(s.t.started).not.toBeNull()

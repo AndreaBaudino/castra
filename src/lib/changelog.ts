@@ -8,6 +8,19 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-10',
+    it: [
+      'Area TO: "Abbina il turno" pubblica gli abbinamenti con il tempo fermo; il tempo parte solo con "Avvia il turno", quando i giocatori sono seduti. Fino ad allora sui telefoni e sullo schermo per la sala si vede il tempo pieno, fermo',
+      'Area TO: i minuti in più di un tavolo si aggiungono e si tolgono con + e −, 5 alla volta, senza che il pannello si chiuda',
+      'Tornei: tornando sull\'app dopo aver spento lo schermo, risultati e turno nuovo arrivano subito, senza riaprirla',
+    ],
+    en: [
+      'Organizer area: "Pair round" publishes the pairings with the clock held; it starts only with "Start round", once the players are seated. Until then phones and the room screen show the full time, still',
+      'Organizer area: a table\'s extra minutes go up and down with + and −, 5 at a time, without the sheet closing',
+      'Tournaments: back on the app after the screen was off, results and the new round show up at once, without reopening it',
+    ],
+  },
+  {
     date: '2026-11-09',
     it: [
       'Mazzi: "Confronta" nella pagina di un mazzo mette due liste una accanto all\'altra. Si sceglie l\'altro mazzo tra i tuoi o tra i mazzi pubblici con lo stesso comandante, e da un mazzo pubblico o condiviso si confronta con il tuo. Si vedono le carte solo nel primo, solo nel secondo e quelle in comune, per tipo, con in cima le carte presenti in numero diverso (Island 3 → 5); in basso il costo medio e le terre di tutti e due. Sul computer le due colonne sono affiancate',
