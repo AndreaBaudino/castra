@@ -1013,9 +1013,10 @@ export function PlayerLists({
                 <a className="event-row" {...listLinkProps(url)}>
                   <div className="event-main">
                     <span className="ellipsis">
-                      {c && <Pips colors={c.colors} size={9} />} {c ? shortName(c.name) : t('meta.noCommander')}
-                      {isAppLink(url) && ' '}
+                      {/* before the commander: a long name would cut it off */}
                       {isAppLink(url) && <span className="tag warn">{t('meta.castraList')}</span>}
+                      {isAppLink(url) && ' '}
+                      {c && <Pips colors={c.colors} size={9} />} {c ? shortName(c.name) : t('meta.noCommander')}
                     </span>
                     <span className="muted small ellipsis">
                       {list.length > 1 ? `${t('meta.usedAt', { n: list.length })} ` : ''}
