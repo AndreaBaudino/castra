@@ -129,9 +129,9 @@ lista.
   del circuito, "Come mai non le giochi?" (le must have e quasi sempre che mancano) e "Le tue pet card" (le carte non
   terre in al massimo il 5% delle presenze del comandante, o in nessuna). Le carte si riconoscono dalla faccia
   frontale; il collegamento apre le carte più giocate del comandante, ogni carta la sua scheda.
-- Nella pagina del comandante, nelle **Liste Moxfield**, **Duplica mazzo**
+- Nella pagina del comandante, nelle **Liste Moxfield**, e nelle **Liste** della scheda del giocatore, **Duplica mazzo**
   (`DuplicateDeck`, mazzo da `deckOfList`): solo accanto ai link che sono la lista dell'archivio di quell'iscrizione
-  (collegamento diretto, non un'estensione). Crea un mazzo in Mazzi con le carte e le copie salvate il 5/11 (non
+  (collegamento diretto, non un'estensione; nella scheda del giocatore basta un torneo dove lo è). Crea un mazzo in Mazzi con le carte e le copie salvate il 5/11 (non
   rilegge Moxfield; i dati delle carte da Scryfall, come per un import) e il nome "Comandante di Giocatore". Le liste
   dell'archivio non sono sempre di 99 carte (41 su 304, da 92 a 106): il mazzo è com'era su Moxfield.
 - Lo stato dell'aggiornamento (area admin → Tornei) riporta dirette, estese, senza lista e collegamenti orfani; gli

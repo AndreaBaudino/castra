@@ -12,6 +12,7 @@ import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
 import type { MetaDataset } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
+import type { Deck } from '../lib/decks'
 import { CircuitInfoButton } from './MetaInfo'
 import { PlayerCards } from './MetaCards'
 import { POTY_SPOTS } from '../config'
@@ -341,6 +342,8 @@ export function PlayerPage({
   openTournament,
   openDeck,
   openCard,
+  onCreateDeck,
+  openOwnDeck,
 }: {
   circuit: Circuit
   dataset: MetaDataset | null
@@ -353,6 +356,8 @@ export function PlayerPage({
   openTournament: (id: string) => void
   openDeck: (uid: string, id: string) => void
   openCard: (name: string) => void
+  onCreateDeck?: (d: Deck) => void
+  openOwnDeck?: (id: string) => void
 }) {
   const { t, lang } = useI18n()
   const p = circuit.players.find((x) => x.key === playerKey)
@@ -377,7 +382,7 @@ export function PlayerPage({
         <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />
         <PlayerColors dataset={dataset} entries={mine} />
         <PlayerCards dataset={dataset} playerKey={playerKey} openCard={openCard} />
-        <PlayerLists dataset={dataset} entries={mine} />
+        <PlayerLists dataset={dataset} entries={mine} onCreateDeck={onCreateDeck} openDeck={openOwnDeck} />
         <PlayerBadges dataset={dataset} entries={mine} />
         <SignatureDeck signature={auto} openCommander={openCommander} />
         <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} openTournament={openTournament} openEvent={openEvent} />
@@ -505,7 +510,7 @@ export function PlayerPage({
       )}
 
       <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} player={p} openTournament={openTournament} openEvent={openEvent} />
-      {dataset && <PlayerLists dataset={dataset} entries={mine} />}
+      {dataset && <PlayerLists dataset={dataset} entries={mine} onCreateDeck={onCreateDeck} openDeck={openOwnDeck} />}
       {/* only on a verified page: anyone can link a player, an admin or a TO vouches for the account */}
       {claim?.verified && <PublicDecks uid={claim.uid} onOpen={(id) => openDeck(claim.uid, id)} />}
     </SubPageShell>

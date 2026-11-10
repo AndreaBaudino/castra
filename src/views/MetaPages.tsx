@@ -972,7 +972,17 @@ export function DeckRecords({ dataset, openCommander }: { dataset: MetaDataset; 
 }
 
 /** The lists a player submitted (Moxfield, or photos of decks of the app), one row per list (the same list is often used at several tournaments). */
-export function PlayerLists({ dataset, entries }: { dataset: MetaDataset; entries: MetaEntry[] }) {
+export function PlayerLists({
+  dataset,
+  entries,
+  onCreateDeck,
+  openDeck,
+}: {
+  dataset: MetaDataset
+  entries: MetaEntry[]
+  onCreateDeck?: (d: Deck) => void
+  openDeck?: (id: string) => void
+}) {
   const { t, lang } = useI18n()
   const [open, setOpen] = useState(false)
   const lists = useMemo(() => {
@@ -996,8 +1006,10 @@ export function PlayerLists({ dataset, entries }: { dataset: MetaDataset; entrie
             const last = list[0]
             const x = dataset.tournaments[last.t]
             const c = last.cmd >= 0 ? dataset.commanders[last.cmd] : null
+            // the same link may be the list's own at one tournament and given by extension at another
+            const own = list.find((e) => e.deckList != null && !e.deckListGuessed)
             return (
-              <li key={url}>
+              <li key={url} className="row-actions">
                 <a className="event-row" {...listLinkProps(url)}>
                   <div className="event-main">
                     <span className="ellipsis">
@@ -1012,6 +1024,7 @@ export function PlayerLists({ dataset, entries }: { dataset: MetaDataset; entrie
                   </div>
                   {!isAppLink(url) && <Icon name="external" size={16} />}
                 </a>
+                {own && onCreateDeck && openDeck && <DuplicateDeck dataset={dataset} entry={own} onCreate={onCreateDeck} openDeck={openDeck} />}
               </li>
             )
           })}

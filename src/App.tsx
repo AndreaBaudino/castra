@@ -510,6 +510,8 @@ export default function App() {
                   openTournament={openTournament}
                   openDeck={openShared}
                   openCard={openMetaCard}
+                  onCreateDeck={(d) => setDecks((ds) => [d, ...ds])}
+                  openOwnDeck={(id) => go('decks', id)}
                 />
               ) : metaSub === 'e' ? (
                 <EventPage circuit={shown.data} eventId={metaArgs[0]} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
