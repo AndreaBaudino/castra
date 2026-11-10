@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useI18n } from '../i18n'
-import { useStoredState } from '../lib/storage'
+import { readStored, useStoredState } from '../lib/storage'
+import { GAME_KEY, type GameState, defaultGame, isGameInProgress } from '../views/LifeCounter'
 import { Icon } from './ui'
 
 // Two notices at the top of the home page: a new version is ready, and "install the app" for those using it
 // from the browser.
 
 const CHECK_EVERY_MS = 60 * 60_000
+const BOOT_MS = 10_000
+
+// reloading is only a problem with a game going (or a tournament table open): then we ask, otherwise we just update
+const busy = () => {
+  const g = readStored<GameState>(GAME_KEY, defaultGame())
+  return !!g.tour || isGameInProgress(g)
+}
+const bootAt = Date.now()
+let touched = false
+addEventListener('pointerdown', () => (touched = true), { once: true, capture: true })
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -39,7 +50,15 @@ export function UpdateBanner() {
       document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && reg.update().catch(() => {}))
     },
   })
-  if (!needRefresh) return null
+  useEffect(() => {
+    if (!needRefresh) return
+    // update when nobody is looking: right at start-up before the first tap, or when the app goes to the background
+    if (!touched && Date.now() - bootAt < BOOT_MS && !busy()) return void updateServiceWorker(true)
+    const onHide = () => document.visibilityState === 'hidden' && !busy() && updateServiceWorker(true)
+    document.addEventListener('visibilitychange', onHide)
+    return () => document.removeEventListener('visibilitychange', onHide)
+  }, [needRefresh]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!needRefresh || !busy()) return null
   return (
     <div className="app-banner update">
       <Icon name="refresh" size={18} />

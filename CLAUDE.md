@@ -34,8 +34,8 @@
   `src/lib/appsScript.test.ts` (lo script che scrive i tornei nei fogli, su fogli finti in memoria),
   `src/lib/notifyScript.test.ts` (lo script delle notifiche dei tornei, su un Firestore finto), `src/lib/theme.test.ts`
   (il testo sopra il colore principale), `scripts/meta/decklists.test.mjs` (quale lista del circuito va a ogni
-  iscrizione), `src/lib/decklists.test.ts` (quanto è giocata una carta); girano anche nel
-  deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
+  iscrizione), `src/lib/decklists.test.ts` (quanto è giocata una carta); girano anche a ogni push e
+  nel deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
   il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.
   `src/lib/tournaments.emulator.test.ts` fa girare un torneo intero sull'emulatore (saltato da `npm test`, lo lancia
@@ -47,7 +47,10 @@
 ## Il repository in breve
 PWA React 19 + TypeScript + Vite 6 (`vite-plugin-pwa`) per **Centurion Commander** (formato Magic 1v1, 25 vite):
 meta dei tornei, classifiche del circuito, life counter, mazzi, statistiche personali, ricerca carte. Pubblicata su
-GitHub Pages a ogni push su `main` (`.github/workflows/deploy.yml`, `BASE=/castra/`). Nessun router né state manager:
+GitHub Pages ogni notte alle 4:00 (ora italiana) se l'app è cambiata (`.github/workflows/deploy.yml`, `BASE=/castra/`;
+a ogni push girano solo i test). Per pubblicare subito una correzione urgente: `[subito]` nel messaggio di commit, o
+"Run workflow" su GitHub. L'app si aggiorna da sola all'avvio o quando va in background, e chiede solo con una partita
+in corso (`AppBanners.tsx`). Nessun router né state manager:
 React puro, `localStorage` e Firebase (Auth + Firestore) caricato in modo pigro.
 
 ```

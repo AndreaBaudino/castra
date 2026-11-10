@@ -1,38 +1,78 @@
 name: Deploy to GitHub Pages
 
+# Every push runs the tests, but the app is published once a night (only if it changed), so users don't get a new
+# version after each commit. Publish now: "[subito]" in a commit message, or "Run workflow" on GitHub.
 on:
   push:
     branches: [main]
+  schedule:
+    # 4:00 in Italy: one cron for summer time, one for winter time (the job keeps only the right one)
+    - cron: '0 2 * * *'
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+  deployments: read
   pages: write
   id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.go.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+        with:
+          fetch-depth: 0
+      - id: go
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          MSG: ${{ join(github.event.commits.*.message, ' ') }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          go=false
+          case "$EVENT" in
+            workflow_dispatch) go=true ;;
+            push) [[ "$MSG" == *'[subito]'* ]] && go=true ;;
+            schedule)
+              if [ "$(TZ=Europe/Rome date +%z)" = '+0200' ]; then want='0 2 * * *'; else want='0 3 * * *'; fi
+              if [ "$SCHEDULE" = "$want" ]; then
+                # only if something that ends up in the app changed since the last publish
+                last=$(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=1" --jq '.[0].sha // empty')
+                if [ -z "$last" ] || ! git cat-file -e "$last^{commit}" 2>/dev/null ||
+                  ! git diff --quiet "$last" HEAD -- src public index.html vite.config.ts package.json package-lock.json; then
+                  go=true
+                fi
+              fi ;;
+          esac
+          echo "deploy=$go" | tee -a "$GITHUB_OUTPUT"
+      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
+      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+        run: npm ci
+      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+        run: npm test
+      - if: steps.go.outputs.deploy == 'true'
+        run: npm run build
         env:
           BASE: /${{ github.event.repository.name }}/
-      - uses: actions/upload-pages-artifact@v3
+      - if: steps.go.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
   deploy:
     needs: build
+    if: needs.build.outputs.deploy == 'true'
+    # one publish at a time; test-only runs no longer cancel a publish in progress
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
       name: github-pages
