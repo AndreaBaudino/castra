@@ -159,7 +159,10 @@ foto al turno 1".
 
 ### Iscrizione
 - Una sola decklist per iscrizione. Con un mazzo di Castra la decklist è il mazzo: il campo del link Moxfield non
-  c'è, e un link già dato si toglie salvando. Senza mazzo, il link Moxfield come oggi.
+  c'è, e un link già dato si toglie salvando. Senza mazzo, il link Moxfield come oggi. Anche su un telefono dove il
+  mazzo dell'iscrizione non c'è, il campo del link resta nascosto: per dare un link si sceglie "nessun mazzo".
+- **Priorità**: se ci sono sia la foto sia un link Moxfield (dati vecchi), vale la foto, nel report (`loadList`), nella
+  pagina della lista e nel meta (il build mette il link della foto nell'iscrizione, qualunque link abbia il foglio).
 - Con un mazzo scelto il comandante viene dal mazzo e non si cambia a mano: per cambiarlo si sceglie un altro mazzo.
 - Nessun avviso sulla lista pubblica: chi usa un mazzo di Castra sa che la lista finisce nel report.
 

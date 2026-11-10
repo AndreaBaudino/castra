@@ -22,7 +22,9 @@ import {
   removePlayer,
   reportScore,
   results,
+  photoLink,
   saveList,
+  savePhoto,
   savePlayer,
   setDrop,
   setExtra,
@@ -228,6 +230,14 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await joinTournament(user('kim'), id, 'mia', { name: 'Mia', commander: 'Kinnan, Bonder Prodigy', deck: 'd1', invalid: false, verified: true }, false)
     await saveList(id, 'mia', MOX)
     expect(await loadList(id, 'mia')).toBe(MOX)
+    // a photo of her deck next to a link (older data): the photo is the list of the report
+    const deck = { id: 'd1', name: 'Kinnan', tags: [], notes: '', cards: [{ name: 'Sol Ring', qty: 1, section: 'main' as const }], createdAt: 'x', updatedAt: 'x' }
+    vi.stubGlobal('location', { origin: 'https://castra.test' }) // the photo's page is a link to the app
+    await savePhoto(id, 'mia', deck, false)
+    await saveList(id, 'mia', MOX)
+    expect(await loadList(id, 'mia')).toBe(photoLink(id, 'mia'))
+    vi.unstubAllGlobals()
+    await saveList(id, 'mia', MOX, true)
     // lea, only linked: waiting; she changes her commander meanwhile
     as('lea')
     await joinTournament(user('lea'), id, 'nina', { name: 'Nina', commander: 'Atraxa, Grand Unifier', deck: null, invalid: true, verified: false }, false)

@@ -15,6 +15,7 @@ export const CHANGELOG: Release[] = [
       'Tornei: tornando sull\'app dopo aver spento lo schermo, risultati e turno nuovo arrivano subito, senza riaprirla',
       'Mazzi: se a un torneo hai dato un link di Moxfield, "Lista" nella pagina del mazzo apre quel link invece di dire che la lista non c\'è',
       'Circuito: le liste prese da un mazzo di Castra, segnate nel foglio con il link dell\'app, aprono la lista del giocatore in Castra invece della Home',
+      'Tornei: con un mazzo di Castra la sua lista ha sempre la precedenza, nel report e nell\'app, anche se è stato dato anche un link di Moxfield',
     ],
     en: [
       'Organizer area: "Pair round" publishes the pairings with the clock held; it starts only with "Start round", once the players are seated. Until then phones and the room screen show the full time, still',
@@ -22,6 +23,7 @@ export const CHANGELOG: Release[] = [
       'Tournaments: back on the app after the screen was off, results and the new round show up at once, without reopening it',
       'Decks: if you gave a Moxfield link at a tournament, "List" on the deck page opens that link instead of saying the list is missing',
       'Circuit: the lists taken from a Castra deck, marked in the sheet with the app\'s link, open the player\'s list in Castra instead of the Home',
+      'Tournaments: with a Castra deck its list always comes first, in the report and in the app, even when a Moxfield link was given too',
     ],
   },
   {

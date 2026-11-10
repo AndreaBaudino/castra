@@ -471,7 +471,8 @@ export function JoinSheet({
     try {
       await joinTournament(user, id, me, { name, commander, deck: deck || null, invalid: !!check && !isValid(check), verified }, !!mine)
       if (chosen) await savePhoto(id, me, chosen, !!check && !isValid(check))
-      else if (clean !== saved || photo) await saveList(id, me, clean || null, photo)
+      // a deck of the app not on this phone: its photo stays the list, never a link instead
+      else if (!deck && (clean !== saved || photo)) await saveList(id, me, clean || null, photo)
       onClose()
       if (!mine) onJoined()
     } catch {
@@ -487,6 +488,7 @@ export function JoinSheet({
           <span>{t('join.deck')}</span>
           <select value={deck} onChange={(e) => pick(e.target.value)}>
             <option value="">{t('join.noDeck')}</option>
+            {deck && !chosen && <option value={deck}>{t('join.deckElsewhere')}</option>}
             {decks.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -502,12 +504,12 @@ export function JoinSheet({
           </>
         )}
         <CommanderInput value={locked ? commander : cmd} onChange={setCmd} locked={locked} />
-        {chosen ? (
+        {deck ? (
           <div className="field">
             <span>{t('join.photo')}</span>
             <div className="photo-row">
               <Icon name="decks" size={18} />
-              <b className="ellipsis">{chosen.name}</b>
+              <b className="ellipsis">{chosen?.name ?? t('join.deckElsewhere')}</b>
             </div>
             <span className="field-hint">{t('join.photoHint')}</span>
           </div>

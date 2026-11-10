@@ -701,10 +701,10 @@ export async function loadPrivate(id: string, key: string) {
   return ((await fs.getDoc(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'))).data() as Private | undefined) ?? {}
 }
 
-/** The decklist's link: Moxfield, or the page of the photo. */
+/** The decklist's link: the page of the photo first (it is the list of the report), otherwise Moxfield. */
 export const loadList = async (id: string, key: string) => {
   const p = await loadPrivate(id, key)
-  return p.link ?? (p.cards ? photoLink(id, key) : null)
+  return p.cards ? photoLink(id, key) : (p.link ?? null)
 }
 
 /** Every decklist given, by player: for the TOs, and for everyone once the tournament is over. */

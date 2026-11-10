@@ -392,8 +392,8 @@ built.forEach((y, yi) => {
   const { lists, orphans } = assignLists(archive, y.year, y.t, y.c, y.e, playerKey)
   y.e.forEach((x, i) => {
     if (own[i] == null) return lists[i] && x.push(...lists[i])
-    // the sheet's link to the app (often its bare address): the page of this photo, opened in the app
-    if (!x[8] || x[8].startsWith(APP)) x[8] = `${APP}#live/${encodeURIComponent(photoArchive.lists[own[i]].id)}@${encodeURIComponent(photoArchive.lists[own[i]].player)}`
+    // the photo is the list of the report, before a Moxfield link and the sheet's bare address of the app
+    x[8] = `${APP}#live/${encodeURIComponent(photoArchive.lists[own[i]].id)}@${encodeURIComponent(photoArchive.lists[own[i]].player)}`
     if (!photoArchive.lists[own[i]].invalid) x.push(archive.lists.length + own[i], 0)
   })
   if (y.year !== listYear) return
