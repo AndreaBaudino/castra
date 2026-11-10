@@ -61,7 +61,10 @@ jobs:
         run: npm ci
       - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
         run: npm test
-      - if: steps.go.outputs.deploy == 'true'
+      # type check, lint and build on every push too: with nightly publishing a break would surface only at 4:00
+      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
+        run: npm run lint
+      - if: github.event_name == 'push' || steps.go.outputs.deploy == 'true'
         run: npm run build
         env:
           BASE: /${{ github.event.repository.name }}/
