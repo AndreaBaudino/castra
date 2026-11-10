@@ -27,4 +27,6 @@ export default tseslint.config(
       ],
     },
   },
+  // the entry file exports nothing, so fast refresh has nothing to keep
+  { files: ['src/main.tsx'], rules: { 'react-refresh/only-export-components': 'off' } },
 )
