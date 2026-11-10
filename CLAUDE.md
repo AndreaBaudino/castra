@@ -45,7 +45,7 @@
   (`require('playwright')`), con viewport da telefono (es. 390×844) e, per il layout da computer, ≥1024 px.
 
 ## Il repository in breve
-PWA React 19 + TypeScript + Vite 6 (`vite-plugin-pwa`) per **Centurion Commander** (formato Magic 1v1, 25 vite):
+PWA React 19 + TypeScript + Vite 8 (`vite-plugin-pwa`) per **Centurion Commander** (formato Magic 1v1, 25 vite):
 meta dei tornei, classifiche del circuito, life counter, mazzi, statistiche personali, ricerca carte. Pubblicata su
 GitHub Pages ogni notte alle 4:00 (ora italiana) se l'app è cambiata (`.github/workflows/deploy.yml`, `BASE=/castra/`;
 a ogni push girano solo i test). Per pubblicare subito una correzione urgente: `[subito]` nel messaggio di commit, o
@@ -108,7 +108,8 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
   `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate
-  da `scripts/notify.mjs` con `notify.yml`, che usa il codice di `src/lib` tramite `vite-node`).
+  da `scripts/notify.mjs` con `notify.yml`, che usa il codice di `src/lib` tramite `vite-node`, dipendenza a sé: Vitest
+  non lo include più).
 
 ### Navigazione (App.tsx)
 - Route nell'hash: `#tab` o `#tab/sottopagina`. Tab: `home`, `meta` (si chiama "Circuito" in UI), `game`, `stats`,
