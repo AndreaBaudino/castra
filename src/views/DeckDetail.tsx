@@ -1066,9 +1066,12 @@ export function TournamentPhoto({
   const { t, lang } = useI18n()
   const { t: tour, players, matches } = useTournament(id)
   const [deck, setDeck] = useState<Deck | null | 'private' | undefined>()
+  // a Moxfield link given instead (a deck of the app stays the one played): the list is there
+  const [link, setLink] = useState<string>()
   useEffect(() => {
     loadPrivate(id, player).then(
       async (p) => {
+        setLink(p.link)
         if (!p.cards) return setDeck(null)
         const cards = parseDecklist(p.cards)
         try {
@@ -1094,7 +1097,12 @@ export function TournamentPhoto({
         {deck !== undefined && (
           <div className="empty-state">
             <Icon name={deck ? 'shield' : 'decks'} size={40} />
-            <p>{t(deck ? 'photo.hidden' : 'deck.missing')}</p>
+            <p>{t(deck ? 'photo.hidden' : link ? 'photo.moxfield' : 'deck.missing')}</p>
+            {!deck && link && (
+              <a className="btn primary" href={link} target="_blank" rel="noreferrer">
+                {t('photo.openMoxfield')}
+              </a>
+            )}
           </div>
         )}
       </div>

@@ -13,11 +13,13 @@ export const CHANGELOG: Release[] = [
       'Area TO: "Abbina il turno" pubblica gli abbinamenti con il tempo fermo; il tempo parte solo con "Avvia il turno", quando i giocatori sono seduti. Fino ad allora sui telefoni e sullo schermo per la sala si vede il tempo pieno, fermo',
       'Area TO: i minuti in più di un tavolo si aggiungono e si tolgono con + e −, 5 alla volta, senza che il pannello si chiuda',
       'Tornei: tornando sull\'app dopo aver spento lo schermo, risultati e turno nuovo arrivano subito, senza riaprirla',
+      'Mazzi: se a un torneo hai dato un link di Moxfield, "Lista" nella pagina del mazzo apre quel link invece di dire che la lista non c\'è',
     ],
     en: [
       'Organizer area: "Pair round" publishes the pairings with the clock held; it starts only with "Start round", once the players are seated. Until then phones and the room screen show the full time, still',
       'Organizer area: a table\'s extra minutes go up and down with + and −, 5 at a time, without the sheet closing',
       'Tournaments: back on the app after the screen was off, results and the new round show up at once, without reopening it',
+      'Decks: if you gave a Moxfield link at a tournament, "List" on the deck page opens that link instead of saying the list is missing',
     ],
   },
   {
