@@ -181,7 +181,8 @@ foto al turno 1".
   note.
 - Unica eccezione: a torneo finito, un admin può rimettere una foto andata persa (per esempio sostituita da un link
   Moxfield) dalla scheda del giocatore nella pagina del torneo, "Rimetti la lista di Castra", incollando la lista
-  com'era al turno 1 (`replacePhoto`, scritto nel registro). Il link per il foglio viene copiato, da incollare a mano.
+  com'era al turno 1 (`replacePhoto`, scritto nel registro). Per il foglio: "Togli dal foglio" e poi
+  "Pubblica sul foglio" (che rilegge le liste al momento), oppure il link copiato, da incollare a mano.
   Il build della notte rilegge le foto anche dei tornei già archiviati, ma aggiunge solo quelle che mancano.
 - Sta nel documento privato dell'iscrizione (`players/{giocatore}/private/deck`), come il link Moxfield, nei campi
   `cards` (la lista come `exportDecklist`, senza sideboard, con le edizioni), `name`, `at` e `invalid` (il controllo

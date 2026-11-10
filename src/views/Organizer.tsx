@@ -28,6 +28,7 @@ import {
   screenLink,
   listLinkProps,
   loadList,
+  loadLists,
   newCode,
   nextCutRound,
   nextStage,
@@ -428,7 +429,8 @@ export function TournamentAdmin({
     if (!(await dialog.confirm(t('run.publishConfirm', { n: tab }), { ok: t('run.publish') }))) return
     setBusy(true)
     try {
-      const res = await publishTournament(id, sheetData(tour, players, matches, lists))
+      // the lists read now: a list of Castra put back since the page opened goes in, before any link
+      const res = await publishTournament(id, sheetData(tour, players, matches, await loadLists(id, players)))
       const added = [
         res.players.length ? t('run.publishedPlayers', { p: res.players.join(', ') }) : '',
         res.commanders.length ? t('run.publishedCommanders', { p: res.commanders.join(', ') }) : '',
