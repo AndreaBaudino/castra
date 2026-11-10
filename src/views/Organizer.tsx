@@ -32,8 +32,10 @@ import {
   nextCutRound,
   nextStage,
   pairSwiss,
+  photoLink,
   publishTournament,
   removePlayer,
+  replacePhoto,
   ranking,
   reportScore,
   savePlayer,
@@ -70,7 +72,8 @@ import { useQr } from '../lib/qr'
 import { Toggle } from './Account'
 import { MatchList, RankingList } from './Live'
 import { JoinSheet } from './MyTournament'
-import type { Deck } from '../lib/decks'
+import { type Deck, parseDecklist } from '../lib/decks'
+import { useIsAdmin } from '../lib/admin'
 import { savePicture, standingsImage } from '../lib/standingsImage'
 
 // The tournament organizers' pages (docs/tornei.md): the card on the home, the TO area (#to) with the tournaments to
@@ -363,6 +366,7 @@ export function TournamentAdmin({
   // the decklists, read once it's over: copying needs them at hand (a phone allows it only right after the tap)
   const lists = useLists(id, players, tour?.status === 'done')
   const { organizers } = useOrganizers()
+  const admin = useIsAdmin(user?.uid ?? null)
   const log = useLog(tour ? id : null, tour?.at ?? '')
 
   if (!organizer || !user)
@@ -872,6 +876,7 @@ export function TournamentAdmin({
         match={current.find((m) => m.p1 === player || m.p2 === player)}
         nameOf={nameOf}
         whoOf={whoOf}
+        admin={admin}
       />
       <JoinSheet
         open={joining}
@@ -1099,10 +1104,12 @@ function PlayerSheet({
   match,
   nameOf,
   whoOf,
+  admin,
 }: {
   id: string
   user: AppUser
   tour: Tournament
+  admin: boolean // a list of Castra lost: put back once it's over
   keyOf: string | null
   player: Player | null
   onClose: () => void
@@ -1117,11 +1124,15 @@ function PlayerSheet({
   const [list, setList] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [pen, setPen] = useState(false)
+  const [paste, setPaste] = useState<string | null>(null) // the admin's decklist for the photo, while open
   const notes = log.filter((e) => e.player === keyOf && (isPenalty(e) || e.kind === 'note'))
   useEffect(() => {
     setCmd(tour.status === 'open' ? '' : (player?.commander ?? '')) // secret until round 1
   }, [player?.commander, keyOf, tour.status])
-  useEffect(() => setPen(false), [keyOf])
+  useEffect(() => {
+    setPen(false)
+    setPaste(null)
+  }, [keyOf])
   useEffect(() => {
     setList(null)
     if (keyOf && player?.list) loadList(id, keyOf).then(setList, () => {})
@@ -1151,6 +1162,44 @@ function PlayerSheet({
             <a className="link" {...listLinkProps(list)}>
               {t('run.openList')}
             </a>
+          )}
+          {admin && tour.status === 'done' && player.deck && (
+            <>
+              {paste == null ? (
+                <button className="btn ghost" onClick={() => setPaste('')}>
+                  {t('run.photoReplace')}
+                </button>
+              ) : (
+                <label>
+                  <span>{t('run.photoReplace')}</span>
+                  <textarea rows={8} value={paste} onChange={(e) => setPaste(e.target.value)} placeholder={t('decks.pasteHint')} />
+                  <span className="field-hint">{t('run.photoReplaceHint')}</span>
+                </label>
+              )}
+              {paste != null && (
+                <button
+                  className="btn primary"
+                  disabled={busy || !parseDecklist(paste).length}
+                  onClick={async () => {
+                    setBusy(true)
+                    try {
+                      await replacePhoto(id, k, paste, player.commander ?? player.name)
+                      setPaste(null)
+                      setList(photoLink(id, k))
+                      // the sheet keeps the old link until it gets this one
+                      await navigator.clipboard.writeText(photoLink(id, k)).catch(() => {})
+                      await dialog.alert(t('run.photoReplaced'))
+                    } catch {
+                      await dialog.alert(t('admin.error'))
+                    } finally {
+                      setBusy(false)
+                    }
+                  }}
+                >
+                  {t('run.photoSave')}
+                </button>
+              )}
+            </>
           )}
           {notes.length > 0 && <LogLines log={notes} nameOf={nameOf} whoOf={whoOf} />}
           {pen ? (

@@ -179,6 +179,10 @@ foto al turno 1".
   iscrizioni aperte.)
 - Dopo il turno 1 nessuno la cambia, neanche il TO: se un deck check trova un'altra lista, il TO lo scrive nelle
   note.
+- Unica eccezione: a torneo finito, un admin può rimettere una foto andata persa (per esempio sostituita da un link
+  Moxfield) dalla scheda del giocatore nella pagina del torneo, "Rimetti la lista di Castra", incollando la lista
+  com'era al turno 1 (`replacePhoto`, scritto nel registro). Il link per il foglio viene copiato, da incollare a mano.
+  Il build della notte rilegge le foto anche dei tornei già archiviati, ma aggiunge solo quelle che mancano.
 - Sta nel documento privato dell'iscrizione (`players/{giocatore}/private/deck`), come il link Moxfield, nei campi
   `cards` (la lista come `exportDecklist`, senza sideboard, con le edizioni), `name`, `at` e `invalid` (il controllo
   dell'app): fino alla fine del torneo la vedono il giocatore e i TO (anche per un deck check), poi tutti. Un link

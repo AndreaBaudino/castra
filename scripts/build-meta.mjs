@@ -319,7 +319,6 @@ await resolveCards(tables.flatMap(({ rows, ctx }) => rows.flatMap((r) => (r.comm
 // archive that only grows, kept on the meta-data branch (the nightly workflow brings it here and back)
 const photoUrl = new URL('.meta-cache/decklists-castra.json', root)
 const photoArchive = existsSync(photoUrl) ? readJson(photoUrl) : { v: 1, lists: [] }
-const archived = new Set(photoArchive.lists.map((l) => l.id))
 const photos = new Map() // tournament id in the app → player key → { cards, name, at, invalid }
 
 // who played whom: only the tournaments run in the app know it (docs/tornei.md), once their results are in the sheet.
@@ -330,7 +329,8 @@ try {
   for (const x of await firestoreDocs('tournaments')) {
     if (x.status !== 'done' || !(x.published || x.filed)) continue
     played.set(x.id, await firestoreDocs(`tournaments/${x.id}/matches`))
-    if (archived.has(x.id)) continue // its photos can't change once round 1 started
+    // read again also when archived: an admin may put back a photo that went missing (replacePhoto); the archive
+    // keeps the ones it has (givePhotos)
     const mine = new Map()
     for (const p of await firestoreDocs(`tournaments/${x.id}/players`)) {
       if (!p.list) continue

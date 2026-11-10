@@ -5,7 +5,7 @@ import type { WriteBatch } from 'firebase/firestore'
 import { fmt } from './timer'
 import type { T } from '../i18n'
 import type { MetaDataset } from './meta'
-import { type Deck, exportDecklist } from './decks'
+import { type Deck, exportDecklist, parseDecklist } from './decks'
 import type { Match as Played } from './matches'
 import { NOTIFY_URL, PUBLISH_URL } from '../config'
 import { type Source, type SourceKind, isEvent } from './sources'
@@ -97,7 +97,7 @@ export interface TableMatch extends Match {
 /** What the log tells: the TO's actions, and the players' own (registering, results, drop). */
 export type LogKind =
   | 'join' | 'commander' | 'leave' | 'report' | 'confirm' | 'drop' // also the players
-  | 'undrop' | 'add' | 'remove' | 'accept' | 'score' | 'extra' | 'pair' | 'repair' | 'cut' | 'clock' | 'done'
+  | 'undrop' | 'add' | 'remove' | 'accept' | 'score' | 'extra' | 'pair' | 'repair' | 'cut' | 'clock' | 'photo' | 'done'
   | 'filed' | 'unfiled' | 'publish' | 'unpublish' | 'cancel'
   | Penalty
 
@@ -693,6 +693,19 @@ export async function savePhoto(id: string, key: string, deck: Deck, invalid: bo
     { merge: true },
   )
   await fs.updateDoc(fs.doc(db, 'tournaments', id, 'players', key), { list: true })
+}
+
+/**
+ * An admin, once the tournament is over, puts back a player's list of Castra that went missing (a Moxfield link saved
+ * in its place): the decklist pasted becomes the photo of the report, before any link. Written in the log.
+ */
+export async function replacePhoto(id: string, key: string, text: string, name: string) {
+  const cards = parseDecklist(text).filter((c) => c.section !== 'side')
+  const list = exportDecklist({ id: '', name, tags: [], notes: '', cards, createdAt: '', updatedAt: '' })
+  await logged(id, { kind: 'photo', player: key }, ({ db, fs }, b) => {
+    b.set(fs.doc(db, 'tournaments', id, 'players', key, 'private', 'deck'), { cards: list, name, at: now(), invalid: false, link: fs.deleteField() }, { merge: true })
+    b.update(fs.doc(db, 'tournaments', id, 'players', key), { list: true })
+  })
 }
 
 /** The player's private document: their decklist and, until round 1, their commander. */

@@ -405,6 +405,19 @@ await allowed('everyone reads the decklists once it is over', getDoc(list(guest,
 await allowed('the results in the sheet', updateDoc(doc(gina, 'tournaments', STAGE), { filed: true }))
 await denied('a decklist changed once in the sheet', setDoc(list(lea, 'nina'), { link: MOX }))
 await denied('saying you gave it once in the sheet', updateDoc(seat(lea, 'nina'), { list: false }))
+// a list of Castra that went missing: only an admin puts it back, once it's over (replacePhoto)
+const photo = { cards: 'Deck\n1 Sol Ring', name: 'Atraxa', at: 'x', invalid: false, link: deleteField() }
+await denied('a TO putting back a photo once it is over', setDoc(list(gina, 'nina'), photo, { merge: true }))
+await allowed(
+  'an admin putting back a photo once it is over',
+  (async () => {
+    const b = writeBatch(carol)
+    b.set(list(carol, 'nina'), photo, { merge: true })
+    b.update(seat(carol, 'nina'), { list: true })
+    b.set(doc(logs(carol)), { kind: 'photo', player: 'nina', at: serverTimestamp(), by: 'carol' })
+    await b.commit()
+  })(),
+)
 
 // a TO who is no longer one
 await asAdmin((db) => deleteDoc(doc(db, 'organizers', 'jo')))
