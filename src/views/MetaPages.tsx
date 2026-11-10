@@ -182,7 +182,7 @@ export function CommanderPage({
   const [allPlayers, setAllPlayers] = useState(false)
   const [allOpponents, setAllOpponents] = useState(false)
   const [allResults, setAllResults] = useState(false)
-  const [showLists, setShowLists] = useState(false)
+  const [tab, setTab] = useStoredState<'trend' | 'cards' | 'lists' | 'players'>('cc.cmdTab', 'trend')
   const cmd = dataset?.commanders.find((c) => c.name === name)
 
   const view = useMemo(() => {
@@ -247,7 +247,7 @@ export function CommanderPage({
         )
       }
     >
-      <div className="deck-hero" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
+      <div className="deck-hero slim" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
         <div className="deck-hero-shade" />
         <div className="deck-hero-body">
           <div className="sub-line">
@@ -262,210 +262,232 @@ export function CommanderPage({
         <div className="notice">{t('meta.noEntries')}</div>
       ) : (
         <>
-          <section className="card with-info">
-            <MetaInfoButton />
-            <div className="stats3">
-              <div>
-                <div className="stat-num">{pct(deck.share)}</div>
-                <div className="stat-label">{t('meta.shareRank', { r: view.rank })}</div>
-              </div>
-              <div>
-                <div className={`stat-num ${deck.games ? wrClass(winrate(deck)) : ''}`}>{deck.games ? pct(winrate(deck)) : '—'}</div>
-                <div className="stat-label">Winrate</div>
-              </div>
-              <div>
-                <div className="stat-num">{deck.entries}</div>
-                <div className="stat-label">{t('meta.entries')}</div>
-              </div>
-            </div>
-            <div className="stats3">
-              <div>
-                <div className="stat-num">{deck.players}</div>
-                <div className="stat-label">{t('meta.players')}</div>
-              </div>
-              <div>
-                <div className="stat-num">{view.wins}</div>
-                <div className="stat-label">{t('meta.won')}</div>
-              </div>
-              <div>
-                <div className="stat-num">{view.top8}</div>
-                <div className="stat-label">{t('meta.top8Events')}</div>
-              </div>
-            </div>
-            {deck.games > 0 && (
-              <>
-                <div className="kv">
-                  <span>{t('meta.wld')}</span>
-                  <b>{fmtRec(deck)}</b>
-                </div>
-                <div className="kv">
-                  <span>{t('meta.draws')}</span>
-                  <b>{pct(deck.draws / deck.games)}</b>
-                </div>
-                <div className="kv">
-                  <span>{t('meta.ci')}</span>
-                  <b>
-                    {pct(lo, 0)} – {pct(hi, 0)}
-                  </b>
-                </div>
-                {deck.wins + deck.losses < 30 && <div className="muted small">{t('meta.lowSample')}</div>}
-              </>
-            )}
-          </section>
-
-          {view.byKind.length > 1 && (
-            <section className="card">
-              <div className="card-title">{t('meta.byKind')}</div>
-              {view.byKind.map(({ k, n, rec }) => (
-                <div key={k} className="kv">
-                  <span>
-                    {t(`meta.kind.${k}`)} · {t('meta.nEntries', { n })}
-                  </span>
-                  <b className={rec.games ? wrClass(winrate(rec)) : ''}>{rec.games ? pct(winrate(rec)) : '—'}</b>
-                </div>
+          {/* the page had grown to four screens: one tab per question, remembered for the next commander */}
+          <div className="cmd-tabs">
+            <div className="seg wide">
+              {(['trend', 'cards', 'lists', 'players'] as const).map((k) => (
+                <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
+                  {t(`cmd.tab.${k}`)}
+                </button>
               ))}
-            </section>
-          )}
+            </div>
+          </div>
 
-          {view.months.length > 1 && (
-            <section className="card">
-              <div className="card-title">{t('meta.byMonth')}</div>
-              <ShareChart months={view.months} />
-            </section>
-          )}
-
-          <TypicalList dataset={dataset} filter={filter} cmd={cmd.id} openCard={openCard} />
-
-          <CommanderDecks name={cmd.name} claims={claims} openDeck={openShared} openPlayer={openPlayer} openAll={openAllDecks} />
-
-          {mine.length > 0 && (
-            <ul className="card-list">
-              {mine.map((d) => (
-                <li key={d.id} className="event-row" onClick={() => openDeck(d.id)}>
-                  <Icon name="decks" size={18} />
-                  <span className="ellipsis grow">{t('meta.yourDeck', { d: d.name })}</span>
-                  <Icon name="chevron" size={16} />
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {view.matchups.length > 0 && (
-            <section className="group">
-              <div className="group-title">{t('meta.vsCommanders')}</div>
-              <ul className="card-list">
-                {(allOpponents ? view.matchups : view.matchups.slice(0, SHOW)).map((m) => {
-                  const c = dataset.commanders[m.id]
-                  return (
-                    <li key={m.id} className="event-row" onClick={() => openCommander(c.name)}>
-                      <div className="event-main">
-                        <span className="ellipsis">
-                          <Pips colors={c.colors} size={12} /> {shortName(c.name)}
-                        </span>
-                        <span className="muted small">{t('meta.nMatches', { n: m.games })}</span>
-                      </div>
-                      <span className="rec-inline">{fmtRec(m)}</span>
-                      {m.wins + m.losses > 0 && <b className={`wr ${wrClass(winrate(m))}`}>{pct(winrate(m), 0)}</b>}
-                    </li>
-                  )
-                })}
-                {view.matchups.length > SHOW && (
-                  <li className="event-row more" onClick={() => setAllOpponents(!allOpponents)}>
-                    {allOpponents ? t('meta.showLess') : t('meta.allOpponents', { n: view.matchups.length })}
-                  </li>
-                )}
-              </ul>
-              <p className="muted small group-note">{t('meta.vsNote', { n: view.matchups.reduce((s, m) => s + m.games, 0) })}</p>
-            </section>
-          )}
-
-          {view.players.length > 0 && (
-            <section className="group">
-              <div className="group-title">{t('meta.whoPlays')}</div>
-              <ul className="card-list">
-                {(allPlayers ? view.players : view.players.slice(0, SHOW)).map((p) => (
-                  <li key={p.key} className="event-row" onClick={() => openPlayer(p.key)}>
-                    <div className="event-main">
-                      <span className="ellipsis">{p.name}</span>
-                      <span className="muted small">{t('meta.nTournaments', { n: p.n })}</span>
+          {tab === 'trend' && (
+            <>
+              <section className="card with-info">
+                <MetaInfoButton />
+                <div className="stats3">
+                  <div>
+                    <div className="stat-num">{pct(deck.share)}</div>
+                    <div className="stat-label">{t('meta.shareRank', { r: view.rank })}</div>
+                  </div>
+                  <div>
+                    <div className={`stat-num ${deck.games ? wrClass(winrate(deck)) : ''}`}>{deck.games ? pct(winrate(deck)) : '—'}</div>
+                    <div className="stat-label">Winrate</div>
+                  </div>
+                  <div>
+                    <div className="stat-num">{deck.entries}</div>
+                    <div className="stat-label">{t('meta.entries')}</div>
+                  </div>
+                </div>
+                <div className="stats3">
+                  <div>
+                    <div className="stat-num">{deck.players}</div>
+                    <div className="stat-label">{t('meta.players')}</div>
+                  </div>
+                  <div>
+                    <div className="stat-num">{view.wins}</div>
+                    <div className="stat-label">{t('meta.won')}</div>
+                  </div>
+                  <div>
+                    <div className="stat-num">{view.top8}</div>
+                    <div className="stat-label">{t('meta.top8Events')}</div>
+                  </div>
+                </div>
+                {deck.games > 0 && (
+                  <>
+                    <div className="kv">
+                      <span>{t('meta.wld')}</span>
+                      <b>{fmtRec(deck)}</b>
                     </div>
-                    {p.rec.games > 0 && (
-                      <>
-                        <span className="rec-inline">{fmtRec(p.rec)}</span>
-                        <b className={`wr ${wrClass(winrate(p.rec))}`}>{pct(winrate(p.rec), 0)}</b>
-                      </>
-                    )}
-                  </li>
-                ))}
-                {view.players.length > SHOW && (
-                  <li className="event-row more" onClick={() => setAllPlayers(!allPlayers)}>
-                    {allPlayers ? t('meta.showLess') : t('meta.allPlayers', { n: view.players.length })}
-                  </li>
+                    <div className="kv">
+                      <span>{t('meta.draws')}</span>
+                      <b>{pct(deck.draws / deck.games)}</b>
+                    </div>
+                    <div className="kv">
+                      <span>{t('meta.ci')}</span>
+                      <b>
+                        {pct(lo, 0)} – {pct(hi, 0)}
+                      </b>
+                    </div>
+                    {deck.wins + deck.losses < 30 && <div className="muted small">{t('meta.lowSample')}</div>}
+                  </>
                 )}
-              </ul>
-            </section>
-          )}
+              </section>
 
-          {view.results.length > 0 && (
-            <section className="group">
-              <div className="group-title">{t('meta.bestResults')}</div>
-              <ul className="card-list">
-                {(allResults ? view.results : view.results.slice(0, SHOW)).map((e, i) => {
-                  const x = dataset.tournaments[e.t]
-                  return (
-                    <li key={i} className="event-row" onClick={() => openTournament(x.id)}>
-                      <PlaceBadge place={e.place} event={isEvent(x)} />
-                      <div className="event-main">
-                        <span className="ellipsis">{tournamentLabel(x, t)}</span>
-                        <span className="muted small">
-                          {dateLabel(x, lang, t)} · {t('circuit.nPlayers', { n: x.players })}
-                          {e.player && ` · ${e.player}`}
-                        </span>
-                      </div>
-                    </li>
-                  )
-                })}
-                {view.results.length > SHOW && (
-                  <li className="event-row more" onClick={() => setAllResults(!allResults)}>
-                    {allResults ? t('meta.showLess') : t('meta.allResults', { n: view.results.length })}
-                  </li>
-                )}
-              </ul>
-            </section>
-          )}
+              {view.byKind.length > 1 && (
+                <section className="card">
+                  <div className="card-title">{t('meta.byKind')}</div>
+                  {view.byKind.map(({ k, n, rec }) => (
+                    <div key={k} className="kv">
+                      <span>
+                        {t(`meta.kind.${k}`)} · {t('meta.nEntries', { n })}
+                      </span>
+                      <b className={rec.games ? wrClass(winrate(rec)) : ''}>{rec.games ? pct(winrate(rec)) : '—'}</b>
+                    </div>
+                  ))}
+                </section>
+              )}
 
-          {view.lists.length > 0 && (
-            <section className="group">
-              <button className="btn full" onClick={() => setShowLists(!showLists)}>
-                {t('meta.lists', { n: view.lists.length })}
-                <Icon name="chevron" size={16} />
-              </button>
-              {showLists && (
-                <ul className="card-list">
-                  {view.lists.map((e, i) => {
-                    const x = dataset.tournaments[e.t]
-                    return (
-                      <li key={i} className="row-actions">
-                        <a className="event-row" {...listLinkProps(e.list!)}>
+              {view.months.length > 1 && (
+                <section className="card">
+                  <div className="card-title">{t('meta.byMonth')}</div>
+                  <ShareChart months={view.months} />
+                </section>
+              )}
+
+              {view.matchups.length > 0 && (
+                <section className="group">
+                  <div className="group-title">{t('meta.vsCommanders')}</div>
+                  <ul className="card-list">
+                    {(allOpponents ? view.matchups : view.matchups.slice(0, SHOW)).map((m) => {
+                      const c = dataset.commanders[m.id]
+                      return (
+                        <li key={m.id} className="event-row" onClick={() => openCommander(c.name)}>
                           <div className="event-main">
                             <span className="ellipsis">
-                              {e.player ?? '—'}
-                              {isAppLink(e.list!) && ' '}
-                              {isAppLink(e.list!) && <span className="tag warn">{t('meta.castraList')}</span>}
+                              <Pips colors={c.colors} size={12} /> {shortName(c.name)}
                             </span>
+                            <span className="muted small">{t('meta.nMatches', { n: m.games })}</span>
+                          </div>
+                          <span className="rec-inline">{fmtRec(m)}</span>
+                          {m.wins + m.losses > 0 && <b className={`wr ${wrClass(winrate(m))}`}>{pct(winrate(m), 0)}</b>}
+                        </li>
+                      )
+                    })}
+                    {view.matchups.length > SHOW && (
+                      <li className="event-row more" onClick={() => setAllOpponents(!allOpponents)}>
+                        {allOpponents ? t('meta.showLess') : t('meta.allOpponents', { n: view.matchups.length })}
+                      </li>
+                    )}
+                  </ul>
+                  <p className="muted small group-note">{t('meta.vsNote', { n: view.matchups.reduce((s, m) => s + m.games, 0) })}</p>
+                </section>
+              )}
+
+            </>
+          )}
+
+          {tab === 'cards' && <TypicalList dataset={dataset} filter={filter} cmd={cmd.id} openCard={openCard} />}
+
+          {tab === 'players' && (
+            <>
+              {view.players.length > 0 && (
+                <section className="group">
+                  <div className="group-title">{t('meta.whoPlays')}</div>
+                  <ul className="card-list">
+                    {(allPlayers ? view.players : view.players.slice(0, SHOW)).map((p) => (
+                      <li key={p.key} className="event-row" onClick={() => openPlayer(p.key)}>
+                        <div className="event-main">
+                          <span className="ellipsis">{p.name}</span>
+                          <span className="muted small">{t('meta.nTournaments', { n: p.n })}</span>
+                        </div>
+                        {p.rec.games > 0 && (
+                          <>
+                            <span className="rec-inline">{fmtRec(p.rec)}</span>
+                            <b className={`wr ${wrClass(winrate(p.rec))}`}>{pct(winrate(p.rec), 0)}</b>
+                          </>
+                        )}
+                      </li>
+                    ))}
+                    {view.players.length > SHOW && (
+                      <li className="event-row more" onClick={() => setAllPlayers(!allPlayers)}>
+                        {allPlayers ? t('meta.showLess') : t('meta.allPlayers', { n: view.players.length })}
+                      </li>
+                    )}
+                  </ul>
+                </section>
+              )}
+
+              {view.results.length > 0 && (
+                <section className="group">
+                  <div className="group-title">{t('meta.bestResults')}</div>
+                  <ul className="card-list">
+                    {(allResults ? view.results : view.results.slice(0, SHOW)).map((e, i) => {
+                      const x = dataset.tournaments[e.t]
+                      return (
+                        <li key={i} className="event-row" onClick={() => openTournament(x.id)}>
+                          <PlaceBadge place={e.place} event={isEvent(x)} />
+                          <div className="event-main">
+                            <span className="ellipsis">{tournamentLabel(x, t)}</span>
                             <span className="muted small">
-                              {tournamentLabel(x, t)} · {dateLabel(x, lang, t)}
+                              {dateLabel(x, lang, t)} · {t('circuit.nPlayers', { n: x.players })}
+                              {e.player && ` · ${e.player}`}
                             </span>
                           </div>
-                          {!isAppLink(e.list!) && <Icon name="external" size={16} />}
-                        </a>
-                        {onCreateDeck && <DuplicateDeck dataset={dataset} entry={e} onCreate={onCreateDeck} openDeck={openDeck} />}
+                        </li>
+                      )
+                    })}
+                    {view.results.length > SHOW && (
+                      <li className="event-row more" onClick={() => setAllResults(!allResults)}>
+                        {allResults ? t('meta.showLess') : t('meta.allResults', { n: view.results.length })}
                       </li>
-                    )
-                  })}
+                    )}
+                  </ul>
+                </section>
+              )}
+
+            </>
+          )}
+
+          {tab === 'lists' && (
+            <>
+              {view.lists.length > 0 ? (
+                <section className="group">
+                  <div className="group-title">{t('cmd.circuitLists', { n: view.lists.length })}</div>
+                  <ul className="card-list">
+                    {view.lists.map((e, i) => {
+                      const x = dataset.tournaments[e.t]
+                      return (
+                        <li key={i} className="row-actions">
+                          <a className="event-row" {...listLinkProps(e.list!)}>
+                            <div className="event-main">
+                              <span className="ellipsis">
+                                {e.player ?? '—'}
+                                {isAppLink(e.list!) && ' '}
+                                {isAppLink(e.list!) && <span className="tag warn">{t('meta.castraList')}</span>}
+                              </span>
+                              <span className="muted small">
+                                {tournamentLabel(x, t)} · {dateLabel(x, lang, t)}
+                              </span>
+                            </div>
+                            {!isAppLink(e.list!) && <Icon name="external" size={16} />}
+                          </a>
+                          {onCreateDeck && <DuplicateDeck dataset={dataset} entry={e} onCreate={onCreateDeck} openDeck={openDeck} />}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              ) : (
+                <p className="muted no-margin">{t('cmd.noLists')}</p>
+              )}
+
+              <CommanderDecks name={cmd.name} claims={claims} openDeck={openShared} openPlayer={openPlayer} openAll={openAllDecks} />
+
+              {mine.length > 0 && (
+                <ul className="card-list">
+                  {mine.map((d) => (
+                    <li key={d.id} className="event-row" onClick={() => openDeck(d.id)}>
+                      <Icon name="decks" size={18} />
+                      <span className="ellipsis grow">{t('meta.yourDeck', { d: d.name })}</span>
+                      <Icon name="chevron" size={16} />
+                    </li>
+                  ))}
                 </ul>
               )}
-            </section>
+            </>
           )}
         </>
       )}

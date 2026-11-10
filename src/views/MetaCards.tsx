@@ -305,8 +305,13 @@ export function TypicalList({
   const { t, lang } = useI18n()
   const dl = useDecklists()
   const [open, setOpen] = useState<Record<string, boolean>>({})
+  const [pick, setPick] = useState('must')
   const x = useMemo(() => (dl ? typicalList(dataset, filter, dl, cmd) : null), [dataset, filter, dl, cmd])
-  if (!x?.entries) return null
+  if (!x?.entries) return dl && <p className="muted no-margin">{t('typical.none')}</p>
+  const groups = ([['must', x.must], ['often', x.often], ['tech', x.choices], ['picked', x.picked]] as const).filter(
+    ([, list]) => list.length,
+  )
+  const shown = groups.find(([k]) => k === pick)?.[0] ?? groups[0]?.[0]
   const num = (n: number) => n.toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
   const title = (
     <div className="card-title">
@@ -395,12 +400,20 @@ export function TypicalList({
         // one list: every card is at 100%, so just its cards
         group('list', t('typical.listNote'), x.must)
       ) : (
-        <div className="typical-cols">
-          {group('must', t('typical.mustNote'), x.must)}
-          {group('often', t('typical.oftenNote'), x.often)}
-          {group('tech', t(x.tech > 0.2 ? 'typical.techNote30' : 'typical.techNote'), x.choices)}
-          {group('picked', t('typical.pickedNote'), x.picked, true)}
-        </div>
+        <>
+          {/* one group at a time: all four together were half of the commander's page */}
+          <div className="chips">
+            {groups.map(([k, list]) => (
+              <button key={k} className={`chip ${k === shown ? 'on' : ''}`} onClick={() => setPick(k)}>
+                {t(`typical.${k}`)} <span className="muted">{list.length}</span>
+              </button>
+            ))}
+          </div>
+          {shown === 'must' && group('must', t('typical.mustNote'), x.must)}
+          {shown === 'often' && group('often', t('typical.oftenNote'), x.often)}
+          {shown === 'tech' && group('tech', t(x.tech > 0.2 ? 'typical.techNote30' : 'typical.techNote'), x.choices)}
+          {shown === 'picked' && group('picked', t('typical.pickedNote'), x.picked, true)}
+        </>
       )}
     </>
   )

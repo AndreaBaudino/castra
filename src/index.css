@@ -883,6 +883,9 @@ button.kv.clickable b {
   padding: 10px 16px 14px;
   color: #fff;
 }
+.deck-hero.slim {
+  height: 96px;
+}
 .deck-hero-shade {
   position: absolute;
   inset: 0;
@@ -5275,7 +5278,6 @@ div.home-row > .home-row-link.link {
 .stats-filters,
 .stats-cols,
 .stats-side,
-.typical-cols,
 .to-cols,
 .to-side,
 .home-tours {
@@ -5508,12 +5510,6 @@ div.home-row > .home-row-link.link {
   }
   .stats-summary:not(:has(.play-draw)) .stats3 {
     grid-column: 1 / -1;
-  }
-  .typical-cols {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    align-items: start;
   }
   .stats-cols {
     display: grid;
@@ -5811,7 +5807,8 @@ div.home-row > .home-row-link.link {
   display: none;
 }
 /* stuck right under the sub-page bar (.sticky-head: its padding plus a 40px button) */
-.cmp-top {
+.cmp-top,
+.cmd-tabs {
   position: sticky;
   top: calc(var(--safe-t) + 62px);
   z-index: 9;
