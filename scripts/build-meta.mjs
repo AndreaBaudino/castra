@@ -381,6 +381,9 @@ const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.ye
 const appOf = new Map(tables.map((x) => [x.t.id, x.app]))
 const photoAt = givePhotos(photoArchive, photos, built.map((y) => ({ ...y, app: y.t.map((t) => appOf.get(t.id)) })), playerKey)
 
+// the app on GitHub Pages: its page of a photo is #live/<tournament>@<player> (src/lib/tournaments.ts photoLink)
+const APP = 'https://andreabaudino.github.io/castra/'
+
 // each entry with a list gets two more fields: [..., list index, 1 when taken by extension]. A photo first, for any
 // year (a deck that failed the app's check: no list at all); then, for the archive's year, the Moxfield lists
 let listReport = null
@@ -389,6 +392,8 @@ built.forEach((y, yi) => {
   const { lists, orphans } = assignLists(archive, y.year, y.t, y.c, y.e, playerKey)
   y.e.forEach((x, i) => {
     if (own[i] == null) return lists[i] && x.push(...lists[i])
+    // the sheet's link to the app (often its bare address): the page of this photo, opened in the app
+    if (!x[8] || x[8].startsWith(APP)) x[8] = `${APP}#live/${encodeURIComponent(photoArchive.lists[own[i]].id)}@${encodeURIComponent(photoArchive.lists[own[i]].player)}`
     if (!photoArchive.lists[own[i]].invalid) x.push(archive.lists.length + own[i], 0)
   })
   if (y.year !== listYear) return

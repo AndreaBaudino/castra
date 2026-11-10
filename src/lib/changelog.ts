@@ -14,12 +14,14 @@ export const CHANGELOG: Release[] = [
       'Area TO: i minuti in più di un tavolo si aggiungono e si tolgono con + e −, 5 alla volta, senza che il pannello si chiuda',
       'Tornei: tornando sull\'app dopo aver spento lo schermo, risultati e turno nuovo arrivano subito, senza riaprirla',
       'Mazzi: se a un torneo hai dato un link di Moxfield, "Lista" nella pagina del mazzo apre quel link invece di dire che la lista non c\'è',
+      'Circuito: le liste prese da un mazzo di Castra, segnate nel foglio con il link dell\'app, aprono la lista del giocatore in Castra invece della Home',
     ],
     en: [
       'Organizer area: "Pair round" publishes the pairings with the clock held; it starts only with "Start round", once the players are seated. Until then phones and the room screen show the full time, still',
       'Organizer area: a table\'s extra minutes go up and down with + and −, 5 at a time, without the sheet closing',
       'Tournaments: back on the app after the screen was off, results and the new round show up at once, without reopening it',
       'Decks: if you gave a Moxfield link at a tournament, "List" on the deck page opens that link instead of saying the list is missing',
+      'Circuit: the lists taken from a Castra deck, marked in the sheet with the app\'s link, open the player\'s list in Castra instead of the Home',
     ],
   },
   {
