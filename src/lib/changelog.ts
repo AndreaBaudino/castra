@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-10',
     it: [
+      'Mazzi, Confronto: i due mazzi A e B e le schede Solo in A, Solo in B e In comune restano sotto la barra in alto mentre si scorrono le carte',
       'Mazzi: anche nella pagina di un mazzo la barra in alto, con indietro, nome e pulsanti, resta fissa mentre si scorre; l\'immagine sta subito sotto',
       'Circuito, comandanti: la barra in alto con indietro, nome, segnala e condividi resta fissa mentre si scorre, come nella scheda di un giocatore',
       'Circuito, giocatori: anche nelle Liste della scheda di un giocatore c\'è "Duplica mazzo", accanto alle liste Moxfield del circuito, come nella pagina del comandante',
@@ -26,6 +27,7 @@ export const CHANGELOG: Release[] = [
       'Area TO: l\'immagine della classifica ha anche la colonna GW, la percentuale di game vinti: è lo spareggio che decide quando due giocatori hanno gli stessi punti e lo stesso OMW',
     ],
     en: [
+      'Decks, Compare: decks A and B and the Only in A, Only in B and In common tabs stay under the top bar while scrolling the cards',
       'Decks: on a deck\'s page too the top bar, with back, name and buttons, stays put while scrolling; the art sits right under it',
       'Circuit, commanders: the top bar with back, name, report and share stays put while scrolling, like on a player\'s page',
       'Circuit, players: the Lists on a player\'s page have "Duplicate deck" too, next to the circuit\'s Moxfield lists, like the commander page',

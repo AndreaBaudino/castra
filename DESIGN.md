@@ -167,7 +167,7 @@ disegnate dalle immagini date, a tratto le altre). Sul telefono due pagine con �
 
 **Confronto di due mazzi** (`DeckCompare`): A e B sono riquadri con una lettera, A piena ember, B bordata in `--text`.
 Sul telefono un `.seg` a tre voci (Solo in A, Solo in B, In comune), sul computer le due colonne affiancate e le carte in
-comune sotto; in fondo la stessa barra del mazzo con i valori da A a B ("1,62 → 1,71").
+comune sotto; riquadri, riepilogo e `.seg` restano attaccati sotto la barra (`.cmp-top`); in fondo la stessa barra del mazzo con i valori da A a B ("1,62 → 1,71").
 
 ## Immagini delle carte
 

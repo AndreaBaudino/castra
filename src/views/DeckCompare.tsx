@@ -209,17 +209,35 @@ export default function DeckCompare({
 
   return (
     <SubPageShell title={t('cmp.title')} onBack={onBack}>
-      <div className="cmp-decks">
-        {chip(a, 'A', refs[0])}
-        <button className="icon-btn" onClick={onSwap} aria-label={t('cmp.swap')} title={t('cmp.swap')}>
-          <Icon name="swap" size={18} />
-        </button>
-        {chip(b, 'B', refs[1])}
-      </div>
-      <div className="cmp-sum muted small">
-        <span>{t('cmp.inCommon', { n: nC })}</span>
-        <span>{t('cmp.sumA', { n: nA })}</span>
-        <span>{t('cmp.sumB', { n: nB })}</span>
+      {/* the two decks and the tabs stay under the bar: which side the cards are is always in sight */}
+      <div className="cmp-top">
+        <div className="cmp-decks">
+          {chip(a, 'A', refs[0])}
+          <button className="icon-btn" onClick={onSwap} aria-label={t('cmp.swap')} title={t('cmp.swap')}>
+            <Icon name="swap" size={18} />
+          </button>
+          {chip(b, 'B', refs[1])}
+        </div>
+        <div className="cmp-sum muted small">
+          <span>{t('cmp.inCommon', { n: nC })}</span>
+          <span>{t('cmp.sumA', { n: nA })}</span>
+          <span>{t('cmp.sumB', { n: nB })}</span>
+        </div>
+        {!wide && (
+          <div className="seg wide">
+            {(
+              [
+                ['a', 'cmp.onlyA', nA],
+                ['b', 'cmp.onlyB', nB],
+                ['common', 'cmp.common', nC],
+              ] as const
+            ).map(([k, key, n]) => (
+              <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
+                {t(key)} <span className="muted">{n}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {wide ? (
         <>
@@ -240,19 +258,6 @@ export default function DeckCompare({
         </>
       ) : (
         <>
-          <div className="seg wide">
-            {(
-              [
-                ['a', 'cmp.onlyA', nA],
-                ['b', 'cmp.onlyB', nB],
-                ['common', 'cmp.common', nC],
-              ] as const
-            ).map(([k, key, n]) => (
-              <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
-                {t(key)} <span className="muted">{n}</span>
-              </button>
-            ))}
-          </div>
           {tab === 'common' ? common : <Groups cards={tab === 'a' ? diff.onlyA : diff.onlyB} openCard={openCard} />}
         </>
       )}
