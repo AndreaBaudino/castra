@@ -182,7 +182,10 @@ export function CommanderPage({
   const [allPlayers, setAllPlayers] = useState(false)
   const [allOpponents, setAllOpponents] = useState(false)
   const [allResults, setAllResults] = useState(false)
-  const [tab, setTab] = useStoredState<'trend' | 'cards' | 'lists' | 'players'>('cc.cmdTab', 'trend')
+  // every commander opens on the overview, even when it replaces another one on the same page (its matchups)
+  const [picked, setPicked] = useState({ name, tab: 'trend' as 'trend' | 'cards' | 'lists' | 'players' })
+  const tab = picked.name === name ? picked.tab : 'trend'
+  const setTab = (k: typeof tab) => setPicked({ name, tab: k })
   const cmd = dataset?.commanders.find((c) => c.name === name)
 
   const view = useMemo(() => {
