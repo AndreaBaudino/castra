@@ -41,6 +41,9 @@ async function wipe(user: AppUser, claimedPlayer: string | null): Promise<Delete
     const snap = await fs.getDocs(fs.collection(db, 'users', user.uid, name))
     refs.push(...snap.docs.map((d) => d.ref))
   }
+  // the cards of its public decks, which everyone reads (src/lib/publicDecks.ts)
+  const cards = await fs.getDocs(fs.query(fs.collection(db, 'publicDecks'), fs.where('uid', '==', user.uid)))
+  refs.push(...cards.docs.map((d) => d.ref))
   if (claimedPlayer) refs.push(fs.doc(db, 'claims', claimedPlayer))
   refs.push(fs.doc(db, 'users', user.uid)) // last: the claim's rules read it
   for (let i = 0; i < refs.length; i += 400) {

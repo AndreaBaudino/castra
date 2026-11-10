@@ -49,7 +49,8 @@ PWA React 19 + TypeScript + Vite 6 (`vite-plugin-pwa`) per **Centurion Commander
 meta dei tornei, classifiche del circuito, life counter, mazzi, statistiche personali, ricerca carte. Pubblicata su
 GitHub Pages ogni notte alle 4:00 (ora italiana) se l'app è cambiata (`.github/workflows/deploy.yml`, `BASE=/castra/`;
 a ogni push girano solo i test). Per pubblicare subito una correzione urgente: `[subito]` nel messaggio di commit, o
-"Run workflow" su GitHub. L'app si aggiorna da sola all'avvio o quando va in background, e chiede solo con una partita
+"Run workflow" su GitHub. Un push che cambia `firestore.rules` pubblica subito anche l'app, perché `rules.yml` mette
+online le regole in pochi minuti e regole nuove possono richiedere l'app che va con loro. L'app si aggiorna da sola all'avvio o quando va in background, e chiede solo con una partita
 in corso (`AppBanners.tsx`). Nessun router né state manager:
 React puro, `localStorage` e Firebase (Auth + Firestore) caricato in modo pigro.
 

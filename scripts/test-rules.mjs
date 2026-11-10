@@ -497,5 +497,17 @@ await denied('a card with other fields', setDoc(doc(pia, 'publicDecks', 'pia~d1'
 await denied("removing someone else's card", deleteDoc(doc(quinn, 'publicDecks', 'pia~d1')))
 await allowed('removing your own card', deleteDoc(doc(pia, 'publicDecks', 'pia~d1')))
 await allowed('removing a card already gone', deleteDoc(doc(pia, 'publicDecks', 'pia~d9')))
+// deleting the account (src/lib/account.ts): its cards found by uid, deleted with the rest
+await setDoc(doc(pia, 'publicDecks', 'pia~d1'), card('pia', 'pit'))
+await allowed(
+  'deleting the account, with the cards of its public decks',
+  (async () => {
+    const b = writeBatch(pia)
+    for (const d of (await getDocs(query(collection(pia, 'publicDecks'), where('uid', '==', 'pia')))).docs) b.delete(d.ref)
+    b.delete(doc(pia, 'users', 'pia'))
+    await b.commit()
+    if (!(await getDocs(query(collection(guest, 'publicDecks'), where('uid', '==', 'pia')))).empty) throw new Error('a card left')
+  })(),
+)
 
 await env.cleanup()

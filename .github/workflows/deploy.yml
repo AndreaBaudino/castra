@@ -1,7 +1,9 @@
 name: Deploy to GitHub Pages
 
 # Every push runs the tests, but the app is published once a night (only if it changed), so users don't get a new
-# version after each commit. Publish now: "[subito]" in a commit message, or "Run workflow" on GitHub.
+# version after each commit. Publish now: "[subito]" in a commit message, or "Run workflow" on GitHub. A push that
+# changes firestore.rules publishes now too: rules.yml puts the rules online within minutes, and new rules may need
+# the app that goes with them.
 on:
   push:
     branches: [main]
@@ -31,12 +33,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           MSG: ${{ join(github.event.commits.*.message, ' ') }}
+          BEFORE: ${{ github.event.before }}
           SCHEDULE: ${{ github.event.schedule }}
         run: |
           go=false
           case "$EVENT" in
             workflow_dispatch) go=true ;;
-            push) [[ "$MSG" == *'[subito]'* ]] && go=true ;;
+            push) { [[ "$MSG" == *'[subito]'* ]] || ! git diff --quiet "$BEFORE" HEAD -- firestore.rules; } && go=true ;;
             schedule)
               if [ "$(TZ=Europe/Rome date +%z)" = '+0200' ]; then want='0 2 * * *'; else want='0 3 * * *'; fi
               if [ "$SCHEDULE" = "$want" ]; then

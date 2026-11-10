@@ -10,6 +10,7 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-10',
     it: [
+      'Profilo, Elimina account: con l\'account spariscono anche le schede dei tuoi mazzi pubblici che la pagina del comandante mostra a tutti',
       'App: le novità arrivano tutte insieme una volta al giorno, di notte, e l\'app si aggiorna da sola quando la apri o la lasci; chiede prima solo se c\'è una partita in corso',
       'Tornei: quando hai un tavolo assegnato e il risultato non è ancora segnato, anche il pulsante centrale della partita apre il life counter su quel tavolo, come "Apri partita" nella Home',
       'Area TO: "Abbina il turno" pubblica gli abbinamenti con il tempo fermo; il tempo parte solo con "Avvia il turno", quando i giocatori sono seduti. Fino ad allora sui telefoni e sullo schermo per la sala si vede il tempo pieno, fermo',
@@ -22,6 +23,7 @@ export const CHANGELOG: Release[] = [
       'Area TO: l\'immagine della classifica ha anche la colonna GW, la percentuale di game vinti: è lo spareggio che decide quando due giocatori hanno gli stessi punti e lo stesso OMW',
     ],
     en: [
+      'Profile, Delete account: the cards of your public decks, which the commander page shows to everyone, go with the account too',
       'App: new versions come once a day, at night, and the app updates by itself when you open or leave it; it asks first only with a game in progress',
       'Tournaments: when you have a table and its result isn\'t entered yet, the game button in the middle also opens the life counter on that table, like "Open match" in the Home',
       'Organizer area: "Pair round" publishes the pairings with the clock held; it starts only with "Start round", once the players are seated. Until then phones and the room screen show the full time, still',
