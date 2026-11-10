@@ -246,15 +246,20 @@ export function CommanderPage({
           </div>
         )
       }
-    >
-      <div className="deck-hero slim" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
-        <div className="deck-hero-shade" />
-        <div className="deck-hero-body">
-          <div className="sub-line">
-            <Pips colors={cmd.colors} size={12} />
+      art={
+        <div className="deck-hero slim art-hero" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
+          <div className="deck-hero-shade" />
+          <div className="deck-hero-body">
+            <div className="art-name" aria-hidden="true">
+              {cmd.name}
+            </div>
+            <div className="sub-line">
+              <Pips colors={cmd.colors} size={12} />
+            </div>
           </div>
         </div>
-      </div>
+      }
+    >
 
       <MetaFilters dataset={dataset} filter={filter} setFilter={setFilter} />
 

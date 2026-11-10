@@ -440,6 +440,13 @@ div:has(> .brand-kicker + .tp-title) {
   font-size: 0.8rem;
   font-weight: 600;
 }
+.chips.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.chips.two .chip {
+  justify-content: space-between;
+}
 .chip.on {
   background: var(--line-strong);
   border-color: var(--line-strong);
@@ -3487,6 +3494,56 @@ textarea {
   margin: calc(-14px - var(--safe-t)) -16px 0;
   padding: calc(var(--safe-t) + 14px) 16px 8px;
   background: var(--bg);
+}
+/* a commander's page on a phone: the art from the top edge of the screen, under a see-through bar (SubPageShell art) */
+.art-name {
+  display: none;
+}
+@media (max-width: 699px) {
+  .page-head.sticky-head.on-art {
+    /* the bar's own height and the page gap: the art starts at the top of the screen */
+    margin-bottom: calc(-74px - var(--safe-t));
+    transition: background-color 0.2s ease;
+  }
+  .page-head.sticky-head.clear {
+    background: transparent;
+  }
+  /* white with a shadow: readable on light art too, over the dark band at its top */
+  .page-head.clear .icon-btn {
+    color: #fff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+  }
+  .page-head.clear .sub-title {
+    visibility: hidden;
+  }
+  /* one line, so the bar keeps its height and the tabs stay right under it: the whole name is on the art */
+  .page-head.on-art .sub-title {
+    -webkit-line-clamp: 1;
+  }
+  .deck-hero.art-hero {
+    height: calc(var(--safe-t) + 230px);
+  }
+  .art-hero .deck-hero-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.6) 0,
+      rgba(0, 0, 0, 0) calc(var(--safe-t) + 90px),
+      rgba(0, 0, 0, 0) 45%,
+      rgba(11, 11, 12, 0.92) 100%
+    );
+  }
+  .art-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.6rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  }
 }
 .chart svg {
   width: 100%;

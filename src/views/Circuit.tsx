@@ -792,16 +792,31 @@ export function SubPageShell({
   title,
   onBack,
   actions,
+  art,
   children,
 }: {
   title: string
   onBack: () => void
   actions?: React.ReactNode
+  /** a full-width picture under a see-through bar, which turns solid with the title once the picture has gone under it */
+  art?: React.ReactNode
   children?: React.ReactNode
 }) {
+  const head = useRef<HTMLElement>(null)
+  const hero = useRef<HTMLDivElement>(null)
+  const [clear, setClear] = useState(!!art)
+  const hasArt = !!art
+  useEffect(() => {
+    if (!hero.current || !head.current) return
+    const io = new IntersectionObserver(([e]) => setClear(e.isIntersecting), {
+      rootMargin: `-${head.current.offsetHeight}px 0px 0px 0px`,
+    })
+    io.observe(hero.current)
+    return () => io.disconnect()
+  }, [hasArt])
   return (
     <div className="page">
-      <header className="page-head sticky-head">
+      <header ref={head} className={`page-head sticky-head${art ? ' on-art' : ''}${clear ? ' clear' : ''}`}>
         <div className="head-left">
           <button className="icon-btn" onClick={onBack} aria-label="back">
             <Icon name="back" />
@@ -810,6 +825,7 @@ export function SubPageShell({
         </div>
         {actions}
       </header>
+      {art && <div ref={hero}>{art}</div>}
       {children}
     </div>
   )

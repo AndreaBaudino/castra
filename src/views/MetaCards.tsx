@@ -402,7 +402,7 @@ export function TypicalList({
       ) : (
         <>
           {/* one group at a time: all four together were half of the commander's page */}
-          <div className="chips">
+          <div className="chips two">
             {groups.map(([k, list]) => (
               <button key={k} className={`chip ${k === shown ? 'on' : ''}`} onClick={() => setPick(k)}>
                 {t(`typical.${k}`)} <span className="muted">{list.length}</span>
