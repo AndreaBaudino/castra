@@ -175,6 +175,7 @@ export interface RankRow {
   losses: number
   draws: number
   omwp: number
+  gwp: number
   dropped: boolean
 }
 
@@ -192,7 +193,7 @@ export function ranking(t: Tournament, players: [string, Player][], matches: Tab
     const r = all.get(id)!
     const p = names.get(id)
     const { points, wins, losses, draws } = r
-    return { id, name: p?.name ?? id, commander: p?.commander ?? null, points, wins, losses, draws, omwp: s.omwp, dropped: s.dropped }
+    return { id, name: p?.name ?? id, commander: p?.commander ?? null, points, wins, losses, draws, omwp: s.omwp, gwp: s.gwp, dropped: s.dropped }
   })
 }
 

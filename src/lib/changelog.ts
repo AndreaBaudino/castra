@@ -17,6 +17,7 @@ export const CHANGELOG: Release[] = [
       'Circuito: le liste prese da un mazzo di Castra, segnate nel foglio con il link dell\'app, aprono la lista del giocatore in Castra invece della Home',
       'Tornei: con un mazzo di Castra la sua lista ha sempre la precedenza, nel report e nell\'app, anche se è stato dato anche un link di Moxfield',
       'Area TO, per gli admin: a torneo finito, nella scheda di un giocatore iscritto con un mazzo di Castra, "Rimetti la lista di Castra" rimette la lista andata persa incollandola; il link per il foglio viene copiato',
+      'Area TO: l\'immagine della classifica ha anche la colonna GW, la percentuale di game vinti: è lo spareggio che decide quando due giocatori hanno gli stessi punti e lo stesso OMW',
     ],
     en: [
       'Organizer area: "Pair round" publishes the pairings with the clock held; it starts only with "Start round", once the players are seated. Until then phones and the room screen show the full time, still',
@@ -26,6 +27,7 @@ export const CHANGELOG: Release[] = [
       'Circuit: the lists taken from a Castra deck, marked in the sheet with the app\'s link, open the player\'s list in Castra instead of the Home',
       'Tournaments: with a Castra deck its list always comes first, in the report and in the app, even when a Moxfield link was given too',
       'Organizer area, for admins: once a tournament is over, the sheet of a player registered with a Castra deck has "Put back the Castra list", to paste back a list that went missing; the link for the sheet is copied',
+      'Organizer area: the standings picture also has the GW column, the share of games won: it is the tiebreaker that decides when two players have the same points and the same OMW',
     ],
   },
   {

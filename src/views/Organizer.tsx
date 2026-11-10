@@ -460,7 +460,7 @@ export function TournamentAdmin({
   const picture = () =>
     act(async () => {
       const day = new Date(tour.date).toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' })
-      const head = t('run.pictureHead').split('|') as [string, string, string, string, string]
+      const head = t('run.pictureHead').split('|') as [string, string, string, string, string, string]
       const title = tournamentTitle(tour, t)
       const sub = `${day} · ${t('run.players', { n: rows.length })}`
       const blob = await standingsImage(rows, { title, subtitle: sub, head, dropped: t('run.dropped') }, lang)

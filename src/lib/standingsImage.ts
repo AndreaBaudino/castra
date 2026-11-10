@@ -4,7 +4,7 @@ import type { RankRow } from './tournaments'
 export interface ImageText {
   title: string
   subtitle: string // the date and how many played
-  head: [string, string, string, string, string] // place, name, points, record, OMW
+  head: [string, string, string, string, string, string] // place, name, points, record, OMW, game-win %
   dropped: string
 }
 
@@ -57,17 +57,19 @@ export async function standingsImage(rows: RankRow[], txt: ImageText, lang: stri
   // columns: right edges of the numbers, the name in between
   const xPlace = PAD + 70
   const xName = PAD + 100
-  const xPts = 730
-  const xRec = 880
-  const xOmw = W - PAD
+  const xPts = 620
+  const xRec = 770
+  const xOmw = 905
+  const xGw = W - PAD
   g.font = '600 24px Inter, sans-serif'
   g.fillStyle = v('--muted')
-  const [hPlace, hName, hPts, hRec, hOmw] = txt.head
+  const [hPlace, hName, hPts, hRec, hOmw, hGw] = txt.head
   g.textAlign = 'right'
   g.fillText(hPlace, xPlace, TOP - 20)
   g.fillText(hPts, xPts, TOP - 20)
   g.fillText(hRec, xRec, TOP - 20)
   g.fillText(hOmw, xOmw, TOP - 20)
+  g.fillText(hGw, xGw, TOP - 20)
   g.textAlign = 'left'
   g.fillText(hName, xName, TOP - 20)
 
@@ -87,12 +89,14 @@ export async function standingsImage(rows: RankRow[], txt: ImageText, lang: stri
     g.fillStyle = v('--text')
     g.fillText(`${r.wins}-${r.losses}-${r.draws}`, xRec, y + 52)
     g.fillText(pct(r.omwp), xOmw, y + 52)
+    // the next tiebreaker after OMW: players level on points and OMW are told apart by it
+    g.fillText(pct(r.gwp), xGw, y + 52)
     g.textAlign = 'left'
     g.font = '600 30px Inter, sans-serif'
-    g.fillText(fit(r.name + (r.dropped ? ` · ${txt.dropped}` : ''), xPts - 80 - xName), xName, y + 40)
+    g.fillText(fit(r.name + (r.dropped ? ` · ${txt.dropped}` : ''), xPts - 60 - xName), xName, y + 40)
     g.fillStyle = v('--muted')
     g.font = '400 22px Inter, sans-serif'
-    g.fillText(fit(r.commander ?? '', xPts - 80 - xName), xName, y + 70)
+    g.fillText(fit(r.commander ?? '', xPts - 60 - xName), xName, y + 70)
   })
 
   g.fillStyle = v('--muted')
