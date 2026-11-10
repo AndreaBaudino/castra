@@ -552,26 +552,35 @@ export default function DeckDetail({
 
   return (
     <div className="page deck-page">
-      <div className="deck-hero" style={art ? { backgroundImage: `url(${art})` } : undefined}>
-        <div className="deck-hero-shade" />
-        <div className="deck-hero-top">
-          <button className="icon-btn on-image" onClick={onBack} aria-label={t('deck.back')}>
+      <header className="page-head sticky-head">
+        <div className="head-left">
+          <button className="icon-btn" onClick={onBack} aria-label={t('deck.back')}>
             <Icon name="back" />
           </button>
-          {!readOnly && (
-            <div className="hero-actions">
-              <button className="icon-btn on-image" onClick={() => setSharing(true)} aria-label={t('deck.share')}>
-                <Icon name="share" />
-              </button>
-              <button className="icon-btn on-image" onClick={() => setChoosingCover(true)} aria-label={t('deck.chooseCover')}>
-                <Icon name="image" />
-              </button>
-              <button className="icon-btn on-image" onClick={() => setEditing((e) => !e)}>
-                {editing ? <span className="small strong">{t('deck.done')}</span> : <Icon name="edit" />}
-              </button>
-            </div>
-          )}
+          <h1 className="sub-title">{deck.name}</h1>
         </div>
+        {!readOnly && (
+          <div className="hero-actions">
+            <button className="icon-btn" onClick={() => setSharing(true)} aria-label={t('deck.share')}>
+              <Icon name="share" />
+            </button>
+            <button className="icon-btn" onClick={() => setChoosingCover(true)} aria-label={t('deck.chooseCover')}>
+              <Icon name="image" />
+            </button>
+            {editing ? (
+              <button className="btn small" onClick={() => setEditing(false)}>
+                {t('deck.done')}
+              </button>
+            ) : (
+              <button className="icon-btn" onClick={() => setEditing(true)} aria-label={t('deck.edit')}>
+                <Icon name="edit" />
+              </button>
+            )}
+          </div>
+        )}
+      </header>
+      <div className="deck-hero" style={art ? { backgroundImage: `url(${art})` } : undefined}>
+        <div className="deck-hero-shade" />
         <div className="deck-hero-body">
           {author && (
             <button className="deck-author" disabled={!author.open} onClick={author.open}>
@@ -580,7 +589,6 @@ export default function DeckDetail({
               {!readOnly && <span className="tag">{t(`deck.vis.${deck.visibility ?? 'private'}`)}</span>}
             </button>
           )}
-          <h1 className="ellipsis">{deck.name}</h1>
           <div className="sub-line">
             <Pips colors={sortColors(check.identity)} size={12} />
             <span className="small">{commanderNames(deck).join(' + ') || '—'}</span>

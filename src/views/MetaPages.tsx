@@ -247,8 +247,7 @@ export function CommanderPage({
         )
       }
     >
-      {/* under the bar that stays at the top, as on a player's page */}
-      <div className="deck-hero under-head" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
+      <div className="deck-hero" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }}>
         <div className="deck-hero-shade" />
         <div className="deck-hero-body">
           <div className="sub-line">

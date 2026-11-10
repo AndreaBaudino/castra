@@ -266,7 +266,7 @@ export function Icon({ name, size = 20 }: { name: keyof typeof paths | string; s
 }
 
 /** Shares the page being shown: the phone's share menu, or the link copied where there is none. */
-export function ShareButton({ text, onImage }: { text: string; onImage?: boolean }) {
+export function ShareButton({ text }: { text: string }) {
   const { t } = useI18n()
   const [copied, setCopied] = useState(false)
   const share = async () => {
@@ -282,7 +282,7 @@ export function ShareButton({ text, onImage }: { text: string; onImage?: boolean
   }
   return (
     <>
-      <button className={`icon-btn ${onImage ? 'on-image' : ''}`} onClick={share} aria-label={t('share.label')}>
+      <button className="icon-btn" onClick={share} aria-label={t('share.label')}>
         <Icon name="share" />
       </button>
       {copied && <div className="toast">{t('share.copied')}</div>}

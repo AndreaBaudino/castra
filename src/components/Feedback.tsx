@@ -90,12 +90,12 @@ export function FeedbackSheet({ open, onClose, about }: { open: boolean; onClose
 }
 
 /** The flag next to "share" on a circuit page: reports a mistake in what the page shows. */
-export function ReportButton({ about, onImage }: { about: string; onImage?: boolean }) {
+export function ReportButton({ about }: { about: string }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button className={`icon-btn ${onImage ? 'on-image' : ''}`} onClick={() => setOpen(true)} aria-label={t('feedback.report')}>
+      <button className="icon-btn" onClick={() => setOpen(true)} aria-label={t('feedback.report')}>
         <Icon name="flag" />
       </button>
       {/* out of the page's sticky head, whose stacking would keep the sheet under the tab bar */}

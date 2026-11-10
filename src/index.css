@@ -373,13 +373,6 @@ div:has(> .brand-kicker + .tp-title) {
 .icon-btn:disabled {
   opacity: 0.35;
 }
-.icon-btn.on-image {
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  width: auto;
-  min-width: 40px;
-  padding: 0 10px;
-}
 .notice {
   background: color-mix(in srgb, var(--gold) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
@@ -879,43 +872,27 @@ button.kv.clickable b {
   justify-content: flex-end;
 }
 
-.deck-page {
-  padding-top: 0;
-}
 .deck-hero {
   position: relative;
   margin: 0 -16px;
-  height: calc(180px + var(--safe-t));
+  height: 150px;
   background: var(--surface-2) center 25% / cover;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: calc(var(--safe-t) + 10px) 16px 14px;
+  justify-content: flex-end;
+  padding: 10px 16px 14px;
   color: #fff;
 }
 .deck-hero-shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 35%, rgba(11, 11, 12, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(11, 11, 12, 0.92) 100%);
 }
-.deck-hero-top,
 .deck-hero-body {
   position: relative;
-}
-.deck-hero-top {
-  display: flex;
-  justify-content: space-between;
-}
-.deck-hero-body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-/* a commander: the art under the bar that stays at the top (.sticky-head), which already leaves room for the notch */
-.deck-hero.under-head {
-  height: 150px;
-  padding-top: 10px;
-  justify-content: flex-end;
 }
 /* who made the deck, above its name; their circuit page when they claimed a player */
 .deck-author {
