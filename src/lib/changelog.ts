@@ -10,6 +10,9 @@ export const CHANGELOG: Release[] = [
   {
     date: '2026-11-10',
     it: [
+      'Statistiche: sul telefono la pagina è divisa in quattro schede, Riepilogo, Mazzi, Avversari e Partite, e i filtri stanno su una riga. Il riepilogo mostra il mazzo migliore, il matchup migliore e peggiore e la bestia nera (contando chi ha almeno 5 partite): toccandoli si apre la scheda giusta',
+      'Statistiche: toccando un mazzo si vedono i suoi matchup, e il suo comandante nel meta. Negli Avversari comandanti e giocatori si ordinano per più giocati, migliori o peggiori, cinque alla volta; ogni percentuale ha anche una barra colorata',
+      'Statistiche: sul telefono le partite sono divise per mese, con il risultato del mese, venti alla volta',
       'Circuito, comandanti: sul telefono l\'immagine del comandante parte dal bordo alto dello schermo, con il nome in grande; la barra in alto è trasparente sopra l\'immagine e torna piena scorrendo. Nella scheda Carte i quattro gruppi stanno in una griglia due per due, tutti in vista',
       'Circuito, comandanti: la pagina è divisa in quattro schede, Andamento, Carte, Liste e Giocatori; ogni comandante si apre su Andamento. Le liste del circuito sono a un tocco invece che in fondo, e le carte più giocate si guardano un gruppo alla volta',
       'Computer: con l\'elenco a sinistra e la pagina a destra, scorrendo sopra un elenco corto la finestra non si sposta più di qualche pixel tirando su la pagina',
@@ -30,6 +33,9 @@ export const CHANGELOG: Release[] = [
       'Area TO: l\'immagine della classifica ha anche la colonna GW, la percentuale di game vinti: è lo spareggio che decide quando due giocatori hanno gli stessi punti e lo stesso OMW',
     ],
     en: [
+      'My stats: on a phone the page is split into four tabs, Summary, Decks, Opponents and Games, with the filters in one row. The summary shows the best deck, the best and worst matchup and your nemesis (counting only those with at least 5 games): tapping one opens the right tab',
+      'My stats: tapping a deck shows its matchups, and its commander in the meta. In Opponents, commanders and players sort by most played, best or worst, five at a time; every percentage has a coloured bar too',
+      'My stats: on a phone the games are grouped by month, with each month\'s result, twenty at a time',
       'Circuit, commanders: on a phone the commander\'s art starts at the top edge of the screen, with the name in large type; the top bar is see-through over the art and turns solid as you scroll. In the Cards tab the four groups sit in a two-by-two grid, all in view',
       'Circuit, commanders: the page is split into four tabs, Overview, Cards, Lists and Players; every commander opens on Overview. The circuit lists are one tap away instead of at the bottom, and the most played cards show one group at a time',
       'Computer: with the list on the left and the page on the right, scrolling over a short list no longer shifts the window a few pixels, pulling the page up',

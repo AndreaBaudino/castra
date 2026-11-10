@@ -4560,6 +4560,63 @@ textarea {
   padding-left: 22px;
   font-size: 0.85rem;
 }
+/* My stats on a phone: the tabs stick to the top edge, with no page bar above; the shadow covers the status bar */
+.stats-page .cmd-tabs {
+  top: var(--safe-t);
+  box-shadow: 0 calc(-1 * var(--safe-t)) 0 10px var(--bg);
+}
+/* the winrate as a bar too, quicker to read than a record */
+.wr-bar {
+  flex: 0 0 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.wr-bar i {
+  display: block;
+  height: 100%;
+  background: currentColor;
+}
+/* best deck, best and worst matchup, nemesis: each opens its tab */
+.stats-hl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.stats-hl .card {
+  gap: 2px;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--text);
+  min-width: 0;
+}
+.hl-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.hl-name {
+  font-weight: 600;
+}
+.month-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.month-row:first-child {
+  border-top: 0;
+}
 .chart .grid.mid {
   stroke-dasharray: 3 3;
 }
@@ -5538,6 +5595,9 @@ div.home-row > .home-row-link.link {
   }
 
   /* my stats: filters in one row, the summary in two columns, the history beside the groups */
+  .wr-bar {
+    display: none;
+  }
   .stats-filters {
     display: flex;
     flex-wrap: wrap;

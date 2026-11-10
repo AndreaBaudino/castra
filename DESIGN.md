@@ -98,7 +98,8 @@ chiari e diventa bianco su quelli scuri, scegliendo quello con più contrasto (`
 | Cattivo | `#E2403A` | `#C62E28` | `--bad` | winrate fino al 45%, sconfitte, carte bandite, errori |
 | Non aggiornato | `#E3B341` | `#A87B00` | `--stale` | pallino dei dati vecchi, salvataggio in corso |
 
-Le soglie dei winrate sono in `wrClass` (`src/components/ui.tsx`). I **pallini di stato** (`.live-dot`) sono tondi:
+Le soglie dei winrate sono in `wrClass` (`src/components/ui.tsx`). Nelle Statistiche sul telefono ogni winrate ha anche una
+barretta (`.wr-bar`, 36×5px, fondo `--line`) riempita fino alla percentuale con lo stesso colore; dai 1024px è nascosta. I **pallini di stato** (`.live-dot`) sono tondi:
 verde che pulsa = dati aggiornati o tornei in corso; giallo fisso = dati non aggiornati; rosso fisso = nessun dato o
 nessun torneo. La riga "Tornei in corso" in Home c'è sempre, con il pallino verde o rosso.
 
