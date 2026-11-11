@@ -184,7 +184,8 @@ comune sotto; riquadri, riepilogo e `.seg` restano attaccati sotto la barra (`.c
   schermo, con il nome grande in basso, e la barra sopra è trasparente (`.sticky-head.clear`), con le icone bianche su
   una fascia scura in cima e un'ombra sotto ogni icona (`drop-shadow`), così si leggono anche su immagini chiare.
   Quando l'immagine passa sotto la barra, la barra torna piena con il nome su una riga. Dai 700px in su resta come le
-  altre schede.
+  altre schede. La scheda di un giocatore sul telefono fa lo stesso (`.player-hero`, più bassa e sfumata nel fondo
+  della pagina), con foto e nome affiancati sotto l'immagine (`.claim-row`) invece che centrati.
 - Nel life counter l'illustrazione scelta per un giocatore (`.player-art`) parte dal lato verso la barra centrale e sfuma
   nel colore del giocatore prima dei contatori, che restano sul colore pieno. Le vite hanno un'ombra leggera per leggersi
   sull'immagine (l'unica eccezione alla regola "niente ombre"). Sul bordo verso la barra, i pulsanti "Sfondo" e X

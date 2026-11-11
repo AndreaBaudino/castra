@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { type T, useI18n } from '../i18n'
 import {
   type MetaDataset,
@@ -788,6 +788,7 @@ export function PlayerHistory({
   player,
   openTournament,
   openEvent,
+  months,
 }: {
   dataset: MetaDataset | null
   entries: MetaEntry[]
@@ -795,6 +796,8 @@ export function PlayerHistory({
   player?: Player
   openTournament: (id: string) => void
   openEvent: (id: string) => void
+  /** a header for each month, with how many tournaments in it (a player's page on a phone) */
+  months?: boolean
 }) {
   const { t, lang } = useI18n()
   const [all, setAll] = useState(false)
@@ -814,41 +817,56 @@ export function PlayerHistory({
     return [...list, ...rest].sort((a, b) => b.date.localeCompare(a.date))
   }, [dataset, entries, circuit, player])
   if (!items.length) return null
+  const monthOf = (d: string) => (d ? new Date(`${d.slice(0, 7)}-15T12:00:00`).toLocaleDateString(lang, { month: 'long', year: 'numeric' }) : '')
+  const shown = all ? items : items.slice(0, SHOW_HISTORY)
 
   return (
     <section className="group">
-      <div className="group-title">{t('meta.played')}</div>
+      {!months && <div className="group-title">{t('meta.played')}</div>}
       <ul className="card-list">
-        {(all ? items : items.slice(0, SHOW_HISTORY)).map((it, i) => {
+        {shown.map((it, i) => {
           const pts = it.pe && (it.pe.poty ? <PotyTag invited /> : <b className="pts-inline">+{it.pe.points}</b>)
+          const month = months ? monthOf(it.date) : ''
+          const head = month && month !== (i ? monthOf(shown[i - 1].date) : '') && (
+            <li className="month-row">
+              <span>{month}</span>
+              <span>{t('meta.nTournaments', { n: items.filter((x) => monthOf(x.date) === month).length })}</span>
+            </li>
+          )
           if ('e' in it) {
             const c = it.e.cmd >= 0 ? dataset!.commanders[it.e.cmd] : null
             return (
-              <li key={i} className="event-row" onClick={() => openTournament(it.x.id)}>
-                <PlaceBadge place={it.e.place} event={isEvent(it.x)} />
-                <div className="event-main">
-                  <span className="ellipsis">{tournamentLabel(it.x, t)}</span>
-                  <span className="muted small cmd-link">
-                    <span>{dateLabel(it.x, lang, t)} ·</span>
-                    <span className="ellipsis">{c ? shortName(c.name) : t('meta.noCommander')}</span>
-                    {it.e.w != null && <span className="rec-tail">· {fmtRec(recordOf([it.e]))}</span>}
-                  </span>
-                </div>
-                {pts}
-              </li>
+              <Fragment key={i}>
+                {head}
+                <li className="event-row" onClick={() => openTournament(it.x.id)}>
+                  <PlaceBadge place={it.e.place} event={isEvent(it.x)} />
+                  <div className="event-main">
+                    <span className="ellipsis">{tournamentLabel(it.x, t)}</span>
+                    <span className="muted small cmd-link">
+                      <span>{dateLabel(it.x, lang, t)} ·</span>
+                      <span className="ellipsis">{c ? shortName(c.name) : t('meta.noCommander')}</span>
+                      {it.e.w != null && <span className="rec-tail">· {fmtRec(recordOf([it.e]))}</span>}
+                    </span>
+                  </div>
+                  {pts}
+                </li>
+              </Fragment>
             )
           }
           return (
-            <li key={i} className="event-row" onClick={() => openEvent(it.ev.id)}>
-              <span className={`place-badge ${it.pe.place ? (it.pe.place <= 4 ? 'top4' : 'top8') : ''}`}>
-                {it.pe.place ? placeLabel(it.pe.place, lang) : '—'}
-              </span>
-              <div className="event-main">
-                <span className="ellipsis">{it.ev.name}</span>
-                <span className="muted small">{t('circuit.nPlayers', { n: it.ev.players })}</span>
-              </div>
-              {pts}
-            </li>
+            <Fragment key={i}>
+              {head}
+              <li className="event-row" onClick={() => openEvent(it.ev.id)}>
+                <span className={`place-badge ${it.pe.place ? (it.pe.place <= 4 ? 'top4' : 'top8') : ''}`}>
+                  {it.pe.place ? placeLabel(it.pe.place, lang) : '—'}
+                </span>
+                <div className="event-main">
+                  <span className="ellipsis">{it.ev.name}</span>
+                  <span className="muted small">{t('circuit.nPlayers', { n: it.ev.players })}</span>
+                </div>
+                {pts}
+              </li>
+            </Fragment>
           )
         })}
         {items.length > SHOW_HISTORY && (

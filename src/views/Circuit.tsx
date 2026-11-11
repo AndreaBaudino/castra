@@ -10,13 +10,15 @@ import { ComparePicker, LeagueList, Records } from './CircuitMore'
 import type { Claim } from '../lib/claims'
 import { type Match, fmtRecord, record, resultLabel } from '../lib/matches'
 import { useDialog } from '../components/Dialog'
-import type { MetaDataset } from '../lib/meta'
+import { type MetaDataset, recordOf, winrate } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 import type { Deck } from '../lib/decks'
 import { CircuitInfoButton } from './MetaInfo'
 import { PlayerCards } from './MetaCards'
 import { POTY_SPOTS } from '../config'
 import { PublicDecks } from './Decks'
+import { useWide } from '../lib/wide'
+import { pct, wrClass } from '../components/ui'
 
 // The Centurion circuit (players, leagues, big events): a world apart from the deck meta.
 
@@ -365,6 +367,9 @@ export function PlayerPage({
   // the player's rows in the deck meta: every event and league stage, with deck and record
   const mine = useMemo(() => dataset?.entries.filter((e) => e.key === playerKey) ?? [], [dataset, playerKey])
   const [customizing, setCustomizing] = useState(false)
+  const wide = useWide()
+  // every player opens on the circuit tab, even when it replaces another one on the same page
+  const [picked, setPicked] = useState({ key: playerKey, tab: 'circ' as 'circ' | 'deck' | 'card' | 'tour' })
   if (!p) {
     if (!dataset || !mine.length) return <MissingPage loaded={!!dataset && circuit.players.length > 0} onBack={onBack} />
     const auto = signatureOf(dataset, mine)
@@ -396,11 +401,31 @@ export function PlayerPage({
   const favorite = dataset ? deckOf(dataset, mine, claim?.deck) : undefined
   const cover = claim?.coverArt ?? (auto && artUrl(auto.cmd.name))
   const above = [...circuit.players].reverse().find((o) => o.total > p.total)
+  const rec = recordOf(mine)
+  // a phone: who they are on top, then one tab at a time; a desktop shows everything, as before
+  const tabs = (['circ', 'deck', 'card', 'tour'] as const).filter(
+    (k) =>
+      k === 'circ' ||
+      (k === 'deck' && (mine.length > 0 || !!claim?.verified)) ||
+      (k === 'card' && !!dataset && mine.length > 0) ||
+      (k === 'tour' && (mine.length > 0 || p.events.length > 0)),
+  )
+  const tab = picked.key === playerKey && tabs.includes(picked.tab) ? picked.tab : 'circ'
+  const show = (k: typeof tab) => wide || tab === k
+  const compare = <ComparePicker circuit={circuit} p={p} prefs={prefs} onPick={(o) => (o === prefs.me ? openCompare(o, p.key) : openCompare(p.key, o))} />
 
   return (
     <SubPageShell
       title={p.name}
       onBack={onBack}
+      art={
+        !wide &&
+        cover && (
+          <div className="deck-hero art-hero player-hero" style={{ backgroundImage: `url("${cover}")` }}>
+            <div className="deck-hero-shade" />
+          </div>
+        )
+      }
       actions={
         <div className="hero-actions">
           <ReportButton about={p.name} />
@@ -431,9 +456,9 @@ export function PlayerPage({
           entries={mine}
         />
       )}
-      <ClaimBox p={p} prefs={prefs} cover={cover} />
+      <ClaimBox p={p} prefs={prefs} cover={cover} row={!wide} />
       {/* "me" on the left when comparing someone with me */}
-      <ComparePicker circuit={circuit} p={p} prefs={prefs} onPick={(o) => (o === prefs.me ? openCompare(o, p.key) : openCompare(p.key, o))} />
+      {wide && compare}
 
       <section className="card">
         <div className="stats3">
@@ -445,20 +470,42 @@ export function PlayerPage({
             <div className="stat-num">{p.total}</div>
             <div className="stat-label">{t('circuit.points')}</div>
           </div>
-          <div>
-            <div className="stat-num">{p.events.length}</div>
-            <div className="stat-label">{t('circuit.events')}</div>
-          </div>
+          {/* on a phone the winrate, the most looked at, in place of the events (they are in the circuit tab) */}
+          {!wide && rec.games > 0 ? (
+            <div>
+              <div className={`stat-num ${wrClass(winrate(rec))}`}>{pct(winrate(rec), 0)}</div>
+              <div className="stat-label">Winrate</div>
+            </div>
+          ) : (
+            <div>
+              <div className="stat-num">{p.events.length}</div>
+              <div className="stat-label">{t('circuit.events')}</div>
+            </div>
+          )}
         </div>
         <PotyNote p={p} poty={poty} spots={circuit.poty ?? POTY_SPOTS} />
         {above && <div className="muted small">{t('circuit.gapAbove', { n: above.total - p.total, r: above.rank ?? '' })}</div>}
       </section>
 
-      {dataset && <PlayerBadges dataset={dataset} entries={mine} player={p} />}
-      <SignatureDeck signature={favorite ?? auto} favorite={!!favorite} openCommander={openCommander} />
+      {!wide && compare}
+      {!wide && tabs.length > 1 && (
+        <div className="cmd-tabs">
+          <div className="seg wide">
+            {tabs.map((k) => (
+              <button key={k} className={tab === k ? 'on' : ''} onClick={() => setPicked({ key: playerKey, tab: k })}>
+                {t(`player.tab.${k}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <MyRecordVs p={p} matches={prefs.matches} />
+      {show('circ') && dataset && <PlayerBadges dataset={dataset} entries={mine} player={p} />}
+      {show('deck') && <SignatureDeck signature={favorite ?? auto} favorite={!!favorite} openCommander={openCommander} />}
 
+      {show('circ') && <MyRecordVs p={p} matches={prefs.matches} />}
+
+      {show('circ') && (
       <section className="card">
         <div className="card-title">{t('circuit.breakdown')}</div>
         {(['s1', 's2'] as const).map((s) => {
@@ -483,12 +530,13 @@ export function PlayerPage({
           <b>{p.total}</b>
         </div>
       </section>
+      )}
 
-      {dataset && mine.length > 0 && <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />}
-      {dataset && <PlayerColors dataset={dataset} entries={mine} />}
-      {dataset && <PlayerCards dataset={dataset} playerKey={playerKey} openCard={openCard} />}
+      {show('deck') && dataset && mine.length > 0 && <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />}
+      {show('deck') && dataset && <PlayerColors dataset={dataset} entries={mine} />}
+      {show('card') && dataset && <PlayerCards dataset={dataset} playerKey={playerKey} openCard={openCard} empty={!wide} />}
 
-      {p.events.length > 0 && (
+      {show('circ') && p.events.length > 0 && (
         <section className="card">
           <div className="stats3 compact">
             <div>
@@ -509,10 +557,12 @@ export function PlayerPage({
         </section>
       )}
 
-      <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} player={p} openTournament={openTournament} openEvent={openEvent} />
-      {dataset && <PlayerLists dataset={dataset} entries={mine} onCreateDeck={onCreateDeck} openDeck={openOwnDeck} />}
+      {show('tour') && (
+        <PlayerHistory dataset={dataset} entries={mine} circuit={circuit} player={p} openTournament={openTournament} openEvent={openEvent} months={!wide} />
+      )}
+      {show('deck') && dataset && <PlayerLists dataset={dataset} entries={mine} onCreateDeck={onCreateDeck} openDeck={openOwnDeck} />}
       {/* only on a verified page: anyone can link a player, an admin or a TO vouches for the account */}
-      {claim?.verified && <PublicDecks uid={claim.uid} onOpen={(id) => openDeck(claim.uid, id)} />}
+      {show('deck') && claim?.verified && <PublicDecks uid={claim.uid} onOpen={(id) => openDeck(claim.uid, id)} />}
     </SubPageShell>
   )
 }
@@ -578,7 +628,7 @@ export function ClaimBadge({ claim }: { claim: Claim }) {
 }
 
 /** The claimer's picture, the "verified" tick and the button to claim or release the player. */
-function ClaimBox({ p, prefs, cover }: { p: Player; prefs: CircuitPrefs; cover?: string }) {
+function ClaimBox({ p, prefs, cover, row }: { p: Player; prefs: CircuitPrefs; cover?: string; row?: boolean }) {
   const { t } = useI18n()
   const dialog = useDialog()
   const [busy, setBusy] = useState(false)
@@ -592,42 +642,56 @@ function ClaimBox({ p, prefs, cover }: { p: Player; prefs: CircuitPrefs; cover?:
       setBusy(false)
     }
   }
+  const avatar = (
+    <span className={`claim-avatar ${claim ? 'claimed' : ''}`}>
+      {claim?.photo ? (
+        <img src={claim.photo} alt="" referrerPolicy="no-referrer" />
+      ) : claim ? (
+        <span>{(claim.name || p.name).charAt(0).toUpperCase()}</span>
+      ) : (
+        <Icon name="user" size={30} />
+      )}
+    </span>
+  )
+  const action = mine ? (
+    <button className="btn primary" disabled={busy} onClick={() => run(null)}>
+      <Icon name="user" size={16} /> {t('circuit.isMe')}
+    </button>
+  ) : claim ? (
+    <span className="muted small">{t('circuit.claimedByOther')}</span>
+  ) : !prefs.uid ? (
+    <button className="btn ghost" onClick={prefs.login}>
+      <Icon name="user" size={16} /> {t('circuit.loginToClaim')}
+    </button>
+  ) : (
+    <button
+      className="btn ghost"
+      disabled={busy}
+      onClick={async () => {
+        const current = prefs.me && prefs.claims.get(prefs.me)?.uid === prefs.uid ? prefs.me : null
+        if (!current || (await dialog.confirm(t('circuit.moveClaim')))) run(p.key)
+      }}
+    >
+      <Icon name="user" size={16} /> {t('circuit.thisIsMe')}
+    </button>
+  )
+  // a phone: the picture beside the name, over the bottom of the art (SubPageShell art)
+  if (row)
+    return (
+      <div className="claim-row">
+        {avatar}
+        <div className="claim-who">
+          <h2 className="claim-name">{p.name}</h2>
+          {claim && <ClaimBadge claim={claim} />}
+          {action}
+        </div>
+      </div>
+    )
   return (
     <div className="claim-box">
-      <PlayerCover art={cover}>
-        <span className={`claim-avatar ${claim ? 'claimed' : ''}`}>
-          {claim?.photo ? (
-            <img src={claim.photo} alt="" referrerPolicy="no-referrer" />
-          ) : claim ? (
-            <span>{(claim.name || p.name).charAt(0).toUpperCase()}</span>
-          ) : (
-            <Icon name="user" size={30} />
-          )}
-        </span>
-      </PlayerCover>
+      <PlayerCover art={cover}>{avatar}</PlayerCover>
       {claim && <ClaimBadge claim={claim} />}
-      {mine ? (
-        <button className="btn primary" disabled={busy} onClick={() => run(null)}>
-          <Icon name="user" size={16} /> {t('circuit.isMe')}
-        </button>
-      ) : claim ? (
-        <span className="muted small">{t('circuit.claimedByOther')}</span>
-      ) : !prefs.uid ? (
-        <button className="btn ghost" onClick={prefs.login}>
-          <Icon name="user" size={16} /> {t('circuit.loginToClaim')}
-        </button>
-      ) : (
-        <button
-          className="btn ghost"
-          disabled={busy}
-          onClick={async () => {
-            const current = prefs.me && prefs.claims.get(prefs.me)?.uid === prefs.uid ? prefs.me : null
-            if (!current || (await dialog.confirm(t('circuit.moveClaim')))) run(p.key)
-          }}
-        >
-          <Icon name="user" size={16} /> {t('circuit.thisIsMe')}
-        </button>
-      )}
+      {action}
     </div>
   )
 }

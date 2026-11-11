@@ -8,6 +8,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-11',
+    it: [
+      'Circuito, giocatori: sul telefono la scheda di un giocatore è più corta. In alto l\'immagine parte dal bordo dello schermo come nella pagina del comandante, con foto e nome affiancati, posizione, punti e winrate; sotto quattro schede, Circuito, Mazzi, Carte e Tornei, con i tornei divisi per mese',
+    ],
+    en: [
+      'Circuit, players: on a phone a player\'s page is shorter. On top the art starts at the screen\'s edge like on a commander\'s page, with picture and name side by side, position, points and winrate; below, four tabs, Circuit, Decks, Cards and Events, with the events grouped by month',
+    ],
+  },
+  {
     date: '2026-11-10',
     it: [
       'Statistiche: sul telefono la pagina è divisa in quattro schede, Riepilogo, Mazzi, Avversari e Partite, e i filtri stanno su una riga. Il riepilogo mostra il mazzo migliore, il matchup migliore e peggiore e la bestia nera (contando chi ha almeno 5 partite): toccandoli si apre la scheda giusta',

@@ -424,16 +424,19 @@ export function PlayerCards({
   dataset,
   playerKey,
   openCard,
+  empty,
 }: {
   dataset: MetaDataset
   playerKey: string
   openCard: (name: string) => void
+  /** a note in place of nothing, when the cards have a tab of their own */
+  empty?: boolean
 }) {
   const { t } = useI18n()
   const dl = useDecklists()
   const [all, setAll] = useState(false)
   const x = useMemo(() => (dl ? playerCards(dataset, dl, playerKey) : null), [dataset, dl, playerKey])
-  if (!x || x.lists < 2) return null
+  if (!x || x.lists < 2) return empty && dl ? <p className="muted no-margin">{t('playerCards.few')}</p> : null
   return (
     <>
       <section className="card">
