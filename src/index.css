@@ -531,6 +531,9 @@ div:has(> .brand-kicker + .tp-title) {
 .small-wr {
   font-size: 0.85rem;
 }
+.nowrap {
+  white-space: nowrap;
+}
 
 /* ---------- home ---------- */
 .hero-btn {
@@ -4967,7 +4970,8 @@ mark.diff-new {
   border-style: solid;
 }
 /* "most played deck": a card with the commander's art and a link to its page */
-.card.signature {
+.signature {
+  display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
@@ -4975,6 +4979,9 @@ mark.diff-new {
   padding: 10px 12px 10px 10px;
   text-align: left;
   color: var(--muted);
+}
+.signature.plain {
+  padding: 0;
 }
 .signature-art {
   width: 56px;

@@ -11,9 +11,11 @@ export const CHANGELOG: Release[] = [
     date: '2026-11-11',
     it: [
       'Circuito, giocatori: sul telefono la scheda di un giocatore è più corta. In alto l\'immagine parte dal bordo dello schermo come nella pagina del comandante, con foto e nome affiancati, posizione, punti e winrate; sotto quattro schede, Circuito, Mazzi, Carte e Tornei, con i tornei divisi per mese',
+      'Circuito, giocatori: sul telefono il mazzo più giocato e i colori stanno in un riquadro solo, i comandanti si vedono cinque alla volta con una barra colorata, e top 8, miglior piazzamento e punti a evento sono nei punti e nel grafico invece che in un riquadro a parte',
     ],
     en: [
       'Circuit, players: on a phone a player\'s page is shorter. On top the art starts at the screen\'s edge like on a commander\'s page, with picture and name side by side, position, points and winrate; below, four tabs, Circuit, Decks, Cards and Events, with the events grouped by month',
+      'Circuit, players: on a phone the most played deck and the colours share one card, the commanders show five at a time with a coloured bar, and top 8, best finish and points per event sit in the points and the chart instead of a card of their own',
     ],
   },
   {

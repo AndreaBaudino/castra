@@ -43,16 +43,19 @@ export function SignatureDeck({
   signature,
   favorite,
   openCommander,
+  plain,
 }: {
   signature?: { cmd: MetaCommander; n: number }
   favorite?: boolean
   openCommander: (name: string) => void
+  /** inside another card */
+  plain?: boolean
 }) {
   const { t } = useI18n()
   if (!signature) return null
   const { cmd, n } = signature
   return (
-    <button className="card signature" onClick={() => openCommander(cmd.name)}>
+    <button className={`signature ${plain ? 'plain' : 'card'}`} onClick={() => openCommander(cmd.name)}>
       <span className="signature-art" style={{ backgroundImage: `url("${artUrl(cmd.name)}")` }} />
       <span className="signature-text">
         <span className="muted small">{t(favorite ? 'player.favorite' : 'player.signature')}</span>
@@ -305,7 +308,7 @@ export function PlayerBadges({ dataset, entries, player }: { dataset: MetaDatase
 }
 
 /** How much of each colour the player's decks have: every tournament split among its commander's colours. */
-export function PlayerColors({ dataset, entries }: { dataset: MetaDataset; entries: MetaEntry[] }) {
+export function PlayerColors({ dataset, entries, bare }: { dataset: MetaDataset; entries: MetaEntry[]; bare?: boolean }) {
   const { t } = useI18n()
   const shares = useMemo(() => {
     const w: Record<string, number> = {}
@@ -319,9 +322,8 @@ export function PlayerColors({ dataset, entries }: { dataset: MetaDataset; entri
     return total ? [...WUBRG, 'C'].filter((c) => w[c]).map((c) => ({ c, share: w[c] / total })) : []
   }, [dataset, entries])
   if (!shares.length) return null
-  return (
-    <section className="card">
-      <div className="card-title">{t('player.colors')}</div>
+  const body = (
+    <>
       <div className="color-bar">
         {shares.map(({ c, share }) => (
           <span key={c} className={`pip-${c}`} style={{ flexGrow: share }} />
@@ -334,6 +336,13 @@ export function PlayerColors({ dataset, entries }: { dataset: MetaDataset; entri
           </span>
         ))}
       </div>
+    </>
+  )
+  if (bare) return body
+  return (
+    <section className="card">
+      <div className="card-title">{t('player.colors')}</div>
+      {body}
     </section>
   )
 }

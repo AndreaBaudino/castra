@@ -501,43 +501,59 @@ export function PlayerPage({
       )}
 
       {show('circ') && dataset && <PlayerBadges dataset={dataset} entries={mine} player={p} />}
-      {show('deck') && <SignatureDeck signature={favorite ?? auto} favorite={!!favorite} openCommander={openCommander} />}
+      {show('deck') &&
+        (wide ? (
+          <SignatureDeck signature={favorite ?? auto} favorite={!!favorite} openCommander={openCommander} />
+        ) : (
+          // a phone: the deck and the player's colours in one card
+          (favorite ?? auto) && (
+            <section className="card">
+              <SignatureDeck signature={favorite ?? auto} favorite={!!favorite} openCommander={openCommander} plain />
+              {dataset && <PlayerColors dataset={dataset} entries={mine} bare />}
+            </section>
+          )
+        ))}
 
       {show('circ') && <MyRecordVs p={p} matches={prefs.matches} />}
 
       {show('circ') && (
-      <section className="card">
-        <div className="card-title">{t('circuit.breakdown')}</div>
-        {(['s1', 's2'] as const).map((s) => {
-          const l = p[s]
-          return (
-            <div key={s} className="kv">
-              <span>
-                {t(s === 's1' ? 'circuit.sort.s1' : 'circuit.sort.s2')}
-                {l && ` · ${l.league} (${t('circuit.leagueRank', { r: l.leagueRank, n: l.leaguePlayers })})`}
-                {l?.also && <span className="muted small"> · {t('circuit.alsoLeague', { l: l.also.join(', ') })}</span>}
-              </span>
-              <b>{l ? l.points : '—'}</b>
-            </div>
-          )
-        })}
-        <div className="kv">
-          <span>{t('circuit.sort.events')}</span>
-          <b>{p.eventPoints}</b>
-        </div>
-        <div className="kv total">
-          <span>{t('circuit.total')}</span>
-          <b>{p.total}</b>
-        </div>
-      </section>
+        <section className="card">
+          <div className="card-title">{t('circuit.breakdown')}</div>
+          {(['s1', 's2'] as const).map((s) => {
+            const l = p[s]
+            return (
+              <div key={s} className="kv">
+                <span>
+                  {t(s === 's1' ? 'circuit.sort.s1' : 'circuit.sort.s2')}
+                  {l && ` · ${l.league} (${t('circuit.leagueRank', { r: l.leagueRank, n: l.leaguePlayers })})`}
+                  {l?.also && <span className="muted small"> · {t('circuit.alsoLeague', { l: l.also.join(', ') })}</span>}
+                </span>
+                <b>{l ? l.points : '—'}</b>
+              </div>
+            )
+          })}
+          <div className="kv">
+            <span>
+              {t('circuit.sort.events')}
+              {/* a phone has no separate card with top 8 and best finish */}
+              {!wide && p.events.length > 0 && ` · ${t('player.eventsSub', { n: p.top8, b: p.best ? placeLabel(p.best, lang) : '—' })}`}
+            </span>
+            <b>{p.eventPoints}</b>
+          </div>
+          <div className="kv total">
+            <span>{t('circuit.total')}</span>
+            <b>{p.total}</b>
+          </div>
+        </section>
       )}
 
-      {show('deck') && dataset && mine.length > 0 && <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} />}
-      {show('deck') && dataset && <PlayerColors dataset={dataset} entries={mine} />}
+      {show('deck') && dataset && mine.length > 0 && <PlayerDecks dataset={dataset} entries={mine} openCommander={openCommander} compact={!wide} />}
+      {wide && dataset && <PlayerColors dataset={dataset} entries={mine} />}
       {show('card') && dataset && <PlayerCards dataset={dataset} playerKey={playerKey} openCard={openCard} empty={!wide} />}
 
       {show('circ') && p.events.length > 0 && (
         <section className="card">
+          {wide && (
           <div className="stats3 compact">
             <div>
               <div className="stat-num">{p.top8}</div>
@@ -552,7 +568,11 @@ export function PlayerPage({
               <div className="stat-label">{t('circuit.avgPts')}</div>
             </div>
           </div>
-          <div className="card-title">{t('circuit.chartTitle')}</div>
+          )}
+          <div className="card-title">
+            {t('circuit.chartTitle')}
+            {!wide && <span className="muted small nowrap">{t('player.avgPts', { n: avg(p).toLocaleString(lang, { maximumFractionDigits: 1 }) })}</span>}
+          </div>
           <PointsChart circuit={circuit} p={p} />
         </section>
       )}

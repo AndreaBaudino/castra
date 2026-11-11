@@ -719,18 +719,60 @@ export function PlayerDecks({
   dataset,
   entries,
   openCommander,
+  compact,
 }: {
   dataset: MetaDataset
   entries: MetaEntry[]
   openCommander: (name: string) => void
+  /** a phone: the winrate is already on top, so just the commanders, five at a time, with a bar each */
+  compact?: boolean
 }) {
   const { t } = useI18n()
+  const [all, setAll] = useState(false)
   const rec = recordOf(entries)
   const by = new Map<number, MetaEntry[]>()
   entries.forEach((e) => e.cmd >= 0 && by.set(e.cmd, [...(by.get(e.cmd) ?? []), e]))
   const cmds = [...by]
     .map(([id, list]) => ({ c: dataset.commanders[id], n: list.length, rec: recordOf(list) }))
     .sort((a, b) => b.n - a.n || winrate(b.rec) - winrate(a.rec))
+  if (compact)
+    return (
+      <section className="group">
+        <div className="group-title">
+          {t('meta.commanders')} · {cmds.length}
+        </div>
+        <p className="muted small group-note">
+          {t('meta.nTournaments', { n: entries.length })}
+          {rec.games > 0 && ` · ${fmtRec(rec)}`} · {t('meta.byeNote')}
+        </p>
+        <ul className="card-list">
+          {(all ? cmds : cmds.slice(0, SHOW)).map(({ c, n, rec: r }) => (
+            <li key={c.id} className="event-row" onClick={() => openCommander(c.name)}>
+              <div className="event-main">
+                <span className="ellipsis">
+                  <Pips colors={c.colors} size={10} /> {shortName(c.name)}
+                </span>
+                <span className="muted small">{t('meta.nTournaments', { n })}</span>
+              </div>
+              {r.games > 0 && (
+                <>
+                  <span className="rec-inline">{fmtRec(r)}</span>
+                  <span className={`wr-bar ${wrClass(winrate(r))}`}>
+                    <i style={{ width: pct(winrate(r), 0) }} />
+                  </span>
+                  <b className={`wr ${wrClass(winrate(r))}`}>{pct(winrate(r), 0)}</b>
+                </>
+              )}
+            </li>
+          ))}
+          {cmds.length > SHOW && (
+            <li className="event-row more" onClick={() => setAll(!all)}>
+              {all ? t('meta.showLess') : t('player.allCommanders', { n: cmds.length })}
+            </li>
+          )}
+        </ul>
+      </section>
+    )
   return (
     <section className="card">
       <div className="card-title">
