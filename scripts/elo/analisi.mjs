@@ -2,8 +2,10 @@
 // study the rules before they go into the app; it changes nothing. A tournament run in Castra counts by its matches
 // (`pm` of the meta) when the meta has them, otherwise by its placings like any sheet. To delete once the meta build
 // computes the Elo.
-//   node scripts/elo/analisi.mjs [anno] [--file meta-2026.json] [--start 100] [--c 5] [--floor 40] [--top 20]
-//                                [--player "Nome Cognome"]
+//   node scripts/elo/analisi.mjs [anno] [--file meta-2026.json] [--base 1000] [--nuovi base|p25|900] [--start 100]
+//                                [--c 5] [--floor 40] [--top 20] [--player "Nome Cognome"] [--leghe]
+// --nuovi: where a player first seen after January starts (the year's base, the 25th percentile of the Elo at that
+// moment, or a number); --leghe: how the players of each league do in the levels against their Elo (closed groups).
 // Without --file it reads meta-<anno>.json from the meta-data branch (git fetch origin meta-data first).
 
 import { execSync } from 'node:child_process'
@@ -14,6 +16,9 @@ const { values: opt, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     file: { type: 'string' },
+    base: { type: 'string', default: '1000' },
+    nuovi: { type: 'string', default: 'base' },
+    leghe: { type: 'boolean' },
     start: { type: 'string', default: '100' },
     c: { type: 'string', default: '5' },
     floor: { type: 'string', default: '40' },
@@ -27,6 +32,8 @@ const meta = JSON.parse(opt.file ? readFileSync(opt.file, 'utf8') : execSync(`gi
 const WEIGHT = { league: 1, l1: 1.5, l2: 2 }
 const Q = Math.log(10) / 400
 const g = (rd) => 1 / Math.sqrt(1 + (3 * Q * Q * rd * rd) / Math.PI ** 2)
+const points = (x) => 3 * (x[4] ?? 0) + (x[6] ?? 0)
+const level = (t) => t.k === 'l1' || t.k === 'l2'
 const games = (x) => (x[4] ?? 0) + (x[5] ?? 0) + (x[6] ?? 0) - (x[7] ? 1 : 0) // the bye is no game
 const days = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5
 
@@ -48,6 +55,13 @@ const rounds = (es) => {
   for (const x of es) n.set(games(x) + (x[7] ? 1 : 0), (n.get(games(x) + (x[7] ? 1 : 0)) ?? 0) + 1)
   return [...n].sort((a, b) => b[1] - a[1])[0][0]
 }
+// each player's league: the one with most stages in the year
+const home = new Map()
+{
+  const n = new Map()
+  for (const x of meta.e) if (x[1] && !level(T[x[0]]) && T[x[0]].lg) n.set(`${x[1]}|${T[x[0]].lg}`, (n.get(`${x[1]}|${T[x[0]].lg}`) ?? 0) + 1)
+  for (const [k, v] of [...n].sort((a, b) => a[1] - b[1])) home.set(k.split('|')[0], k.split('|')[1])
+}
 const order = [...entries.keys()]
   .filter((ti) => entries.get(ti).length >= 2 && rounds(entries.get(ti)) > 0)
   .sort((a, b) => day[a].localeCompare(day[b]) || (T[a].st ?? 0) - (T[b].st ?? 0))
@@ -55,25 +69,33 @@ const order = [...entries.keys()]
 /**
  * Glicko of docs/elo.md: every player compared with every other entry by placing, each comparison weighing
  * tournament weight × average games of the two ÷ (entries − 1); Elo and margin of the start of the tournament.
- * Also the prediction check: before each tournament from March, who of two players finishes higher.
+ * Also the prediction check: before each tournament from March, who of two players with different points finishes
+ * higher (between equal points the tiebreakers decide, not the players), and how each league's players do in the
+ * levels against what their Elo expected.
  */
-function glicko({ start, c, floor }) {
-  const R = new Map(), RD = new Map(), last = new Map(), hist = new Map(), played = new Map()
+function glicko({ base, nuovi, start, c, floor }) {
+  const R = new Map(), RD = new Map(), last = new Map(), hist = new Map(), played = new Map(), leagues = new Map()
   let loss = 0, right = 0, pairs = 0
+  const newcomer = (d) => {
+    if (d < `${year}-02-01` || nuovi === 'base') return base
+    if (nuovi !== 'p25') return +nuovi
+    const v = [...R.values()].sort((a, b) => a - b)
+    return v.length ? v[Math.floor((v.length - 1) / 4)] : base
+  }
   for (const ti of order) {
     const es = entries.get(ti), t = T[ti], d = day[ti], n = es.length, w = WEIGHT[t.k] ?? 1
     for (const [p] of es.map((x) => [x[1]])) {
-      if (!R.has(p)) R.set(p, 1500), RD.set(p, start)
+      if (!R.has(p)) R.set(p, newcomer(d)), RD.set(p, start)
       if (last.has(p)) RD.set(p, Math.min(start, Math.sqrt(RD.get(p) ** 2 + c * c * days(last.get(p), d))))
     }
     if (d >= `${year}-03-01`)
       for (let i = 0; i < n; i++)
         for (let j = i + 1; j < n; j++) {
           const [a, b] = [es[i], es[j]]
-          if (a[3] === b[3]) continue
+          if (points(a) === points(b)) continue
           const gg = g(Math.hypot(RD.get(a[1]), RD.get(b[1])))
           const pa = Math.min(1 - 1e-6, Math.max(1e-6, 1 / (1 + 10 ** ((-gg * (R.get(a[1]) - R.get(b[1]))) / 400))))
-          const won = a[3] < b[3]
+          const won = points(a) > points(b)
           loss -= Math.log(won ? pa : 1 - pa)
           right += pa === 0.5 ? 0.5 : (pa > 0.5) === won ? 1 : 0
           pairs++
@@ -84,7 +106,7 @@ function glicko({ start, c, floor }) {
     const vs = new Map(es.map((a) => [a, []]))
     if (matchesOf.has(ti)) {
       for (const [, ea, eb, x, y, dr, round] of matchesOf.get(ti)) {
-        if ((t.k === 'league' && round > swiss) || x + y + dr === 0) continue
+        if ((!level(t) && round > swiss) || x + y + dr === 0) continue
         const [a, b] = [meta.e[ea], meta.e[eb]]
         const s = x > y ? 1 : x < y ? 0 : 0.5
         vs.get(a)?.push([b, s, w])
@@ -95,12 +117,19 @@ function glicko({ start, c, floor }) {
         for (const b of es)
           if (b !== a) vs.get(a).push([b, a[3] < b[3] ? 1 : a[3] > b[3] ? 0 : 0.5, (w * (games(a) + games(b))) / 2 / (n - 1)])
     const next = es.map((a) => {
-      let sum = 0, info = 0
+      let sum = 0, info = 0, off = 0, all = 0
       for (const [b, s, weight] of vs.get(a)) {
         const gb = g(RD.get(b[1]))
         const e = 1 / (1 + 10 ** ((-gb * (R.get(a[1]) - R.get(b[1]))) / 400))
         sum += weight * gb * (s - e)
         info += weight * Q * Q * gb * gb * e * (1 - e)
+        off += weight * (s - e)
+        all += weight
+      }
+      const lg = home.get(a[1])
+      if (level(t) && lg && d >= `${year}-03-01` && all) {
+        const x = leagues.get(lg) ?? leagues.set(lg, { off: 0, all: 0, n: 0 }).get(lg)
+        x.off += off, x.all += all, x.n++
       }
       const v = 1 / (1 / RD.get(a[1]) ** 2 + info)
       return [a, R.get(a[1]) + Q * v * sum, Math.max(floor, Math.sqrt(v))]
@@ -111,19 +140,23 @@ function glicko({ start, c, floor }) {
       R.set(p, r), RD.set(p, rd), last.set(p, d), played.set(p, (played.get(p) ?? 0) + games(a))
     }
   }
-  return { R, RD, hist, played, right: right / pairs, loss: loss / pairs, pairs }
+  return { R, RD, hist, played, leagues, right: right / pairs, loss: loss / pairs, pairs }
 }
 
 const fmt = (n, d = 0) => n.toFixed(d).replace('.', ',')
-const name = (t) => (t.k === 'league' ? `${t.lg} · tappa ${t.st}` : `${t.k === 'l1' ? 'Livello 1' : 'Livello 2'} · ${t.n}`)
-const res = glicko({ start: +opt.start, c: +opt.c, floor: +opt.floor })
+const name = (t) => (level(t) ? `${t.k === 'l1' ? 'Livello 1' : 'Livello 2'} · ${t.n}` : `${t.lg ?? t.n} ${t.s ?? ''} · tappa ${t.st}`)
+const res = glicko({ base: +opt.base, nuovi: opt.nuovi, start: +opt.start, c: +opt.c, floor: +opt.floor })
 const all = [...res.R.keys()]
 const mean = all.reduce((s, p) => s + res.R.get(p), 0) / all.length
-console.log(`Elo ${year}, Glicko da ±${opt.start}, pause ${opt.c}, minimo ±${opt.floor}: ${all.length} giocatori, media ${fmt(mean, 1)}`)
+console.log(`Elo ${year}, base ${opt.base}, nuovi da ${opt.nuovi}, Glicko da ±${opt.start}, pause ${opt.c}, minimo ±${opt.floor}: ${all.length} giocatori, media ${fmt(mean, 1)}`)
 console.log(`Previsione da marzo: ${fmt(res.right * 100, 2)}% coppie azzeccate, log-loss ${fmt(res.loss, 4)} (${res.pairs} coppie)`)
 console.log(`Provvisori (margine sopra ±80): ${all.filter((p) => res.RD.get(p) > 80).length}\n`)
 
-if (opt.player) {
+if (opt.leghe) {
+  console.log('Nei livelli da marzo, rispetto al previsto dal loro Elo (in punti percentuali), per lega di casa:')
+  for (const [lg, x] of [...res.leagues].sort((a, b) => a[1].off / a[1].all - b[1].off / b[1].all))
+    console.log(`  ${lg.padEnd(22)} ${((x.off >= 0 ? '+' : '') + fmt((x.off / x.all) * 100, 1)).padStart(6)}  (${x.n} presenze)`)
+} else if (opt.player) {
   const h = res.hist.get(opt.player)
   if (!h) throw new Error(`${opt.player}: nessun torneo nel ${year}`)
   for (const x of h)
@@ -132,7 +165,7 @@ if (opt.player) {
   const top = all.sort((a, b) => res.R.get(b) - res.R.get(a)).slice(0, +opt.top)
   top.forEach((p, i) => {
     const h = res.hist.get(p)
-    const part = (k) => h.filter((x) => (x.t.k === 'league') === k).reduce((s, x) => s + x.move, 0)
+    const part = (k) => h.filter((x) => !level(x.t) === k).reduce((s, x) => s + x.move, 0)
     console.log(`${String(i + 1).padStart(3)} ${p.padEnd(26)} ${fmt(res.R.get(p))} ±${fmt(res.RD.get(p)).padEnd(4)} ${String(res.played.get(p)).padStart(4)} partite   leghe ${fmt(part(true))}  livelli ${fmt(part(false))}`)
   })
 }

@@ -23,10 +23,11 @@ dell'Elo definitivo si fanno dopo queste regole.
 ## 2. Le regole
 
 L'Elo si calcola con il metodo **Glicko** (adattato al circuito, sezione 6): ogni giocatore ha due numeri, l'**Elo**
-e un **margine**, cioè quanto il sistema è sicuro di quell'Elo (1650 ± 60). Con il margine piccolo una partita sposta
+e un **margine**, cioè quanto il sistema è sicuro di quell'Elo (1150 ± 60). Con il margine piccolo una partita sposta
 poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
 
-- **Un anno alla volta**: il 1º gennaio tutti ripartono da **1500 ± 100**. Ogni anno ha il suo Elo, come le
+- **Un anno alla volta**: il 1º gennaio tutti ripartono da **1000 ± 100** (1000 scelto perché sembra più "centrale":
+  il numero di partenza è solo estetico, spostarlo sposta tutti allo stesso modo e non cambia la classifica). Ogni anno ha il suo Elo, come le
   classifiche. (Il Glicko classico parte da ± 350, ma con tutti che ripartono insieme le prime tappe spostano
   centinaia di punti e la classifica non si rimette più in ordine: sezione 6.)
 - **Il margine scende giocando** (ogni partita lo restringe, prima in fretta poi sempre più piano, fino a un minimo di
@@ -45,13 +46,13 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
   - nuovo Elo = Elo + q × nuovo margine² × Σ peso × g × (risultato − atteso).
 
   Il risultato vale 1 la vittoria, ½ il pareggio, 0 la sconfitta (il 2-1 come il 2-0). Esempio, una partita di una
-  tappa con 1600 ± 55 contro un avversario ± 60:
+  tappa con 1100 ± 55 contro un avversario ± 60:
 
   | Avversario | Probabilità di vincere | Vittoria | Sconfitta |
   | --- | --- | --- | --- |
-  | 1400 | 76% | +4,1 | −12,7 |
-  | 1600 | 50% | +8,4 | −8,4 |
-  | 1800 | 24% | +12,7 | −4,1 |
+  | 900 | 76% | +4,1 | −12,7 |
+  | 1100 | 50% | +8,4 | −8,4 |
+  | 1300 | 24% | +12,7 | −4,1 |
 
   Con ± 90 (chi gioca poco o torna da una pausa) gli stessi risultati valgono circa due volte e mezza: +21,5 / −21,5
   alla pari. Battere uno forte rende, perdere con uno debole costa, come nell'Elo classico.
@@ -63,7 +64,7 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
   notturno del meta, quindi si vede la notte dopo la pubblicazione (un torneo di Castra non ancora pubblicato non
   conta).
 - **I punti non passano di mano esattamente**: ognuno si muove con il suo margine, nel foglio come in Castra. Nel 2026
-  la media finisce a 1494 invece di 1500.
+  la media finisce a 994 invece di 1000.
 - **Ordine dei tornei**: per data; una tappa senza data viene subito dopo la tappa precedente della sua lega (come in
   `docs/liste-mazzi.md`), con 0 giorni di pausa.
 
@@ -123,15 +124,32 @@ il comando è in cima al file); i grafici sono su
   Il vantaggio non dipende dalla velocità (un Elo più veloce migliora ma oltre ×3 peggiora di nuovo) né da una scelta
   fortunata: partenza ± 100 o ± 120 e pause da 3 a 8 danno tutte tra 0,624 e 0,627. Le impostazioni sono scelte sugli
   stessi dati, quindi il vantaggio vero potrebbe essere un po' più piccolo: da verificare sui match di Castra.
-- **Classifica** (Glicko adattato): 363 giocatori, da 1223 a 1904, media 1494. Romeo 1904 ± 61, Crifo' 1809 ± 53,
-  Chiarotto 1765, Crisci 1762, Sacco 1761, Russo 1756, Borfiga 1738. I livelli pesano più che con l'Elo a valore fisso
+- **Classifica** (Glicko adattato, base 1000): 363 giocatori, da 723 a 1404, media 994. Romeo 1404 ± 61, Crifo' 1309
+  ± 53, Chiarotto 1265, Crisci 1262, Sacco 1261, Russo 1256, Borfiga 1238. I livelli pesano più che con l'Elo a valore fisso
   (Crifo': +188 dalle leghe e +121 dai livelli, prima +180 e +50).
 - **Foglio e Castra**: la tappa di Sanremo del 9/11, l'unica giocata in Castra, calcolata nei due modi partendo dagli
   stessi numeri, dà movimenti simili (dal foglio / dai match): Romeo +14,4 / +18,6, Baudino +26,2 / +20,0, Crisci
   +4,9 / +10,0, Borfiga −3,7 / −8,1, Marossa −31,0 / −22,3, Palumbo −16,9 / −21,8. Con i match conta chi si è
   incontrato davvero, dal foglio tutti gli iscritti. Da ricontrollare con le prossime tappe in Castra.
 
+- **Revisione dell'11/11** (`--leghe` e `--nuovi` dello script). La previsione conta da qui solo le coppie con punti
+  diversi (tra pari punti decidono gli spareggi): 65,6% sul 2026.
+  - Pari punti trattati come pareggio invece dell'ordine degli spareggi: nessun miglioramento (65,7%, log-loss
+    peggiore). Resta il piazzamento.
+  - Pesi dei tornei: 1/1/1, 1/1,25/1,5 e 1/1,5/2 prevedono uguale (log-loss tra 0,6105 e 0,6113), 1/2/3 peggio. Restano
+    1/1,5/2, scelta di principio che i dati non smentiscono.
+  - Gennaio è il mese meno preciso (61%, gli altri tra 63 e 70%): tutti hanno ± 100, quindi sono provvisori.
+  - **I nuovi partono troppo alti**: chi arriva dopo gennaio, al primo torneo, va 11 punti percentuali sotto il
+    previsto (dal secondo è in linea) e regala punti ai giocatori abituali. Partendo dal 25° percentile dell'Elo del
+    momento lo scarto scende a −4 e la previsione migliora (66,1%, log-loss 0,6088); da un numero fisso 100 sotto la
+    base, quasi uguale (65,9%, −6). Da decidere (sezione 7).
+  - **Gruppi chiusi**: nei livelli i giocatori di Savona rendono 7 punti percentuali meno del previsto dal loro Elo
+    (circa 50 punti di troppo), quelli di Sanremo 7 e di Latina / Frosinone 9 di più. Il Glicko frena chi gioca tanto
+    ma non corregge le differenze tra leghe. Campioni piccoli (20-104 presenze): si rimisura (sezione 7).
+
 ## 7. In sospeso
 
-- Ricentrare la media a 1500 a fine calcolo (oggi 1494)?
+- Partenza di chi arriva dopo gennaio: 25° percentile dell'Elo del momento, o un numero fisso (900)?
+- Gruppi chiusi: rimisurare con `--leghe` a fine stagione e, se una lega resta oltre ±5 punti percentuali con almeno
+  80 presenze nei livelli, decidere una correzione.
 - Mockup di classifica, scheda del giocatore e confronto tra due giocatori.
