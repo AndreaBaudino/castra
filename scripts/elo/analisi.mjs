@@ -1,6 +1,7 @@
 // The players' Elo of docs/elo.md (Glicko adapted to the circuit), computed from the tournament sheets of one year, to
-// study the rules before they go into the app; it changes nothing. Tournaments run in Castra count here by their
-// placings, like any sheet. To delete once the meta build computes the Elo.
+// study the rules before they go into the app; it changes nothing. A tournament run in Castra counts by its matches
+// (`pm` of the meta) when the meta has them, otherwise by its placings like any sheet. To delete once the meta build
+// computes the Elo.
 //   node scripts/elo/analisi.mjs [anno] [--file meta-2026.json] [--start 100] [--c 5] [--floor 40] [--top 20]
 //                                [--player "Nome Cognome"]
 // Without --file it reads meta-<anno>.json from the meta-data branch (git fetch origin meta-data first).
@@ -38,6 +39,9 @@ const day = T.map((t) => {
 })
 const entries = new Map()
 for (const x of meta.e) if (x[1]) (entries.get(x[0]) ?? entries.set(x[0], []).get(x[0])).push(x)
+// the matches of the tournaments run in Castra: [tournament, entry, entry, won, lost, drawn, round]
+const matchesOf = new Map()
+for (const x of meta.pm ?? []) (matchesOf.get(x[0]) ?? matchesOf.set(x[0], []).get(x[0])).push(x)
 // the Swiss rounds: the most common number of games (bye included); a tournament without results stays out
 const rounds = (es) => {
   const n = new Map()
@@ -74,12 +78,25 @@ function glicko({ start, c, floor }) {
           right += pa === 0.5 ? 0.5 : (pa > 0.5) === won ? 1 : 0
           pairs++
         }
+    // each player's games: the real matches (the top cut only in levels, no intentional draw), or every other entry
+    // by placing
+    const swiss = rounds(es)
+    const vs = new Map(es.map((a) => [a, []]))
+    if (matchesOf.has(ti)) {
+      for (const [, ea, eb, x, y, dr, round] of matchesOf.get(ti)) {
+        if ((t.k === 'league' && round > swiss) || x + y + dr === 0) continue
+        const [a, b] = [meta.e[ea], meta.e[eb]]
+        const s = x > y ? 1 : x < y ? 0 : 0.5
+        vs.get(a)?.push([b, s, w])
+        vs.get(b)?.push([a, 1 - s, w])
+      }
+    } else
+      for (const a of es)
+        for (const b of es)
+          if (b !== a) vs.get(a).push([b, a[3] < b[3] ? 1 : a[3] > b[3] ? 0 : 0.5, (w * (games(a) + games(b))) / 2 / (n - 1)])
     const next = es.map((a) => {
       let sum = 0, info = 0
-      for (const b of es) {
-        if (b === a) continue
-        const s = a[3] < b[3] ? 1 : a[3] > b[3] ? 0 : 0.5
-        const weight = (w * (games(a) + games(b))) / 2 / (n - 1)
+      for (const [b, s, weight] of vs.get(a)) {
         const gb = g(RD.get(b[1]))
         const e = 1 / (1 + 10 ** ((-gb * (R.get(a[1]) - R.get(b[1]))) / 400))
         sum += weight * gb * (s - e)

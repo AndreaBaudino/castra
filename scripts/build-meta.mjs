@@ -15,7 +15,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { aliasLookup, commanderKey, loadAliases, playerKey } from './meta/aliases.mjs'
 import { firestoreDocs } from './meta/firestore.mjs'
 import { assignLists, cardName, givePhotos } from './meta/decklists.mjs'
-import { pairingsOf } from './meta/pairings.mjs'
+import { pairingsOf, playerMatchesOf } from './meta/pairings.mjs'
 
 const dir = new URL('./meta/', import.meta.url)
 const root = new URL('../', import.meta.url)
@@ -351,10 +351,12 @@ function build(tables) {
   const entries = []
   const tournaments = []
   const pairings = []
+  const matches = []
   for (const { t, players, rows, app, ctx } of tables) {
     const ti = tournaments.length
     tournaments.push({ ...t, p: players || rows.length }) // as declared in the sheet: some rows can be drops or duplicates
     const cmdOf = new Map() // player key (as written, and corrected) → commander, for the app's matches
+    const entryOf = new Map() // and → entry, for the players' matches
     rows.forEach((r, i) => {
       let ci = -1
       if (r.commander) {
@@ -367,13 +369,21 @@ function build(tables) {
       }
       // [tournament, player, commander, place, wins, losses, draws, bye ticked, list]
       const player = r.player && playerOf(r.player, ctx)
+      if (player) {
+        cmdOf.set(playerKey(r.player), ci).set(playerKey(player), ci)
+        entryOf.set(playerKey(r.player), entries.length).set(playerKey(player), entries.length)
+      }
       entries.push([ti, player, ci, i + 1, r.wins, r.losses, r.draws, r.bye ? 1 : 0, r.list])
-      if (player) cmdOf.set(playerKey(r.player), ci).set(playerKey(player), ci)
     })
-    if (played.has(app)) pairings.push(...pairingsOf(ti, played.get(app), cmdOf))
+    if (played.has(app)) {
+      pairings.push(...pairingsOf(ti, played.get(app), cmdOf))
+      matches.push(...playerMatchesOf(ti, played.get(app), entryOf))
+    }
   }
-  // only when there are some: the years without stay as they were
-  return { t: tournaments, c: commanders, e: entries, ...(pairings.length ? { m: pairings } : {}) }
+  // only when there are some: the years without stay as they were. `pm`: a field of its own, as the app reads every
+  // row of `m` as two commanders
+  const more = { ...(pairings.length ? { m: pairings } : {}), ...(matches.length ? { pm: matches } : {}) }
+  return { t: tournaments, c: commanders, e: entries, ...more }
 }
 const yearList = [...new Set(tables.map((x) => x.year))].sort((a, b) => b - a)
 const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.year === year)) }))
@@ -437,11 +447,16 @@ for (const { year } of built) {
 // each year's update time moves only when its data does, so the nightly run publishes nothing on quiet days
 const outUrl = new URL('public/meta.json', root)
 const prev = existsSync(outUrl) ? readJson(outUrl).years : []
-const rebuilt = built.map(({ year, t, c, e, m }) => {
+const rebuilt = built.map(({ year, t, c, e, m, pm }) => {
   const old = prev.find((y) => y.year === year)
-  // Firestore not read: the pairings already published stay, while their tournaments and commanders are the same
-  const same = playedFailed && old?.m && JSON.stringify([old.t, old.c]) === JSON.stringify([t, c])
-  const out = { v: 1, year, updated: new Date().toISOString(), t, c, e, ...(m ? { m } : same ? { m: old.m } : {}) }
+  // Firestore not read: the matches already published stay, while their tournaments, commanders and entries are the same
+  const same = playedFailed && JSON.stringify([old?.t, old?.c]) === JSON.stringify([t, c])
+  const samePlayers = same && JSON.stringify(old.e.map((x) => x.slice(0, 2))) === JSON.stringify(e.map((x) => x.slice(0, 2)))
+  const out = {
+    v: 1, year, updated: new Date().toISOString(), t, c, e,
+    ...(m ? { m } : same && old.m ? { m: old.m } : {}),
+    ...(pm ? { pm } : samePlayers && old.pm ? { pm: old.pm } : {}),
+  }
   if (old && JSON.stringify({ ...old, updated: '' }) === JSON.stringify({ ...out, updated: '' })) out.updated = old.updated
   return out
 })

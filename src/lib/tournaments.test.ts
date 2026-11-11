@@ -235,6 +235,26 @@ describe('commanders against commanders', () => {
     ])
   })
 
+  it("keeps each played match with the players' rows, for the Elo, commander or not", async () => {
+    const { playerMatchesOf } = await import(/* @vite-ignore */ new URL('../../scripts/meta/pairings.mjs', import.meta.url).href)
+    const entryOf = new Map([['ada', 10], ['bea', 11], ['dan', 12]])
+    const m = (round: number, p1: string, p2: string | null, score?: number[]) => ({ round, table: 1, p1, p2, ...(score ? { score } : {}) })
+    expect(
+      playerMatchesOf(4, [
+        m(1, 'ada', 'bea', [2, 1, 0]),
+        m(1, 'dan', null, [2, 0, 0]), // the bye
+        m(2, 'bea', 'dan', [1, 1, 1]), // dan has no commander in the sheet: still a match
+        m(2, 'ada', 'zoe', [2, 0, 0]), // not in the sheet
+        m(3, 'ada', 'dan'), // no result
+        m(4, 'bea', 'ada', [0, 2]), // the top cut's final, a score without draws
+      ], entryOf),
+    ).toEqual([
+      [4, 10, 11, 2, 1, 0, 1],
+      [4, 11, 12, 1, 1, 1, 2],
+      [4, 11, 10, 0, 2, 0, 4],
+    ])
+  })
+
   it("adds up a commander's matches against each other one, from either side, mirrors left out", () => {
     const ds = {
       tournaments: [stage(1, { season: 's1' }), stage(2)],

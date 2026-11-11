@@ -9,8 +9,12 @@ dell'Elo definitivo si fanno dopo queste regole.
 
 - **Fogli dei tornei**: per ogni iscrizione piazzamento, vittorie, sconfitte, pareggi e bye, ma non contro chi si è
   giocato.
-- **Tornei giocati in Castra**: ogni match, con i due giocatori e il risultato (`tournaments/{id}/matches`, già letti
-  dal build del meta per i matchup tra comandanti).
+- **Tornei giocati in Castra**: ogni match, con i due giocatori e il risultato. Il build del meta li legge da
+  Firestore (`tournaments/{id}/matches`) dopo la pubblicazione sul foglio e li pubblica nel campo `pm` di
+  `meta-<anno>.json`: `[torneo, iscrizione, iscrizione, game vinti dal primo, dal secondo, pareggiati, turno]`, con le
+  iscrizioni del foglio (anche chi non ha il comandante). Il turno separa lo svizzero dalla top. Pubblici come la
+  pagina dal vivo del torneo.
+- Il foglio resta la base di tutto: i match sono un di più che rende l'Elo più preciso dove ci sono.
 - Nel 2026 contano tutti e due; dal 2027, se tutti i tornei passano da Castra, resteranno solo i match. Le regole
   sotto valgono comunque per tutti e due: i tornei scritti solo nel foglio potrebbero esserci sempre, e un torneo deve
   pesare uguale da qualunque parte arrivi.

@@ -240,7 +240,8 @@ scrivere codice. I mockup delle schermate sono su
 - Il meta notturno legge il foglio come oggi, senza doppi conteggi. In più `build-meta.mjs` legge i match dei
   tornei in app chiusi e pubblicati (o segnati come riportati) e li aggiunge al meta come abbinamenti tra comandanti,
   con i comandanti delle righe del foglio (`scripts/meta/pairings.mjs`): la pagina di ogni comandante mostra i suoi
-  match contro gli altri comandanti. Bye, match senza risultato e mirror restano fuori. Se Firestore non risponde
+  match contro gli altri comandanti. Bye, match senza risultato e mirror restano fuori. Gli stessi match, con i
+  giocatori (le loro righe del foglio), i game e il turno, vanno nel campo `pm` per l'Elo (`docs/elo.md`). Se Firestore non risponde
   restano gli abbinamenti già pubblicati.
 
 ## 9. Dati su Firestore
