@@ -164,7 +164,7 @@ if (opt.leghe) {
   })
   for (const x of rows.sort((a, b) => a.m - b.m)) {
     const flag = x.n >= 20 && Math.abs(x.m) >= 5 && Math.abs(x.m) >= 2 * x.se ? '  ← oltre la soglia' : ''
-    console.log(`  ${x.lg.padEnd(22)} ${((x.m >= 0 ? '+' : '') + fmt(x.m, 1)).padStart(6)} ±${fmt(x.se, 1).padEnd(4)} (${x.n} presenze)${flag}`)
+    console.log(`  ${x.lg.padEnd(22)} ${((x.m >= 0 ? '+' : '') + fmt(x.m, 1)).padStart(6)} ±${(x.n > 1 ? fmt(x.se, 1) : '—').padEnd(4)} (${x.n} ${x.n === 1 ? 'presenza' : 'presenze'})${flag}`)
   }
 } else if (opt.player) {
   const h = res.hist.get(opt.player)
