@@ -29,6 +29,14 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
 - **Chi arriva dopo gennaio** parte dal **25° percentile** dell'Elo di quel momento (l'Elo che ha un giocatore su
   quattro dal basso: nel 2026 da 938 a febbraio a 846 a novembre), sempre con ± 100. Partendo dalla base i nuovi
   andavano 11 punti percentuali sotto il previsto al primo torneo e regalavano punti agli abituali (sezione 6).
+- **Elo di lega**: ogni lega ha anche un suo correttivo, che impara da solo nei livelli (dove le leghe si incontrano):
+  dopo ogni livello, per ogni giocatore con una lega di casa (quella dove gioca più tappe), il correttivo della sua lega
+  si sposta di 4 × Σ peso × (risultato − atteso). Se i giocatori di una lega rendono nei livelli meno di quanto dice il
+  loro Elo, il correttivo scende. L'Elo che si vede è **un numero solo**: Elo del giocatore + correttivo della sua lega,
+  usato anche per tutti i risultati attesi. Chi gioca solo livelli non ha correttivo. Così si correggono i gruppi
+  chiusi (una lega con tante tappe tra gli stessi giocatori) senza decisioni a tavolino: provato sul 2026, prevede
+  meglio di ogni correzione decisa con una misura a giugno (sezione 6). A fine 2026: Savona −83, Genova −34, Roma −19,
+  Sanremo +78, Lega Online +60, Latina / Frosinone +55.
 - **Un anno alla volta**: il 1º gennaio tutti ripartono da **1000 ± 100** (1000 scelto perché sembra più "centrale":
   il numero di partenza è solo estetico, spostarlo sposta tutti allo stesso modo e non cambia la classifica). Ogni anno ha il suo Elo, come le
   classifiche. (Il Glicko classico parte da ± 350, ma con tutti che ripartono insieme le prime tappe spostano
@@ -149,15 +157,19 @@ il comando è in cima al file); i grafici sono su
     base, quasi uguale (65,9%, −6). Deciso il 25° percentile: classifica Romeo 1386, Crifo' 1277, Crisci 1233.
   - **Gruppi chiusi**: nei livelli i giocatori di Savona rendono 7 punti percentuali meno del previsto dal loro Elo
     (circa 50 punti di troppo), quelli di Sanremo 7 e di Latina / Frosinone 9 di più. Il Glicko frena chi gioca tanto
-    ma non corregge le differenze tra leghe. Campioni piccoli: si misura a ogni inizio di stagione (sezione 7).
+    ma non corregge le differenze tra leghe.
+  - **Correzioni dei gruppi chiusi**, provate come andrebbero davvero: misura a giugno sulla s1 (oltre la soglia solo
+    Sanremo, +9,6), correzione da giugno, giudizio sui confronti tra leghe diverse nei livelli della s2 (1.295 coppie):
+    nessuna 67,2% / 0,589; spostare l'Elo della lega 65,9% / 0,605 (Sanremo si era già riallineato da solo e finisce a
+    +6,1); livelli più pesanti per la lega 67,3% / 0,589; tappe meno pesanti 66,9% / 0,589; **Elo di lega 69,3% /
+    0,579**, e Savona in s2 da −10,6 a −5,7. Le correzioni decise con una misura arrivano in ritardo e correggono la
+    lega sbagliata; l'Elo di lega impara da solo. Velocità 2, 4 e 8 battono tutte le altre correzioni, 4 la migliore.
 
 ## 7. In sospeso
 
-- **Gruppi chiusi**: si misurano con `node scripts/elo/analisi.mjs --leghe` (con `--dal` / `--al` per una
-  stagione) all'inizio di ogni stagione: **a gennaio**, all'inizio della s1, sull'anno appena chiuso, e **a giugno**,
-  al passaggio alla s2, sulla s1 appena chiusa (le stagioni vanno da gennaio a maggio e da giugno a dicembre, 12
-  livelli ciascuna nel 2026). Una lega si corregge se, con almeno 20 presenze nei livelli, lo scarto è di almeno 5
-  punti percentuali e almeno il doppio del suo errore (sotto, può essere un caso). La correzione vale da lì in avanti,
-  mai sui numeri già visti. Nel 2026 completo: Savona −7,2 ± 3,6 (50 presenze) e Sanremo +6,2 ± 2,8 (69) sono al
-  limite. Il modo di correggere si decide alla prima lega oltre la soglia.
+- **Elo di lega a gennaio**: tenuto intero, azzerato o dimezzato? Sul 2026, con un finto capodanno il 1º giugno
+  (giocatori a 1000), tenerlo intero prevede meglio la s2 (leghe diverse nei livelli 68,3%, log-loss 0,593; a metà
+  67,2% / 0,598; azzerato 65,4% / 0,607). Il correttivo imparato solo sulla s1 e solo sulla s2 si somiglia (7 leghe su 9
+  con lo stesso segno, correlazione +0,52). Proposta: tenerlo intero; la prova vera a fine 2027.
+- `--leghe` resta come controllo a ogni inizio di stagione, non più per decidere correzioni.
 - Mockup di classifica, scheda del giocatore e confronto tra due giocatori.

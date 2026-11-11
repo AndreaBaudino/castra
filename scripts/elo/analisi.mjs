@@ -4,10 +4,11 @@
 // computes the Elo.
 //   node scripts/elo/analisi.mjs [anno] [--file meta-2026.json] [--base 1000] [--nuovi p25|base|900] [--start 100]
 //                                [--c 5] [--floor 40] [--top 20] [--player "Nome Cognome"]
-//                                [--leghe [--dal 2026-01-01] [--al 2026-05-31]]
+//                                [--leghe [--dal 2026-01-01] [--al 2026-05-31]] [--eta 4]
 // --nuovi: where a player first seen after January starts (the 25th percentile of the Elo at that moment, as decided,
 // the year's base, or a number); --leghe: how the players of each league do in the levels against their Elo (closed
-// groups), with the error of that figure; --dal / --al: the days measured by --leghe (default: the whole year).
+// groups), with the error of that figure; --dal / --al: the days measured by --leghe (default: the whole year);
+// --eta: how fast each league's own Elo learns from its players in the levels (0: no league Elo).
 // Without --file it reads meta-<anno>.json from the meta-data branch (git fetch origin meta-data first).
 
 import { execSync } from 'node:child_process'
@@ -22,6 +23,7 @@ const { values: opt, positionals } = parseArgs({
     nuovi: { type: 'string', default: 'p25' },
     leghe: { type: 'boolean' },
     dal: { type: 'string' },
+    eta: { type: 'string', default: '4' },
     al: { type: 'string' },
     start: { type: 'string', default: '100' },
     c: { type: 'string', default: '5' },
@@ -77,19 +79,22 @@ const order = [...entries.keys()]
  * higher (between equal points the tiebreakers decide, not the players), and how each league's players do in the
  * levels against what their Elo expected.
  */
-function glicko({ base, nuovi, start, c, floor }) {
+function glicko({ base, nuovi, start, c, floor, eta }) {
   const R = new Map(), RD = new Map(), last = new Map(), hist = new Map(), played = new Map(), leagues = new Map()
+  // each league's Elo, learnt in the levels: a player's Elo is theirs plus their league's, one number
+  const L = new Map()
+  const elo = (p) => R.get(p) + (L.get(home.get(p)) ?? 0)
   let loss = 0, right = 0, pairs = 0
   const newcomer = (d) => {
     if (d < `${year}-02-01` || nuovi === 'base') return base
     if (nuovi !== 'p25') return +nuovi
-    const v = [...R.values()].sort((a, b) => a - b)
+    const v = [...R.keys()].map(elo).sort((a, b) => a - b)
     return v.length ? v[Math.floor((v.length - 1) / 4)] : base
   }
   for (const ti of order) {
     const es = entries.get(ti), t = T[ti], d = day[ti], n = es.length, w = WEIGHT[t.k] ?? 1
     for (const [p] of es.map((x) => [x[1]])) {
-      if (!R.has(p)) R.set(p, newcomer(d)), RD.set(p, start)
+      if (!R.has(p)) R.set(p, newcomer(d) - (L.get(home.get(p)) ?? 0)), RD.set(p, start)
       if (last.has(p)) RD.set(p, Math.min(start, Math.sqrt(RD.get(p) ** 2 + c * c * days(last.get(p), d))))
     }
     if (d >= `${year}-03-01`)
@@ -98,7 +103,7 @@ function glicko({ base, nuovi, start, c, floor }) {
           const [a, b] = [es[i], es[j]]
           if (points(a) === points(b)) continue
           const gg = g(Math.hypot(RD.get(a[1]), RD.get(b[1])))
-          const pa = Math.min(1 - 1e-6, Math.max(1e-6, 1 / (1 + 10 ** ((-gg * (R.get(a[1]) - R.get(b[1]))) / 400))))
+          const pa = Math.min(1 - 1e-6, Math.max(1e-6, 1 / (1 + 10 ** ((-gg * (elo(a[1]) - elo(b[1]))) / 400))))
           const won = points(a) > points(b)
           loss -= Math.log(won ? pa : 1 - pa)
           right += pa === 0.5 ? 0.5 : (pa > 0.5) === won ? 1 : 0
@@ -124,7 +129,7 @@ function glicko({ base, nuovi, start, c, floor }) {
       let sum = 0, info = 0, off = 0, all = 0
       for (const [b, s, weight] of vs.get(a)) {
         const gb = g(RD.get(b[1]))
-        const e = 1 / (1 + 10 ** ((-gb * (R.get(a[1]) - R.get(b[1]))) / 400))
+        const e = 1 / (1 + 10 ** ((-gb * (elo(a[1]) - elo(b[1]))) / 400))
         sum += weight * gb * (s - e)
         info += weight * Q * Q * gb * gb * e * (1 - e)
         off += weight * (s - e)
@@ -133,27 +138,32 @@ function glicko({ base, nuovi, start, c, floor }) {
       const lg = home.get(a[1])
       if (level(t) && lg && all && d >= (opt.dal ?? '') && d <= (opt.al ?? '9')) (leagues.get(lg) ?? leagues.set(lg, []).get(lg)).push(off / all)
       const v = 1 / (1 / RD.get(a[1]) ** 2 + info)
-      return [a, R.get(a[1]) + Q * v * sum, Math.max(floor, Math.sqrt(v))]
+      return [a, R.get(a[1]) + Q * v * sum, Math.max(floor, Math.sqrt(v)), off]
     })
-    for (const [a, r, rd] of next) {
+    const before = new Map(es.map((a) => [a[1], elo(a[1])]))
+    // the league learns from how its players did in a level against their Elo
+    if (level(t)) for (const [a, , , off] of next) if (home.has(a[1])) L.set(home.get(a[1]), (L.get(home.get(a[1])) ?? 0) + eta * off)
+    for (const [a, r, rd] of next) R.set(a[1], r), RD.set(a[1], rd)
+    for (const [a, , rd] of next) {
       const p = a[1]
-      ;(hist.get(p) ?? hist.set(p, []).get(p)).push({ day: d, t, place: a[3], n, move: r - R.get(p), elo: r, rd })
-      R.set(p, r), RD.set(p, rd), last.set(p, d), played.set(p, (played.get(p) ?? 0) + games(a))
+      ;(hist.get(p) ?? hist.set(p, []).get(p)).push({ day: d, t, place: a[3], n, move: elo(p) - before.get(p), elo: elo(p), rd })
+      last.set(p, d), played.set(p, (played.get(p) ?? 0) + games(a))
     }
   }
-  return { R, RD, hist, played, leagues, right: right / pairs, loss: loss / pairs, pairs }
+  return { R: new Map([...R.keys()].map((p) => [p, elo(p)])), RD, L, hist, played, leagues, right: right / pairs, loss: loss / pairs, pairs }
 }
 
 const fmt = (n, d = 0) => n.toFixed(d).replace('.', ',')
 const name = (t) => (level(t) ? `${t.k === 'l1' ? 'Livello 1' : 'Livello 2'} · ${t.n}` : `${t.lg ?? t.n} ${t.s ?? ''} · tappa ${t.st}`)
-const res = glicko({ base: +opt.base, nuovi: opt.nuovi, start: +opt.start, c: +opt.c, floor: +opt.floor })
+const res = glicko({ base: +opt.base, nuovi: opt.nuovi, start: +opt.start, c: +opt.c, floor: +opt.floor, eta: +opt.eta })
 const all = [...res.R.keys()]
 const mean = all.reduce((s, p) => s + res.R.get(p), 0) / all.length
-console.log(`Elo ${year}, base ${opt.base}, nuovi da ${opt.nuovi}, Glicko da ±${opt.start}, pause ${opt.c}, minimo ±${opt.floor}: ${all.length} giocatori, media ${fmt(mean, 1)}`)
+console.log(`Elo ${year}, base ${opt.base}, nuovi da ${opt.nuovi}, Elo di lega ${opt.eta}, Glicko da ±${opt.start}, pause ${opt.c}, minimo ±${opt.floor}: ${all.length} giocatori, media ${fmt(mean, 1)}`)
 console.log(`Previsione da marzo: ${fmt(res.right * 100, 2)}% coppie azzeccate, log-loss ${fmt(res.loss, 4)} (${res.pairs} coppie)`)
 console.log(`Provvisori (margine sopra ±80): ${all.filter((p) => res.RD.get(p) > 80).length}\n`)
 
 if (opt.leghe) {
+  console.log('Elo di lega (compreso nell\'Elo di ogni giocatore):', [...res.L].sort((a, b) => a[1] - b[1]).filter((x) => Math.abs(x[1]) >= 1).map(([lg, v]) => `${lg} ${v >= 0 ? '+' : ''}${fmt(v)}`).join(', '))
   // each presence's result against expectations; the error of the mean tells whether a gap can be chance
   console.log(`Nei livelli ${opt.dal ?? ''}…${opt.al ?? ''}, rispetto al previsto dal loro Elo (punti percentuali), per lega di casa.`)
   console.log('Da correggere se lo scarto è di almeno 5 e almeno il doppio dell\'errore, con almeno 20 presenze (docs/elo.md):')
