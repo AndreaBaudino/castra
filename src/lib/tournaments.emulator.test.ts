@@ -188,8 +188,10 @@ describe.runIf(process.env.FIRESTORE_EMULATOR_HOST)('a tournament on the emulato
     await setFiled(id, true)
     expect((await read(id)).t.filed).toBe(true)
     expect(await unfiled()).not.toContain(id)
-    const { order } = results(s.t, s.players, s.matches)
-    expect(order.slice(0, 2)).toEqual([second, first]) // the winner of the final first
+    const { order, standings: swissSt } = results(s.t, s.players, s.matches)
+    // a league stage: the final is for the prizes, the places stay the Swiss ones (a level would put the winner first)
+    expect(order).toEqual(swissSt.map((x) => x.id))
+    expect(results({ ...s.t, kind: 'l1' }, s.players, s.matches).order.slice(0, 2)).toEqual([second, first])
     expect(order).toHaveLength(8)
 
     // someone who isn't a TO can't touch it

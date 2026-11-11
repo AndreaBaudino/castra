@@ -8,7 +8,7 @@ scrivere codice. I mockup delle schermate sono su
 ## 1. Cosa copre
 
 - **Livello 1, livello 2 e tappe di lega.** Non esistono altri tipi di torneo. La lega online resta fuori.
-- Il POTY probabilmente rientra tra i tornei di livello; se serve diventa un tipo in più nell'elenco dei fogli.
+- Il POTY è un torneo a sé (deciso a novembre 2026): quando servirà in app diventerà un tipo in più nell'elenco dei fogli.
 - Ogni torneo in app corrisponde a un foglio che esiste già: la scheda della tappa (`1`, `2`, …) nel foglio
   stagionale della lega, oppure il foglio del livello 1 o 2 registrato dagli admin in `sources`.
 
@@ -108,12 +108,11 @@ scrivere codice. I mockup delle schermate sono su
   con i punti fatti; se il drop arriva a turno in corso, il match di quel turno vale com'è segnato.
 - **Top cut**: la decide il TO (nessuna, 2, 4, 8); per le tappe di lega parte da "nessuna" (in 137 tappe del 2026 non
   se n'è mai giocata una). Seeding dallo svizzero (1º contro 8º…). Un match di top cut deve avere un vincitore.
-- **Top cut nel foglio** (in attesa di conferma del comitato): i match della top **si contano** nelle V/S/P e
-  **l'ordine finale è quello della top** (1º il vincitore, 2º il finalista, poi semifinalisti e quarti, ognuno
-  ordinato secondo lo svizzero). È quello che fanno i fogli 2026 dove la top è stata giocata e contata (MR Magic
-  Savona di gennaio, Savona di marzo, Genova L2, High Tide Genova, Albisola L2, MagicHammer di settembre e ottobre).
-  Da chiedere al comitato: Cogoleto (34 giocatori), Damnation Lucca (23) e Paupergeddon (22), dove non c'è traccia di
-  match in più.
+- **Top cut nel foglio** (deciso dal comitato, novembre 2026): conta solo nei **livelli 1 e 2**, che danno i punti
+  della top. Lì i match della top **si contano** nelle V/S/P e **l'ordine finale è quello della top** (1º il
+  vincitore, 2º il finalista, poi semifinalisti e quarti, ognuno ordinato secondo lo svizzero), come nei fogli 2026
+  dove è stata giocata. Nelle **tappe di lega** la top si può giocare per i premi, ma posizione e V/S/P restano
+  quelle dello svizzero, nel foglio e nella classifica finale dell'app; il tabellone resta visibile nell'app.
 
 ## 6. Svolgimento
 
@@ -322,6 +321,6 @@ torneo intero con le funzioni dell'app contro le stesse regole; `rules.yml` le p
 
 ## 11. In sospeso
 
-- Comitato: top cut nelle V/S/P e i tre fogli strani (Cogoleto, Damnation Lucca, Paupergeddon).
-- Proprietario: nuova versione dello script con il permesso di modifica dei fogli, e il suo URL in `PUBLISH_URL`.
-- POTY: se è un torneo a sé, un tipo in più.
+- POTY: un tipo di torneo in più, con le sue regole (da definire con il comitato quando servirà in app).
+- Fogli 2026 strani (Cogoleto, Damnation Lucca, Paupergeddon): top senza traccia di match in più; il meta li legge
+  come sono scritti.

@@ -86,7 +86,7 @@ describe('tournaments', () => {
     const m = (round: number, table: number, p1: string, p2: string, score: [number, number, number]): TableMatch => ({ round, table, p1, p2, score })
     const swiss = [m(1, 1, 'a', 'b', [2, 0, 0]), m(1, 2, 'c', 'd', [2, 0, 0]), m(2, 1, 'a', 'c', [2, 0, 0]), m(2, 2, 'b', 'd', [2, 0, 0])]
     const final = m(3, 1, 'a', 'c', [0, 2, 0])
-    const t = { status: 'cut', rounds: 2, cut: 2 } as Tournament
+    const t = { kind: 'l1', status: 'cut', rounds: 2, cut: 2 } as Tournament
     const r = results(t, players, [...swiss, final])
     expect(r.standings.map((s) => [s.id, s.points])).toEqual([['a', 6], ['b', 3], ['c', 3], ['d', 0]])
     expect(r.order).toEqual(['c', 'a', 'b', 'd'])
@@ -110,7 +110,7 @@ describe('tournaments', () => {
       m(2, 2, 'b', 'l', [2, 0, 0]),
       m(3, 1, 'a', 'b', [0, 2, 0]), // the final, a top 2
     ]
-    const rows = sheetRows({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches)
+    const rows = sheetRows({ kind: 'l1', status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches)
     // the final: b beat a, so b first and a second; then the others as in the Swiss, c (4 points) and l (0)
     expect(rows.names.split('\n')).toEqual([
       'Bruno\tSpider-Man 2099',
@@ -122,13 +122,13 @@ describe('tournaments', () => {
     expect(rows.results.split('\n')).toEqual(['2\t1\t0\tFALSE\t', '1\t1\t1\tFALSE\t', '1\t0\t1\tTRUE\t', '0\t2\t0\tFALSE\t'])
     // what the script writes: the same, with the decklists given
     const mox = 'https://moxfield.com/decks/Ab3'
-    expect(sheetData({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches, new Map([['a', mox]]))).toEqual([
+    expect(sheetData({ kind: 'l1', status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches, new Map([['a', mox]]))).toEqual([
       { name: 'Bruno', commander: 'Spider-Man 2099', w: 2, l: 1, d: 0, bye: false, list: '' },
       { name: 'Anna', commander: 'Kinnan, Bonder Prodigy', w: 1, l: 1, d: 1, bye: false, list: mox },
       { name: 'Carla', commander: 'Jeska, Thrice Reborn / Yoshimaru, Ever Faithful', w: 1, l: 0, d: 1, bye: true, list: '' },
       { name: 'Luca', commander: null, w: 0, l: 2, d: 0, bye: false, list: '' },
     ])
-    expect(sheetRows({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches, new Map([['a', mox]])).results.split('\n')[1]).toBe(
+    expect(sheetRows({ kind: 'l1', status: 'done', rounds: 2, cut: 2 } as Tournament, players, matches, new Map([['a', mox]])).results.split('\n')[1]).toBe(
       `1\t1\t1\tFALSE\t${mox}`,
     )
   })
@@ -194,13 +194,19 @@ describe('tournaments', () => {
     const m = (round: number, table: number, p1: string, p2: string, score: [number, number, number]): TableMatch => ({ round, table, p1, p2, score })
     const swiss = [m(1, 1, 'a', 'b', [2, 0, 0]), m(1, 2, 'c', 'd', [2, 0, 0]), m(2, 1, 'a', 'c', [2, 0, 0]), m(2, 2, 'b', 'd', [2, 0, 0])]
     const final = m(3, 1, 'a', 'c', [0, 2, 0])
-    const cut = ranking({ status: 'cut', rounds: 2, cut: 2 } as Tournament, players, [...swiss, final])
+    const cut = ranking({ kind: 'l1', status: 'cut', rounds: 2, cut: 2 } as Tournament, players, [...swiss, final])
     expect(cut.map((r) => [r.id, r.points, `${r.wins}-${r.losses}`])).toEqual([['a', 6, '2-0'], ['b', 3, '1-1'], ['c', 3, '1-1'], ['d', 0, '0-2']])
-    const done = ranking({ status: 'done', rounds: 2, cut: 2 } as Tournament, players, [...swiss, final])
+    const done = ranking({ kind: 'l1', status: 'done', rounds: 2, cut: 2 } as Tournament, players, [...swiss, final])
     // c won the final: first, with the final in its record and points (6, as in the sheet), and its Swiss OMW
     expect(done.map((r) => [r.id, r.points, `${r.wins}-${r.losses}`])).toEqual([['c', 6, '2-1'], ['a', 6, '2-1'], ['b', 3, '1-1'], ['d', 0, '0-2']])
     expect(done[0]).toMatchObject({ name: 'C', commander: 'X', dropped: false, omwp: cut.find((r) => r.id === 'c')!.omwp })
     expect(done[3].commander).toBeNull()
+    // a league stage: the top cut is for the prizes, places and records stay the Swiss ones, in the app and the sheet
+    const league = { kind: 'league', status: 'done', rounds: 2, cut: 2 } as Tournament
+    expect(ranking(league, players, [...swiss, final]).map((r) => [r.id, r.points, `${r.wins}-${r.losses}`])).toEqual(
+      cut.map((r) => [r.id, r.points, `${r.wins}-${r.losses}`]),
+    )
+    expect(sheetData(league, players, [...swiss, final]).map((r) => [r.name, r.w, r.l])).toEqual([['A', 2, 0], ['B', 1, 1], ['C', 1, 1], ['D', 0, 2]])
   })
 })
 

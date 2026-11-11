@@ -163,7 +163,8 @@ export const entrantsOf = (players: [string, Player][]): Entrant[] =>
 export function results(t: Tournament, players: [string, Player][], matches: TableMatch[]) {
   const cut = t.status === 'cut' || t.status === 'done' ? matches.filter((m) => m.round > t.rounds) : []
   const st: Standing[] = standings(entrantsOf(players), matches.filter((m) => !cut.includes(m)))
-  return { standings: st, order: finalOrder(st, cut) }
+  // only levels 1 and 2 give points for the top cut: a league stage keeps the Swiss places, its top is for the prizes
+  return { standings: st, order: isEvent(t.kind) ? finalOrder(st, cut) : st.map((s) => s.id) }
 }
 
 export interface RankRow {
@@ -181,12 +182,12 @@ export interface RankRow {
 
 /**
  * The standings as shown: during the Swiss rounds and the top cut the Swiss ones; once over the final order, with the
- * records and points the sheet will have (the top cut counted).
+ * records and points the sheet will have (the top cut counted only in levels 1 and 2).
  */
 export function ranking(t: Tournament, players: [string, Player][], matches: TableMatch[]): RankRow[] {
   const { standings: st, order } = results(t, players, matches)
   const swiss = new Map(st.map((s) => [s.id, s]))
-  const all = t.status === 'done' ? new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s])) : swiss
+  const all = t.status === 'done' && isEvent(t.kind) ? new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s])) : swiss
   const names = new Map(players)
   return (t.status === 'done' ? order : st.map((s) => s.id)).map((id) => {
     const s = swiss.get(id)!
@@ -210,12 +211,13 @@ export interface SheetRow {
 /**
  * What goes into the sheet's stage tab (or a level's "Classifica"), in the final order: name and commander (columns
  * B-C), wins, losses, draws, bye and decklist (E-I); the points (D) are a formula. Wins count the bye, as in the sheets;
- * losses the rounds a late entry missed; both the top cut.
+ * losses the rounds a late entry missed; both the top cut, in levels 1 and 2.
  */
 export function sheetData(t: Tournament, players: [string, Player][], matches: TableMatch[], lists = new Map<string, string>()): SheetRow[] {
-  const rec = new Map(standings(entrantsOf(players), matches).map((s) => [s.id, s]))
+  const { standings: st, order } = results(t, players, matches)
+  const rec = new Map((isEvent(t.kind) ? standings(entrantsOf(players), matches) : st).map((s) => [s.id, s]))
   const names = new Map(players)
-  return results(t, players, matches).order.map((id) => {
+  return order.map((id) => {
     const r = rec.get(id)!
     const p = names.get(id)!
     return { name: p.name, commander: p.commander, w: r.wins, l: r.losses, d: r.draws, bye: r.byes > 0, list: lists.get(id) ?? '' }
