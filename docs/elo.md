@@ -100,7 +100,8 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
 
 ## 6. Prove sui dati
 
-Sul meta 2026 (11/11/2026), calcolato a parte prima di scrivere codice; i grafici sono su
+Sul meta 2026 (11/11/2026), con `scripts/elo/analisi.mjs` (da togliere quando il build del meta calcolerà l'Elo:
+il comando è in cima al file); i grafici sono su
 [claude.ai](https://claude.ai/artifact/KdR76t4M195gXTfX3aqWzS) (privati).
 
 - **Previsione**: da marzo in poi, prima di ogni torneo e con i numeri di allora, chi tra due giocatori sarebbe
