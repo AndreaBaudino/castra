@@ -18,24 +18,50 @@ dell'Elo definitivo si fanno dopo queste regole.
 
 ## 2. Le regole
 
-- **Un anno alla volta**: il 1º gennaio tutti ripartono da **1500**. Ogni anno ha il suo Elo, come le classifiche.
-- **Peso del torneo**: tappa di lega ×1 (anche la lega online), livello 1 ×1,5, livello 2 ×2.
-- **Valore di una partita**: 32 × peso ÷ turni dello svizzero di quel torneo (una tappa da 4 turni: 8; un livello 1
-  da 5 turni: 9,6; un livello 2 da 6 turni: 10,7). Ogni partita giocata vale uguale, nel foglio e in Castra: chi gioca
-  più partite (la top) può muoversi di più, chi entra tardi o fa drop di meno.
-- **Quanto si guadagna**: valore × (risultato − risultato atteso). Il risultato vale 1 la vittoria, ½ il pareggio, 0
-  la sconfitta (il 2-1 come il 2-0). Il risultato atteso viene dalla differenza di Elo, come negli scacchi:
-  1 / (1 + 10^((Elo avversario − Elo mio) / 400)); con 100 punti di differenza il più forte vince 64 volte su 100.
-  Quindi conta contro chi: in una tappa (8 a partita), con 1600 contro 1400 si vince +1,9 e si perde −6,1; contro
-  1800 si vince +6,1 e si perde −1,9; alla pari ±4. Dal foglio vale lo stesso, ma rispetto a tutti gli iscritti.
-- Per tutte le partite di un torneo vale l'Elo che i giocatori avevano **prima del torneo**: il torneo si calcola
-  tutto insieme, poi si passa al successivo. L'Elo si aggiorna a torneo finito, quando è scritto nel foglio: lo
-  calcola il build notturno del meta, quindi si vede la notte dopo la pubblicazione (un torneo di Castra non ancora
-  pubblicato non conta).
-- **I punti passano di mano**: quello che uno guadagna, gli avversari lo perdono, nel foglio come in Castra. La media
-  di tutti resta 1500.
+L'Elo si calcola con il metodo **Glicko** (adattato al circuito, sezione 6): ogni giocatore ha due numeri, l'**Elo**
+e un **margine**, cioè quanto il sistema è sicuro di quell'Elo (1650 ± 60). Con il margine piccolo una partita sposta
+poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
+
+- **Un anno alla volta**: il 1º gennaio tutti ripartono da **1500 ± 100**. Ogni anno ha il suo Elo, come le
+  classifiche. (Il Glicko classico parte da ± 350, ma con tutti che ripartono insieme le prime tappe spostano
+  centinaia di punti e la classifica non si rimette più in ordine: sezione 6.)
+- **Il margine scende giocando** (ogni partita lo restringe, prima in fretta poi sempre più piano, fino a un minimo di
+  ± 40) e **risale con le pause**: prima di ogni torneo diventa √(margine² + 5² × giorni dall'ultimo torneo), al
+  massimo ± 100. Tre mesi fermo: da ± 55 a ± 73.
+- **Peso del torneo**: tappa di lega ×1 (anche la lega online), livello 1 ×1,5, livello 2 ×2. Una partita di un
+  livello 2 conta come due partite di una tappa. Ogni partita giocata conta, nel foglio come in Castra: chi gioca più
+  partite (la top) si muove di più, chi entra tardi o fa drop di meno.
+- **Contro chi**: il risultato atteso viene dalla differenza di Elo, come negli scacchi:
+  1 / (1 + 10^(−g × (Elo mio − Elo avversario) / 400)); con 100 punti di differenza il più forte vince 64 volte su
+  100. g (tra 0 e 1) abbassa un po' il peso degli avversari dal margine largo, perché non si sa bene quanto valgono:
+  g = 1 / √(1 + 3q² × margine dell'avversario² / π²), con q = ln 10 / 400.
+- **Quanto si guadagna** in un torneo, con le partite pesate (sezioni 3 e 4), tutte con i numeri di inizio torneo:
+  - informazione = Σ peso × q² × g² × atteso × (1 − atteso);
+  - nuovo margine = 1 / √(1 / margine² + informazione), non sotto ± 40;
+  - nuovo Elo = Elo + q × nuovo margine² × Σ peso × g × (risultato − atteso).
+
+  Il risultato vale 1 la vittoria, ½ il pareggio, 0 la sconfitta (il 2-1 come il 2-0). Esempio, una partita di una
+  tappa con 1600 ± 55 contro un avversario ± 60:
+
+  | Avversario | Probabilità di vincere | Vittoria | Sconfitta |
+  | --- | --- | --- | --- |
+  | 1400 | 76% | +4,1 | −12,7 |
+  | 1600 | 50% | +8,4 | −8,4 |
+  | 1800 | 24% | +12,7 | −4,1 |
+
+  Con ± 90 (chi gioca poco o torna da una pausa) gli stessi risultati valgono circa due volte e mezza: +21,5 / −21,5
+  alla pari. Battere uno forte rende, perdere con uno debole costa, come nell'Elo classico.
+- **Chi gioca tanto si muove piano** perché il sistema lo conosce già, senza regole sul numero di tappe: nella stagione
+  2 Crifo' (152 partite nell'anno, ± 53) si muove in media di 7,3 punti a tappa a Savona, Carzaniga (27 partite, ± 68)
+  di 14,8 nella stessa lega. Chi gioca poco non viene toccato, e il passato non cambia mai.
+- Per tutte le partite di un torneo valgono Elo e margine di **prima del torneo**: il torneo si calcola tutto insieme,
+  poi si passa al successivo. L'Elo si aggiorna a torneo finito, quando è scritto nel foglio: lo calcola il build
+  notturno del meta, quindi si vede la notte dopo la pubblicazione (un torneo di Castra non ancora pubblicato non
+  conta).
+- **I punti non passano di mano esattamente**: ognuno si muove con il suo margine, nel foglio come in Castra. Nel 2026
+  la media finisce a 1494 invece di 1500.
 - **Ordine dei tornei**: per data; una tappa senza data viene subito dopo la tappa precedente della sua lega (come in
-  `docs/liste-mazzi.md`).
+  `docs/liste-mazzi.md`), con 0 giorni di pausa.
 
 ### Cosa conta
 
@@ -49,48 +75,58 @@ dell'Elo definitivo si fanno dopo queste regole.
 
 ## 3. Tornei di Castra
 
-Ogni match dello svizzero, e della top nei livelli 1 e 2, sposta l'Elo dei due giocatori: valore × (risultato −
-atteso) a chi l'ha giocato, lo stesso con il segno opposto all'avversario. I turni dello svizzero sono quelli del
-torneo (`rounds`).
+Ogni match dello svizzero, e della top nei livelli 1 e 2, è una partita con il peso del torneo, contro l'avversario
+vero. Ognuno dei due la usa con il suo margine.
 
 ## 4. Tornei dal foglio
 
 Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altri iscritti** in base al piazzamento:
 "vince" contro chi è arrivato sotto, "perde" contro chi è arrivato sopra, pareggia con chi ha lo stesso piazzamento.
 
-- In ogni confronto tra due giocatori, il valore della partita si moltiplica per la **media delle partite giocate dai
-  due** (vittorie + sconfitte + pareggi, tolto il bye) e si divide per gli iscritti meno uno. Quello che uno guadagna,
-  l'altro lo perde.
-- Così il movimento di un giocatore in un torneo è circa valore × sue partite × (risultato − atteso), come in Castra,
-  e chi gioca la top si muove di più perché tutti i suoi confronti valgono di più.
-- **Turni dello svizzero**: il foglio non li scrive. Sono il numero di partite più frequente tra gli iscritti (bye
-  compreso): chi non ha fatto drop e non è entrato in top li ha giocati tutti. Nel 2026 torna in tutti i livelli,
-  anche nei 3 dove il TO ha fatto un numero di turni diverso da quello che danno gli iscritti; nei livelli con la top
-  gli 8 della top hanno le partite in più.
-- Perché la media: se ognuno si muovesse solo con le sue partite, chi entra in top (8 partite, e di solito guadagna)
-  guadagnerebbe più di quanto perde chi sta sotto (5 partite), e ogni livello con la top creerebbe punti dal nulla
-  (+913 nel 2026, la media a 1502). Con la media il totale resta zero, come in Castra.
+- Ogni confronto pesa: peso del torneo × **media delle partite giocate dai due** (vittorie + sconfitte + pareggi, tolto
+  il bye) ÷ (iscritti − 1). In tutto, per ogni giocatore, i confronti pesano circa quanto le sue partite, come in
+  Castra; chi gioca la top pesa di più perché tutti i suoi confronti valgono di più.
+- La media delle partite dei due (e non solo le proprie) tiene lo stesso peso al confronto visto da tutti e due i lati.
 
 ## 5. Dove si vede
 
 - **Pubblico**: una classifica Elo per tutti e l'Elo nella scheda di ogni giocatore.
-- In classifica si entra dalla **prima partecipazione**. Sotto le **10 partite** l'Elo è "provvisorio": compare con
-  l'etichetta e sta sotto gli altri, perché a inizio anno (e dal 2027, con i soli match) chi vince il primo torneo
-  salirebbe in cima dopo una sera.
+- In classifica si entra dalla **prima partecipazione**. Con il margine sopra **± 80** l'Elo è "provvisorio": compare
+  con l'etichetta e sta sotto gli altri (chi ha meno di 10 partite ha in media ± 85; a fine 2026 sarebbero 144
+  giocatori su 363).
+- Nella scheda del giocatore anche il margine, spiegato nella (i): "più giochi, più il tuo Elo è preciso e si muove
+  piano; dopo una pausa torna a muoversi di più".
 - Le schermate si decidono con i mockup, dopo queste regole.
 
 ## 6. Prove sui dati
 
-Sul meta 2026 (11/11/2026), calcolato a parte prima di scrivere codice:
+Sul meta 2026 (11/11/2026), calcolato a parte prima di scrivere codice; i grafici sono su
+[claude.ai](https://claude.ai/artifact/KdR76t4M195gXTfX3aqWzS) (privati).
 
-- 363 giocatori, media 1500 esatta, da 1355 a 1730. In cima Crifo' 1730 (152 partite), Romeo 1694, Borfiga 1633,
-  Chiarotto 1632, Degli Agostini 1624. 157 giocatori sotto le 10 partite; il migliore di loro ha 1531.
-- La tappa di Sanremo del 9/11, l'unica giocata in Castra, calcolata nei due modi partendo dallo stesso Elo, dà
-  movimenti simili (dal foglio / dai match): Romeo +8,9 / +10,6, Baudino +9,9 / +7,4, Crisci +4,8 / +7,1, Borfiga
-  −0,9 / −3,4, Palumbo −9,1 / −10,3. Le differenze sono quelle attese: con i match conta chi si è incontrato davvero
-  (Borfiga ha perso contro avversari più deboli), dal foglio tutti gli iscritti. Da ricontrollare con le prossime
-  tappe in Castra.
+- **Previsione**: da marzo in poi, prima di ogni torneo e con i numeri di allora, chi tra due giocatori sarebbe
+  arrivato sopra (12.506 coppie). Coppie azzeccate e log-loss (quanto il sistema era sicuro quando sbagliava, più
+  bassa è meglio):
+
+  | Sistema | Azzeccate | Log-loss |
+  | --- | --- | --- |
+  | Elo con valore fisso a partita (32 × peso ÷ turni) | 63,5% | 0,643 |
+  | lo stesso, con le tappe oltre l'8ª pesate (8 ÷ n)² | 63,4% | 0,644 |
+  | lo stesso, tre volte più veloce (il migliore degli Elo provati) | 63,9% | 0,628 |
+  | Glicko classico (± 350) | 64,6% | 0,648 |
+  | **Glicko adattato (± 100, pause 5)** | **64,3%** | **0,625** |
+
+  Il vantaggio non dipende dalla velocità (un Elo più veloce migliora ma oltre ×3 peggiora di nuovo) né da una scelta
+  fortunata: partenza ± 100 o ± 120 e pause da 3 a 8 danno tutte tra 0,624 e 0,627. Le impostazioni sono scelte sugli
+  stessi dati, quindi il vantaggio vero potrebbe essere un po' più piccolo: da verificare sui match di Castra.
+- **Classifica** (Glicko adattato): 363 giocatori, da 1223 a 1904, media 1494. Romeo 1904 ± 61, Crifo' 1809 ± 53,
+  Chiarotto 1765, Crisci 1762, Sacco 1761, Russo 1756, Borfiga 1738. I livelli pesano più che con l'Elo a valore fisso
+  (Crifo': +188 dalle leghe e +121 dai livelli, prima +180 e +50).
+- **Foglio e Castra**: la tappa di Sanremo del 9/11, l'unica giocata in Castra, calcolata nei due modi partendo dagli
+  stessi numeri, dà movimenti simili (dal foglio / dai match): Romeo +14,4 / +18,6, Baudino +26,2 / +20,0, Crisci
+  +4,9 / +10,0, Borfiga −3,7 / −8,1, Marossa −31,0 / −22,3, Palumbo −16,9 / −21,8. Con i match conta chi si è
+  incontrato davvero, dal foglio tutti gli iscritti. Da ricontrollare con le prossime tappe in Castra.
 
 ## 7. In sospeso
 
+- Ricentrare la media a 1500 a fine calcolo (oggi 1494)?
 - Mockup di classifica, scheda del giocatore e confronto tra due giocatori.
