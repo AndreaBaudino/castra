@@ -26,6 +26,9 @@ L'Elo si calcola con il metodo **Glicko** (adattato al circuito, sezione 6): ogn
 e un **margine**, cioè quanto il sistema è sicuro di quell'Elo (1150 ± 60). Con il margine piccolo una partita sposta
 poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
 
+- **Chi arriva dopo gennaio** parte dal **25° percentile** dell'Elo di quel momento (l'Elo che ha un giocatore su
+  quattro dal basso: nel 2026 da 938 a febbraio a 846 a novembre), sempre con ± 100. Partendo dalla base i nuovi
+  andavano 11 punti percentuali sotto il previsto al primo torneo e regalavano punti agli abituali (sezione 6).
 - **Un anno alla volta**: il 1º gennaio tutti ripartono da **1000 ± 100** (1000 scelto perché sembra più "centrale":
   il numero di partenza è solo estetico, spostarlo sposta tutti allo stesso modo e non cambia la classifica). Ogni anno ha il suo Elo, come le
   classifiche. (Il Glicko classico parte da ± 350, ma con tutti che ripartono insieme le prime tappe spostano
@@ -132,7 +135,8 @@ il comando è in cima al file); i grafici sono su
   +4,9 / +10,0, Borfiga −3,7 / −8,1, Marossa −31,0 / −22,3, Palumbo −16,9 / −21,8. Con i match conta chi si è
   incontrato davvero, dal foglio tutti gli iscritti. Da ricontrollare con le prossime tappe in Castra.
 
-- **Revisione dell'11/11** (`--leghe` e `--nuovi` dello script). La previsione conta da qui solo le coppie con punti
+- **Revisione dell'11/11** (`--leghe` e `--nuovi` dello script; i numeri sopra sono con la partenza dei nuovi dalla
+  base, prima di decidere il 25° percentile). La previsione conta da qui solo le coppie con punti
   diversi (tra pari punti decidono gli spareggi): 65,6% sul 2026.
   - Pari punti trattati come pareggio invece dell'ordine degli spareggi: nessun miglioramento (65,7%, log-loss
     peggiore). Resta il piazzamento.
@@ -142,14 +146,18 @@ il comando è in cima al file); i grafici sono su
   - **I nuovi partono troppo alti**: chi arriva dopo gennaio, al primo torneo, va 11 punti percentuali sotto il
     previsto (dal secondo è in linea) e regala punti ai giocatori abituali. Partendo dal 25° percentile dell'Elo del
     momento lo scarto scende a −4 e la previsione migliora (66,1%, log-loss 0,6088); da un numero fisso 100 sotto la
-    base, quasi uguale (65,9%, −6). Da decidere (sezione 7).
+    base, quasi uguale (65,9%, −6). Deciso il 25° percentile: classifica Romeo 1386, Crifo' 1277, Crisci 1233.
   - **Gruppi chiusi**: nei livelli i giocatori di Savona rendono 7 punti percentuali meno del previsto dal loro Elo
     (circa 50 punti di troppo), quelli di Sanremo 7 e di Latina / Frosinone 9 di più. Il Glicko frena chi gioca tanto
-    ma non corregge le differenze tra leghe. Campioni piccoli (20-104 presenze): si rimisura (sezione 7).
+    ma non corregge le differenze tra leghe. Campioni piccoli: si misura a ogni inizio di stagione (sezione 7).
 
 ## 7. In sospeso
 
-- Partenza di chi arriva dopo gennaio: 25° percentile dell'Elo del momento, o un numero fisso (900)?
-- Gruppi chiusi: rimisurare con `--leghe` a fine stagione e, se una lega resta oltre ±5 punti percentuali con almeno
-  80 presenze nei livelli, decidere una correzione.
+- **Gruppi chiusi**: si misurano con `node scripts/elo/analisi.mjs --leghe` (con `--dal` / `--al` per una
+  stagione) all'inizio di ogni stagione: **a gennaio**, all'inizio della s1, sull'anno appena chiuso, e **a giugno**,
+  al passaggio alla s2, sulla s1 appena chiusa (le stagioni vanno da gennaio a maggio e da giugno a dicembre, 12
+  livelli ciascuna nel 2026). Una lega si corregge se, con almeno 20 presenze nei livelli, lo scarto è di almeno 5
+  punti percentuali e almeno il doppio del suo errore (sotto, può essere un caso). La correzione vale da lì in avanti,
+  mai sui numeri già visti. Nel 2026 completo: Savona −7,2 ± 3,6 (50 presenze) e Sanremo +6,2 ± 2,8 (69) sono al
+  limite. Il modo di correggere si decide alla prima lega oltre la soglia.
 - Mockup di classifica, scheda del giocatore e confronto tra due giocatori.
