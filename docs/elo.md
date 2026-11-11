@@ -19,15 +19,19 @@ dell'Elo definitivo si fanno dopo queste regole.
 ## 2. Le regole
 
 - **Un anno alla volta**: il 1º gennaio tutti ripartono da **1500**. Ogni anno ha il suo Elo, come le classifiche.
-- **Peso del torneo**: tappa di lega ×1, livello 1 ×1,5, livello 2 ×2.
+- **Peso del torneo**: tappa di lega ×1 (anche la lega online), livello 1 ×1,5, livello 2 ×2.
 - **Valore di una partita**: 32 × peso ÷ turni dello svizzero di quel torneo (una tappa da 4 turni: 8; un livello 1
   da 5 turni: 9,6; un livello 2 da 6 turni: 10,7). Ogni partita giocata vale uguale, nel foglio e in Castra: chi gioca
   più partite (la top) può muoversi di più, chi entra tardi o fa drop di meno.
 - **Quanto si guadagna**: valore × (risultato − risultato atteso). Il risultato vale 1 la vittoria, ½ il pareggio, 0
   la sconfitta (il 2-1 come il 2-0). Il risultato atteso viene dalla differenza di Elo, come negli scacchi:
   1 / (1 + 10^((Elo avversario − Elo mio) / 400)); con 100 punti di differenza il più forte vince 64 volte su 100.
+  Quindi conta contro chi: in una tappa (8 a partita), con 1600 contro 1400 si vince +1,9 e si perde −6,1; contro
+  1800 si vince +6,1 e si perde −1,9; alla pari ±4. Dal foglio vale lo stesso, ma rispetto a tutti gli iscritti.
 - Per tutte le partite di un torneo vale l'Elo che i giocatori avevano **prima del torneo**: il torneo si calcola
-  tutto insieme, poi si passa al successivo.
+  tutto insieme, poi si passa al successivo. L'Elo si aggiorna a torneo finito, quando è scritto nel foglio: lo
+  calcola il build notturno del meta, quindi si vede la notte dopo la pubblicazione (un torneo di Castra non ancora
+  pubblicato non conta).
 - **I punti passano di mano**: quello che uno guadagna, gli avversari lo perdono, nel foglio come in Castra. La media
   di tutti resta 1500.
 - **Ordine dei tornei**: per data; una tappa senza data viene subito dopo la tappa precedente della sua lega (come in
@@ -89,5 +93,4 @@ Sul meta 2026 (11/11/2026), calcolato a parte prima di scrivere codice:
 
 ## 7. In sospeso
 
-- Lega online: conta, e con che peso?
 - Mockup di classifica, scheda del giocatore e confronto tra due giocatori.
