@@ -4,6 +4,9 @@
  * list; any other entry of a player with a list for the same commander takes that player's latest one, but a list read
  * later (`taken` of the list) never replaces the one an entry played before that day already took. Returns, for
  * each entry, [list index, 1 when taken by extension] or null, and the archive's entries no longer found (orphans).
+ * An entry whose tournament changed id (a level's date corrected, a league renamed) is found again by player, link and
+ * commander among the tournaments the archive doesn't know; with more than one, a league's stage by its number, then
+ * the one played by the day the list was read.
  * Only the year the archive was taken in: a list of that year says nothing about the next one's decks.
  * `t`, `c`, `e` are the year's tournaments, commanders and entries as in meta.json; `key` is playerKey.
  */
@@ -14,22 +17,40 @@ export function assignLists(archive, year, t, c, e, key) {
   const orphans = []
   const own = new Map() // player key|commander → { day the list was read → [list, latest tournament rank] }
   const [rank, day] = ranks(t)
+  const direct = (li, i) => {
+    const l = archive.lists[li]
+    out[i] = [li, 0]
+    const k = `${key(e[i][1])}|${l.commander}`
+    const m = own.get(k) ?? own.set(k, {}).get(k)
+    const b = l.taken ?? archive.taken
+    if (!m[b] || rank[e[i][0]] > m[b][1]) m[b] = [li, rank[e[i][0]]]
+  }
+  const lost = []
   archive.lists.forEach((l, li) => {
     for (const [tid, player] of l.entries) {
       const i = at.get(`${tid}|${key(player)}`)
-      const x = e[i]
-      if (i == null || c[x[2]]?.n !== l.commander) {
-        orphans.push(`${tid} ${player}: ${l.link}`)
-        continue
-      }
-      out[i] = [li, 0]
-      const k = `${key(player)}|${l.commander}`
-      const r = rank[x[0]]
-      const m = own.get(k) ?? own.set(k, {}).get(k)
-      const b = l.taken ?? archive.taken
-      if (!m[b] || r > m[b][1]) m[b] = [li, r]
+      if (i == null) lost.push([li, tid, player])
+      else if (c[e[i][2]]?.n !== l.commander) orphans.push(`${tid} ${player}: ${l.link}`)
+      else direct(li, i)
     }
   })
+  // the lost ones, once every entry still found has its list
+  const known = new Set(t.map((x) => x.id))
+  const alive = new Set(archive.lists.flatMap((l) => l.entries.map(([tid]) => tid)).filter((tid) => known.has(tid)))
+  for (const [li, tid, player] of lost) {
+    const l = archive.lists[li]
+    let fits = []
+    e.forEach((x, i) => {
+      if (out[i] || alive.has(t[x[0]].id) || !x[1] || key(x[1]) !== key(player)) return
+      if (c[x[2]]?.n === l.commander && deckId(x[8]) === deckId(l.link)) fits.push(i)
+    })
+    // the same link at several tournaments: a league's stage with the same number, then one played by the day read
+    const stage = /^s\d+-.+-(\d+)$/.exec(tid)?.[1]
+    if (fits.length > 1 && stage) fits = fits.filter((i) => t[e[i][0]].st === +stage)
+    if (fits.length > 1) fits = fits.filter((i) => day[e[i][0]] <= (l.taken ?? archive.taken))
+    if (fits.length === 1) direct(li, fits[0])
+    else orphans.push(`${tid} ${player}: ${l.link}`)
+  }
   e.forEach((x, i) => {
     const m = !out[i] && x[1] && x[2] >= 0 && own.get(`${key(x[1])}|${c[x[2]].n}`)
     const mine = m && latest(m, day[x[0]])
@@ -37,6 +58,9 @@ export function assignLists(archive, year, t, c, e, key) {
   })
   return { lists: out, orphans }
 }
+
+// the deck's id in a Moxfield link, also when the sheet has it pasted twice in one cell
+const deckId = (link) => link?.match(/moxfield\.com\/decks\/([\w-]+?)(?=https?:|[^\w-]|$)/)?.[1] ?? link
 
 // the latest list known when a tournament played on `d` was first given one: the lists read later don't replace it
 function latest(m, d) {

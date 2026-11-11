@@ -143,8 +143,12 @@ lista.
   torneo vale con la versione di quel giorno.
 - L'estensione presume che il giocatore abbia portato lo stesso mazzo.
 - Il campione pesa di più su chi pubblica le liste e su alcuni negozi (Savona, Cogoleto).
-- Il collegamento usa id del torneo e nome del giocatore (dopo le correzioni dei nomi). Se un foglio cambia data o un
-  nome viene corretto, il collegamento resta orfano: il build lo deve segnalare nello stato dell'area admin.
+- Il collegamento usa id del torneo e nome del giocatore (dopo le correzioni dei nomi). L'id di un livello contiene la
+  data e quello di una tappa il nome della lega: se cambiano, l'iscrizione si ritrova (dall'11/11/2026) per giocatore,
+  link Moxfield (l'id del mazzo, anche se nella cella è incollato due volte) e comandante, tra i tornei che l'archivio
+  non conosce. Se ce n'è più di uno vale, per una tappa, quella con lo stesso numero, poi quello giocato entro il
+  giorno della lettura; se resta più di uno, o nessuno, il collegamento è orfano e il build lo segnala nello stato
+  dell'area admin. Una correzione del nome del giocatore o un link cambiato nel foglio lasciano ancora orfani.
 
 ## 7. Validazione
 

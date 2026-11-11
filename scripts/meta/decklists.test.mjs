@@ -69,6 +69,27 @@ describe('assignLists', () => {
     expect(orphans).toEqual(['l1-2026-01-30-cogoleto Nessuno: https://moxfield.com/decks/new'])
   })
 
+  it('finds again the entries of a tournament whose id changed, by player, link and commander', () => {
+    // Cogoleto's date corrected in the sheet: 9/1 → 10/1, a new id
+    const moved = t.map((x, i) => (i === 0 ? { ...x, id: 'l1-2026-01-10-cogoleto', d: '2026-01-10' } : x))
+    const again = assignLists(archive, 2026, moved, c, e, playerKey)
+    expect(again.lists).toEqual(lists)
+    expect(again.orphans).toEqual(orphans)
+    // the same link at two tournaments the archive doesn't know: no way to tell which one, still an orphan
+    const twice = [...e, row(4, 'Lorenzo Arzenton', 2, TIVIT)]
+    expect(assignLists(archive, 2026, moved, c, twice, playerKey).orphans).toContain(`l1-2026-01-09-cogoleto Lorenzo Arzenton: ${TIVIT}`)
+    // ...unless one of them was played after the list was read (Savona, in December)
+    const after = [...e, row(5, 'Lorenzo Arzenton', 2, TIVIT)]
+    expect(assignLists(archive, 2026, moved, c, after, playerKey).lists[3]).toEqual([1, 0])
+    // a date corrected to after the day the lists were read (it was wrong): still the only one with that link
+    const later = moved.map((x, i) => (i === 0 ? { ...x, id: 'l1-2026-12-01-cogoleto', d: '2026-12-01' } : x))
+    expect(assignLists(archive, 2026, later, c, e, playerKey).lists[3]).toEqual([1, 0])
+    // a renamed league: the same link at two of its stages, the stage's number tells which
+    const renamed = moved.map((x) => (x.lg === 'Sanremo' ? { ...x, id: x.id.replace('sanremo', 'sanremo-centro') } : x))
+    const stages = [...e, row(2, 'Lorenzo Misuri', 0, NEW)]
+    expect(assignLists(archive, 2026, renamed, c, stages, playerKey).lists[5]).toEqual([2, 0])
+  })
+
   it('gives nothing to another year', () => {
     expect(assignLists(archive, 2027, t, c, e, playerKey).lists.every((x) => x === null)).toBe(true)
   })
