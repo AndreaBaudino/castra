@@ -37,6 +37,11 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
   chiusi (una lega con tante tappe tra gli stessi giocatori) senza decisioni a tavolino: provato sul 2026, prevede
   meglio di ogni correzione decisa con una misura a giugno (sezione 6). A fine 2026: Savona −83, Genova −34, Roma −19,
   Sanremo +78, Lega Online +60, Latina / Frosinone +55.
+- **A gennaio l'Elo di lega resta intero** (ripartono i giocatori, non le leghe): con i giocatori a 1000 è l'unica
+  memoria di quanto vale una lega. Sul 2026, con un finto capodanno il 1º giugno, tenerlo intero prevede meglio la s2
+  (leghe diverse nei livelli 68,3%, log-loss 0,593; a metà 67,2% / 0,598; azzerato 65,4% / 0,607); il correttivo
+  imparato solo sulla s1 e solo sulla s2 si somiglia (7 leghe su 9 con lo stesso segno, correlazione +0,52). Continua
+  a imparare, quindi una lega che cambia si riallinea da sola. La prova vera a fine 2027.
 - **Un anno alla volta**: il 1º gennaio tutti ripartono da **1000 ± 100** (1000 scelto perché sembra più "centrale":
   il numero di partenza è solo estetico, spostarlo sposta tutti allo stesso modo e non cambia la classifica). Ogni anno ha il suo Elo, come le
   classifiche. (Il Glicko classico parte da ± 350, ma con tutti che ripartono insieme le prime tappe spostano
@@ -143,7 +148,7 @@ il comando è in cima al file); i grafici sono su
   +4,9 / +10,0, Borfiga −3,7 / −8,1, Marossa −31,0 / −22,3, Palumbo −16,9 / −21,8. Con i match conta chi si è
   incontrato davvero, dal foglio tutti gli iscritti. Da ricontrollare con le prossime tappe in Castra.
 
-- **Revisione dell'11/11** (`--leghe` e `--nuovi` dello script; i numeri sopra sono con la partenza dei nuovi dalla
+- **Revisione dell'11/11** (con lo script; i numeri sopra sono con la partenza dei nuovi dalla
   base, prima di decidere il 25° percentile). La previsione conta da qui solo le coppie con punti
   diversi (tra pari punti decidono gli spareggi): 65,6% sul 2026.
   - Pari punti trattati come pareggio invece dell'ordine degli spareggi: nessun miglioramento (65,7%, log-loss
@@ -167,9 +172,4 @@ il comando è in cima al file); i grafici sono su
 
 ## 7. In sospeso
 
-- **Elo di lega a gennaio**: tenuto intero, azzerato o dimezzato? Sul 2026, con un finto capodanno il 1º giugno
-  (giocatori a 1000), tenerlo intero prevede meglio la s2 (leghe diverse nei livelli 68,3%, log-loss 0,593; a metà
-  67,2% / 0,598; azzerato 65,4% / 0,607). Il correttivo imparato solo sulla s1 e solo sulla s2 si somiglia (7 leghe su 9
-  con lo stesso segno, correlazione +0,52). Proposta: tenerlo intero; la prova vera a fine 2027.
-- `--leghe` resta come controllo a ogni inizio di stagione, non più per decidere correzioni.
 - Mockup di classifica, scheda del giocatore e confronto tra due giocatori.
