@@ -16,6 +16,7 @@ import { aliasLookup, commanderKey, loadAliases, playerKey } from './meta/aliase
 import { firestoreDocs } from './meta/firestore.mjs'
 import { assignLists, cardName, givePhotos } from './meta/decklists.mjs'
 import { pairingsOf, playerMatchesOf } from './meta/pairings.mjs'
+import { computeElo } from './meta/elo.mjs'
 
 const dir = new URL('./meta/', import.meta.url)
 const root = new URL('../', import.meta.url)
@@ -457,6 +458,8 @@ const rebuilt = built.map(({ year, t, c, e, m, pm }) => {
     ...(m ? { m } : same && old.m ? { m: old.m } : {}),
     ...(pm ? { pm } : samePlayers && old.pm ? { pm: old.pm } : {}),
   }
+  // the players' Elo (docs/elo.md), from the year as published, matches included
+  out.elo = computeElo(out)
   if (old && JSON.stringify({ ...old, updated: '' }) === JSON.stringify({ ...out, updated: '' })) out.updated = old.updated
   return out
 })
