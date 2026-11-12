@@ -3,7 +3,7 @@
 Un numero che dice quanto è forte un giocatore del circuito, indipendentemente da quanti tornei gioca (la classifica a
 punti premia anche la presenza). Deciso con il proprietario a novembre 2026, prima di scrivere codice; i primi mockup,
 con due idee a confronto, sono su [claude.ai](https://claude.ai/artifact/43dyDSrGXUom4xLkPcyxkH) (privati). I mockup
-dell'Elo definitivo si fanno dopo queste regole.
+dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/MbebbJCKsDawjSAMYpTzAY) (privati).
 
 ## 1. Da dove vengono i dati
 
@@ -124,9 +124,19 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
 - In classifica si entra dalla **prima partecipazione**. Con il margine sopra **± 80** l'Elo è "provvisorio": compare
   con l'etichetta e sta sotto gli altri (chi ha meno di 10 partite ha in media ± 85; a fine 2026 sarebbero 144
   giocatori su 363).
-- Nella scheda del giocatore anche il margine, spiegato nella (i): "più giochi, più il tuo Elo è preciso e si muove
-  piano; dopo una pausa torna a muoversi di più".
-- Le schermate si decidono con i mockup, dopo queste regole.
+- **Classifiche**: una voce a sé, `CLASSIFICA · ELO · EVENTI · LEGHE · RECORD`, con i filtri di lega e dei seguiti.
+  Ogni riga: posizione, nome, lega, partite, Elo e quanto è cambiato in 30 giorni; sotto i provvisori, con
+  l'etichetta; in fondo la propria riga. Il link "Come funziona l'Elo" apre la (i).
+- **Scheda del giocatore** (Circuito): Elo, cambio in 30 giorni, posizione, partite, margine, grafico dell'anno (un
+  punto per torneo) e i tornei con lo spostamento e l'Elo dopo. Un torneo di Castra si apre sulle sue partite, con
+  l'Elo dell'avversario e quanto ha reso ognuna. Quando arriva lo spostamento della lega, la riga lo mostra a parte:
+  "torneo +22,0 · lega −14,4".
+- **(i) Come funziona l'Elo**: partenza, contro chi, tornei e pesi, margine ("più giochi, più il tuo Elo diventa
+  preciso; ogni mese senza tornei torna a muoversi un po' di più"; sopra ± 80 provvisorio), la lega (arriva al torneo
+  successivo).
+- **Testa a testa** (pulsante Confronta della scheda, `#meta/c~a~b`): "Se si incontrassero adesso", la probabilità di
+  vincere un match e quanto guadagna o perde ognuno per una partita di una tappa; la riga Elo sopra quelle che ci sono
+  già. Mai negli abbinamenti dei tornei.
 
 ## 6. Prove sui dati
 
@@ -181,4 +191,5 @@ il comando è in cima al file); i grafici sono su
 
 ## 7. In sospeso
 
-- Mockup di classifica, scheda del giocatore e confronto tra due giocatori.
+- Niente sulle regole e sulle schermate. Da fare: il calcolo nel build del meta e le schermate nell'app, poi togliere
+  `scripts/elo/analisi.mjs`.
