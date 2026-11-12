@@ -33,9 +33,10 @@ export function tournamentDays(year, t) {
 /**
  * The year's Elo, from its raw meta (`year`, `t`, `e`, `pm`). For each entry of `e` (null if the tournament doesn't
  * count): [Elo used in the tournament, Elo after, the tournament's move, the league's move arriving, the pause's loss,
- * margin after]; for each match of `pm`: the moves of the two players.
+ * margin after]; for each match of `pm`: the moves of the two players; each league's own Elo at the end (`l`), which
+ * goes on whole the next year (`leagues`: the previous year's).
  */
-export function computeElo({ year, t: T, e: E, pm = [] }) {
+export function computeElo({ year, t: T, e: E, pm = [] }, leagues = {}) {
   const day = tournamentDays(year, T)
   const entries = new Map()
   E.forEach((x, i) => x[1] && (entries.get(x[0]) ?? entries.set(x[0], []).get(x[0])).push(i))
@@ -67,13 +68,12 @@ export function computeElo({ year, t: T, e: E, pm = [] }) {
   // each league's Elo, learnt in the levels: a player's Elo is theirs plus their league's, one number. Each player keeps
   // the league's value of their last tournament (Lp), so their Elo moves only when they play; the tournament itself
   // uses the current one
-  const L = new Map(), Lp = new Map()
+  const L = new Map(Object.entries(leagues)), Lp = new Map()
   const lg = (p) => L.get(home.get(p)) ?? 0
   const elo = (p) => R.get(p) + lg(p)
   const shown = (p) => R.get(p) + (Lp.get(p) ?? 0)
   // who arrives after January starts where one player in four from the bottom is
-  const newcomer = (d) => {
-    if (d < `${year}-02-01`) return BASE
+  const newcomer = () => {
     const v = [...R.keys()].map(shown).sort((a, b) => a - b)
     return v.length ? v[Math.floor((v.length - 1) / 4)] : BASE
   }
@@ -86,7 +86,8 @@ export function computeElo({ year, t: T, e: E, pm = [] }) {
     const lpBefore = new Map(), lost = new Map()
     for (const i of es) {
       const p = E[i][1]
-      if (!R.has(p)) R.set(p, newcomer(d) - lg(p)), RD.set(p, START), Lp.set(p, lg(p))
+      // in January everyone starts from BASE plus their league's Elo; later, from the 25th percentile of who plays
+      if (!R.has(p)) R.set(p, d < `${year}-02-01` ? BASE : newcomer() - lg(p)), RD.set(p, START), Lp.set(p, lg(p))
       if (last.has(p)) {
         RD.set(p, Math.min(START, Math.sqrt(RD.get(p) ** 2 + PAUSE * PAUSE * days(last.get(p), d))))
         lost.set(p, idle(shown(p), last.get(p), d))
@@ -138,5 +139,5 @@ export function computeElo({ year, t: T, e: E, pm = [] }) {
       out[a] = [r1(start.get(a)), r1(shown(p)), r1(move), r1(Lp.get(p) - lpBefore.get(p)), r1(lost.get(p) ?? 0), Math.round(rd)]
     }
   }
-  return { d: day, e: out, ...(pm.length ? { pm: pmOut } : {}) }
+  return { d: day, e: out, ...(pm.length ? { pm: pmOut } : {}), l: Object.fromEntries([...L].map(([k, v]) => [k, r1(v)])) }
 }

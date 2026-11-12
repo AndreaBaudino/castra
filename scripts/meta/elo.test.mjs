@@ -88,3 +88,13 @@ describe('Elo', () => {
     expect(tournamentDays(2026, [stage(1, '2026-01-10'), stage(2), stage(1)])).toEqual(['2026-01-10', '2026-01-10', '2026-01-01'])
   })
 })
+
+describe("leagues' Elo", () => {
+  it('goes on whole into the next year', () => {
+    const t = [stage(1, '2026-01-10')]
+    const r = computeElo({ year: 2026, t, e: four(0, ['A', 'B', 'C', 'D']) }, { Sanremo: 50 })
+    expect(r.l.Sanremo).toBe(50)
+    // a player of Sanremo starts at 1000 plus the league
+    expect(r.e[0][0]).toBe(BASE + 50)
+  })
+})

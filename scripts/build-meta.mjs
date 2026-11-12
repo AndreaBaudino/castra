@@ -458,15 +458,24 @@ const rebuilt = built.map(({ year, t, c, e, m, pm }) => {
     ...(m ? { m } : same && old.m ? { m: old.m } : {}),
     ...(pm ? { pm } : samePlayers && old.pm ? { pm: old.pm } : {}),
   }
-  // the players' Elo (docs/elo.md), from the year as published, matches included
-  out.elo = computeElo(out)
-  if (old && JSON.stringify({ ...old, updated: '' }) === JSON.stringify({ ...out, updated: '' })) out.updated = old.updated
+  // (the Elo is added below)
+  if (old && JSON.stringify({ ...old, updated: '', elo: undefined }) === JSON.stringify({ ...out, updated: '' })) out.updated = old.updated
   return out
 })
 // a year with no sheet read this time (none downloaded, or taken out of sources.json) keeps its published data
 const kept = prev.filter((y) => !yearList.includes(y.year))
 for (const y of kept) warn(String(y.year), 'nessun foglio letto: restano i dati già pubblicati')
 const years = [...rebuilt, ...kept].sort((a, b) => b.year - a.year)
+// the players' Elo (docs/elo.md), from each year as published, matches included; the leagues' own Elo goes on from
+// the year before
+for (const y of [...rebuilt].sort((a, b) => a.year - b.year)) {
+  const before = years.find((x) => x.year === y.year - 1)?.elo?.l
+  const old = prev.find((x) => x.year === y.year)
+  const keep = old && old.updated === y.updated
+  y.elo = computeElo(y, before)
+  // a quiet night stays quiet: same data, same Elo, same update time
+  if (keep && JSON.stringify(old.elo) !== JSON.stringify(y.elo)) y.updated = new Date().toISOString()
+}
 writeFileSync(outUrl, JSON.stringify({ v: 2, years }))
 // the lists' cards for the app, fixed like the archive: [name, color identity (null: not found on Scryfall), kind].
 // Kind, by the front face: 0 not a land, 1 a land, 2 a staple land (basic, fetch, or making 2 to 4 colors), 3 a modal

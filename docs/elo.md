@@ -67,7 +67,8 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
   chiusi (una lega con tante tappe tra gli stessi giocatori) senza decisioni a tavolino: provato sul 2026, prevede
   meglio di ogni correzione decisa con una misura a giugno (sezione 6). A fine 2026: Savona −83, Genova −34, Roma −19,
   Sanremo +78, Lega Online +60, Latina / Frosinone +55.
-- **A gennaio l'Elo di lega resta intero** (ripartono i giocatori, non le leghe): con i giocatori a 1000 è l'unica
+- **A gennaio l'Elo di lega resta intero** (ripartono i giocatori, non le leghe; chi gioca a gennaio parte da 1000
+  più l'Elo della sua lega, chi arriva dopo dal 25° percentile): con i giocatori a 1000 è l'unica
   memoria di quanto vale una lega. Sul 2026, con un finto capodanno il 1º giugno, tenerlo intero prevede meglio la s2
   (leghe diverse nei livelli 68,3%, log-loss 0,593; a metà 67,2% / 0,598; azzerato 65,4% / 0,607); il correttivo
   imparato solo sulla s1 e solo sulla s2 si somiglia (7 leghe su 9 con lo stesso segno, correlazione +0,52). Continua
