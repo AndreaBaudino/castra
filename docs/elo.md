@@ -234,7 +234,7 @@ apposta, più dettagliato (bordo, umbone, costola, ali). Tavola "Icone dei rank"
 | Optio | lancia | #5FBF85 / #2F7F4F |
 | Centurione | elmo con la cresta | #5A9BEA / #2B63B8 |
 | Primipilo | aquila (l'aquila della legione era affidata a lui) | #D9A93A / #94690F |
-| Podio | corona d'alloro (provvisoria, in attesa di quella del proprietario): oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
+| Podio | corona d'alloro: oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
 
 - **Divisioni**: dischi (*phalerae*) accanto all'icona, tanti quanto il numero della divisione: uno per I, due per
   II, tre per III. Il numero romano resta scritto.
