@@ -10,7 +10,9 @@ npm run dev      # http://localhost:5173
 npm run build    # output in dist/
 ```
 
-Per pubblicare in una sotto-cartella (es. GitHub Pages): `BASE=/centurion-companion/ npm run build`.
+L'app è su GitHub Pages con il dominio `castra.centurioncommander.app` (Settings → Pages → Custom domain; DNS su
+Cloudflare: `CNAME castra` → `andreabaudino.github.io`, senza proxy). Il vecchio indirizzo
+`andreabaudino.github.io/castra/` porta lì da solo. Per pubblicare in una sotto-cartella: `BASE=/castra/ npm run build`.
 
 ## Dati del meta (tornei di ogni anno)
 
@@ -123,7 +125,8 @@ Setup (una tantum, piano gratuito "Spark"):
 
 1. https://console.firebase.google.com → **Aggiungi progetto** (Google Analytics non serve).
 2. **Build → Authentication → Get started**, poi in *Sign-in method* abilita **Google** e **Email/Password**.
-3. *Authentication → Settings → Authorized domains*: aggiungi `andreabaudino.github.io`.
+3. *Authentication → Settings → Authorized domains*: aggiungi `castra.centurioncommander.app` (il dominio
+   dell'app) e lascia `andreabaudino.github.io`, il vecchio indirizzo, per le app installate da lì.
 4. **Build → Firestore Database → Create database** (location `eur3` o `europe-west`), poi nella scheda
    *Rules* incolla il contenuto di `firestore.rules` e pubblica (solo la prima volta: dopo ci pensa GitHub, vedi
    sotto).

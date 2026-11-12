@@ -252,8 +252,8 @@ describe('publishing a tournament into its sheet (Apps Script)', () => {
     expect(bad({ bye: 'TRUE' })).toBe('righe non valide')
     expect(bad({ list: 'https://spy.example/decks/x' })).toBe('righe non valide')
     // the photo of a deck of the app: of this tournament, as the app makes its link
-    expect(bad({ list: `https://andreabaudino.github.io/castra/#live/${DRIVE}~16@leonardo%20crifo` })).toBe('righe non valide')
-    expect(bad({ list: `https://andreabaudino.github.io/castra/#live/${TID}@x"),y` })).toBe('righe non valide')
+    expect(bad({ list: `https://castra.centurioncommander.app/#live/${DRIVE}~16@leonardo%20crifo` })).toBe('righe non valide')
+    expect(bad({ list: `https://castra.centurioncommander.app/#live/${TID}@x"),y` })).toBe('righe non valide')
     expect(post({ token: 'tok', id: TID, rows: [] }).error).toBe('righe non valide')
     expect(post({ token: 'tok', id: '../admins/x', rows: RESULTS }).error).toBe('richiesta non valida')
     expect(calls).toHaveLength(0) // Firestore never asked
@@ -261,9 +261,13 @@ describe('publishing a tournament into its sheet (Apps Script)', () => {
 
   it('writes the link to the photo of a deck of the app, as a decklist', () => {
     const { tabs, post } = setup()
-    const photo = `https://andreabaudino.github.io/castra/#live/${TID}@leonardo%20crifo'`
+    const photo = `https://castra.centurioncommander.app/#live/${TID}@leonardo%20crifo'`
     expect(post({ token: 'tok', id: TID, rows: [{ ...RESULTS[0], list: photo }, ...RESULTS.slice(1)] }).ok).toBe(true)
     expect(tabs['17'].grid[5][8]).toBe(photo)
+    // apps installed from the old address still send it
+    const old = `https://andreabaudino.github.io/castra/#live/${TID}@leonardo%20crifo`
+    const again = setup()
+    expect(again.post({ token: 'tok', id: TID, rows: [{ ...RESULTS[0], list: old }, ...RESULTS.slice(1)] }).ok).toBe(true)
   })
 
   it('stops when the tab or the league table has no room', () => {

@@ -56,7 +56,7 @@
 ## Il repository in breve
 PWA React 19 + TypeScript + Vite 8 (`vite-plugin-pwa`) per **Centurion Commander** (formato Magic 1v1, 25 vite):
 meta dei tornei, classifiche del circuito, life counter, mazzi, statistiche personali, ricerca carte. Pubblicata su
-GitHub Pages ogni notte alle 4:00 (ora italiana) se l'app è cambiata (`.github/workflows/deploy.yml`, `BASE=/castra/`;
+GitHub Pages ogni notte alle 4:00 (ora italiana) se l'app è cambiata (`.github/workflows/deploy.yml`, dominio `castra.centurioncommander.app`, `BASE=/`;
 a ogni push girano solo i test). Per pubblicare subito una correzione urgente: `[subito]` nel messaggio di commit, o
 "Run workflow" su GitHub. Un push che cambia `firestore.rules` pubblica subito anche l'app, perché `rules.yml` mette
 online le regole in pochi minuti e regole nuove possono richiedere l'app che va con loro. L'app si aggiorna da sola all'avvio o quando va in background, e chiede solo con una partita

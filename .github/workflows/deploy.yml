@@ -70,7 +70,7 @@ jobs:
       - if: github.event_name != 'schedule' || steps.go.outputs.deploy == 'true'
         run: npm run build
         env:
-          BASE: /${{ github.event.repository.name }}/
+          BASE: / # the app is served at the root of its own domain (castra.centurioncommander.app)
       - if: steps.go.outputs.deploy == 'true'
         uses: actions/upload-pages-artifact@v5
         with:

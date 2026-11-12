@@ -392,8 +392,8 @@ const built = yearList.map((year) => ({ year, ...build(tables.filter((x) => x.ye
 const appOf = new Map(tables.map((x) => [x.t.id, x.app]))
 const photoAt = givePhotos(photoArchive, photos, built.map((y) => ({ ...y, app: y.t.map((t) => appOf.get(t.id)) })), playerKey)
 
-// the app on GitHub Pages: its page of a photo is #live/<tournament>@<player> (src/lib/tournaments.ts photoLink)
-const APP = 'https://andreabaudino.github.io/castra/'
+// the app: its page of a photo is #live/<tournament>@<player> (src/lib/tournaments.ts photoLink)
+const APP = 'https://castra.centurioncommander.app/'
 
 // each entry with a list gets two more fields: [..., list index, 1 when taken by extension]. A photo first, for any
 // year (a deck that failed the app's check: no list at all); then, for the archive's year, the Moxfield lists

@@ -250,15 +250,17 @@ function unpublish(token, id) {
   return { ok: true, tab: p.tab, kept }
 }
 
-// the page of a deck of the app photographed at round 1 (src/lib/tournaments.ts photoLink), on the app's GitHub Pages
-const APP = 'https://andreabaudino.github.io/castra/'
+// the page of a deck of the app photographed at round 1 (src/lib/tournaments.ts photoLink); the old GitHub Pages
+// address too, still sent by apps installed from there (they no longer update)
+const APPS = ['https://castra.centurioncommander.app/', 'https://andreabaudino.github.io/castra/']
 
 /** The rows as the app sends them: checked, as they go into a sheet many people use. */
 function checkRows(rows, id) {
   const n = (v) => Number.isInteger(v) && v >= 0 && v <= 30
   // a Moxfield deck, or the photo of a player of this very tournament
   const list = (s) => /^https:\/\/(www\.)?moxfield\.com\/decks\/[-_A-Za-z0-9]+\/?$/.test(s)
-    || (s.startsWith(APP + '#live/' + id + '@') && /^[-_.!~*'()A-Za-z0-9%]+$/.test(s.slice((APP + '#live/' + id + '@').length)))
+    || APPS.some((a) => s.startsWith(a + '#live/' + id + '@')
+      && /^[-_.!~*'()A-Za-z0-9%]+$/.test(s.slice((a + '#live/' + id + '@').length)))
   const ok = Array.isArray(rows) && rows.length > 0 && rows.length <= 300 && rows.every((r) =>
     r && typeof r.name === 'string' && r.name.trim() && r.name.length <= 200
       && (r.commander == null || (typeof r.commander === 'string' && r.commander.length <= 300))
