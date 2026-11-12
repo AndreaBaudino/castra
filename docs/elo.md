@@ -218,6 +218,29 @@ e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
   0, 1, 2, 6, 7, 4, 2, 3, 4, 4, 4. Sopra 1250 nel corso del 2026 sono arrivati 9 giocatori, a Centurione (vecchia
   soglia 1150) 38: i rank alti si raggiungono anche con pochi tornei, la fine dell'anno non cambia la distribuzione.
 
+### Icone dei rank
+
+Una per rank (non per divisione: a 16 px diciotto icone non si distinguerebbero), disegnate apposta: oggetti
+dell'esercito romano a tratto (SVG 24 × 24, tratto arrotondato), in un colore solo, quello del rank, che nel tema
+chiaro è più scuro. Disegni nella tavola "Icone dei rank" dei mockup.
+
+| Rank | Icona | Colore scuro / chiaro |
+| --- | --- | --- |
+| Tirone | spada di legno della recluta (*rudis*) | #9A9AA2 / #5F5F67 |
+| Legionario | scudo (*scutum*) | #C08A5B / #8A5A2E |
+| Decano | tenda (guidava gli otto compagni di tenda) | #A9BCCB / #4F6A80 |
+| Optio | bastone col pomo (*hastile*) | #5FBF85 / #2F7F4F |
+| Centurione | elmo con la cresta di traverso | #5A9BEA / #2B63B8 |
+| Primipilo | aquila della legione (era affidata a lui) | #D9A93A / #94690F |
+| Podio | corona d'alloro: oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
+
+- **Divisioni**: tre dischi (*phalerae*) accanto all'icona, pieni verso la promozione: uno per III, due per II, tre
+  per I. Il numero romano resta scritto.
+- **Provvisorio**: scudo tratteggiato vuoto, "non classificato". **Inattivo**: la sua icona in grigio.
+- **Dove**: scheda del giocatore (icona grande in un riquadro, dischi e barra fino al rank dopo), schermata Rank (in
+  ogni riga e sul podio), classifica (piccola, prima del nome del rank), testa a testa (riga Rank). Mai negli
+  abbinamenti dei tornei né sullo schermo per la sala. Idea per dopo: "Sei salito a …" nella riga del torneo.
+
 ## 6. Prove sui dati
 
 Sul meta 2026 (11/11/2026), con `scripts/elo/analisi.mjs` (da togliere quando il build del meta calcolerà l'Elo:
