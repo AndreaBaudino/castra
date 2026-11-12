@@ -232,7 +232,7 @@ apposta, più dettagliato (bordo, umbone, costola, ali). Tavola "Icone dei rank"
 | Legionario | scudo (*scutum*) con bordo, umbone, costola e ali | #C08A5B / #8A5A2E |
 | Decano | tenda con la bandiera (guidava i compagni di tenda) | #A9BCCB / #4F6A80 |
 | Optio | lancia | #5FBF85 / #2F7F4F |
-| Centurione | elmo con la cresta | #5A9BEA / #2B63B8 |
+| Centurione | elmo con la cresta a ventaglio | #5A9BEA / #2B63B8 |
 | Primipilo | aquila (l'aquila della legione era affidata a lui) | #D9A93A / #94690F |
 | Podio | corona d'alloro: oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
 
