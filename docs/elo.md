@@ -22,7 +22,7 @@ dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/M
 | Calo per le pause | 10 punti al mese dal 2º mese intero senza tornei, mai sotto 1000 (sotto 1000 nessun calo) |
 | Provvisorio | margine dell'ultimo torneo sopra ± 80 |
 | Inattivo | più di 3 mesi senza tornei: classifica a parte, torna al primo torneo |
-| Rank | romani ogni 100 punti (Tirone sotto 800 … Optio da 1000 … Primipilo da 1200) con divisioni III-II-I di circa 33 punti; podio sempre per i primi 3 della classifica |
+| Rank | romani ogni 100 punti (Tirone sotto 800 … Optio da 1000 … Primipilo da 1200) con divisioni I-II-III di circa 33 punti (III la più alta); podio sempre per i primi 3 della classifica |
 | Dove si vede | voce ELO nelle classifiche, scheda del giocatore, (i), testa a testa; pubblico |
 
 ## 1. Da dove vengono i dati
@@ -193,7 +193,7 @@ Un nome per fascia di Elo, ogni 100 punti: un rank sopra vince circa 2 match su 
 64%). Soglie fisse, scelte sulla distribuzione del 2026, che da febbraio cambia poco (mediana della classifica tra 960
 e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
 
-| Rank | Elo | III | II | I | Al 12/11/2026 |
+| Rank | Elo | I | II | III | Al 12/11/2026 |
 | --- | --- | --- | --- | --- | --- |
 | Podio | i primi 3 della classifica, qualunque Elo: 1º Imperatore, 2º Legato, 3º Tribuno | | | | 3 |
 | Primipilo | 1200 e oltre (senza divisioni) | | | | 5 |
@@ -204,11 +204,12 @@ e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
 | Tirone | sotto 800 | sotto 733 | 733–766 | 767–799 | 21 |
 
 - Il rank viene dall'Elo che si vede, arrotondato all'intero, e si aggiorna con lui (la notte dopo il foglio).
-- Le divisioni vanno come i numeri romani: III la più bassa, I la più alta, poi il rank sopra.
-- Si parte da Optio III (1000); chi arriva dopo gennaio dal 25° percentile (oggi 846, Legionario II).
+- Le divisioni si contano salendo, come i dischi dell'icona: I la più bassa, III la più alta, poi il rank sopra (al
+  contrario di League of Legends, scelto perché numero e dischi coincidono).
+- Si parte da Optio I (1000); chi arriva dopo gennaio dal 25° percentile (oggi 846, Legionario II).
 - **Provvisori**: nessun rank ("non classificato") finché il margine non scende sotto ± 80. A gennaio tutti partono a
   1000 ± 100, quindi il rank arriva dopo circa 2 tappe, come un piazzamento.
-- **Inattivi**: tengono il rank, in grigio. Il calo per le pause può abbassarlo, ma si ferma a 1000: mai sotto Optio III.
+- **Inattivi**: tengono il rank, in grigio. Il calo per le pause può abbassarlo, ma si ferma a 1000: mai sotto Optio I.
 - **Podio**: sempre i primi tre della classifica (non provvisori né inattivi), qualunque sia il loro Elo: oggi Romeo
   (1426) Imperatore, Crisci (1257) Legato, Borfiga (1237) Tribuno. Con una soglia il podio sarebbe rimasto mezzo vuoto
   per metà anno. Chi supera 1200 senza stare sul podio è Primipilo. A gennaio, finché tutti sono provvisori, il podio
@@ -234,8 +235,8 @@ chiaro è più scuro. Disegni nella tavola "Icone dei rank" dei mockup.
 | Primipilo | aquila della legione (era affidata a lui) | #D9A93A / #94690F |
 | Podio | corona d'alloro: oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
 
-- **Divisioni**: tre dischi (*phalerae*) accanto all'icona, pieni verso la promozione: uno per III, due per II, tre
-  per I. Il numero romano resta scritto.
+- **Divisioni**: dischi (*phalerae*) accanto all'icona, tanti quanto il numero della divisione: uno per I, due per
+  II, tre per III. Il numero romano resta scritto.
 - **Provvisorio**: scudo tratteggiato vuoto, "non classificato". **Inattivo**: la sua icona in grigio.
 - **Dove**: scheda del giocatore (icona grande in un riquadro, dischi e barra fino al rank dopo), schermata Rank (in
   ogni riga e sul podio), classifica (piccola, prima del nome del rank), testa a testa (riga Rank). Mai negli
