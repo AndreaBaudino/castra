@@ -5,6 +5,7 @@ import { useStoredState } from '../lib/storage'
 import { Icon, pct } from '../components/ui'
 import { type CircuitPrefs, MissingPage, PotyTag, SubPageShell, VerifiedTick, avg, placeLabel } from './Circuit'
 import { type MetaDataset, type MetaEntry, type MetaTournament, recordOf, shortName, winrate } from '../lib/meta'
+import { EloCompare, EloCompareRows } from './Elo'
 import { DeckRecords, LeagueMeta, LeagueStages, tournamentLabel } from './MetaPages'
 
 // Leagues, season records and head-to-head: views built on the circuit model.
@@ -440,7 +441,10 @@ export function ComparePage({
         ))}
       </div>
 
+      <EloCompare dataset={dataset} a={a.key} b={b.key} nameA={a.name} nameB={b.name} />
+
       <section className="card h2h-table">
+        <EloCompareRows dataset={dataset} a={a.key} b={b.key} />
         {rows.map(([label, va, vb, lower, fmt]) => {
           const w = better(va, vb, lower)
           const f = (v?: number) => (v === undefined ? '—' : (fmt ?? String)(v))

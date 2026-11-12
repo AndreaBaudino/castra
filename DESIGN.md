@@ -111,7 +111,10 @@ Forge vuole un solo colore saturo. Restano però, perché sono informazioni e no
   serie del confronto (`--cmp-a`, `--cmp-b`);
 - i colori dei giocatori nel life counter (`--p0`, `--p1`), scelti nella Grafica: pannelli pieni, senza sfumature (se non
   c'è l'illustrazione di una carta, vedi sotto);
-- la cresta rossa dell'elmo (`--crest`).
+- la cresta rossa dell'elmo (`--crest`);
+- i colori dei rank dell'Elo (`--rank-tirone`…`--rank-primipilo`, `--rank-imperatore`, `--rank-legato`,
+  `--rank-tribuno`), il metallo di ogni rank, più scuri nel tema chiaro; le medaglie (`RankMedal.tsx`) hanno i loro
+  metalli disegnati, uguali nei due temi.
 
 Le barre che misurano un dato (quota del meta) sono grigie (`--muted`), non ember.
 

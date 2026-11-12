@@ -19,6 +19,7 @@ import { Icon } from './components/ui'
 import Home from './views/Home'
 import Meta, { META_MODE_KEY } from './views/Meta'
 import { CircuitNoticeCard, EventPage, PlayerPage, focusMeInRanking } from './views/Circuit'
+import { Promotion, RankPage } from './views/Elo'
 import { CommanderDecksPage, CommanderPage, TournamentPage, tournamentOfEvent } from './views/MetaPages'
 import { usePublishDecks } from './lib/publicDecks'
 import { ComparePage, LeaguePage } from './views/CircuitMore'
@@ -257,7 +258,8 @@ export default function App() {
   }
   // the circuit player this account holds, for the tournaments
   const me = circuitMe && uid && claims.get(circuitMe)?.uid === uid ? circuitMe : null
-  const circuitPrefs = { me: circuitMe, follow, setFollow, claims, uid, link: linkPlayer, login: () => go('account'), matches }
+  const openRanks = () => go('meta', 'r', true)
+  const circuitPrefs = { me: circuitMe, follow, setFollow, claims, uid, link: linkPlayer, login: () => go('account'), matches, openRanks }
   const openPlayer = (key: string) => go('meta', `p~${encodeURIComponent(key)}`, true)
   const openEvent = (id: string) => go('meta', `e~${id}`, true)
   const openLeague = (season: string, name: string) => go('meta', `l~${season}~${encodeURIComponent(name)}`, true)
@@ -349,6 +351,8 @@ export default function App() {
   return (
     <div className="app">
       <UpdateBanner />
+      {/* once after the night that brought the linked player up a rank: this year's Elo only */}
+      <Promotion dataset={dataset && dataset.year === dataset.years[0] ? dataset : null} me={me} openRanks={openRanks} />
       {wide && <SideNav tab={route.tab} go={(tab) => (tab === 'game' ? openGame() : go(tab))} user={user} gameInProgress={gameInProgress} />}
       {playing.map((id) => (
         <TableWatch key={id} id={id} me={me!} verified={!!claims.get(me!)?.verified} onTable={onTable} />
@@ -481,6 +485,8 @@ export default function App() {
                 openShared={openShared}
                 openAllDecks={() => go('meta', `kd~${encodeURIComponent(metaArgs[0])}`, true)}
               />
+            ) : metaSub === 'r' ? (
+              <RankPage dataset={dataset} prefs={circuitPrefs} onBack={() => history.back()} openPlayer={openPlayer} />
             ) : metaSub === 'kd' ? (
               <CommanderDecksPage name={metaArgs[0]} claims={claims} openDeck={openShared} openPlayer={openPlayer} onBack={() => history.back()} />
             ) : metaSub === 'x' ? (

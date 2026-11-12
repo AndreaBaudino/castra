@@ -8,6 +8,19 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-12',
+    it: [
+      'Circuito: arriva l\'Elo dei giocatori. Nella Classifica c\'è la vista Elo, calcolata da ogni torneo dell\'anno (piazzamenti dei fogli e partite giocate in Castra), con quanto è cambiato negli ultimi 30 giorni, i provvisori e gli inattivi a parte. Chi non gioca da più di un mese perde 10 punti al mese, mai sotto 1000',
+      'Circuito: ogni 100 punti di Elo c\'è un rank romano, da Tirone a Primipilo, con tre divisioni; i primi tre della classifica sono Imperatore, Legato e Tribuno. Nella scheda del giocatore la foto porta l\'armatura del suo rank, con l\'andamento dell\'Elo torneo per torneo; quando sali di rank l\'app te lo dice',
+      'Circuito, confronto: le probabilità di vittoria tra i due giocatori e quanti punti muoverebbe una partita',
+    ],
+    en: [
+      'Circuit: players now have an Elo. The Ranking has an Elo view, worked out from every tournament of the year (the sheets\' placings and the games played in Castra), with the change in the last 30 days, and the provisional and inactive players apart. Who hasn\'t played for over a month loses 10 points a month, never below 1000',
+      'Circuit: every 100 Elo points there is a Roman rank, from Tiro to Primus Pilus, with three divisions; the top three of the ranking are Emperor, Legate and Tribune. On a player\'s page the picture wears their rank\'s armour, with the Elo tournament by tournament; when you go up a rank the app tells you',
+      'Circuit, head to head: the two players\' chances of winning and how many points a game would move',
+    ],
+  },
+  {
     date: '2026-11-11',
     it: [
       'Area TO: nelle tappe di lega il top cut si può giocare per i premi, ma posizione e risultati della tappa restano quelli dello svizzero, nella classifica finale e sul foglio. Nei livelli 1 e 2 la top conta come prima',

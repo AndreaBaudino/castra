@@ -53,6 +53,28 @@ export interface MetaPairing {
   r: 0 | 1 | 2 // the winner: a (1), b (2), or a draw (0)
 }
 
+/** A player's Elo at one tournament (docs/elo.md), computed by the meta build. */
+export interface EloRow {
+  start: number // the Elo the tournament was played with (the league's latest move and the pause included)
+  after: number // the Elo shown after it
+  move: number // the tournament's own move
+  league: number // the league's moves since the player's last tournament, arriving now
+  idle: number // what the pause before it cost
+  rd: number // the margin after it
+}
+
+/** A match played in Castra: entries (indexes of `entries`), games won by each and drawn, round, Elo moves. */
+export interface MetaPlayerMatch {
+  t: number
+  a: number
+  b: number
+  wa: number
+  wb: number
+  d: number
+  round: number
+  move?: [number, number]
+}
+
 export interface MetaDataset {
   year: number
   years: number[] // every year with data, the newest first
@@ -61,6 +83,9 @@ export interface MetaDataset {
   commanders: MetaCommander[]
   entries: MetaEntry[]
   pairings: MetaPairing[]
+  playerMatches: MetaPlayerMatch[]
+  // the Elo of docs/elo.md: the day of each tournament, a row for each entry that counts (missing in old files)
+  elo?: { days: string[]; rows: (EloRow | null)[] }
 }
 
 export interface MetaDeck {
@@ -222,6 +247,8 @@ interface RawMeta {
   c: { n: string; c: string }[]
   e: RawEntry[]
   m?: [number, number, number, 0 | 1 | 2][] // missing: no tournament run in the app that year
+  pm?: [number, number, number, number, number, number, number][]
+  elo?: { d: string[]; e: ([number, number, number, number, number, number] | null)[]; pm?: ([number, number] | null)[] }
 }
 /** public/meta.json: every year, the newest first. A single year (RawMeta) is the file of earlier versions. */
 type RawFile = { v: 2; years: RawMeta[] } | RawMeta
@@ -259,6 +286,16 @@ function fromRaw(raw: RawMeta, years: number[]): MetaDataset {
       ...(deckList != null ? { deckList, deckListGuessed: !!guessed } : {}),
     })),
     pairings: (raw.m ?? []).map(([t, a, b, r]) => ({ t, a, b, r })),
+    playerMatches: (raw.pm ?? []).map(([t, a, b, wa, wb, d, round], i) => {
+      const move = raw.elo?.pm?.[i]
+      return { t, a, b, wa, wb, d, round, ...(move ? { move } : {}) }
+    }),
+    ...(raw.elo && {
+      elo: {
+        days: raw.elo.d,
+        rows: raw.elo.e.map((r) => (r ? { start: r[0], after: r[1], move: r[2], league: r[3], idle: r[4], rd: r[5] } : null)),
+      },
+    }),
   }
 }
 

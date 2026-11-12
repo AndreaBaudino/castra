@@ -14,6 +14,8 @@ import { type MetaDataset, recordOf, winrate } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 import type { Deck } from '../lib/decks'
 import { CircuitInfoButton } from './MetaInfo'
+import { ArmouredAvatar, EloCard, EloRanking } from './Elo'
+import { type Rank, rankOfPlayer, useElo } from '../lib/elo'
 import { PlayerCards } from './MetaCards'
 import { POTY_SPOTS } from '../config'
 import { PublicDecks } from './Decks'
@@ -31,6 +33,7 @@ export interface CircuitPrefs {
   link: (key: string | null) => Promise<void> // claim (or release with null) a player for this account
   login: () => void
   matches: Match[] // the user's own matches: their record against a player
+  openRanks: () => void // the Elo's ranks page
 }
 
 type Sort = 'total' | 's1' | 's2' | 'events' | 'played' | 'avg' | 'top8'
@@ -86,11 +89,11 @@ export function CircuitPanel({
   openCommander: (name: string) => void
 }) {
   const { t } = useI18n()
-  const [view, setView] = useStoredState<'ranking' | 'events' | 'leagues' | 'records'>('cc.circuit.view', 'ranking')
+  const [view, setView] = useStoredState<'ranking' | 'elo' | 'events' | 'leagues' | 'records'>('cc.circuit.view', 'ranking')
   return (
     <>
       <div className="seg wide circuit-views">
-        {(['ranking', 'events', 'leagues', 'records'] as const).map((v) => (
+        {(['ranking', 'elo', 'events', 'leagues', 'records'] as const).map((v) => (
           <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>
             {t(`circuit.view.${v}`)}
           </button>
@@ -98,6 +101,8 @@ export function CircuitPanel({
       </div>
       {view === 'ranking' ? (
         <Ranking circuit={circuit} prefs={prefs} openPlayer={openPlayer} />
+      ) : view === 'elo' ? (
+        <EloRanking dataset={dataset} prefs={prefs} openPlayer={openPlayer} openRanks={prefs.openRanks} />
       ) : view === 'events' ? (
         <EventList circuit={circuit} prefs={prefs} openEvent={openEvent} />
       ) : view === 'leagues' ? (
@@ -366,6 +371,7 @@ export function PlayerPage({
   const poty = useMemo(() => potyStatus(circuit), [circuit])
   // the player's rows in the deck meta: every event and league stage, with deck and record
   const mine = useMemo(() => dataset?.entries.filter((e) => e.key === playerKey) ?? [], [dataset, playerKey])
+  const elo = useElo(dataset)
   const [customizing, setCustomizing] = useState(false)
   const wide = useWide()
   // every player opens on the circuit tab, even when it replaces another one on the same page
@@ -402,6 +408,8 @@ export function PlayerPage({
   const cover = claim?.coverArt ?? (auto && artUrl(auto.cmd.name))
   const above = [...circuit.players].reverse().find((o) => o.total > p.total)
   const rec = recordOf(mine)
+  const myElo = elo?.players.get(p.key)
+  const rank = myElo && elo ? rankOfPlayer(myElo, elo.ranked) : null
   // a phone: who they are on top, then one tab at a time; a desktop shows everything, as before
   const tabs = (['circ', 'deck', 'card', 'tour'] as const).filter(
     (k) =>
@@ -456,7 +464,7 @@ export function PlayerPage({
           entries={mine}
         />
       )}
-      <ClaimBox p={p} prefs={prefs} cover={cover} row={!wide} />
+      <ClaimBox p={p} prefs={prefs} cover={cover} row={!wide} rank={rank} grey={myElo?.status === 'inactive'} />
       {/* "me" on the left when comparing someone with me */}
       {wide && compare}
 
@@ -500,6 +508,7 @@ export function PlayerPage({
         </div>
       )}
 
+      {show('circ') && dataset && <EloCard dataset={dataset} playerKey={p.key} prefs={prefs} openRanks={prefs.openRanks} openTournament={openTournament} />}
       {show('circ') && dataset && <PlayerBadges dataset={dataset} entries={mine} player={p} />}
       {show('deck') &&
         (wide ? (
@@ -648,7 +657,7 @@ export function ClaimBadge({ claim }: { claim: Claim }) {
 }
 
 /** The claimer's picture, the "verified" tick and the button to claim or release the player. */
-function ClaimBox({ p, prefs, cover, row }: { p: Player; prefs: CircuitPrefs; cover?: string; row?: boolean }) {
+function ClaimBox({ p, prefs, cover, row, rank, grey }: { p: Player; prefs: CircuitPrefs; cover?: string; row?: boolean; rank?: Rank | null; grey?: boolean }) {
   const { t } = useI18n()
   const dialog = useDialog()
   const [busy, setBusy] = useState(false)
@@ -662,7 +671,7 @@ function ClaimBox({ p, prefs, cover, row }: { p: Player; prefs: CircuitPrefs; co
       setBusy(false)
     }
   }
-  const avatar = (
+  const picture = (
     <span className={`claim-avatar ${claim ? 'claimed' : ''}`}>
       {claim?.photo ? (
         <img src={claim.photo} alt="" referrerPolicy="no-referrer" />
@@ -672,6 +681,14 @@ function ClaimBox({ p, prefs, cover, row }: { p: Player; prefs: CircuitPrefs; co
         <Icon name="user" size={30} />
       )}
     </span>
+  )
+  // with a rank, the picture takes the place of the medal's disc, in its armour (docs/elo.md)
+  const avatar = rank ? (
+    <ArmouredAvatar rank={rank} grey={grey}>
+      {picture}
+    </ArmouredAvatar>
+  ) : (
+    picture
   )
   const action = mine ? (
     <button className="btn primary" disabled={busy} onClick={() => run(null)}>
@@ -698,7 +715,7 @@ function ClaimBox({ p, prefs, cover, row }: { p: Player; prefs: CircuitPrefs; co
   // a phone: the picture beside the name, over the bottom of the art (SubPageShell art)
   if (row)
     return (
-      <div className="claim-row">
+      <div className={`claim-row ${rank ? 'armoured-row' : ''}`}>
         {avatar}
         <div className="claim-who">
           <h2 className="claim-name">{p.name}</h2>

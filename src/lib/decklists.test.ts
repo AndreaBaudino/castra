@@ -30,6 +30,7 @@ const ds: MetaDataset = {
   ],
   entries: [entry(0, 0, 0), entry(1, 0, 0), entry(0, 1, 1), entry(1, 1)],
   pairings: [],
+  playerMatches: [],
 }
 const dl: Decklists = {
   v: 2,

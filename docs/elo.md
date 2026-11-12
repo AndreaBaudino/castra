@@ -289,8 +289,8 @@ ricco), ma i disegni sono nostri e non copiano quelli di Riot.
 
 ## 6. Prove sui dati
 
-Sul meta 2026 (11/11/2026), con `scripts/elo/analisi.mjs` (da togliere quando il build del meta calcolerà l'Elo:
-il comando è in cima al file); i grafici sono su
+Sul meta 2026 (11/11/2026), con lo script di analisi usato prima dell'implementazione (ora il calcolo è
+`scripts/meta/elo.mjs`); i grafici sono su
 [claude.ai](https://claude.ai/artifact/KdR76t4M195gXTfX3aqWzS) (privati).
 
 - **Previsione**: da marzo in poi, prima di ogni torneo e con i numeri di allora, chi tra due giocatori sarebbe
@@ -340,5 +340,5 @@ il comando è in cima al file); i grafici sono su
 
 ## 7. In sospeso
 
-- Niente altro sulle regole. Da fare: il calcolo nel build del meta e le schermate nell'app, poi togliere
-  `scripts/elo/analisi.mjs`.
+- Niente. Il calcolo è in `scripts/meta/elo.mjs` (con i test in `elo.test.mjs`), fatto dal build del meta; ciò che
+  dipende da oggi in `src/lib/elo.ts`; le schermate in `src/views/Elo.tsx`, medaglie e icone in `src/components/`.

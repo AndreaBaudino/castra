@@ -43,7 +43,7 @@
   `src/lib/appsScript.test.ts` (lo script che scrive i tornei nei fogli, su fogli finti in memoria),
   `src/lib/notifyScript.test.ts` (lo script delle notifiche dei tornei, su un Firestore finto), `src/lib/theme.test.ts`
   (il testo sopra il colore principale), `scripts/meta/decklists.test.mjs` (quale lista del circuito va a ogni
-  iscrizione), `src/lib/decklists.test.ts` (quanto è giocata una carta); girano anche a ogni push e
+  iscrizione), `src/lib/decklists.test.ts` (quanto è giocata una carta), `scripts/meta/elo.test.mjs` (l'Elo dei giocatori); girano anche a ogni push e
   nel deploy, che si ferma se falliscono. Quando cambia un parser o un formato esterno, aggiungi il caso lì.
 - Regole Firestore: `scripts/test-rules.mjs` le prova sull'emulatore (workflow `rules.yml`, a ogni push che le tocca;
   il comando per lanciarlo a mano è in cima al file, serve Java). Quando cambi le regole, aggiungi lì il caso.
@@ -114,6 +114,10 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - `decklists.ts`: le liste dei mazzi del circuito (`decklists.json` dal ramo `meta-data`, riserva in `public/`): `cardStats` (scheda Carte del Circuito),
   `cardUse` (scheda della carta), `typicalList` (le carte più giocate nella pagina del comandante), `playerCards` (le carte di un giocatore), `deckVsMeta` (un mazzo contro il meta), `deckOfList` (Duplica mazzo); viste in
   `views/MetaCards.tsx`; regole in `docs/liste-mazzi.md`.
+- `elo.ts`: l'Elo dei giocatori (`docs/elo.md`) calcolato dal build del meta (`scripts/meta/elo.mjs`, `elo` in ogni
+  anno del meta) e ciò che dipende da oggi: pausa, inattivi, classifica, rank (`rankOf`, `useElo`, `useRankName`);
+  icone e medaglie dei rank in `rankIcons.ts` / `medalArt.ts` (generati), disegnate da `components/Rank.tsx` e
+  `RankMedal.tsx`; viste in `views/Elo.tsx` (classifica Elo, scheda del giocatore, pagina dei rank, promozione).
 - `matches.ts` (partite, record), `analysis.ts` (curva, colori, probabilità), `timer.ts`, `theme.ts`, `prefs.ts`,
   `backup.ts` (export JSON/CSV), `account.ts` (cancellazione), `wide.ts` (`useWide()` = schermo ≥1024 px),
   `longPress.ts`, `sound.ts`, `changelog.ts`, `feedback.ts` (segnalazioni), `push.ts` (token delle notifiche, inviate
@@ -126,7 +130,7 @@ public/meta.json    copia del meta inclusa nell'app (fallback)
 - Mazzi: `decks/<id>` uno mio, `decks/<uid>~<id>` uno condiviso, `decks/cmp~<a>~<b>` due a confronto (un mazzo è
   `<id>` se mio, `<uid>.<id>` se di altri).
 - Sottopagine del Circuito con prefisso: `p~giocatore`, `e~evento`, `l~stagione~lega`, `c~a~b` (confronto),
-  `k~comandante` (`kd~comandante`: i suoi mazzi pubblici), `t~torneo`, `x~carta` (dalla scheda Carte); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
+  `k~comandante` (`kd~comandante`: i suoi mazzi pubblici), `r` (i rank dell'Elo), `t~torneo`, `x~carta` (dalla scheda Carte); si aprono con `openPlayer`, `openEvent`, `openCommander`… (`go(tab, sub, stack)`).
 - La cronologia è costruita apposta perché il tasto "indietro" del telefono funzioni: home → pagina principale →
   sottopagine impilate → foglio/dialogo aperto. Fogli e dialoghi usano `useBackCloses(open, onClose, layer)`:
   ogni nuovo pannello modale deve usarlo (o usare `Sheet` / `useDialog()`), mai `window.confirm`/`alert`.
