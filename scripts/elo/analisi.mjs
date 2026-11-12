@@ -4,11 +4,11 @@
 // computes the Elo.
 //   node scripts/elo/analisi.mjs [anno] [--file meta-2026.json] [--base 1000] [--nuovi p25|base|900] [--start 100]
 //                                [--c 5] [--floor 40] [--top 20] [--player "Nome Cognome"]
-//                                [--eta 4] [--al 2026-11-12] [--calo 10]
+//                                [--eta 4] [--al 2026-11-12] [--calo 10] [--da 2]
 // --nuovi: where a player first seen after January starts (the 25th percentile of the Elo at that moment, as decided,
 // the year's base, or a number); --eta: how fast each league's own Elo learns from its players in the levels (0: no
 // league Elo); --al: the day of the ranking (default today): who has not played for 3 months goes among the inactive;
-// --calo: points lost for each whole month without tournaments, never below the base.
+// --calo: points lost for each whole month without tournaments from the --da-th on, never below the base.
 // Without --file it reads meta-<anno>.json from the meta-data branch (git fetch origin meta-data first).
 
 import { execSync } from 'node:child_process'
@@ -23,6 +23,7 @@ const { values: opt, positionals } = parseArgs({
     nuovi: { type: 'string', default: 'p25' },
     eta: { type: 'string', default: '4' },
     calo: { type: 'string', default: '10' },
+    da: { type: 'string', default: '2' },
     al: { type: 'string' },
     start: { type: 'string', default: '100' },
     c: { type: 'string', default: '5' },
@@ -77,9 +78,10 @@ const order = [...entries.keys()]
  * Also the prediction check: before each tournament from March, who of two players with different points finishes
  * higher (between equal points the tiebreakers decide, not the players).
  */
-// what a pause costs: calo points for each whole month without tournaments, never below the base (nor anything for who
-// is already under it)
-const idle = (elo, from, to) => Math.min(+opt.calo * Math.floor(days(from, to) / 30), Math.max(0, elo - +opt.base))
+// what a pause costs: calo points for each whole month without tournaments from the da-th on (2 months: −10, 3: −20),
+// never below the base (nor anything for who is already under it)
+const idle = (elo, from, to) =>
+  Math.min(+opt.calo * Math.max(0, Math.floor(days(from, to) / 30) - +opt.da + 1), Math.max(0, elo - +opt.base))
 
 function glicko({ base, nuovi, start, c, floor, eta }) {
   const R = new Map(), RD = new Map(), last = new Map(), hist = new Map(), played = new Map()
