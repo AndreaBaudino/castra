@@ -22,6 +22,7 @@ dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/M
 | Calo per le pause | 10 punti al mese dal 2º mese intero senza tornei, mai sotto 1000 (sotto 1000 nessun calo) |
 | Provvisorio | margine dell'ultimo torneo sopra ± 80 |
 | Inattivo | più di 3 mesi senza tornei: classifica a parte, torna al primo torneo |
+| Rank | romani ogni 100 punti con divisioni III-II-I di circa 33 punti; da 1250 Primipilo; podio per i primi 3 sopra 1250 |
 | Dove si vede | voce ELO nelle classifiche, scheda del giocatore, (i), testa a testa; pubblico |
 
 ## 1. Da dove vengono i dati
@@ -171,6 +172,31 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
   vincere un match e quanto guadagna o perde ognuno per una partita di una tappa; la riga Elo sopra quelle che ci sono
   già. Mai negli abbinamenti dei tornei.
 
+### Rank
+
+Un nome per fascia di Elo, ogni 100 punti, con il rank di mezzo attorno alla partenza: un rank sopra vince circa 2
+match su 3 contro un rank sotto (100 punti = 64%). Soglie fisse, scelte sulla distribuzione del 2026, che da febbraio
+cambia poco (mediana della classifica tra 960 e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
+
+| Rank | Elo | III | II | I | Al 12/11/2026 |
+| --- | --- | --- | --- | --- | --- |
+| Podio | i primi 3 della classifica con almeno 1250: 1º Imperatore, 2º Legato, 3º Tribuno | | | | 1 |
+| Primipilo | 1250 e oltre (senza divisioni) | | | | 0 oltre il podio |
+| Centurione | 1150–1249 | 1150–1182 | 1183–1216 | 1217–1249 | 12 |
+| Optio | 1050–1149 | 1050–1082 | 1083–1116 | 1117–1149 | 24 |
+| Decano | 950–1049 | 950–982 | 983–1016 | 1017–1049 | 37 |
+| Legionario | 850–949 | 850–882 | 883–916 | 917–949 | 29 |
+| Tirone | sotto 850 | sotto 783 | 783–816 | 817–849 | 38 |
+
+- Il rank viene dall'Elo che si vede, arrotondato all'intero, e si aggiorna con lui (la notte dopo il foglio).
+- Le divisioni vanno come i numeri romani: III la più bassa, I la più alta, poi il rank sopra.
+- **Provvisori**: nessun rank ("non classificato") finché il margine non scende sotto ± 80. A gennaio tutti partono a
+  1000 ± 100, quindi il rank arriva dopo circa 2 tappe, come un piazzamento.
+- **Inattivi**: tengono il rank, in grigio. Il calo per le pause può abbassarlo, ma si ferma a 1000: mai sotto Decano II.
+- **Podio**: solo tra chi è in classifica (non provvisori né inattivi) e ha almeno 1250, quindi può avere meno di tre
+  posti (nel 2026 sopra 1250 c'erano da 1 a 4 giocatori; oggi solo Romeo, Imperatore). Chi è sopra 1250 senza podio è
+  Primipilo.
+
 ## 6. Prove sui dati
 
 Sul meta 2026 (11/11/2026), con `scripts/elo/analisi.mjs` (da togliere quando il build del meta calcolerà l'Elo:
@@ -224,5 +250,6 @@ il comando è in cima al file); i grafici sono su
 
 ## 7. In sospeso
 
-- Niente sulle regole e sulle schermate. Da fare: il calcolo nel build del meta e le schermate nell'app, poi togliere
+- I mockup dei rank (nomi del podio da confermare).
+- Niente altro sulle regole. Da fare: il calcolo nel build del meta e le schermate nell'app, poi togliere
   `scripts/elo/analisi.mjs`.
