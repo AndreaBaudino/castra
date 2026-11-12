@@ -5568,7 +5568,12 @@ div.home-row > .home-row-link.link {
   margin-top: -110px;
 }
 .claim-row.armoured-row .claim-who {
+  position: relative; /* the name in front of the armour's lower pieces */
+  z-index: 1;
   align-items: center;
+}
+.claim-row.armoured-row .claim-name {
+  text-shadow: 0 1px 3px var(--bg), 0 0 8px var(--bg);
 }
 .elo-big {
   display: flex;
