@@ -22,7 +22,7 @@ dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/M
 | Calo per le pause | 10 punti al mese dal 2º mese intero senza tornei, mai sotto 1000 (sotto 1000 nessun calo) |
 | Provvisorio | margine dell'ultimo torneo sopra ± 80 |
 | Inattivo | più di 3 mesi senza tornei: classifica a parte, torna al primo torneo |
-| Rank | romani ogni 100 punti con divisioni III-II-I di circa 33 punti; da 1250 Primipilo; podio sempre per i primi 3 della classifica |
+| Rank | romani ogni 100 punti (Tirone sotto 800 … Optio da 1000 … Primipilo da 1200) con divisioni III-II-I di circa 33 punti; podio sempre per i primi 3 della classifica |
 | Dove si vede | voce ELO nelle classifiche, scheda del giocatore, (i), testa a testa; pubblico |
 
 ## 1. Da dove vengono i dati
@@ -174,29 +174,34 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
 
 ### Rank
 
-Un nome per fascia di Elo, ogni 100 punti, con il rank di mezzo attorno alla partenza: un rank sopra vince circa 2
-match su 3 contro un rank sotto (100 punti = 64%). Soglie fisse, scelte sulla distribuzione del 2026, che da febbraio
-cambia poco (mediana della classifica tra 960 e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
+Un nome per fascia di Elo, ogni 100 punti: un rank sopra vince circa 2 match su 3 contro un rank sotto (100 punti =
+64%). Soglie fisse, scelte sulla distribuzione del 2026, che da febbraio cambia poco (mediana della classifica tra 960
+e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
 
 | Rank | Elo | III | II | I | Al 12/11/2026 |
 | --- | --- | --- | --- | --- | --- |
 | Podio | i primi 3 della classifica, qualunque Elo: 1º Imperatore, 2º Legato, 3º Tribuno | | | | 3 |
-| Primipilo | 1250 e oltre (senza divisioni) | | | | 0 oltre il podio |
-| Centurione | 1150–1249 | 1150–1182 | 1183–1216 | 1217–1249 | 10 (più 2 sul podio) |
-| Optio | 1050–1149 | 1050–1082 | 1083–1116 | 1117–1149 | 24 |
-| Decano | 950–1049 | 950–982 | 983–1016 | 1017–1049 | 37 |
-| Legionario | 850–949 | 850–882 | 883–916 | 917–949 | 29 |
-| Tirone | sotto 850 | sotto 783 | 783–816 | 817–849 | 38 |
+| Primipilo | 1200 e oltre (senza divisioni) | | | | 4 |
+| Centurione | 1100–1199 | 1100–1132 | 1133–1166 | 1167–1199 | 18 |
+| Optio | 1000–1099 (partenza) | 1000–1032 | 1033–1066 | 1067–1099 | 36 |
+| Decano | 900–999 | 900–932 | 933–966 | 967–999 | 30 |
+| Legionario | 800–899 | 800–832 | 833–866 | 867–899 | 32 |
+| Tirone | sotto 800 | sotto 733 | 733–766 | 767–799 | 18 |
 
 - Il rank viene dall'Elo che si vede, arrotondato all'intero, e si aggiorna con lui (la notte dopo il foglio).
 - Le divisioni vanno come i numeri romani: III la più bassa, I la più alta, poi il rank sopra.
+- Si parte da Optio III (1000); chi arriva dopo gennaio dal 25° percentile (oggi 846, Legionario II).
 - **Provvisori**: nessun rank ("non classificato") finché il margine non scende sotto ± 80. A gennaio tutti partono a
   1000 ± 100, quindi il rank arriva dopo circa 2 tappe, come un piazzamento.
-- **Inattivi**: tengono il rank, in grigio. Il calo per le pause può abbassarlo, ma si ferma a 1000: mai sotto Decano II.
+- **Inattivi**: tengono il rank, in grigio. Il calo per le pause può abbassarlo, ma si ferma a 1000: mai sotto Optio III.
 - **Podio**: sempre i primi tre della classifica (non provvisori né inattivi), qualunque sia il loro Elo: oggi Romeo
-  (1414) Imperatore, Crisci (1245) Legato, Crifo' (1234) Tribuno. Con la soglia di 1250 il podio sarebbe rimasto mezzo
-  vuoto per metà anno (nel 2026 sopra 1250 c'erano da 1 a 4 giocatori). Chi supera 1250 senza stare sul podio è
-  Primipilo. A gennaio, finché tutti sono provvisori, il podio è vuoto.
+  (1414) Imperatore, Crisci (1245) Legato, Crifo' (1234) Tribuno. Con una soglia il podio sarebbe rimasto mezzo vuoto
+  per metà anno. Chi supera 1200 senza stare sul podio è Primipilo. A gennaio, finché tutti sono provvisori, il podio
+  è vuoto.
+- **Perché queste soglie**: prima erano 50 punti più in alto (Primipilo da 1250), ma con il podio sempre pieno il
+  Primipilo fuori dal podio nel 2026 ci sarebbe stato solo a maggio e giugno (un giocatore). Da 1200, mese per mese:
+  0, 1, 2, 6, 7, 4, 2, 3, 4, 4, 4. Sopra 1250 nel corso del 2026 sono arrivati 9 giocatori, a Centurione (vecchia
+  soglia 1150) 38: i rank alti si raggiungono anche con pochi tornei, la fine dell'anno non cambia la distribuzione.
 
 ## 6. Prove sui dati
 
