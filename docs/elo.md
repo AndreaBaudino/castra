@@ -23,6 +23,7 @@ dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/M
 | Provvisorio | margine dell'ultimo torneo sopra ± 80 |
 | Inattivo | più di 3 mesi senza tornei: classifica a parte, torna al primo torneo |
 | Rank | romani ogni 100 punti (Tirone sotto 800 … Optio da 1000 … Primipilo da 1200) con divisioni I-II-III di circa 33 punti (III la più alta); podio sempre per i primi 3 della classifica |
+| Medaglie | nella scheda: armatura che cresce col rank, animata solo lì |
 | Dove si vede | voce ELO nelle classifiche, scheda del giocatore, (i), testa a testa; pubblico |
 
 ## 1. Da dove vengono i dati
@@ -236,12 +237,45 @@ apposta, più dettagliato (bordo, umbone, costola, ali). Tavola "Icone dei rank"
 | Primipilo | aquila (l'aquila della legione era affidata a lui) | #D9A93A / #94690F |
 | Podio | corona d'alloro: oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
 
-- **Divisioni**: dischi (*phalerae*) accanto all'icona, tanti quanto il numero della divisione: uno per I, due per
-  II, tre per III. Il numero romano resta scritto.
+- **Divisioni**: accanto all'icona resta scritto il numero romano (I, II, III); nella medaglia della scheda sono le
+  punte sopra l'armatura (sotto).
 - **Provvisorio**: scudo tratteggiato vuoto, "non classificato". **Inattivo**: la sua icona in grigio.
 - **Dove**: scheda del giocatore (icona grande in un riquadro, dischi e barra fino al rank dopo), schermata Rank (in
   ogni riga e sul podio), classifica (piccola, prima del nome del rank), testa a testa (riga Rank). Mai negli
   abbinamenti dei tornei né sullo schermo per la sala. Idea per dopo: "Sei salito a …" nella riga del torneo.
+
+### Medaglie dei rank (solo nella scheda del giocatore)
+
+Nella scheda del giocatore il rank è una medaglia, grande nella sezione Elo e piccola agganciata all'avatar (con un
+anello del colore del rank intorno al cerchio). Altrove resta l'icona. Disegni nella tavola "Medaglie con l'armatura"
+dei mockup; l'idea di partenza sono gli stemmi dei rank di League of Legends (più sali, più l'emblema è grande e
+ricco), ma i disegni sono nostri e non copiano quelli di Riot.
+
+- **Base**: una *phalera* piena, tutta di metallo del colore del rank, con l'icona coniata al centro.
+- **Vestizione**: ogni rank aggiunge un pezzo d'armatura senza coprire quelli di prima:
+
+  | Rank | Si aggiunge |
+  | --- | --- |
+  | Tirone | solo la medaglia |
+  | Legionario | anello di piastre con i rivetti |
+  | Decano | spallacci: tre lamine per lato, d'acciaio con il bordo nel metallo del rank |
+  | Optio | frange di cuoio (*pteruges*) con le punte di metallo, corte |
+  | Centurione | ali di metallo aperte di lato, con la punta in alto e sei punte sotto (uno strato) |
+  | Primipilo | due strati di ali, cresta rossa di crine, corona d'alloro verde in basso, frange lunghe |
+  | Podio | tre strati di ali, stelle (3 Imperatore, 2 Legato, 1 Tribuno), nastri di stoffa porpora; tutto in oro, argento o bronzo |
+
+- **Ordine dei pezzi**, da dietro: ali, frange, spallacci, alloro, anello, stelle, disco. Le ali stanno dietro gli
+  spallacci perché si vedano tutti i pezzi.
+- **Divisioni**: una, due o tre punte di metallo che spuntano in alto dall'armatura (I, II, III), dal Tirone al
+  Centurione; dal Primipilo c'è la cresta.
+- **Materiali**: il metallo ha bordi smussati, riflessi e ombre portate tra i pezzi (luce da in alto a sinistra);
+  alloro, cresta, cuoio e nastri sono opachi, con la loro trama (nervatura delle foglie, crine, tessuto). Le stelle
+  hanno una faccia più chiara e un alone.
+- **Animazione, solo nella medaglia grande della scheda**: la luce oscilla lenta sul metallo (7 secondi) e ogni 5
+  secondi un riflesso attraversa il disco. Ferma con "riduci movimento" del telefono e sull'avatar piccolo.
+- **Provvisorio**: nessuna medaglia ("non classificato"). **Inattivo**: la sua medaglia in grigio.
+- Nell'app conviene generare le medaglie piccole una volta per rank (immagini pronte), perché i filtri di luce SVG
+  costano: dal vivo solo la medaglia grande della scheda.
 
 ## 6. Prove sui dati
 
@@ -296,6 +330,6 @@ il comando è in cima al file); i grafici sono su
 
 ## 7. In sospeso
 
-- I mockup dei rank (nomi del podio da confermare).
+- La medaglia nella scheda del giocatore e sull'avatar, da mettere nei mockup.
 - Niente altro sulle regole. Da fare: il calcolo nel build del meta e le schermate nell'app, poi togliere
   `scripts/elo/analisi.mjs`.
