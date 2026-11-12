@@ -32,8 +32,17 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
 - **Elo di lega**: ogni lega ha anche un suo correttivo, che impara da solo nei livelli (dove le leghe si incontrano):
   dopo ogni livello, per ogni giocatore con una lega di casa (quella dove gioca più tappe), il correttivo della sua lega
   si sposta di 4 × Σ peso × (risultato − atteso). Se i giocatori di una lega rendono nei livelli meno di quanto dice il
-  loro Elo, il correttivo scende. L'Elo che si vede è **un numero solo**: Elo del giocatore + correttivo della sua lega,
-  usato anche per tutti i risultati attesi. Chi gioca solo livelli non ha correttivo. Così si correggono i gruppi
+  loro Elo, il correttivo scende. L'Elo che si vede è **un numero solo**: Elo del giocatore + correttivo della sua lega.
+  Chi gioca solo livelli non ha correttivo.
+- **Lo spostamento della lega arriva al torneo successivo**: ogni giocatore tiene il correttivo che la sua lega aveva al
+  suo ultimo torneo, quindi il suo Elo si muove solo quando gioca e i punti già presi non cambiano. Al torneo dopo
+  prende il correttivo di quel momento, mostrato a parte nella riga del torneo ("torneo +22,0 · lega −14,4"). Il torneo
+  usa per tutti i risultati attesi il correttivo aggiornato, quindi le previsioni sono le stesse di un correttivo
+  applicato subito a tutti; cambia solo il numero mostrato di chi non gioca, che in classifica resta a com'era al suo
+  ultimo torneo (anche il 25° percentile dei nuovi si calcola su questo numero). Applicato subito, il correttivo
+  spostava di notte l'Elo di chi non aveva giocato: sul 2026 di solito di 10 punti, una volta su dieci oltre 30
+  (Savona −46 dopo il livello 2 di Albisola). Calmarlo costava precisione (68,0% invece di 69,3% tra leghe diverse),
+  spostarlo solo al cambio di stagione ancora di più (66,7%). Così si correggono i gruppi
   chiusi (una lega con tante tappe tra gli stessi giocatori) senza decisioni a tavolino: provato sul 2026, prevede
   meglio di ogni correzione decisa con una misura a giugno (sezione 6). A fine 2026: Savona −83, Genova −34, Roma −19,
   Sanremo +78, Lega Online +60, Latina / Frosinone +55.

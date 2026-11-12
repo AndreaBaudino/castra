@@ -77,21 +77,27 @@ const order = [...entries.keys()]
  */
 function glicko({ base, nuovi, start, c, floor, eta }) {
   const R = new Map(), RD = new Map(), last = new Map(), hist = new Map(), played = new Map()
-  // each league's Elo, learnt in the levels: a player's Elo is theirs plus their league's, one number
-  const L = new Map()
-  const elo = (p) => R.get(p) + (L.get(home.get(p)) ?? 0)
+  // each league's Elo, learnt in the levels: a player's Elo is theirs plus their league's, one number. Each player keeps
+  // the league's value of their last tournament (Lp), so their Elo moves only when they play; the tournament itself
+  // uses the current one, so the expected results are the same
+  const L = new Map(), Lp = new Map()
+  const lg = (p) => L.get(home.get(p)) ?? 0
+  const elo = (p) => R.get(p) + lg(p)
+  const shown = (p) => R.get(p) + (Lp.get(p) ?? 0)
   let loss = 0, right = 0, pairs = 0
   const newcomer = (d) => {
     if (d < `${year}-02-01` || nuovi === 'base') return base
     if (nuovi !== 'p25') return +nuovi
-    const v = [...R.keys()].map(elo).sort((a, b) => a - b)
+    const v = [...R.keys()].map(shown).sort((a, b) => a - b)
     return v.length ? v[Math.floor((v.length - 1) / 4)] : base
   }
   for (const ti of order) {
     const es = entries.get(ti), t = T[ti], d = day[ti], n = es.length, w = WEIGHT[t.k] ?? 1
+    const before = new Map(), lpBefore = new Map()
     for (const [p] of es.map((x) => [x[1]])) {
-      if (!R.has(p)) R.set(p, newcomer(d) - (L.get(home.get(p)) ?? 0)), RD.set(p, start)
+      if (!R.has(p)) R.set(p, newcomer(d) - lg(p)), RD.set(p, start), Lp.set(p, lg(p))
       if (last.has(p)) RD.set(p, Math.min(start, Math.sqrt(RD.get(p) ** 2 + c * c * days(last.get(p), d))))
+      before.set(p, shown(p)), lpBefore.set(p, Lp.get(p) ?? 0)
     }
     if (d >= `${year}-03-01`)
       for (let i = 0; i < n; i++)
@@ -133,17 +139,19 @@ function glicko({ base, nuovi, start, c, floor, eta }) {
       const v = 1 / (1 / RD.get(a[1]) ** 2 + info)
       return [a, R.get(a[1]) + Q * v * sum, Math.max(floor, Math.sqrt(v)), off]
     })
-    const before = new Map(es.map((a) => [a[1], elo(a[1])]))
     // the league learns from how its players did in a level against their Elo
     if (level(t)) for (const [a, , , off] of next) if (home.has(a[1])) L.set(home.get(a[1]), (L.get(home.get(a[1])) ?? 0) + eta * off)
     for (const [a, r, rd] of next) R.set(a[1], r), RD.set(a[1], rd)
     for (const [a, , rd] of next) {
       const p = a[1]
-      ;(hist.get(p) ?? hist.set(p, []).get(p)).push({ day: d, t, place: a[3], n, move: elo(p) - before.get(p), elo: elo(p), rd })
+      Lp.set(p, lg(p))
+      // the league's moves since the player's last tournament arrive now, on a line of their own
+      const league = Lp.get(p) - lpBefore.get(p)
+      ;(hist.get(p) ?? hist.set(p, []).get(p)).push({ day: d, t, place: a[3], n, move: shown(p) - before.get(p) - league, league, elo: shown(p), rd })
       last.set(p, d), played.set(p, (played.get(p) ?? 0) + games(a))
     }
   }
-  return { R: new Map([...R.keys()].map((p) => [p, elo(p)])), RD, L, hist, played, right: right / pairs, loss: loss / pairs, pairs }
+  return { R: new Map([...R.keys()].map((p) => [p, shown(p)])), RD, L, hist, played, right: right / pairs, loss: loss / pairs, pairs }
 }
 
 const fmt = (n, d = 0) => n.toFixed(d).replace('.', ',')
@@ -155,12 +163,12 @@ console.log(`Elo ${year}, base ${opt.base}, nuovi da ${opt.nuovi}, Elo di lega $
 console.log(`Previsione da marzo: ${fmt(res.right * 100, 2)}% coppie azzeccate, log-loss ${fmt(res.loss, 4)} (${res.pairs} coppie)`)
 console.log(`Provvisori (margine sopra ±80): ${all.filter((p) => res.RD.get(p) > 80).length}\n`)
 
-console.log('Elo di lega (compreso nell\'Elo di ogni giocatore):', [...res.L].sort((a, b) => a[1] - b[1]).filter((x) => Math.abs(x[1]) >= 1).map(([lg, v]) => `${lg} ${v >= 0 ? '+' : ''}${fmt(v)}`).join(', '), '\n')
+console.log('Elo di lega (arriva nell\'Elo di ogni giocatore al suo torneo successivo):', [...res.L].sort((a, b) => a[1] - b[1]).filter((x) => Math.abs(x[1]) >= 1).map(([lg, v]) => `${lg} ${v >= 0 ? '+' : ''}${fmt(v)}`).join(', '), '\n')
 if (opt.player) {
   const h = res.hist.get(opt.player)
   if (!h) throw new Error(`${opt.player}: nessun torneo nel ${year}`)
   for (const x of h)
-    console.log(`${x.day}  ${name(x.t).padEnd(34)} ${String(x.place).padStart(2)}º su ${String(x.n).padEnd(3)} ${(x.move >= 0 ? '+' : '') + fmt(x.move, 1)}`.padEnd(70) + `${fmt(x.elo)} ±${fmt(x.rd)}`)
+    console.log(`${x.day}  ${name(x.t).padEnd(34)} ${String(x.place).padStart(2)}º su ${String(x.n).padEnd(3)} ${(x.move >= 0 ? '+' : '') + fmt(x.move, 1)}`.padEnd(70) + `${fmt(x.elo)} ±${fmt(x.rd)}` + (Math.abs(x.league) >= 0.05 ? `   lega ${(x.league >= 0 ? '+' : '') + fmt(x.league, 1)}` : ''))
 } else {
   const top = all.sort((a, b) => res.R.get(b) - res.R.get(a)).slice(0, +opt.top)
   top.forEach((p, i) => {
