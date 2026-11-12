@@ -246,8 +246,10 @@ apposta, più dettagliato (bordo, umbone, costola, ali). Tavola "Icone dei rank"
 
 ### Medaglie dei rank (solo nella scheda del giocatore)
 
-Nella scheda del giocatore il rank è una medaglia, grande nella sezione Elo e piccola agganciata all'avatar (con un
-anello del colore del rank intorno al cerchio). Altrove resta l'icona. Disegni nella tavola "Medaglie con l'armatura"
+Nella scheda del giocatore il rank è l'armatura della medaglia intorno all'avatar: l'avatar prende il posto del disco
+centrale e piastre, spallacci, frange, ali, cresta e alloro gli stanno intorno. L'avatar è centrato sotto l'immagine
+del mazzo, con nome, "Verificato" e rank sotto; nella sezione Elo restano solo icona, nome del rank, punti al rank
+dopo e barra (nessuna seconda medaglia). Altrove resta l'icona. Disegni nella tavola "Medaglie con l'armatura"
 dei mockup; l'idea di partenza sono gli stemmi dei rank di League of Legends (più sali, più l'emblema è grande e
 ricco), ma i disegni sono nostri e non copiano quelli di Riot.
 
@@ -271,11 +273,11 @@ ricco), ma i disegni sono nostri e non copiano quelli di Riot.
 - **Materiali**: il metallo ha bordi smussati, riflessi e ombre portate tra i pezzi (luce da in alto a sinistra);
   alloro, cresta, cuoio e nastri sono opachi, con la loro trama (nervatura delle foglie, crine, tessuto). Le stelle
   hanno una faccia più chiara e un alone.
-- **Animazione, solo nella medaglia grande della scheda**: la luce oscilla lenta sul metallo (7 secondi) e ogni 5
-  secondi un riflesso attraversa il disco. Ferma con "riduci movimento" del telefono e sull'avatar piccolo.
+- **Animazione, solo nell'armatura intorno all'avatar della scheda**: la luce oscilla lenta sul metallo (7 secondi) e ogni 5
+  secondi un riflesso attraversa il disco. Ferma con "riduci movimento" del telefono.
 - **Provvisorio**: nessuna medaglia ("non classificato"). **Inattivo**: la sua medaglia in grigio.
-- Nell'app conviene generare le medaglie piccole una volta per rank (immagini pronte), perché i filtri di luce SVG
-  costano: dal vivo solo la medaglia grande della scheda.
+- I filtri di luce SVG costano: dal vivo c'è una sola armatura, quella della scheda aperta; se servissero medaglie
+  piccole altrove, meglio immagini pronte, generate una volta per rank.
 
 ## 6. Prove sui dati
 
@@ -330,6 +332,5 @@ il comando è in cima al file); i grafici sono su
 
 ## 7. In sospeso
 
-- La medaglia nella scheda del giocatore e sull'avatar, da mettere nei mockup.
 - Niente altro sulle regole. Da fare: il calcolo nel build del meta e le schermate nell'app, poi togliere
   `scripts/elo/analisi.mjs`.
