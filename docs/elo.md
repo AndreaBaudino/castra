@@ -276,6 +276,12 @@ ricco), ma i disegni sono nostri e non copiano quelli di Riot.
 - **Animazione, solo nell'armatura intorno all'avatar della scheda**: la luce oscilla lenta sul metallo (7 secondi) e ogni 5
   secondi un riflesso attraversa il disco. Ferma con "riduci movimento" del telefono.
 - **Provvisorio**: nessuna medaglia ("non classificato"). **Inattivo**: la sua medaglia in grigio.
+- **La medaglia intera** (con il disco e l'icona) si vede in due posti: nella **schermata Rank**, una per rank della
+  scala (ferma; la riga del giocatore con le sue punte) e le tre del podio; e nella **promozione**, un pannello che
+  compare una volta, la prima volta che si apre l'app dopo la notte che ha fatto salire di rank o di divisione
+  ("Sei salito a Centurione III", medaglia grande animata, il torneo che l'ha portato, i punti al rank dopo,
+  Continua / Vedi tutti i rank). Nella riga di quel torneo della scheda resta "▲ Sei salito a …", che riapre il
+  pannello. In classifica restano le icone.
 - I filtri di luce SVG costano: dal vivo c'è una sola armatura, quella della scheda aperta; se servissero medaglie
   piccole altrove, meglio immagini pronte, generate una volta per rank.
 
