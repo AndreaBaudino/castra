@@ -36,7 +36,7 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
   Chi gioca solo livelli non ha correttivo.
 - **Lo spostamento della lega arriva al torneo successivo**: ogni giocatore tiene il correttivo che la sua lega aveva al
   suo ultimo torneo, quindi il suo Elo si muove solo quando gioca e i punti già presi non cambiano. Al torneo dopo
-  prende il correttivo di quel momento, mostrato a parte nella riga del torneo ("torneo +22,0 · lega −14,4"). Il torneo
+  prende il correttivo di quel momento, mostrato a parte nella riga del torneo ("torneo +23,0 · lega −13,8"). Il torneo
   usa per tutti i risultati attesi il correttivo aggiornato, quindi le previsioni sono le stesse di un correttivo
   applicato subito a tutti; cambia solo il numero mostrato di chi non gioca, che in classifica resta a com'era al suo
   ultimo torneo (anche il 25° percentile dei nuovi si calcola su questo numero). Applicato subito, il correttivo
@@ -123,25 +123,29 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
 - **Pubblico**: una classifica Elo per tutti e l'Elo nella scheda di ogni giocatore.
 - In classifica si entra dalla **prima partecipazione**. Con il margine del suo ultimo torneo sopra **± 80** l'Elo è
   "provvisorio" (ha giocato poco): compare con l'etichetta e sta sotto gli altri.
+- **Calo per le pause**: per ogni **mese intero** (30 giorni) senza tornei si perdono **10 punti**, mai sotto **1000**
+  (chi è già sotto non perde niente). Si vede subito nel numero e, al rientro, a parte nella riga del torneo ("torneo
+  +23,0 · lega −13,8 · pausa −10,0"); continua anche da inattivo, fino a gennaio. Chi gioca almeno una volta al mese
+  non perde mai niente. 10 è circa mezzo torneo: un abituale si muove di 19 punti a torneo (mediana; uno su quattro
+  oltre 31) e di 31 in un mese in cui gioca. È l'unica eccezione a "l'Elo cambia solo quando giochi", perché dipende
+  solo da chi non gioca. Sul 2026 prevede un po' meglio di nessun calo (66,60% / 0,6061 invece di 66,54% / 0,6075):
+  chi rientra rende un po' meno del suo vecchio Elo. 5 al mese 0,6069, 15 come niente, 20 o più peggio di niente
+  (prove senza il minimo di 1000, che migliora ancora). Al rientro il margine è comunque più largo (al massimo 2,7
+  volte un giocatore attivo dopo 9 mesi, a 3 mesi circa 1,6), quindi chi torna in forma recupera in fretta. Far
+  crescere il margine più in fretta con le pause prevede peggio (velocità 8 al posto di 5: 0,6090).
 - **Inattivi**: chi non gioca un torneo da **più di 3 mesi** passa in una classifica a parte, sotto i provvisori, con
-  l'Elo intatto (nessun punto tolto); al primo torneo torna in classifica. Il provvisorio guarda il margine dell'ultimo
-  torneo, non quello cresciuto con la pausa, così le due etichette non si sovrappongono. Al 12/11/2026: 141 in
-  classifica, 59 provvisori, 164 inattivi.
-- **Perché nessun calo per inattività**: chi rientra ha già il margine più largo, quindi si muove di più in tutte e
-  due le direzioni, al massimo 2,7 volte un giocatore attivo dopo 9 mesi (a 3 mesi circa 1,6), e solo per un torneo o
-  due; fermarsi apposta non conviene. Sul 2026 un calo di 15 punti al mese dopo 3 mesi prevedeva un po' meglio i
-  rientri (66,71% / 0,6061 invece di 66,54% / 0,6075; 50 al mese peggio di niente), ma su soli 62 rientri: da
-  riprovare a fine 2027. Far crescere il margine più in fretta con le pause prevede peggio (velocità 8 al posto di 5:
-  0,6090).
+  l'Elo calato dalle pause; al primo torneo torna in classifica. Il provvisorio guarda il margine dell'ultimo torneo,
+  non quello cresciuto con la pausa, così le due etichette non si sovrappongono. Al 12/11/2026: 141 in classifica, 59
+  provvisori, 164 inattivi.
 - **Classifiche**: una voce a sé, `CLASSIFICA · ELO · EVENTI · LEGHE · RECORD`, con i filtri di lega e dei seguiti.
   Ogni riga: posizione, nome, lega, partite, Elo e quanto è cambiato in 30 giorni; sotto i provvisori, con
-  l'etichetta, e gli inattivi con la data dell'ultimo torneo; in fondo la propria riga. Il link "Come funziona l'Elo" apre la (i).
+  l'etichetta, e gli inattivi con la data dell'ultimo torneo e quanto hanno perso; in fondo la propria riga. Il link "Come funziona l'Elo" apre la (i).
 - **Scheda del giocatore** (Circuito): Elo, cambio in 30 giorni, posizione, partite, margine, grafico dell'anno (un
   punto per torneo) e i tornei con lo spostamento e l'Elo dopo. Un torneo di Castra si apre sulle sue partite, con
-  l'Elo dell'avversario e quanto ha reso ognuna. Quando arriva lo spostamento della lega, la riga lo mostra a parte:
-  "torneo +22,0 · lega −14,4".
+  l'Elo dell'avversario e quanto ha reso ognuna. Lo spostamento della lega e il calo per la pausa, quando ci sono,
+  stanno a parte nella riga del torneo: "torneo +23,0 · lega −13,8 · pausa −10,0".
 - **(i) Come funziona l'Elo**: partenza, contro chi, tornei e pesi, margine ("più giochi, più il tuo Elo diventa
-  preciso; ogni mese senza tornei torna a muoversi un po' di più"; sopra ± 80 provvisorio; dopo 3 mesi senza tornei tra gli inattivi), la lega (arriva al torneo
+  preciso; ogni mese senza tornei torna a muoversi un po' di più"; sopra ± 80 provvisorio; 10 punti per ogni mese senza tornei, mai sotto 1000; dopo 3 mesi tra gli inattivi), la lega (arriva al torneo
   successivo).
 - **Testa a testa** (pulsante Confronta della scheda, `#meta/c~a~b`): "Se si incontrassero adesso", la probabilità di
   vincere un match e quanto guadagna o perde ognuno per una partita di una tappa; la riga Elo sopra quelle che ci sono

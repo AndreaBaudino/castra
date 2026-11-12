@@ -4,10 +4,11 @@
 // computes the Elo.
 //   node scripts/elo/analisi.mjs [anno] [--file meta-2026.json] [--base 1000] [--nuovi p25|base|900] [--start 100]
 //                                [--c 5] [--floor 40] [--top 20] [--player "Nome Cognome"]
-//                                [--eta 4] [--al 2026-11-12]
+//                                [--eta 4] [--al 2026-11-12] [--calo 10]
 // --nuovi: where a player first seen after January starts (the 25th percentile of the Elo at that moment, as decided,
 // the year's base, or a number); --eta: how fast each league's own Elo learns from its players in the levels (0: no
-// league Elo); --al: the day of the ranking (default today): who has not played for 3 months goes among the inactive.
+// league Elo); --al: the day of the ranking (default today): who has not played for 3 months goes among the inactive;
+// --calo: points lost for each whole month without tournaments, never below the base.
 // Without --file it reads meta-<anno>.json from the meta-data branch (git fetch origin meta-data first).
 
 import { execSync } from 'node:child_process'
@@ -21,6 +22,7 @@ const { values: opt, positionals } = parseArgs({
     base: { type: 'string', default: '1000' },
     nuovi: { type: 'string', default: 'p25' },
     eta: { type: 'string', default: '4' },
+    calo: { type: 'string', default: '10' },
     al: { type: 'string' },
     start: { type: 'string', default: '100' },
     c: { type: 'string', default: '5' },
@@ -75,6 +77,10 @@ const order = [...entries.keys()]
  * Also the prediction check: before each tournament from March, who of two players with different points finishes
  * higher (between equal points the tiebreakers decide, not the players).
  */
+// what a pause costs: calo points for each whole month without tournaments, never below the base (nor anything for who
+// is already under it)
+const idle = (elo, from, to) => Math.min(+opt.calo * Math.floor(days(from, to) / 30), Math.max(0, elo - +opt.base))
+
 function glicko({ base, nuovi, start, c, floor, eta }) {
   const R = new Map(), RD = new Map(), last = new Map(), hist = new Map(), played = new Map()
   // each league's Elo, learnt in the levels: a player's Elo is theirs plus their league's, one number. Each player keeps
@@ -93,10 +99,14 @@ function glicko({ base, nuovi, start, c, floor, eta }) {
   }
   for (const ti of order) {
     const es = entries.get(ti), t = T[ti], d = day[ti], n = es.length, w = WEIGHT[t.k] ?? 1
-    const before = new Map(), lpBefore = new Map()
+    const before = new Map(), lpBefore = new Map(), lost = new Map()
     for (const [p] of es.map((x) => [x[1]])) {
       if (!R.has(p)) R.set(p, newcomer(d) - lg(p)), RD.set(p, start), Lp.set(p, lg(p))
-      if (last.has(p)) RD.set(p, Math.min(start, Math.sqrt(RD.get(p) ** 2 + c * c * days(last.get(p), d))))
+      if (last.has(p)) {
+        RD.set(p, Math.min(start, Math.sqrt(RD.get(p) ** 2 + c * c * days(last.get(p), d))))
+        lost.set(p, idle(shown(p), last.get(p), d))
+        R.set(p, R.get(p) - lost.get(p))
+      }
       before.set(p, shown(p)), lpBefore.set(p, Lp.get(p) ?? 0)
     }
     if (d >= `${year}-03-01`)
@@ -147,7 +157,7 @@ function glicko({ base, nuovi, start, c, floor, eta }) {
       Lp.set(p, lg(p))
       // the league's moves since the player's last tournament arrive now, on a line of their own
       const league = Lp.get(p) - lpBefore.get(p)
-      ;(hist.get(p) ?? hist.set(p, []).get(p)).push({ day: d, t, place: a[3], n, move: shown(p) - before.get(p) - league, league, elo: shown(p), rd })
+      ;(hist.get(p) ?? hist.set(p, []).get(p)).push({ day: d, t, place: a[3], n, move: shown(p) - before.get(p) - league, league, idle: lost.get(p) ?? 0, elo: shown(p), rd })
       last.set(p, d), played.set(p, (played.get(p) ?? 0) + games(a))
     }
   }
@@ -164,6 +174,8 @@ console.log(`Previsione da marzo: ${fmt(res.right * 100, 2)}% coppie azzeccate, 
 // the ranking of a day: who has not played for 3 months goes among the inactive, Elo untouched; provisional is who
 // played little (the margin of their last tournament above ±80), so the two labels never overlap
 const today = opt.al ?? new Date().toISOString().slice(0, 10)
+// the Elo of that day, with the pause since the last tournament
+const now = new Map(all.map((p) => [p, res.R.get(p) - idle(res.R.get(p), res.hist.get(p).at(-1).day, today)]))
 const away = (p) => days(res.hist.get(p).at(-1).day, today) > 90
 const group = (p) => (away(p) ? 'inattivi' : res.RD.get(p) > 80 ? 'provvisori' : 'classifica')
 const count = (k) => all.filter((p) => group(p) === k).length
@@ -174,12 +186,13 @@ if (opt.player) {
   const h = res.hist.get(opt.player)
   if (!h) throw new Error(`${opt.player}: nessun torneo nel ${year}`)
   for (const x of h)
-    console.log(`${x.day}  ${name(x.t).padEnd(34)} ${String(x.place).padStart(2)}º su ${String(x.n).padEnd(3)} ${(x.move >= 0 ? '+' : '') + fmt(x.move, 1)}`.padEnd(70) + `${fmt(x.elo)} ±${fmt(x.rd)}` + (Math.abs(x.league) >= 0.05 ? `   lega ${(x.league >= 0 ? '+' : '') + fmt(x.league, 1)}` : ''))
+    console.log(`${x.day}  ${name(x.t).padEnd(34)} ${String(x.place).padStart(2)}º su ${String(x.n).padEnd(3)} ${(x.move >= 0 ? '+' : '') + fmt(x.move, 1)}`.padEnd(70) + `${fmt(x.elo)} ±${fmt(x.rd)}` + (Math.abs(x.league) >= 0.05 ? `   lega ${(x.league >= 0 ? '+' : '') + fmt(x.league, 1)}` : '') + (x.idle ? `   pausa −${fmt(x.idle, 1)}` : ''))
+  console.log(`Al ${today}: ${fmt(now.get(opt.player))}`)
 } else {
-  const top = all.filter((p) => group(p) === 'classifica').sort((a, b) => res.R.get(b) - res.R.get(a)).slice(0, +opt.top)
+  const top = all.filter((p) => group(p) === 'classifica').sort((a, b) => now.get(b) - now.get(a)).slice(0, +opt.top)
   top.forEach((p, i) => {
     const h = res.hist.get(p)
     const part = (k) => h.filter((x) => !level(x.t) === k).reduce((s, x) => s + x.move, 0)
-    console.log(`${String(i + 1).padStart(3)} ${p.padEnd(26)} ${fmt(res.R.get(p))} ±${fmt(res.RD.get(p)).padEnd(4)} ${String(res.played.get(p)).padStart(4)} partite   leghe ${fmt(part(true))}  livelli ${fmt(part(false))}`)
+    console.log(`${String(i + 1).padStart(3)} ${p.padEnd(26)} ${fmt(now.get(p))} ±${fmt(res.RD.get(p)).padEnd(4)} ${String(res.played.get(p)).padStart(4)} partite   leghe ${fmt(part(true))}  livelli ${fmt(part(false))}`)
   })
 }
