@@ -5561,6 +5561,18 @@ div.home-row > .home-row-link.link {
 .armoured > .claim-avatar {
   position: relative;
 }
+/* on the cover the photo grows and drops onto the art's edge: in the armour it keeps the disc's size, the armour drops */
+.player-cover .armoured {
+  transform: translateY(28px);
+}
+.player-cover:has(.armoured) {
+  margin-bottom: 72px; /* room for the armour's lower pieces */
+}
+.player-cover .armoured > .claim-avatar {
+  width: 76px;
+  height: 76px;
+  transform: none;
+}
 .claim-row.armoured-row {
   flex-direction: column;
   align-items: center;
