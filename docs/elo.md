@@ -221,19 +221,20 @@ e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
 
 ### Icone dei rank
 
-Una per rank (non per divisione: a 16 px diciotto icone non si distinguerebbero), disegnate apposta: oggetti
-dell'esercito romano a tratto (SVG 24 × 24, tratto arrotondato), in un colore solo, quello del rank, che nel tema
-chiaro è più scuro. Disegni nella tavola "Icone dei rank" dei mockup.
+Una per rank (non per divisione: a 16 px diciotto icone non si distinguerebbero): sagome piene di oggetti
+dell'esercito romano, scelte dal proprietario (senza licenza) e convertite in SVG 24 × 24 (un `path` con
+`fill-rule="evenodd"`), in un colore solo, quello del rank, che nel tema chiaro è più scuro. Lo scudo è disegnato
+apposta, più dettagliato (bordo, umbone, costola, ali). Tavola "Icone dei rank" dei mockup.
 
 | Rank | Icona | Colore scuro / chiaro |
 | --- | --- | --- |
-| Tirone | spada di legno della recluta (*rudis*) | #9A9AA2 / #5F5F67 |
-| Legionario | scudo (*scutum*) | #C08A5B / #8A5A2E |
-| Decano | tenda (guidava gli otto compagni di tenda) | #A9BCCB / #4F6A80 |
-| Optio | bastone col pomo (*hastile*) | #5FBF85 / #2F7F4F |
-| Centurione | elmo con la cresta di traverso | #5A9BEA / #2B63B8 |
-| Primipilo | aquila della legione (era affidata a lui) | #D9A93A / #94690F |
-| Podio | corona d'alloro: oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
+| Tirone | spada | #9A9AA2 / #5F5F67 |
+| Legionario | scudo (*scutum*) con bordo, umbone, costola e ali | #C08A5B / #8A5A2E |
+| Decano | tenda con la bandiera (guidava i compagni di tenda) | #A9BCCB / #4F6A80 |
+| Optio | lancia | #5FBF85 / #2F7F4F |
+| Centurione | elmo con la cresta | #5A9BEA / #2B63B8 |
+| Primipilo | aquila (l'aquila della legione era affidata a lui) | #D9A93A / #94690F |
+| Podio | corona d'alloro (provvisoria, in attesa di quella del proprietario): oro Imperatore, argento Legato, bronzo Tribuno | #F0C75E, #D0D5DD, #D08D5C |
 
 - **Divisioni**: dischi (*phalerae*) accanto all'icona, tanti quanto il numero della divisione: uno per I, due per
   II, tre per III. Il numero romano resta scritto.
