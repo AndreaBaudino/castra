@@ -150,6 +150,14 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
 - **Pubblico**: una classifica Elo per tutti e l'Elo nella scheda di ogni giocatore.
 - In classifica si entra dalla **prima partecipazione**. Con il margine del suo ultimo torneo sopra **± 80** l'Elo è
   "provvisorio" (ha giocato poco): compare con l'etichetta e sta sotto gli altri.
+  Chi è provvisorio, in pratica: **chi è nuovo** (parte da ± 100 e ogni tappa da 4 partite lo stringe di circa 6
+  punti, quindi servono circa 3 tappe senza pause lunghe) e **chi rientra da una pausa lunga** (il margine torna verso
+  ± 100: dopo mesi fermo servono 1-2 tappe). Esempi al 12/11/2026: Arneri, nuovo a giugno, 16 partite in 4 tappe ma
+  con 75 giorni fermo in estate, ± 82, gli manca una tappa; Cimino, 32 partite ma fermo da marzo a ottobre, ± 86. Dei
+  59 provvisori, 38 hanno meno di 8 partite e 34 un torneo solo.
+- **Cambio in 30 giorni** (classifica e scheda): l'Elo di oggi meno quello di 30 giorni prima, con tutto dentro
+  (tornei, lega, calo per le pause). Esempio: Romeo −33 = tappa 7 −36,4 (7º su 12 da primo Elo) + tappa 8 +17,9 −
+  lega 14,8.
 - **Calo per le pause**: dal **secondo mese intero** (60 giorni) senza tornei si perdono **10 punti al mese** (2 mesi
   −10, 3 mesi −20, 4 mesi −30…), mai sotto **1000** (chi è già sotto non perde niente). Si vede subito nel numero e,
   al rientro, a parte nella riga del torneo ("torneo +12,0 · lega −5,0 · pausa −20,0"); continua anche da inattivo,
