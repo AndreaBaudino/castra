@@ -280,8 +280,9 @@ ricco), ma i disegni sono nostri e non copiano quelli di Riot.
   scala (ferma; la riga del giocatore con le sue punte) e le tre del podio; e nella **promozione**, un pannello che
   compare una volta, la prima volta che si apre l'app dopo la notte che ha fatto salire di rank o di divisione
   ("Sei salito a Centurione III", medaglia grande animata, il torneo che l'ha portato, i punti al rank dopo,
-  Continua / Vedi tutti i rank). Nella riga di quel torneo della scheda resta "▲ Sei salito a …", che riapre il
-  pannello. In classifica restano le icone.
+  Continua / Vedi tutti i rank). Nella riga di quel torneo della scheda resta "Sei salito a …" con l'icona del rank,
+  nel suo colore, che riapre il pannello; le discese hanno la stessa riga in grigio ("Sceso a …"), senza pannello.
+  In classifica restano le icone.
 - I filtri di luce SVG costano: dal vivo c'è una sola armatura, quella della scheda aperta; se servissero medaglie
   piccole altrove, meglio immagini pronte, generate una volta per rank.
 
