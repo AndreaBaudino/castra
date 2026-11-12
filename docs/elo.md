@@ -5,6 +5,25 @@ punti premia anche la presenza). Deciso con il proprietario a novembre 2026, pri
 con due idee a confronto, sono su [claude.ai](https://claude.ai/artifact/43dyDSrGXUom4xLkPcyxkH) (privati). I mockup
 dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/MbebbJCKsDawjSAMYpTzAY) (privati).
 
+## In breve: le impostazioni decise
+
+| Cosa | Valore |
+| --- | --- |
+| Metodo | Glicko adattato (Elo + margine), un numero solo chiamato "Elo" |
+| Partenza | 1º gennaio, tutti a 1000 ± 100; reset ogni anno |
+| Chi arriva dopo gennaio | 25° percentile dell'Elo che si vede in quel momento, ± 100 |
+| Margine | minimo ± 40; con le pause √(margine² + 5² × giorni), massimo ± 100 |
+| Peso dei tornei | tappa e lega online ×1, livello 1 ×1,5, livello 2 ×2 |
+| Fonti | foglio (piazzamento contro tutti gli iscritti) + match di Castra (`pm`), un torneo conta una volta |
+| Top | solo nei livelli 1 e 2 |
+| Bye e pareggio intenzionale | non contano; pareggio giocato = mezza vittoria |
+| Aggiornamento | la notte dopo che il torneo è scritto nel foglio |
+| Elo di lega | velocità 4, impara solo nei livelli, resta intero a gennaio; arriva a ogni giocatore al suo torneo successivo |
+| Calo per le pause | 10 punti al mese dal 2º mese intero senza tornei, mai sotto 1000 (sotto 1000 nessun calo) |
+| Provvisorio | margine dell'ultimo torneo sopra ± 80 |
+| Inattivo | più di 3 mesi senza tornei: classifica a parte, torna al primo torneo |
+| Dove si vede | voce ELO nelle classifiche, scheda del giocatore, (i), testa a testa; pubblico |
+
 ## 1. Da dove vengono i dati
 
 - **Fogli dei tornei**: per ogni iscrizione piazzamento, vittorie, sconfitte, pareggi e bye, ma non contro chi si è
