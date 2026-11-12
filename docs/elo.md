@@ -14,7 +14,7 @@ dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/M
 | Chi arriva dopo gennaio | 25° percentile dell'Elo che si vede in quel momento, ± 100 |
 | Margine | minimo ± 40; con le pause √(margine² + 5² × giorni), massimo ± 100 |
 | Peso dei tornei | tappa e lega online ×1, livello 1 ×1,5, livello 2 ×2 |
-| Fonti | foglio (piazzamento contro tutti gli iscritti) + match di Castra (`pm`), un torneo conta una volta |
+| Fonti | foglio (piazzamento contro tutti gli iscritti; chi fa drop per punti per turno) + match di Castra (`pm`), un torneo conta una volta |
 | Top | solo nei livelli 1 e 2 |
 | Bye e pareggio intenzionale | non contano; pareggio giocato = mezza vittoria |
 | Aggiornamento | la notte dopo che il torneo è scritto nel foglio |
@@ -56,7 +56,7 @@ poco, con il margine largo sposta molto. Nell'app si chiama comunque "Elo".
   Chi gioca solo livelli non ha correttivo.
 - **Lo spostamento della lega arriva al torneo successivo**: ogni giocatore tiene il correttivo che la sua lega aveva al
   suo ultimo torneo, quindi il suo Elo si muove solo quando gioca e i punti già presi non cambiano. Al torneo dopo
-  prende il correttivo di quel momento, mostrato a parte nella riga del torneo ("torneo +22,1 · lega −13,9"). Il torneo
+  prende il correttivo di quel momento, mostrato a parte nella riga del torneo ("torneo +19,2 · lega −14,8"). Il torneo
   usa per tutti i risultati attesi il correttivo aggiornato, quindi le previsioni sono le stesse di un correttivo
   applicato subito a tutti; cambia solo il numero mostrato di chi non gioca, che in classifica resta a com'era al suo
   ultimo torneo (anche il 25° percentile dei nuovi si calcola su questo numero). Applicato subito, il correttivo
@@ -137,6 +137,13 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
   il bye) ÷ (iscritti − 1). In tutto, per ogni giocatore, i confronti pesano circa quanto le sue partite, come in
   Castra; chi gioca la top pesa di più perché tutti i suoi confronti valgono di più.
 - La media delle partite dei due (e non solo le proprie) tiene lo stesso peso al confronto visto da tutti e due i lati.
+- **Drop e arrivi in ritardo**: se uno dei due ha giocato meno turni dello svizzero (bye compreso), il confronto usa i
+  **punti per turno giocato** invece del piazzamento (il bye conta come turno, con i suoi punti). Il foglio mette chi
+  fa drop sotto tutti quelli che hanno continuato, come se avesse chiuso il torneo lì; così un 2-2 vale il 50%, come
+  in Castra dove contano solo le partite giocate. Il peso resta quello delle partite giocate. Esempio: Baudino, 2-2 e
+  drop al livello 2 di Albisola (7º Elo su 58, 45º), da −74 a −43. Nel 2026 sono 72 iscrizioni su 2.282 (50 con un
+  turno in meno, 19 con due, 3 con tre). La previsione non cambia (log-loss 0,6065 invece di 0,6063), ma la prova
+  qui vale poco: giudica sui punti finali, e chi fa drop ha meno punti per forza. È una scelta di equità.
 
 ## 5. Dove si vede
 
@@ -164,7 +171,7 @@ Non sapendo gli avversari, ogni giocatore viene confrontato con **tutti gli altr
 - **Scheda del giocatore** (Circuito): Elo, cambio in 30 giorni, posizione, partite, margine, grafico dell'anno (un
   punto per torneo) e i tornei con lo spostamento e l'Elo dopo. Un torneo di Castra si apre sulle sue partite, con
   l'Elo dell'avversario e quanto ha reso ognuna. Lo spostamento della lega e il calo per la pausa, quando ci sono,
-  stanno a parte nella riga del torneo: "torneo +22,1 · lega −13,9" (con una pausa lunga anche "pausa −20,0").
+  stanno a parte nella riga del torneo: "torneo +19,2 · lega −14,8" (con una pausa lunga anche "pausa −20,0").
 - **(i) Come funziona l'Elo**: partenza, contro chi, tornei e pesi, margine ("più giochi, più il tuo Elo diventa
   preciso; ogni mese senza tornei torna a muoversi un po' di più"; sopra ± 80 provvisorio; dal secondo mese senza tornei 10 punti al mese, mai sotto 1000; dopo 3 mesi tra gli inattivi), la lega (arriva al torneo
   successivo).
@@ -181,12 +188,12 @@ e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
 | Rank | Elo | III | II | I | Al 12/11/2026 |
 | --- | --- | --- | --- | --- | --- |
 | Podio | i primi 3 della classifica, qualunque Elo: 1º Imperatore, 2º Legato, 3º Tribuno | | | | 3 |
-| Primipilo | 1200 e oltre (senza divisioni) | | | | 4 |
+| Primipilo | 1200 e oltre (senza divisioni) | | | | 5 |
 | Centurione | 1100–1199 | 1100–1132 | 1133–1166 | 1167–1199 | 18 |
-| Optio | 1000–1099 (partenza) | 1000–1032 | 1033–1066 | 1067–1099 | 36 |
-| Decano | 900–999 | 900–932 | 933–966 | 967–999 | 30 |
-| Legionario | 800–899 | 800–832 | 833–866 | 867–899 | 32 |
-| Tirone | sotto 800 | sotto 733 | 733–766 | 767–799 | 18 |
+| Optio | 1000–1099 (partenza) | 1000–1032 | 1033–1066 | 1067–1099 | 33 |
+| Decano | 900–999 | 900–932 | 933–966 | 967–999 | 31 |
+| Legionario | 800–899 | 800–832 | 833–866 | 867–899 | 30 |
+| Tirone | sotto 800 | sotto 733 | 733–766 | 767–799 | 21 |
 
 - Il rank viene dall'Elo che si vede, arrotondato all'intero, e si aggiorna con lui (la notte dopo il foglio).
 - Le divisioni vanno come i numeri romani: III la più bassa, I la più alta, poi il rank sopra.
@@ -195,7 +202,7 @@ e 1010, un giocatore su dieci sopra 1140-1190, da circa 700 a 1400).
   1000 ± 100, quindi il rank arriva dopo circa 2 tappe, come un piazzamento.
 - **Inattivi**: tengono il rank, in grigio. Il calo per le pause può abbassarlo, ma si ferma a 1000: mai sotto Optio III.
 - **Podio**: sempre i primi tre della classifica (non provvisori né inattivi), qualunque sia il loro Elo: oggi Romeo
-  (1414) Imperatore, Crisci (1245) Legato, Crifo' (1234) Tribuno. Con una soglia il podio sarebbe rimasto mezzo vuoto
+  (1426) Imperatore, Crisci (1257) Legato, Borfiga (1237) Tribuno. Con una soglia il podio sarebbe rimasto mezzo vuoto
   per metà anno. Chi supera 1200 senza stare sul podio è Primipilo. A gennaio, finché tutti sono provvisori, il podio
   è vuoto.
 - **Perché queste soglie**: prima erano 50 punti più in alto (Primipilo da 1250), ma con il podio sempre pieno il

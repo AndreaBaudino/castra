@@ -61,6 +61,14 @@ const rounds = (es) => {
   for (const x of es) n.set(games(x) + (x[7] ? 1 : 0), (n.get(games(x) + (x[7] ? 1 : 0)) ?? 0) + 1)
   return [...n].sort((a, b) => b[1] - a[1])[0][0]
 }
+// a sheet comparison: by placing, but who played fewer rounds than the Swiss (drop, late arrival) by points per round
+// played, since the sheet would rank a drop under everyone who kept playing (the bye counts as a round, with its points)
+const turns = (x) => games(x) + (x[7] ? 1 : 0)
+const ppr = (x) => points(x) / Math.max(1, turns(x))
+const versus = (a, b, swiss) =>
+  turns(a) < swiss || turns(b) < swiss
+    ? (ppr(a) > ppr(b) ? 1 : ppr(a) < ppr(b) ? 0 : 0.5)
+    : a[3] < b[3] ? 1 : a[3] > b[3] ? 0 : 0.5
 // each player's league: the one with most stages in the year
 const home = new Map()
 {
@@ -138,7 +146,7 @@ function glicko({ base, nuovi, start, c, floor, eta }) {
     } else
       for (const a of es)
         for (const b of es)
-          if (b !== a) vs.get(a).push([b, a[3] < b[3] ? 1 : a[3] > b[3] ? 0 : 0.5, (w * (games(a) + games(b))) / 2 / (n - 1)])
+          if (b !== a) vs.get(a).push([b, versus(a, b, swiss), (w * (games(a) + games(b))) / 2 / (n - 1)])
     const next = es.map((a) => {
       let sum = 0, info = 0, off = 0
       for (const [b, s, weight] of vs.get(a)) {
