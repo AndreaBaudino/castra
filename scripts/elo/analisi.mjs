@@ -4,10 +4,10 @@
 // computes the Elo.
 //   node scripts/elo/analisi.mjs [anno] [--file meta-2026.json] [--base 1000] [--nuovi p25|base|900] [--start 100]
 //                                [--c 5] [--floor 40] [--top 20] [--player "Nome Cognome"]
-//                                [--eta 4]
+//                                [--eta 4] [--al 2026-11-12]
 // --nuovi: where a player first seen after January starts (the 25th percentile of the Elo at that moment, as decided,
 // the year's base, or a number); --eta: how fast each league's own Elo learns from its players in the levels (0: no
-// league Elo).
+// league Elo); --al: the day of the ranking (default today): who has not played for 3 months goes among the inactive.
 // Without --file it reads meta-<anno>.json from the meta-data branch (git fetch origin meta-data first).
 
 import { execSync } from 'node:child_process'
@@ -161,7 +161,13 @@ const all = [...res.R.keys()]
 const mean = all.reduce((s, p) => s + res.R.get(p), 0) / all.length
 console.log(`Elo ${year}, base ${opt.base}, nuovi da ${opt.nuovi}, Elo di lega ${opt.eta}, Glicko da ±${opt.start}, pause ${opt.c}, minimo ±${opt.floor}: ${all.length} giocatori, media ${fmt(mean, 1)}`)
 console.log(`Previsione da marzo: ${fmt(res.right * 100, 2)}% coppie azzeccate, log-loss ${fmt(res.loss, 4)} (${res.pairs} coppie)`)
-console.log(`Provvisori (margine sopra ±80): ${all.filter((p) => res.RD.get(p) > 80).length}\n`)
+// the ranking of a day: who has not played for 3 months goes among the inactive, Elo untouched; provisional is who
+// played little (the margin of their last tournament above ±80), so the two labels never overlap
+const today = opt.al ?? new Date().toISOString().slice(0, 10)
+const away = (p) => days(res.hist.get(p).at(-1).day, today) > 90
+const group = (p) => (away(p) ? 'inattivi' : res.RD.get(p) > 80 ? 'provvisori' : 'classifica')
+const count = (k) => all.filter((p) => group(p) === k).length
+console.log(`Al ${today}: in classifica ${count('classifica')}, provvisori ${count('provvisori')}, inattivi (fermi da più di 3 mesi) ${count('inattivi')}\n`)
 
 console.log('Elo di lega (arriva nell\'Elo di ogni giocatore al suo torneo successivo):', [...res.L].sort((a, b) => a[1] - b[1]).filter((x) => Math.abs(x[1]) >= 1).map(([lg, v]) => `${lg} ${v >= 0 ? '+' : ''}${fmt(v)}`).join(', '), '\n')
 if (opt.player) {
@@ -170,7 +176,7 @@ if (opt.player) {
   for (const x of h)
     console.log(`${x.day}  ${name(x.t).padEnd(34)} ${String(x.place).padStart(2)}º su ${String(x.n).padEnd(3)} ${(x.move >= 0 ? '+' : '') + fmt(x.move, 1)}`.padEnd(70) + `${fmt(x.elo)} ±${fmt(x.rd)}` + (Math.abs(x.league) >= 0.05 ? `   lega ${(x.league >= 0 ? '+' : '') + fmt(x.league, 1)}` : ''))
 } else {
-  const top = all.sort((a, b) => res.R.get(b) - res.R.get(a)).slice(0, +opt.top)
+  const top = all.filter((p) => group(p) === 'classifica').sort((a, b) => res.R.get(b) - res.R.get(a)).slice(0, +opt.top)
   top.forEach((p, i) => {
     const h = res.hist.get(p)
     const part = (k) => h.filter((x) => !level(x.t) === k).reduce((s, x) => s + x.move, 0)
