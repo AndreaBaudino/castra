@@ -22,7 +22,7 @@ dell'Elo definitivo, approvati, sono su [claude.ai](https://claude.ai/artifact/M
 | Calo per le pause | 10 punti al mese dal 2º mese intero senza tornei, mai sotto 1000 (sotto 1000 nessun calo) |
 | Provvisorio | margine dell'ultimo torneo sopra ± 80 |
 | Inattivo | più di 3 mesi senza tornei: classifica a parte, torna al primo torneo |
-| Rank | romani ogni 100 punti con divisioni III-II-I di circa 33 punti; da 1250 Primipilo; podio per i primi 3 sopra 1250 |
+| Rank | romani ogni 100 punti con divisioni III-II-I di circa 33 punti; da 1250 Primipilo; podio sempre per i primi 3 della classifica |
 | Dove si vede | voce ELO nelle classifiche, scheda del giocatore, (i), testa a testa; pubblico |
 
 ## 1. Da dove vengono i dati
@@ -180,9 +180,9 @@ cambia poco (mediana della classifica tra 960 e 1010, un giocatore su dieci sopr
 
 | Rank | Elo | III | II | I | Al 12/11/2026 |
 | --- | --- | --- | --- | --- | --- |
-| Podio | i primi 3 della classifica con almeno 1250: 1º Imperatore, 2º Legato, 3º Tribuno | | | | 1 |
+| Podio | i primi 3 della classifica, qualunque Elo: 1º Imperatore, 2º Legato, 3º Tribuno | | | | 3 |
 | Primipilo | 1250 e oltre (senza divisioni) | | | | 0 oltre il podio |
-| Centurione | 1150–1249 | 1150–1182 | 1183–1216 | 1217–1249 | 12 |
+| Centurione | 1150–1249 | 1150–1182 | 1183–1216 | 1217–1249 | 10 (più 2 sul podio) |
 | Optio | 1050–1149 | 1050–1082 | 1083–1116 | 1117–1149 | 24 |
 | Decano | 950–1049 | 950–982 | 983–1016 | 1017–1049 | 37 |
 | Legionario | 850–949 | 850–882 | 883–916 | 917–949 | 29 |
@@ -193,9 +193,10 @@ cambia poco (mediana della classifica tra 960 e 1010, un giocatore su dieci sopr
 - **Provvisori**: nessun rank ("non classificato") finché il margine non scende sotto ± 80. A gennaio tutti partono a
   1000 ± 100, quindi il rank arriva dopo circa 2 tappe, come un piazzamento.
 - **Inattivi**: tengono il rank, in grigio. Il calo per le pause può abbassarlo, ma si ferma a 1000: mai sotto Decano II.
-- **Podio**: solo tra chi è in classifica (non provvisori né inattivi) e ha almeno 1250, quindi può avere meno di tre
-  posti (nel 2026 sopra 1250 c'erano da 1 a 4 giocatori; oggi solo Romeo, Imperatore). Chi è sopra 1250 senza podio è
-  Primipilo.
+- **Podio**: sempre i primi tre della classifica (non provvisori né inattivi), qualunque sia il loro Elo: oggi Romeo
+  (1414) Imperatore, Crisci (1245) Legato, Crifo' (1234) Tribuno. Con la soglia di 1250 il podio sarebbe rimasto mezzo
+  vuoto per metà anno (nel 2026 sopra 1250 c'erano da 1 a 4 giocatori). Chi supera 1250 senza stare sul podio è
+  Primipilo. A gennaio, finché tutti sono provvisori, il podio è vuoto.
 
 ## 6. Prove sui dati
 
