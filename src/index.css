@@ -1382,11 +1382,17 @@ button.kv.clickable b {
   justify-content: center;
   animation: fade 0.15s ease;
 }
+/* an open sheet or dialog freezes the page beneath; the gutter stays so nothing shifts on a computer */
+html:has(.sheet-backdrop, .dialog-backdrop, .qr-screen) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
 .sheet {
   width: 100%;
   max-width: 640px;
   max-height: 92dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--surface);
   border-radius: 8px 8px 0 0;
   /* no top padding: the sticky head covers the top edge, so scrolled content never shows above it */
