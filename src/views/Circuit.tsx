@@ -14,7 +14,7 @@ import { type MetaDataset, recordOf, winrate } from '../lib/meta'
 import { PlayerDecks, PlayerHistory, PlayerLists } from './MetaPages'
 import type { Deck } from '../lib/decks'
 import { CircuitInfoButton } from './MetaInfo'
-import { ArmouredAvatar, EloCard, EloRanking } from './Elo'
+import { ArmouredAvatar, EloCard, EloLine, EloRanking } from './Elo'
 import { type Rank, rankOfPlayer, useElo } from '../lib/elo'
 import { PlayerCards } from './MetaCards'
 import { POTY_SPOTS } from '../config'
@@ -375,7 +375,7 @@ export function PlayerPage({
   const [customizing, setCustomizing] = useState(false)
   const wide = useWide()
   // every player opens on the circuit tab, even when it replaces another one on the same page
-  const [picked, setPicked] = useState({ key: playerKey, tab: 'circ' as 'circ' | 'deck' | 'card' | 'tour' })
+  const [picked, setPicked] = useState({ key: playerKey, tab: 'circ' as 'circ' | 'elo' | 'deck' | 'card' | 'tour' })
   if (!p) {
     if (!dataset || !mine.length) return <MissingPage loaded={!!dataset && circuit.players.length > 0} onBack={onBack} />
     const auto = signatureOf(dataset, mine)
@@ -411,9 +411,10 @@ export function PlayerPage({
   const myElo = elo?.players.get(p.key)
   const rank = myElo && elo ? rankOfPlayer(myElo, elo.ranked) : null
   // a phone: who they are on top, then one tab at a time; a desktop shows everything, as before
-  const tabs = (['circ', 'deck', 'card', 'tour'] as const).filter(
+  const tabs = (['circ', 'elo', 'deck', 'card', 'tour'] as const).filter(
     (k) =>
       k === 'circ' ||
+      (k === 'elo' && !!myElo) ||
       (k === 'deck' && (mine.length > 0 || !!claim?.verified)) ||
       (k === 'card' && !!dataset && mine.length > 0) ||
       (k === 'tour' && (mine.length > 0 || p.events.length > 0)),
@@ -508,7 +509,8 @@ export function PlayerPage({
         </div>
       )}
 
-      {show('circ') && dataset && <EloCard dataset={dataset} playerKey={p.key} prefs={prefs} openRanks={prefs.openRanks} openTournament={openTournament} />}
+      {!wide && show('circ') && dataset && <EloLine dataset={dataset} playerKey={p.key} onOpen={() => setPicked({ key: playerKey, tab: 'elo' })} />}
+      {show('elo') && dataset && <EloCard dataset={dataset} playerKey={p.key} prefs={prefs} openRanks={prefs.openRanks} openTournament={openTournament} />}
       {show('circ') && dataset && <PlayerBadges dataset={dataset} entries={mine} player={p} />}
       {show('deck') &&
         (wide ? (

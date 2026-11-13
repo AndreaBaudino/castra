@@ -9,8 +9,14 @@ export interface Release {
 export const CHANGELOG: Release[] = [
   {
     date: '2026-11-13',
-    it: ['Mazzi: sul telefono l\'immagine del mazzo parte dal bordo in alto dello schermo, sotto una barra trasparente, come nella pagina del comandante e del giocatore'],
-    en: ['Decks: on a phone the deck\'s art starts from the top edge of the screen, under a see-through bar, as on the commander\'s and the player\'s page'],
+    it: [
+      'Circuito, giocatori: sul telefono l\'Elo ha una scheda tutta sua, accanto a Circuito, Mazzi, Carte e Tornei. In Circuito resta una riga con punteggio, andamento e rank: toccala per aprirla',
+      'Mazzi: sul telefono l\'immagine del mazzo parte dal bordo in alto dello schermo, sotto una barra trasparente, come nella pagina del comandante e del giocatore',
+    ],
+    en: [
+      'Circuit, players: on a phone the Elo has a tab of its own, next to Circuit, Decks, Cards and Events. The Circuit tab keeps one line with the score, the trend and the rank: tap it to open the tab',
+      'Decks: on a phone the deck\'s art starts from the top edge of the screen, under a see-through bar, as on the commander\'s and the player\'s page',
+    ],
   },
   {
     date: '2026-11-12',

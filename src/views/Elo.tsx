@@ -388,6 +388,28 @@ export function EloCard({
   )
 }
 
+/** A phone's circuit tab: the Elo in one line, the whole card is in its own tab. */
+export function EloLine({ dataset, playerKey: key, onOpen }: { dataset: MetaDataset; playerKey: string; onOpen: () => void }) {
+  const { t } = useI18n()
+  const elo = useElo(dataset)
+  const p = elo?.players.get(key)
+  if (!elo || !p) return null
+  const rank = rankOfPlayer(p, elo.ranked)
+  return (
+    <section className="card">
+      <button className="elo-line" onClick={onOpen}>
+        <span className="elo-big">
+          <span className="muted">{t('elo.title')}</span>
+          <b>{Math.round(p.elo)}</b>
+          <Delta n={p.d30} />
+        </span>
+        {rank && <RankTag rank={rank} grey={p.status === 'inactive'} />}
+        <Icon name="chevron" size={18} />
+      </button>
+    </section>
+  )
+}
+
 function EloChart({ p }: { p: PlayerElo }) {
   const { lang } = useI18n()
   if (p.steps.length < 2) return null

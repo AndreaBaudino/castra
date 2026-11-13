@@ -5596,6 +5596,23 @@ div.home-row > .home-row-link.link {
   font: 700 2.5rem/1 var(--font-display);
   letter-spacing: -0.02em;
 }
+.elo-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+.elo-line .elo-big {
+  flex: 1;
+}
+.elo-line .elo-big > b {
+  font-size: 1.6rem;
+}
 .elo-rank-line {
   display: block;
   width: 100%;
