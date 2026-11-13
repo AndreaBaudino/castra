@@ -8,6 +8,11 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    date: '2026-11-13',
+    it: ['Mazzi: sul telefono l\'immagine del mazzo parte dal bordo in alto dello schermo, sotto una barra trasparente, come nella pagina del comandante e del giocatore'],
+    en: ['Decks: on a phone the deck\'s art starts from the top edge of the screen, under a see-through bar, as on the commander\'s and the player\'s page'],
+  },
+  {
     date: '2026-11-12',
     it: [
       'Circuito: arriva l\'Elo dei giocatori. Nella Classifica c\'è la vista Elo, calcolata da ogni torneo dell\'anno (piazzamenti dei fogli e partite giocate in Castra), con quanto è cambiato negli ultimi 30 giorni, i provvisori e gli inattivi a parte. Chi non gioca da più di un mese perde 10 punti al mese, mai sotto 1000',

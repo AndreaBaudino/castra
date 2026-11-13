@@ -25,7 +25,7 @@ import {
   parseDecklist,
 } from '../lib/decks'
 import { loadPrivate, photoLink, ranking, tournamentTitle, useTournament } from '../lib/tournaments'
-import { placeLabel } from './Circuit'
+import { SubPageShell, placeLabel } from './Circuit'
 import { type MetaDataset, type MetaDeck, findMetaDeck, nickName, winrate } from '../lib/meta'
 import { type DeckTournament, type Match, deckTournaments, fmtRecord, record } from '../lib/matches'
 import { type Price, euro, fetchCheapest, fetchCollection, fetchPrices, fetchPrints, requestKey, searchCards, symbolUrl } from '../lib/scryfall'
@@ -550,16 +550,35 @@ export default function DeckDetail({
     return deck.cards.filter((c) => c.info?.art && !seen.has(c.name) && seen.add(c.name))
   }, [deck.cards])
 
-  return (
-    <div className="page deck-page">
-      <header className="page-head sticky-head">
-        <div className="head-left">
-          <button className="icon-btn" onClick={onBack} aria-label={t('deck.back')}>
-            <Icon name="back" />
-          </button>
-          <h1 className="sub-title">{deck.name}</h1>
+  const hero = (
+    <div className={`deck-hero${art ? ' art-hero' : ''}`} style={art ? { backgroundImage: `url(${art})` } : undefined}>
+      <div className="deck-hero-shade" />
+      <div className="deck-hero-body">
+        <div className="art-name" aria-hidden="true">
+          {deck.name}
         </div>
-        {!readOnly && (
+        {author && (
+          <button className="deck-author" disabled={!author.open} onClick={author.open}>
+            {author.photo ? <img src={author.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{author.name.charAt(0).toUpperCase()}</span>}
+            <span className="ellipsis">{author.name}</span>
+            {!readOnly && <span className="tag">{t(`deck.vis.${deck.visibility ?? 'private'}`)}</span>}
+          </button>
+        )}
+        <div className="sub-line">
+          <Pips colors={sortColors(check.identity)} size={12} />
+          <span className="small">{commanderNames(deck).join(' + ') || '—'}</span>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <SubPageShell
+      className="deck-page"
+      title={deck.name}
+      onBack={onBack}
+      actions={
+        !readOnly && (
           <div className="hero-actions">
             <button className="icon-btn" onClick={() => setSharing(true)} aria-label={t('deck.share')}>
               <Icon name="share" />
@@ -577,24 +596,11 @@ export default function DeckDetail({
               </button>
             )}
           </div>
-        )}
-      </header>
-      <div className="deck-hero" style={art ? { backgroundImage: `url(${art})` } : undefined}>
-        <div className="deck-hero-shade" />
-        <div className="deck-hero-body">
-          {author && (
-            <button className="deck-author" disabled={!author.open} onClick={author.open}>
-              {author.photo ? <img src={author.photo} alt="" referrerPolicy="no-referrer" /> : <span className="avatar">{author.name.charAt(0).toUpperCase()}</span>}
-              <span className="ellipsis">{author.name}</span>
-              {!readOnly && <span className="tag">{t(`deck.vis.${deck.visibility ?? 'private'}`)}</span>}
-            </button>
-          )}
-          <div className="sub-line">
-            <Pips colors={sortColors(check.identity)} size={12} />
-            <span className="small">{commanderNames(deck).join(' + ') || '—'}</span>
-          </div>
-        </div>
-      </div>
+        )
+      }
+      art={art && hero}
+    >
+      {!art && hero}
 
       {extra}
 
@@ -965,7 +971,7 @@ export default function DeckDetail({
       </Sheet>
 
       {toast && <div className="toast">{toast}</div>}
-    </div>
+    </SubPageShell>
   )
 }
 

@@ -894,9 +894,11 @@ export function SubPageShell({
   onBack,
   actions,
   art,
+  className,
   children,
 }: {
   title: string
+  className?: string
   onBack: () => void
   actions?: React.ReactNode
   /** a full-width picture under a see-through bar, which turns solid with the title once the picture has gone under it */
@@ -916,7 +918,7 @@ export function SubPageShell({
     return () => io.disconnect()
   }, [hasArt])
   return (
-    <div className="page">
+    <div className={`page${className ? ` ${className}` : ''}`}>
       <header ref={head} className={`page-head sticky-head${art ? ' on-art' : ''}${clear ? ' clear' : ''}`}>
         <div className="head-left">
           <button className="icon-btn" onClick={onBack} aria-label="back">
