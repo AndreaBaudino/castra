@@ -121,7 +121,14 @@ export interface Price {
 }
 
 const num = (s?: string | null) => (s ? Number(s) : null)
-const priceOf = (c: ScryCard): Price => ({ eur: num(c.prices?.eur), foil: num(c.prices?.eur_foil), url: c.purchase_uris?.cardmarket })
+// Scryfall's link carries referrer/utm params that get it blocked by Cardmarket's firewall
+const cmUrl = (s?: string) => {
+  if (!s) return
+  const u = new URL(s)
+  for (const k of [...u.searchParams.keys()]) if (k === 'referrer' || k.startsWith('utm_')) u.searchParams.delete(k)
+  return u.href
+}
+const priceOf = (c: ScryCard): Price => ({ eur: num(c.prices?.eur), foil: num(c.prices?.eur_foil), url: cmUrl(c.purchase_uris?.cardmarket) })
 const prices = new Map<string, Price>() // by printing: a session is short enough to keep them
 
 /**
